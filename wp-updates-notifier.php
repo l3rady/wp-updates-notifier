@@ -36,7 +36,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		protected static $options_field_ver = "sc_wpun_settings_ver";
 		protected static $options_field_current_ver = "2.0";
 		protected static $cron_name = "sc_wpun_update_check";
-		protected static $frequency_intervals = array( "hourly", "twicedaily", "daily" );
+		protected static $frequency_intervals = array( "hourly", "twicedaily", "daily", "manual" );
 
 		function __construct() {
 			// Check settings are up to date
@@ -125,16 +125,33 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 * @return void
 		 */
 		public function enable_cron( $manual_interval = false ) {
-			$options         = get_option( self::$options_field ); // get current settings
+			$options         = get_option( self::$options_field ); // Get settings
 			$currentSchedule = wp_get_schedule( self::$cron_name ); // find if a schedule already exists
+
+			// if a manual cron interval is set, use this
 			if ( !empty( $manual_interval ) ) {
 				$options['frequency'] = $manual_interval;
-			} // if a manual cron interval is set, use this
-			if ( $currentSchedule != $options['frequency'] ) { // check if the current schedule matches the one set in settings
-				if ( in_array( $options['frequency'], self::$frequency_intervals ) ) { // check the cron setting is valid
-					do_action( "sc_wpun_disable_cron" ); // remove any crons for this plugin first so we don't end up with multiple crons doing the same thing.
-					wp_schedule_event( ( time() + 3600 ), $options['frequency'], self::$cron_name ); // schedule cron for this plugin.
+			}
+
+			if ( "manual" == $options['frequency'] ) {
+				do_action( "sc_wpun_disable_cron" ); // Make sure no cron is setup as we are manual
+			}
+			else {
+				// check if the current schedule matches the one set in settings
+				if ( $currentSchedule == $options['frequency'] ) {
+					return;
 				}
+
+				// check the cron setting is valid
+				if ( !in_array( $options['frequency'], self::$frequency_intervals ) ) {
+					return;
+				}
+
+				// Remove any cron's for this plugin first so we don't end up with multiple cron's doing the same thing.
+				do_action( "sc_wpun_disable_cron" );
+
+				// Schedule cron for this plugin.
+				wp_schedule_event( time(), $options['frequency'], self::$cron_name );
 			}
 		}
 
@@ -416,8 +433,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 
-		static public function admin_register_scripts_styles()
-		{
+		static public function admin_register_scripts_styles() {
 			wp_register_script( 'wp_updates_monitor_js_function', plugins_url( 'js/function.js', __FILE__ ), array( 'jquery' ), '1.0', true );
 		}
 
@@ -430,7 +446,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 */
 		public function admin_settings_menu() {
 			$page = add_options_page( 'WP Updates Notifier', 'WP Updates Notifier', 'manage_options', 'wp-updates-notifier', array( __CLASS__, 'settings_page' ) );
-			add_action( "admin_print_scripts-{$page}" , array( __CLASS__, 'enqueue_plugin_script' ) );
+			add_action( "admin_print_scripts-{$page}", array( __CLASS__, 'enqueue_plugin_script' ) );
 		}
 
 		static public function enqueue_plugin_script() {
@@ -471,12 +487,15 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_validate( $input ) {
 			$valid = get_option( self::$options_field );
 
-			if( in_array( $input['cron_method'], array( "wordpress", "other" ) ) ) {
+			if ( in_array( $input['cron_method'], array( "wordpress", "other" ) ) ) {
 				$valid['cron_method'] = $input['cron_method'];
 			}
 			else {
 				add_settings_error( "sc_wpun_settings_main_cron_method", "sc_wpun_settings_main_cron_method_error", __( "Invalid cron method selected", "wp-updates-notifier" ), "error" );
 			}
+
+			if("other" == $valid['cron_method'])
+				$input['frequency'] = "manual";
 
 			if ( in_array( $input['frequency'], self::$frequency_intervals ) ) {
 				$valid['frequency'] = $input['frequency'];
