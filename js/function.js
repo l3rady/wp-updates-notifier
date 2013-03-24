@@ -15,20 +15,19 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-jQuery(function ($)
-{
-    var
-        sc_wpun_settings_cron = $('select[name="sc_wpun_settings[cron_method]"]'),
-        sc_wpun_settings_interval = $('select[name="sc_wpun_settings[file_check_interval]"]')
-    ;
+jQuery(function ($) {
+	var
+		sc_wpun_settings_cron = $('select[name="sc_wpun_settings[cron_method]"]'),
+		sc_wpun_settings_interval = $('select[name="sc_wpun_settings[file_check_interval]"]')
+		;
 
-    sc_wpun_settings_cron.change(function() {
-        if(sc_wpun_settings_cron.val() == "wordpress") {
-            sc_wpun_settings_cron.parent().find("div").hide();
-            sc_wpun_settings_interval.parent().parent().show();
-        } else {
-            sc_wpun_settings_cron.parent().find("div").show();
-            sc_wpun_settings_interval.parent().parent().hide();
-        }
-    }).trigger("change");
+	sc_wpun_settings_cron.change(function () {
+		if (sc_wpun_settings_cron.val() == "wordpress") {
+			sc_wpun_settings_cron.parent().find("div").hide();
+			sc_wpun_settings_interval.parent().parent().show();
+		} else {
+			sc_wpun_settings_cron.parent().find("div").show();
+			sc_wpun_settings_interval.parent().parent().hide();
+		}
+	}).trigger("change");
 });

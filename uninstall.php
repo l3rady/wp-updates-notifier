@@ -16,8 +16,9 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-if( ! defined( "WP_UNINSTALL_PLUGIN" ) )
-	exit();	
+if ( !defined( "WP_UNINSTALL_PLUGIN" ) ) {
+	exit();
+}
 
 delete_option( "sc_wpun_settings" );
 delete_option( "sc_wpun_settings_ver" );
