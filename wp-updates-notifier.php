@@ -54,6 +54,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			add_action( 'admin_menu', array( __CLASS__, 'admin_settings_menu' ) ); // Add menu to options
 			add_action( 'admin_init', array( __CLASS__, 'admin_settings_init' ) ); // Add admin init functions
 			add_action( 'admin_init', array( __CLASS__, 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins
+			add_action( 'admin_init', array( __CLASS__, 'admin_register_scripts_styles' ) );
 			add_action( 'sc_wpun_enable_cron', array( __CLASS__, 'enable_cron' ) ); // action to enable cron
 			add_action( 'sc_wpun_disable_cron', array( __CLASS__, 'disable_cron' ) ); // action to disable cron
 			add_action( self::$cron_name, array( __CLASS__, 'do_update_check' ) ); // action to link cron task to actual task
@@ -415,6 +416,11 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 
+		static public function admin_register_scripts_styles()
+		{
+			wp_register_script( 'wp_updates_monitor_js_function', plugins_url( 'js/function.js', __FILE__ ), array( 'jquery' ), '1.0', true );
+		}
+
 		/*
 		 * EVERYTHING SETTINGS
 		 *
@@ -423,6 +429,11 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 */
 		public function admin_settings_menu() {
 			$page = add_options_page( 'WP Updates Notifier', 'WP Updates Notifier', 'manage_options', 'wp-updates-notifier', array( __CLASS__, 'settings_page' ) );
+			add_action( "admin_print_scripts-{$page}" , array( __CLASS__, 'enqueue_plugin_script' ) );
+		}
+
+		static public function enqueue_plugin_script() {
+			wp_enqueue_script( 'wp_updates_monitor_js_function' );
 		}
 
 		public function settings_page() {
