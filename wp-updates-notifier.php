@@ -421,6 +421,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			wp_register_script( 'wp_updates_monitor_js_function', plugins_url( 'js/function.js', __FILE__ ), array( 'jquery' ), '1.0', true );
 		}
 
+
 		/*
 		 * EVERYTHING SETTINGS
 		 *
@@ -470,10 +471,12 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_validate( $input ) {
 			$valid = get_option( self::$options_field );
 
-			if( in_array( $input['cron_method'], array( "wordpress", "other" ) ) )
+			if( in_array( $input['cron_method'], array( "wordpress", "other" ) ) ) {
 				$valid['cron_method'] = $input['cron_method'];
-			else
+			}
+			else {
 				add_settings_error( "sc_wpun_settings_main_cron_method", "sc_wpun_settings_main_cron_method_error", __( "Invalid cron method selected", "wp-updates-notifier" ), "error" );
+			}
 
 			if ( in_array( $input['frequency'], self::$frequency_intervals ) ) {
 				$valid['frequency'] = $input['frequency'];

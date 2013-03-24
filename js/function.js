@@ -18,7 +18,7 @@
 jQuery(function ($) {
 	var
 		sc_wpun_settings_cron = $('select[name="sc_wpun_settings[cron_method]"]'),
-		sc_wpun_settings_interval = $('select[name="sc_wpun_settings[file_check_interval]"]')
+		sc_wpun_settings_interval = $('select[name="sc_wpun_settings[frequency]"]')
 		;
 
 	sc_wpun_settings_cron.change(function () {
