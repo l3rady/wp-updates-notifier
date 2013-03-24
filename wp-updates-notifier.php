@@ -4,13 +4,13 @@ Plugin Name: WP Updates Notifier
 Plugin URI: http://l3rady.com/projects/wp-updates-notifier/
 Description: Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
 Author: Scott Cariss
-Version: 1.3.2
+Version: 1.4
 Author URI: http://l3rady.com/
 Text Domain: wp-updates-notifier
 Domain Path: /languages
 */
 
-/*  Copyright 2012  Scott Cariss  (email : scott@l3rady.com)
+/*  Copyright 2013  Scott Cariss  (email : scott@l3rady.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ if (!class_exists('sc_WPUpdatesNotifier')) {
 	class sc_WPUpdatesNotifier {
 		protected static $options_field = "sc_wpun_settings";
 		protected static $options_field_ver = "sc_wpun_settings_ver";
-		protected static $options_field_current_ver = "1.0";
+		protected static $options_field_current_ver = "2.0";
 		protected static $cron_name = "sc_wpun_update_check";
 		protected static $frequency_intervals = array("hourly", "twicedaily", "daily");
 
@@ -72,6 +72,7 @@ if (!class_exists('sc_WPUpdatesNotifier')) {
 			if(self::$options_field_current_ver != $current_ver) { // is the version the same as this plugin?
 				$options = (array) get_option(self::$options_field); // get current settings from DB
 				$defaults = array( // Here are our default values for this plugin
+                                    'cron_method' => 'wordpress', // Cron method to be used for scheduling scans
 								  	'frequency' => self::$frequency_intervals[0],
 									'notify_to' => get_option('admin_email'),
 									'notify_from' => get_option('admin_email'),
@@ -82,7 +83,8 @@ if (!class_exists('sc_WPUpdatesNotifier')) {
                                         'core' => "",
                                         'plugin' => array(),
                                         'theme' => array(),
-                                    )
+                                    ),
+                                    'security_key' => sha1( microtime( true ) . mt_rand( 10000, 90000 ) ), // Generate a random key to be used for Other Cron Method
 								  );
                 // Intersect current options with defaults. Basically removing settings that are obsolete
 				$options = array_intersect_key($options, $defaults);
@@ -406,6 +408,7 @@ if (!class_exists('sc_WPUpdatesNotifier')) {
 			settings_fields("sc_wpun_settings");
 			do_settings_sections("wp-updates-notifier");
 			?>
+            <p>&nbsp;</p>
             <input class="button-primary" name="Submit" type="submit" value="<?php _e("Save settings", "wp-updates-notifier"); ?>" />
             <input class="button" name="submitwithemail" type="submit" value="<?php _e("Save settings with test email", "wp-updates-notifier"); ?>" />
             </form>
@@ -415,7 +418,8 @@ if (!class_exists('sc_WPUpdatesNotifier')) {
 		public function admin_settings_init() {
 			register_setting(self::$options_field, self::$options_field, array(__CLASS__, "sc_wpun_settings_validate")); // Register Main Settings
 			add_settings_section("sc_wpun_settings_main", __("Settings", "wp-updates-notifier"), array(__CLASS__, "sc_wpun_settings_main_text"), "wp-updates-notifier"); // Make settings main section
-			add_settings_field("sc_wpun_settings_main_frequency", __("Frequency to check", "wp-updates-notifier"), array(__CLASS__, "sc_wpun_settings_main_field_frequency"), "wp-updates-notifier", "sc_wpun_settings_main");
+            add_settings_field( "sc_wpun_settings_main_cron_method", __( "Cron Method", "wp-updates-notifier" ), array( __CLASS__, "sc_wpun_settings_main_field_cron_method" ), "wp-updates-notifier", "sc_wpun_settings_main" );
+            add_settings_field("sc_wpun_settings_main_frequency", __("Frequency to check", "wp-updates-notifier"), array(__CLASS__, "sc_wpun_settings_main_field_frequency"), "wp-updates-notifier", "sc_wpun_settings_main");
 			add_settings_field("sc_wpun_settings_main_notify_to", __("Notify email to", "wp-updates-notifier"), array(__CLASS__, "sc_wpun_settings_main_field_notify_to"), "wp-updates-notifier", "sc_wpun_settings_main");
 			add_settings_field("sc_wpun_settings_main_notify_from", __("Notify email from", "wp-updates-notifier"), array(__CLASS__, "sc_wpun_settings_main_field_notify_from"), "wp-updates-notifier", "sc_wpun_settings_main");
 			add_settings_field("sc_wpun_settings_main_notify_plugins", __("Notify about plugin updates?", "wp-updates-notifier"), array(__CLASS__, "sc_wpun_settings_main_field_notify_plugins"), "wp-updates-notifier", "sc_wpun_settings_main");
@@ -492,6 +496,20 @@ if (!class_exists('sc_WPUpdatesNotifier')) {
             }
         }
 		public function sc_wpun_settings_main_text() {}
+        public function sc_wpun_settings_main_field_cron_method() {
+            $options = get_option(self::$options_field);
+            ?>
+            <select name="<?php echo self::$options_field; ?>[cron_method]">
+                <option value="wordpress" <?php selected( $options['cron_method'], "wordpress" ); ?>><?php _e( "WordPress Cron", "wp-updates-notifier" ); ?></option>
+                <option value="other" <?php selected( $options['cron_method'], "other" ); ?>><?php _e( "Other Cron", "wp-updates-notifier" ); ?></option>
+            </select>
+            <div>
+                <br />
+                <span class="description"><?php _e( "Cron Command: ", "wp-updates-notifier" ); ?></span>
+                <pre>wget -q "<?php echo site_url(); ?>/index.php?sc_wpun_check=1&amp;sc_wpun_key=<?php echo $options['security_key']; ?>" -O /dev/null >/dev/null 2>&amp;1</pre>
+            </div>
+        <?php
+        }
 		public function sc_wpun_settings_main_field_frequency() {
 			$options = get_option(self::$options_field);
 			?>

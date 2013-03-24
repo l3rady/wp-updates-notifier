@@ -1,5 +1,5 @@
 <?php
-/*  Copyright 2012  Scott Cariss  (email : scott@l3rady.com)
+/*  Copyright 2013  Scott Cariss  (email : scott@l3rady.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,9 +16,8 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-if(!defined('WP_UNINSTALL_PLUGIN')) {
+if( ! defined( "WP_UNINSTALL_PLUGIN" ) )
 	exit();	
-}
-delete_option("sc_wpun_settings");
-delete_option("sc_wpun_settings_ver");
-?>
+
+delete_option( "sc_wpun_settings" );
+delete_option( "sc_wpun_settings_ver" );
