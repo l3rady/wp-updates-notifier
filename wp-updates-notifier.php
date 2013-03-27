@@ -32,11 +32,11 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 
 	// WP Updates Notifier - All the magic happens here!
 	class sc_WPUpdatesNotifier {
-		protected static $options_field = "sc_wpun_settings";
-		protected static $options_field_ver = "sc_wpun_settings_ver";
-		protected static $options_field_current_ver = "3.0";
-		protected static $cron_name = "sc_wpun_update_check";
-		protected static $frequency_intervals = array( "hourly", "twicedaily", "daily", "manual" );
+		private static $options_field = "sc_wpun_settings";
+		private static $options_field_ver = "sc_wpun_settings_ver";
+		private static $options_field_current_ver = "3.0";
+		private static $cron_name = "sc_wpun_update_check";
+		private static $frequency_intervals = array( "hourly", "twicedaily", "daily", "manual" );
 
 		function __construct() {
 			// Check settings are up to date
@@ -70,8 +70,8 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 *
 		 * @return void
 		 */
-		protected function settingsUpToDate() {
-			$current_ver = get_option( self::$options_field_ver ); // Get current plugin version
+		private function settingsUpToDate() {
+			$current_ver = self::getSetOptions( self::$options_field_ver ); // Get current plugin version
 			if ( self::$options_field_current_ver != $current_ver ) { // is the version the same as this plugin?
 				$options  = (array) get_option( self::$options_field ); // get current settings from DB
 				$defaults = array( // Here are our default values for this plugin
@@ -93,11 +93,19 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				$options = array_intersect_key( $options, $defaults );
 				// Merge current settings with defaults. Basically adding any new settings with defaults that we dont have.
 				$options = array_merge( $defaults, $options );
-				update_option( self::$options_field, $options ); // update settings
-				update_option( self::$options_field_ver, self::$options_field_current_ver ); // update settings version
+				self::getSetOptions( self::$options_field, $options ); // update settings
+				self::getSetOptions( self::$options_field_ver, self::$options_field_current_ver ); // update settings version
 			}
 		}
 
+
+		private static function getSetOptions( $field, $settings = false ) {
+			if( $settings === false ) {
+				return apply_filters( 'sc_wpun_get_options_filter', get_option( $field ), $field );
+			}
+
+			return update_option( $field, apply_filters( 'sc_wpun_put_options_filter', $settings, $field ) );
+		}
 
 		/**
 		 * Function that deals with activation of this plugin
@@ -127,7 +135,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 * @return void
 		 */
 		public function enable_cron( $manual_interval = false ) {
-			$options         = get_option( self::$options_field ); // Get settings
+			$options         = self::getSetOptions( self::$options_field ); // Get settings
 			$currentSchedule = wp_get_schedule( self::$cron_name ); // find if a schedule already exists
 
 			// if a manual cron interval is set, use this
@@ -196,7 +204,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 * @return void
 		 */
 		public function do_update_check() {
-			$options      = get_option( self::$options_field ); // get settings
+			$options      = self::getSetOptions( self::$options_field ); // get settings
 			$message      = ""; // start with a blank message
 			$core_updated = self::core_update_check( $message ); // check the WP core for updates
 			if ( 0 != $options['notify_plugins'] ) { // are we to check for plugin updates?
@@ -226,9 +234,9 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 *
 		 * @return bool
 		 */
-		protected function core_update_check( &$message ) {
+		private function core_update_check( &$message ) {
 			global $wp_version;
-			$settings = get_option( self::$options_field ); // get settings
+			$settings = self::getSetOptions( self::$options_field ); // get settings
 			do_action( "wp_version_check" ); // force WP to check its core for updates
 			$update_core = get_site_transient( "update_core" ); // get information of updates
 			if ( 'upgrade' == $update_core->updates[0]->response ) { // is WP core update available?
@@ -238,7 +246,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 					$old_core_ver = $wp_version; // the old WP core version
 					$message .= "\n" . sprintf( __( "WP-Core: WordPress is out of date. Please update from version %s to %s", "wp-updates-notifier" ), $old_core_ver, $new_core_ver ) . "\n";
 					$settings['notified']['core'] = $new_core_ver; // set core version we are notifying about
-					update_option( self::$options_field, $settings ); // update settings
+					self::getSetOptions( self::$options_field, $settings ); // update settings
 					return true; // we have updates so return true
 				}
 				else {
@@ -246,7 +254,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				}
 			}
 			$settings['notified']['core'] = ""; // no updates lets set this nothing
-			update_option( self::$options_field, $settings ); // update settings
+			self::getSetOptions( self::$options_field, $settings ); // update settings
 			return false; // no updates return false
 		}
 
@@ -259,10 +267,10 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 *
 		 * @return bool
 		 */
-		protected function plugins_update_check( &$message, $allOrActive ) {
+		private function plugins_update_check( &$message, $allOrActive ) {
 			global $wp_version;
 			$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
-			$settings       = get_option( self::$options_field ); // get settings
+			$settings       = self::getSetOptions( self::$options_field ); // get settings
 			do_action( "wp_update_plugins" ); // force WP to check plugins for updates
 			$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates
 			if ( !empty( $update_plugins->response ) ) { // any plugin updates available?
@@ -294,14 +302,14 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 						$message .= "\t" . sprintf( __( "Compatibility: %s", "wp-updates-notifier" ), $compat ) . "\n";
 						$settings['notified']['plugin'][$key] = $data->new_version; // set plugin version we are notifying about
 					}
-					update_option( self::$options_field, $settings ); // save settings
+					self::getSetOptions( self::$options_field, $settings ); // save settings
 					return true; // we have plugin updates return true
 				}
 			}
 			else {
 				if ( 0 != count( $settings['notified']['plugin'] ) ) { // is there any plugin notifications?
 					$settings['notified']['plugin'] = array(); // set plugin notifications to empty as all plugins up-to-date
-					update_option( self::$options_field, $settings ); // save settings
+					self::getSetOptions( self::$options_field, $settings ); // save settings
 				}
 			}
 			return false; // No plugin updates so return false
@@ -316,8 +324,8 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 *
 		 * @return bool
 		 */
-		protected function themes_update_check( &$message, $allOrActive ) {
-			$settings = get_option( self::$options_field ); // get settings
+		private function themes_update_check( &$message, $allOrActive ) {
+			$settings = self::getSetOptions( self::$options_field ); // get settings
 			do_action( "wp_update_themes" ); // force WP to check for theme updates
 			$update_themes = get_site_transient( 'update_themes' ); // get information of updates
 			if ( !empty( $update_themes->response ) ) { // any theme updates available?
@@ -333,14 +341,14 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 						$message .= "\n" . sprintf( __( "Theme: %s is out of date. Please update from version %s to %s", "wp-updates-notifier" ), $theme_info['Name'], $theme_info['Version'], $data['new_version'] ) . "\n";
 						$settings['notified']['theme'][$key] = $data['new_version']; // set theme version we are notifying about
 					}
-					update_option( self::$options_field, $settings ); // save settings
+					self::getSetOptions( self::$options_field, $settings ); // save settings
 					return true; // we have theme updates return true
 				}
 			}
 			else {
 				if ( 0 != count( $settings['notified']['theme'] ) ) { // is there any theme notifications?
 					$settings['notified']['theme'] = array(); // set theme notifications to empty as all themes up-to-date
-					update_option( self::$options_field, $settings ); // save settings
+					self::getSetOptions( self::$options_field, $settings ); // save settings
 				}
 			}
 			return false; // No theme updates so return false
@@ -355,7 +363,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 * @return array $plugins_need_update
 		 */
 		public function check_plugins_against_notified( $plugins_need_update ) {
-			$settings = get_option( self::$options_field ); // get settings
+			$settings = self::getSetOptions( self::$options_field ); // get settings
 			foreach ( $plugins_need_update as $key => $data ) { // loop through plugins that need update
 				if ( isset( $settings['notified']['plugin'][$key] ) ) { // has this plugin been notified before?
 					if ( $data->new_version == $settings['notified']['plugin'][$key] ) { // does this plugin version match that of the one that's been notified?
@@ -375,7 +383,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 * @return array $themes_need_update
 		 */
 		public function check_themes_against_notified( $themes_need_update ) {
-			$settings = get_option( self::$options_field ); // get settings
+			$settings = self::getSetOptions( self::$options_field ); // get settings
 			foreach ( $themes_need_update as $key => $data ) { // loop through themes that need update
 				if ( isset( $settings['notified']['theme'][$key] ) ) { // has this theme been notified before?
 					if ( $data['new_version'] == $settings['notified']['theme'][$key] ) { // does this theme version match that of the one that's been notified?
@@ -395,7 +403,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 * @return void
 		 */
 		public function send_notification_email( $message ) {
-			$settings = get_option( self::$options_field ); // get settings
+			$settings = self::getSetOptions( self::$options_field ); // get settings
 			$subject  = sprintf( __( "WP Updates Notifier: Updates Available @ %s", "wp-updates-notifier" ), site_url() );
 			add_filter( 'wp_mail_from', array( __CLASS__, 'sc_wpun_wp_mail_from' ) ); // add from filter
 			add_filter( 'wp_mail_from_name', array( __CLASS__, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
@@ -407,7 +415,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 		public function sc_wpun_wp_mail_from() {
-			$settings = get_option( self::$options_field );
+			$settings = self::getSetOptions( self::$options_field );
 			return $settings['notify_from'];
 		}
 
@@ -426,7 +434,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 * @return void
 		 */
 		public function remove_update_nag_for_nonadmins() {
-			$settings = get_option( self::$options_field ); // get settings
+			$settings = self::getSetOptions( self::$options_field ); // get settings
 			if ( 1 == $settings['hide_updates'] ) { // is this enabled?
 				if ( !current_user_can( 'update_plugins' ) ) { // can the current user update plugins?
 					remove_action( 'admin_notices', 'update_nag', 3 ); // no they cannot so remove the nag for them.
@@ -441,7 +449,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 
 
 		static public function sc_wpun_check() {
-			$options = get_option( self::$options_field ); // get settings
+			$options = self::getSetOptions( self::$options_field ); // get settings
 
 			if ( !isset( $_GET['sc_wpun_key'] ) || $options['security_key'] != $_GET['sc_wpun_key'] || "other" != $options['cron_method'] ) {
 				return;
@@ -500,7 +508,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 		public function sc_wpun_settings_validate( $input ) {
-			$valid = get_option( self::$options_field );
+			$valid = self::getSetOptions( self::$options_field );
 
 			if ( in_array( $input['cron_method'], array( "wordpress", "other" ) ) ) {
 				$valid['cron_method'] = $input['cron_method'];
@@ -590,7 +598,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 		public function sc_wpun_settings_main_field_cron_method() {
-			$options = get_option( self::$options_field );
+			$options = self::getSetOptions( self::$options_field );
 			?>
 			<select name="<?php echo self::$options_field; ?>[cron_method]">
 				<option value="wordpress" <?php selected( $options['cron_method'], "wordpress" ); ?>><?php _e( "WordPress Cron", "wp-updates-notifier" ); ?></option>
@@ -605,7 +613,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 		public function sc_wpun_settings_main_field_frequency() {
-			$options = get_option( self::$options_field );
+			$options = self::getSetOptions( self::$options_field );
 			?>
 			<select id="sc_wpun_settings_main_frequency" name="<?php echo self::$options_field; ?>[frequency]">
 			<option value="<?php echo self::$frequency_intervals[0]; ?>" <?php selected( $options['frequency'], self::$frequency_intervals[0] ); ?>><?php _e( "Hourly", "wp-updates-notifier" ); ?></option>
@@ -616,20 +624,20 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 		public function sc_wpun_settings_main_field_notify_to() {
-			$options = get_option( self::$options_field );
+			$options = self::getSetOptions( self::$options_field );
 			?>
 			<input id="sc_wpun_settings_main_notify_to" class="regular-text" name="<?php echo self::$options_field; ?>[notify_to]" value="<?php echo $options['notify_to']; ?>" />
 			<span class="description"><?php _e( "Separate multiple email address with a comma (,)", "wp-updates-notifier" ); ?></span><?php
 		}
 
 		public function sc_wpun_settings_main_field_notify_from() {
-			$options = get_option( self::$options_field );
+			$options = self::getSetOptions( self::$options_field );
 			?>
 			<input id="sc_wpun_settings_main_notify_from" class="regular-text" name="<?php echo self::$options_field; ?>[notify_from]" value="<?php echo $options['notify_from']; ?>" /><?php
 		}
 
 		public function sc_wpun_settings_main_field_notify_plugins() {
-			$options = get_option( self::$options_field );
+			$options = self::getSetOptions( self::$options_field );
 			?>
 			<label><input name="<?php echo self::$options_field; ?>[notify_plugins]" type="radio" value="0" <?php checked( $options['notify_plugins'], 0 ); ?> /> <?php _e( "No", "wp-updates-notifier" ); ?>
 			</label><br />
@@ -641,7 +649,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 		public function sc_wpun_settings_main_field_notify_themes() {
-			$options = get_option( self::$options_field );
+			$options = self::getSetOptions( self::$options_field );
 			?>
 			<label><input name="<?php echo self::$options_field; ?>[notify_themes]" type="radio" value="0" <?php checked( $options['notify_themes'], 0 ); ?> /> <?php _e( "No", "wp-updates-notifier" ); ?>
 			</label><br />
@@ -653,7 +661,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 		public function sc_wpun_settings_main_field_hide_updates() {
-			$options = get_option( self::$options_field );
+			$options = self::getSetOptions( self::$options_field );
 			?>
 		<select id="sc_wpun_settings_main_hide_updates" name="<?php echo self::$options_field; ?>[hide_updates]">
 			<option value="1" <?php selected( $options['hide_updates'], 1 ); ?>><?php _e( "Yes", "wp-updates-notifier" ); ?></option>
