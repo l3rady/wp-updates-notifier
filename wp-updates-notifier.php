@@ -75,7 +75,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				$options  = (array) get_option( self::$options_field ); // get current settings from DB
 				$defaults = array( // Here are our default values for this plugin
 					'cron_method'    => 'wordpress', // Cron method to be used for scheduling scans
-					'frequency'      => array_shift( self::get_intervals() ),
+					'frequency'      => 'hourly',
 					'notify_to'      => get_option( 'admin_email' ),
 					'notify_from'    => get_option( 'admin_email' ),
 					'notify_plugins' => 1,
