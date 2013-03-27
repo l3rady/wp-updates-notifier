@@ -449,7 +449,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			add_action( "admin_print_scripts-{$page}", array( __CLASS__, 'enqueue_plugin_script' ) );
 		}
 
-		static public function enqueue_plugin_script() {
+		public static function enqueue_plugin_script() {
 			wp_enqueue_script( 'wp_updates_monitor_js_function' );
 		}
 
@@ -584,7 +584,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			<div>
 				<br />
 				<span class="description"><?php _e( "Cron Command: ", "wp-updates-notifier" ); ?></span>
-				<pre>wget -q "<?php echo site_url(); ?>/index.php?sc_wpun_check=1&amp;sc_wpun_key=<?php echo $options['security_key']; ?>" -O /dev/null >/dev/null 2>&amp;1</pre>
+				<pre>wget -q "<?php echo admin_url( "/admin-ajax.php?action=sc_wpun_check&sc_wpun_key=" . $options['security_key'] ); ?>" -O /dev/null >/dev/null 2>&amp;1</pre>
 			</div>
 		<?php
 		}
