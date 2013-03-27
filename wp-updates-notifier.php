@@ -445,7 +445,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 * much straight forward use of the WordPress Settings API.
 		 */
 		public function admin_settings_menu() {
-			$page = add_options_page( 'WP Updates Notifier', 'WP Updates Notifier', 'manage_options', 'wp-updates-notifier', array( __CLASS__, 'settings_page' ) );
+			$page = add_options_page( 'Updates Notifier', 'Updates Notifier', 'manage_options', 'wp-updates-notifier', array( __CLASS__, 'settings_page' ) );
 			add_action( "admin_print_scripts-{$page}", array( __CLASS__, 'enqueue_plugin_script' ) );
 		}
 
@@ -457,7 +457,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			?>
 			<div class="wrap">
 				<?php screen_icon(); ?>
-				<h2><?php _e( "WP Updates Notifier", "wp-updates-notifier" ); ?></h2>
+				<h2><?php _e( "Updates Notifier", "wp-updates-notifier" ); ?></h2>
 
 				<form action="options.php" method="post">
 					<?php
