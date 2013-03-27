@@ -34,9 +34,8 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 	class sc_WPUpdatesNotifier {
 		private static $options_field = "sc_wpun_settings";
 		private static $options_field_ver = "sc_wpun_settings_ver";
-		private static $options_field_current_ver = "3.0";
+		private static $options_field_current_ver = "4.0";
 		private static $cron_name = "sc_wpun_update_check";
-		private static $frequency_intervals = array( "hourly", "twicedaily", "daily", "manual" );
 
 		function __construct() {
 			// Check settings are up to date
@@ -76,7 +75,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				$options  = (array) get_option( self::$options_field ); // get current settings from DB
 				$defaults = array( // Here are our default values for this plugin
 					'cron_method'    => 'wordpress', // Cron method to be used for scheduling scans
-					'frequency'      => self::$frequency_intervals[0],
+					'frequency'      => 'hourly',
 					'notify_to'      => get_option( 'admin_email' ),
 					'notify_from'    => get_option( 'admin_email' ),
 					'notify_plugins' => 1,
@@ -153,7 +152,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				}
 
 				// check the cron setting is valid
-				if ( !in_array( $options['frequency'], self::$frequency_intervals ) ) {
+				if ( !in_array( $options['frequency'], self::get_intervals() ) ) {
 					return;
 				}
 
@@ -461,6 +460,25 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 
+		static private function get_schedules() {
+			$schedules = wp_get_schedules();
+			usort( $schedules, array( __CLASS__, 'sort_by_interval' ) );
+			return $schedules;
+		}
+
+
+		static private function get_intervals() {
+			$intervals = array_keys( self::get_schedules() );
+			$intervals[] = "manual";
+			return $intervals;
+		}
+
+
+		static private function sort_by_interval( $a, $b ) {
+			return $a['interval'] - $b['interval'];
+		}
+
+
 		/*
 		 * EVERYTHING SETTINGS
 		 *
@@ -520,7 +538,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			if("other" == $valid['cron_method'])
 				$input['frequency'] = "manual";
 
-			if ( in_array( $input['frequency'], self::$frequency_intervals ) ) {
+			if ( in_array( $input['frequency'], self::get_intervals() ) ) {
 				$valid['frequency'] = $input['frequency'];
 				do_action( "sc_wpun_enable_cron", $input['frequency'] );
 			}
@@ -616,9 +634,9 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			$options = self::getSetOptions( self::$options_field );
 			?>
 			<select id="sc_wpun_settings_main_frequency" name="<?php echo self::$options_field; ?>[frequency]">
-			<option value="<?php echo self::$frequency_intervals[0]; ?>" <?php selected( $options['frequency'], self::$frequency_intervals[0] ); ?>><?php _e( "Hourly", "wp-updates-notifier" ); ?></option>
-			<option value="<?php echo self::$frequency_intervals[1]; ?>" <?php selected( $options['frequency'], self::$frequency_intervals[1] ); ?>><?php _e( "Twice Daily", "wp-updates-notifier" ); ?></option>
-			<option value="<?php echo self::$frequency_intervals[2]; ?>" <?php selected( $options['frequency'], self::$frequency_intervals[2] ); ?>><?php _e( "Daily", "wp-updates-notifier" ); ?></option>
+				<?php foreach ( self::get_schedules() as $k => $v ): ?>
+					<option value="<?php echo $k; ?>" <?php selected( $options['frequency'], $k ); ?>><?php echo $v['display']; ?></option>
+				<?php endforeach; ?>
 			<select>
 		<?php
 		}
