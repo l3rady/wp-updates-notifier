@@ -52,6 +52,9 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 == Changelog ==
 
+= 1.4 =
+* Added external cron method allowing users check for updates as often or as little as they want.
+
 = 1.3.2 =
 * Added $wp_version globals ( Explains why WordPress Core Updates notifications haven't been working )
 * Added missed variable $cur_wp_version
