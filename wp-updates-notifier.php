@@ -34,7 +34,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 	class sc_WPUpdatesNotifier {
 		protected static $options_field = "sc_wpun_settings";
 		protected static $options_field_ver = "sc_wpun_settings_ver";
-		protected static $options_field_current_ver = "2.0";
+		protected static $options_field_current_ver = "3.0";
 		protected static $cron_name = "sc_wpun_update_check";
 		protected static $frequency_intervals = array( "hourly", "twicedaily", "daily", "manual" );
 
@@ -58,6 +58,8 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			add_action( 'sc_wpun_enable_cron', array( __CLASS__, 'enable_cron' ) ); // action to enable cron
 			add_action( 'sc_wpun_disable_cron', array( __CLASS__, 'disable_cron' ) ); // action to disable cron
 			add_action( self::$cron_name, array( __CLASS__, 'do_update_check' ) ); // action to link cron task to actual task
+			add_action( 'wp_ajax_sc_wpun_check', array( __CLASS__, 'sc_wpun_check' ) ); // Admin ajax hook for remote cron method.
+			add_action( 'wp_ajax_nopriv_sc_wpun_check', array( __CLASS__, 'sc_wpun_check' ) ); // Admin ajax hook for remote cron method.
 		}
 
 
@@ -435,6 +437,19 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 
 		static public function admin_register_scripts_styles() {
 			wp_register_script( 'wp_updates_monitor_js_function', plugins_url( 'js/function.js', __FILE__ ), array( 'jquery' ), '1.0', true );
+		}
+
+
+		static public function sc_wpun_check() {
+			$options = get_option( self::$options_field ); // get settings
+
+			if ( !isset( $_GET['sc_wpun_key'] ) || $options['security_key'] != $_GET['sc_wpun_key'] || "other" != $options['cron_method'] ) {
+				return;
+			}
+
+			self::do_update_check();
+
+			die( __( "Successfully checked for updates.", "wp-updates-notifier" ) );
 		}
 
 
