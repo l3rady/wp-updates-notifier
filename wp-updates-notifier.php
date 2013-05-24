@@ -106,6 +106,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			return update_option( $field, apply_filters( 'sc_wpun_put_options_filter', $settings, $field ) );
 		}
 
+
 		/**
 		 * Function that deals with activation of this plugin
 		 *
