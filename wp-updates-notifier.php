@@ -490,7 +490,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 
 
 		private static function get_intervals() {
-			$intervals = array_keys( self::get_schedules() );
+			$intervals   = array_keys( self::get_schedules() );
 			$intervals[] = "manual";
 			return $intervals;
 		}
@@ -579,8 +579,9 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				add_settings_error( "sc_wpun_settings_main_cron_method", "sc_wpun_settings_main_cron_method_error", __( "Invalid cron method selected", "wp-updates-notifier" ), "error" );
 			}
 
-			if("other" == $valid['cron_method'])
+			if ( "other" == $valid['cron_method'] ) {
 				$input['frequency'] = "manual";
+			}
 
 			if ( in_array( $input['frequency'], self::get_intervals() ) ) {
 				$valid['frequency'] = $input['frequency'];
