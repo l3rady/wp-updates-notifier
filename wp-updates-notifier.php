@@ -37,7 +37,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		const OPT_VERSION = "5.0";
 		const CRON_NAME = "sc_wpun_update_check";
 
-		function __construct() {
+		public static function init() {
 			// Check settings are up to date
 			self::settingsUpToDate();
 			// Create Activation and Deactivation Hooks
@@ -121,7 +121,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 *
 		 * @return void
 		 */
-		public function activate() {
+		public static function activate() {
 			do_action( "sc_wpun_enable_cron" ); // Enable cron
 		}
 
@@ -131,7 +131,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 *
 		 * @return void
 		 */
-		public function deactivate() {
+		public static function deactivate() {
 			do_action( "sc_wpun_disable_cron" ); // Disable cron
 		}
 
@@ -193,7 +193,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 *
 		 * @return array $links
 		 */
-		public function plugin_action_links( $links, $file ) {
+		public static function plugin_action_links( $links, $file ) {
 			static $this_plugin;
 			if ( !$this_plugin ) {
 				$this_plugin = plugin_basename( __FILE__ );
@@ -245,7 +245,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 *
 		 * @return bool
 		 */
-		private function core_update_check( &$message ) {
+		private static function core_update_check( &$message ) {
 			global $wp_version;
 			$settings = self::getSetOptions( self::OPT_FIELD); // get settings
 			do_action( "wp_version_check" ); // force WP to check its core for updates
@@ -278,7 +278,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 *
 		 * @return bool
 		 */
-		private function plugins_update_check( &$message, $allOrActive ) {
+		private static function plugins_update_check( &$message, $allOrActive ) {
 			global $wp_version;
 			$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
 			$settings       = self::getSetOptions( self::OPT_FIELD); // get settings
@@ -430,11 +430,11 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			return $settings['notify_from'];
 		}
 
-		public function sc_wpun_wp_mail_from_name() {
+		public static function sc_wpun_wp_mail_from_name() {
 			return __( "WP Updates Notifier", "wp-updates-notifier" );
 		}
 
-		public function sc_wpun_wp_mail_content_type() {
+		public static function sc_wpun_wp_mail_content_type() {
 			return "text/plain";
 		}
 
@@ -464,7 +464,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		/**
 		 * Adds JS to admin settings screen for this plugin
 		 */
-		static public function admin_register_scripts_styles() {
+		public static function admin_register_scripts_styles() {
 			wp_register_script( 'wp_updates_monitor_js_function', plugins_url( 'js/function.js', __FILE__ ), array( 'jquery' ), '1.0', true );
 		}
 
@@ -482,21 +482,21 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 
-		static private function get_schedules() {
+		private static function get_schedules() {
 			$schedules = wp_get_schedules();
 			uasort( $schedules, array( __CLASS__, 'sort_by_interval' ) );
 			return $schedules;
 		}
 
 
-		static private function get_intervals() {
+		private static function get_intervals() {
 			$intervals = array_keys( self::get_schedules() );
 			$intervals[] = "manual";
 			return $intervals;
 		}
 
 
-		static private function sort_by_interval( $a, $b ) {
+		private static function sort_by_interval( $a, $b ) {
 			return $a['interval'] - $b['interval'];
 		}
 
@@ -507,7 +507,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 * I'm not going to comment any of this as its all pretty
 		 * much straight forward use of the WordPress Settings API.
 		 */
-		public function admin_settings_menu() {
+		public static function admin_settings_menu() {
 			$page = add_options_page( 'Updates Notifier', 'Updates Notifier', 'manage_options', 'wp-updates-notifier', array( __CLASS__, 'settings_page' ) );
 			add_action( "admin_print_scripts-{$page}", array( __CLASS__, 'enqueue_plugin_script' ) );
 		}
@@ -650,13 +650,13 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			return $valid;
 		}
 
-		public function send_test_email( $settings_errors ) {
+		public static function send_test_email( $settings_errors ) {
 			if ( isset( $settings_errors[0]['type'] ) && $settings_errors[0]['type'] == "updated" ) {
 				self::send_notification_email( __( "This is a test message from WP Updates Notifier.", "wp-updates-notifier" ) );
 			}
 		}
 
-		public function sc_wpun_settings_main_text() {
+		public static function sc_wpun_settings_main_text() {
 		}
 
 		public function sc_wpun_settings_main_field_cron_method() {
@@ -735,9 +735,5 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 	}
 }
 
-
-// Create Instance of WPUN Class
-if ( !isset( $sc_wpun ) && function_exists( 'add_action' ) ) {
-	$sc_wpun = new sc_WPUpdatesNotifier();
-}
+sc_WPUpdatesNotifier::init();
 ?>
