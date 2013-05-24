@@ -99,6 +99,12 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 
+		/**
+		* @param $field
+		* @param bool|mixed $settings
+		*
+		* @return bool|mixed|void
+		*/
 		private static function getSetOptions( $field, $settings = false ) {
 			if( $settings === false ) {
 				return apply_filters( 'sc_wpun_get_options_filter', get_option( $field ), $field );
@@ -340,7 +346,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				$themes_need_update = apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ); // additional filtering of themes need update
 				if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 					foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating
-						$theme_info = get_theme_data( WP_CONTENT_DIR . "/themes/" . $key . "/style.css" ); // get theme info
+						$theme_info = wp_get_theme( $key ); // get theme info
 						$message .= "\n" . sprintf( __( "Theme: %s is out of date. Please update from version %s to %s", "wp-updates-notifier" ), $theme_info['Name'], $theme_info['Version'], $data['new_version'] ) . "\n";
 						$settings['notified']['theme'][$key] = $data['new_version']; // set theme version we are notifying about
 					}
