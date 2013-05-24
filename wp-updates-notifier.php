@@ -100,13 +100,15 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 
 
 		/**
-		* @param $field
-		* @param bool|mixed $settings
-		*
-		* @return bool|mixed|void
-		*/
+		 * Filter for when getting or settings this plugins settings
+		 *
+		 * @param string     $field    Option field name of where we are getting or setting plugin settings
+		 * @param bool|mixed $settings False if getting settings else an array with settings you are saving
+		 *
+		 * @return bool|mixed True or false if setting or an array of settings if getting
+		 */
 		private static function getSetOptions( $field, $settings = false ) {
-			if( $settings === false ) {
+			if ( $settings === false ) {
 				return apply_filters( 'sc_wpun_get_options_filter', get_option( $field ), $field );
 			}
 
@@ -459,6 +461,9 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 
+		/**
+		 * Adds JS to admin settings screen for this plugin
+		 */
 		static public function admin_register_scripts_styles() {
 			wp_register_script( 'wp_updates_monitor_js_function', plugins_url( 'js/function.js', __FILE__ ), array( 'jquery' ), '1.0', true );
 		}
