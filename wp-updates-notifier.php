@@ -34,7 +34,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 	class sc_WPUpdatesNotifier {
 		const OPT_FIELD = "sc_wpun_settings";
 		const OPT_VERSION_FIELD = "sc_wpun_settings_ver";
-		const OPT_VERSION = "4.0";
+		const OPT_VERSION = "5.0";
 		const CRON_NAME = "sc_wpun_update_check";
 
 		function __construct() {
@@ -86,7 +86,8 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 						'plugin' => array(),
 						'theme'  => array(),
 					),
-					'security_key'   => sha1( microtime( true ) . mt_rand( 10000, 90000 ) ), // Generate a random key to be used for Other Cron Method
+					'security_key'   => sha1( microtime( true ) . mt_rand( 10000, 90000 ) ), // Generate a random key to be used for Other Cron Method,
+					'last_check_time' => false
 				);
 				// Intersect current options with defaults. Basically removing settings that are obsolete
 				$options = array_intersect_key( $options, $defaults );
@@ -224,6 +225,8 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				$message .= sprintf( __( "Please visit %s to update.", "wp-updates-notifier" ), admin_url( 'update-core.php' ) );
 				self::send_notification_email( $message ); // send our notification email.
 			}
+
+			self::log_last_check_time();
 		}
 
 
@@ -428,6 +431,13 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 
+		private function log_last_check_time() {
+			$options                    = self::getSetOptions( self::OPT_FIELD );
+			$options['last_check_time'] = current_time( "timestamp" );
+			self::getSetOptions( self::OPT_FIELD, $options );
+		}
+
+
 		/**
 		 * Removes the update nag for non admin users.
 		 *
@@ -496,10 +506,32 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 		public function settings_page() {
+			$options     = self::getSetOptions( self::OPT_FIELD );
+			$date_format = get_option( 'date_format' );
+			$time_format = get_option( 'time_format' );
 			?>
 			<div class="wrap">
 				<?php screen_icon(); ?>
 				<h2><?php _e( "Updates Notifier", "wp-updates-notifier" ); ?></h2>
+
+				<p>
+                    <span class="description">
+                    <?php
+					if ( false === $options["last_check_time"] ) {
+						$scan_date = __( "Never", "wp-updates-notifier" );
+					}
+					else {
+						$scan_date = sprintf(
+							__( "%1s @ %2s", "wp-updates-notifier" ),
+							date( $date_format, $options["last_check_time"] ),
+							date( $time_format, $options['last_check_time'] )
+						);
+					}
+
+					echo sprintf( __( "Last scanned: %s", "wp-updates-notifier" ), $scan_date );
+					?>
+                    </span>
+				</p>
 
 				<form action="<?php echo admin_url( "options.php" ); ?>" method="post">
 					<?php
