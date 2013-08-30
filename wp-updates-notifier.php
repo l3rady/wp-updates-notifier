@@ -225,6 +225,8 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				$message .= sprintf( __( "Please visit %s to update.", "wp-updates-notifier" ), admin_url( 'update-core.php' ) );
 				self::send_notification_email( $message ); // send our notification email.
 			}
+
+			self::log_last_check_time();
 		}
 
 
@@ -426,6 +428,13 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 
 		public function sc_wpun_wp_mail_content_type() {
 			return "text/plain";
+		}
+
+
+		private function log_last_check_time() {
+			$options                    = self::getSetOptions( self::OPT_FIELD );
+			$options['last_check_time'] = current_time( "timestamp" );
+			self::getSetOptions( self::OPT_FIELD, $options );
 		}
 
 
