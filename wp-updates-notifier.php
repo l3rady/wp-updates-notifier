@@ -139,7 +139,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			$currentSchedule = wp_get_schedule( self::CRON_NAME); // find if a schedule already exists
 
 			// if a manual cron interval is set, use this
-			if ( !empty( $manual_interval ) ) {
+			if ( false !== $manual_interval ) {
 				$options['frequency'] = $manual_interval;
 			}
 
@@ -463,7 +463,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 
 		static private function get_schedules() {
 			$schedules = wp_get_schedules();
-			usort( $schedules, array( __CLASS__, 'sort_by_interval' ) );
+			uasort( $schedules, array( __CLASS__, 'sort_by_interval' ) );
 			return $schedules;
 		}
 
