@@ -34,7 +34,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 	class sc_WPUpdatesNotifier {
 		const OPT_FIELD = "sc_wpun_settings";
 		const OPT_VERSION_FIELD = "sc_wpun_settings_ver";
-		const OPT_VERSION = "4.0";
+		const OPT_VERSION = "5.0";
 		const CRON_NAME = "sc_wpun_update_check";
 
 		function __construct() {
@@ -86,7 +86,8 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 						'plugin' => array(),
 						'theme'  => array(),
 					),
-					'security_key'   => sha1( microtime( true ) . mt_rand( 10000, 90000 ) ), // Generate a random key to be used for Other Cron Method
+					'security_key'   => sha1( microtime( true ) . mt_rand( 10000, 90000 ) ), // Generate a random key to be used for Other Cron Method,
+					'last_check_time' => false
 				);
 				// Intersect current options with defaults. Basically removing settings that are obsolete
 				$options = array_intersect_key( $options, $defaults );
