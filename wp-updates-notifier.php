@@ -497,10 +497,32 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		}
 
 		public function settings_page() {
+			$options     = self::getSetOptions( self::OPT_FIELD );
+			$date_format = get_option( 'date_format' );
+			$time_format = get_option( 'time_format' );
 			?>
 			<div class="wrap">
 				<?php screen_icon(); ?>
 				<h2><?php _e( "Updates Notifier", "wp-updates-notifier" ); ?></h2>
+
+				<p>
+                    <span class="description">
+                    <?php
+					if ( false === $options["last_check_time"] ) {
+						$scan_date = __( "Never", "wp-updates-notifier" );
+					}
+					else {
+						$scan_date = sprintf(
+							__( "%1s @ %2s", "wp-updates-notifier" ),
+							date( $date_format, $options["last_check_time"] ),
+							date( $time_format, $options['last_check_time'] )
+						);
+					}
+
+					echo sprintf( __( "Last scanned: %s", "wp-updates-notifier" ), $scan_date );
+					?>
+                    </span>
+				</p>
 
 				<form action="<?php echo admin_url( "options.php" ); ?>" method="post">
 					<?php
