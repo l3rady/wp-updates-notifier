@@ -35,6 +35,7 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 *Languages*
 
+- French by [Christophe Catarina](http://www.ordilibre.com/) - *Added 03 July 2013*
 - German by [Alexander Pfabel](http://alexander.pfabel.de/) - *Added 02 October 2012*
 
 == Installation ==
@@ -56,6 +57,7 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 * Added external cron method allowing users check for updates as often or as little as they want.
 * Added sc_wpun_get_options_filter and sc_wpun_put_options_filter filters to allow filtering of this plugins settings
 * Now using wp_get_schedules() rather than statically assigned schedules. This allows admins to set their own schedules such as a weekly one.
+* Added French translations
 
 = 1.3.2 =
 * Added $wp_version globals ( Explains why WordPress Core Updates notifications haven't been working )
