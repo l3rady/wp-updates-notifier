@@ -529,7 +529,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_validate( $input ) {
 			$valid = self::getSetOptions( self::$options_field );
 
-			if ( in_array( $input['cron_method'], array( "wordpress", "other" ) ) ) {
+			if ( isset( $input['cron_method'] ) && in_array( $input['cron_method'], array( "wordpress", "other" ) ) ) {
 				$valid['cron_method'] = $input['cron_method'];
 			}
 			else {
@@ -576,7 +576,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				add_settings_error( "sc_wpun_settings_main_notify_from", "sc_wpun_settings_main_notify_from_error", __( "Invalid email from entered", "wp-updates-notifier" ), "error" );
 			}
 
-			$sanitized_notify_plugins = absint( $input['notify_plugins'] );
+			$sanitized_notify_plugins = absint( isset( $input['notify_plugins'] ) ? $input['notify_plugins'] : 0 );
 			if ( $sanitized_notify_plugins >= 0 && $sanitized_notify_plugins <= 2 ) {
 				$valid['notify_plugins'] = $sanitized_notify_plugins;
 			}
@@ -584,7 +584,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				add_settings_error( "sc_wpun_settings_main_notify_plugins", "sc_wpun_settings_main_notify_plugins_error", __( "Invalid plugin updates value entered", "wp-updates-notifier" ), "error" );
 			}
 
-			$sanitized_notify_themes = absint( $input['notify_themes'] );
+			$sanitized_notify_themes = absint( isset( $input['notify_themes'] ) ? $input['notify_themes'] : 0 );
 			if ( $sanitized_notify_themes >= 0 && $sanitized_notify_themes <= 2 ) {
 				$valid['notify_themes'] = $sanitized_notify_themes;
 			}
@@ -592,7 +592,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				add_settings_error( "sc_wpun_settings_main_notify_themes", "sc_wpun_settings_main_notify_themes_error", __( "Invalid theme updates value entered", "wp-updates-notifier" ), "error" );
 			}
 
-			$sanitized_hide_updates = absint( $input['hide_updates'] );
+			$sanitized_hide_updates = absint( isset( $input['hide_updates'] ) ? $input['hide_updates'] : 0 );
 			if ( $sanitized_hide_updates <= 1 ) {
 				$valid['hide_updates'] = $sanitized_hide_updates;
 			}
@@ -682,10 +682,10 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_main_field_hide_updates() {
 			$options = self::getSetOptions( self::$options_field );
 			?>
-		<select id="sc_wpun_settings_main_hide_updates" name="<?php echo self::$options_field; ?>[hide_updates]">
-			<option value="1" <?php selected( $options['hide_updates'], 1 ); ?>><?php _e( "Yes", "wp-updates-notifier" ); ?></option>
-			<option value="0" <?php selected( $options['hide_updates'], 0 ); ?>><?php _e( "No", "wp-updates-notifier" ); ?></option>
-			<select>
+			<select id="sc_wpun_settings_main_hide_updates" name="<?php echo self::$options_field; ?>[hide_updates]">
+				<option value="1" <?php selected( $options['hide_updates'], 1 ); ?>><?php _e( "Yes", "wp-updates-notifier" ); ?></option>
+				<option value="0" <?php selected( $options['hide_updates'], 0 ); ?>><?php _e( "No", "wp-updates-notifier" ); ?></option>
+			</select>
 			<?php
 		}
 		/**** END EVERYTHING SETTINGS ****/
