@@ -1,0 +1,205 @@
+# Copyright (C) 2013 WP Updates Notifier
+# This file is distributed under the same license as the WP Updates Notifier package.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Updates Notifier 1.4\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-updates-notifier\n"
+"POT-Creation-Date: 2013-11-27 15:09:57+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2013-11-28 00:36+0900\n"
+"Last-Translator: cat <cat@midx.jp>\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: wp-updates-notifier.php:194 wp-updates-notifier.php:551
+msgid "Settings"
+msgstr "設定"
+
+#: wp-updates-notifier.php:224
+msgid "There are updates available for your WordPress site:"
+msgstr "お使いの WordPress に更新があります:"
+
+#: wp-updates-notifier.php:225
+msgid "Please visit %s to update."
+msgstr "更新するには %s を開いてください。"
+
+#: wp-updates-notifier.php:250
+msgid "WP-Core: WordPress is out of date. Please update from version %s to %s"
+msgstr "WP 本体: WordPress に新しいバージョンがあります。バージョン %s から %s へ更新してください"
+
+#: wp-updates-notifier.php:292
+msgid "Plugin: %s is out of date. Please update from version %s to %s"
+msgstr "プラグイン: %s に新しいバージョンがあります。バージョン %s から %s へ更新してください"
+
+#: wp-updates-notifier.php:293
+msgid "Details: %s"
+msgstr "説明: %s"
+
+#: wp-updates-notifier.php:294
+msgid "Changelog: %s%s"
+msgstr "更新履歴: %s%s"
+
+#: wp-updates-notifier.php:303
+msgid "Compatibility with WordPress %1$s: Unknown"
+msgstr "WordPress %1$s との互換性: 不明"
+
+#: wp-updates-notifier.php:305
+msgid "Compatibility: %s"
+msgstr "互換性: %s"
+
+#: wp-updates-notifier.php:344
+msgid "Theme: %s is out of date. Please update from version %s to %s"
+msgstr "テーマ: に新しいバージョンがあります。バージョン %s から %s へ更新してください"
+
+#: wp-updates-notifier.php:410
+msgid "WP Updates Notifier: Updates Available @ %s"
+msgstr "WP Updates Notifier: %s に更新があります"
+
+#. #-#-#-#-#  wp-updates-notifier.pot (WP Updates Notifier 1.4)  #-#-#-#-#
+#. Plugin Name of the plugin/theme
+#: wp-updates-notifier.php:426
+msgid "WP Updates Notifier"
+msgstr "WP Updates Notifier"
+
+#: wp-updates-notifier.php:515
+msgid "Updates Notifier"
+msgstr "更新通知"
+
+#: wp-updates-notifier.php:521
+msgid "Never"
+msgstr "なし"
+
+#: wp-updates-notifier.php:525
+msgid "%1s @ %2s"
+msgstr "%1s %2s"
+
+#: wp-updates-notifier.php:531
+msgid "Last scanned: %s"
+msgstr "最終チェック日時: %s"
+
+#: wp-updates-notifier.php:542
+msgid "Save settings"
+msgstr "変更を保存"
+
+#: wp-updates-notifier.php:543
+msgid "Save settings with test email"
+msgstr "変更を保存してテストメールを送信"
+
+#: wp-updates-notifier.php:552
+msgid "Cron Method"
+msgstr "Cron ツール"
+
+#: wp-updates-notifier.php:553
+msgid "Frequency to check"
+msgstr "更新チェックの頻度"
+
+#: wp-updates-notifier.php:554
+msgid "Notify email to"
+msgstr "更新情報の通知先"
+
+#: wp-updates-notifier.php:555
+msgid "Notify email from"
+msgstr "更新通知の送信元"
+
+#: wp-updates-notifier.php:556
+msgid "Notify about plugin updates?"
+msgstr "プラグインの更新を通知しますか？"
+
+#: wp-updates-notifier.php:557
+msgid "Notify about theme updates?"
+msgstr "テーマの更新を通知しますか？"
+
+#: wp-updates-notifier.php:558
+msgid "Hide core WP update nag from non-admin users?"
+msgstr "WP 本体が表示する更新通知を、管理者以外のユーザーから隠しますか？"
+
+#: wp-updates-notifier.php:568
+msgid "Invalid cron method selected"
+msgstr "Cron ツールの入力値が正しくありません"
+
+#: wp-updates-notifier.php:579
+msgid "Invalid frequency entered"
+msgstr "更新チェックの頻度の形式が正しくありません"
+
+#: wp-updates-notifier.php:589
+msgid "One or more email to addresses are invalid"
+msgstr "通知先メールアドレスの形式が正しくありません"
+
+#: wp-updates-notifier.php:600
+msgid "No email to address entered"
+msgstr "通知先を入力してください"
+
+#: wp-updates-notifier.php:608
+msgid "Invalid email from entered"
+msgstr "送信元メールアドレスの形式が正しくありません"
+
+#: wp-updates-notifier.php:616
+msgid "Invalid plugin updates value entered"
+msgstr "プラグインの更新通知の入力値が正しくありません"
+
+#: wp-updates-notifier.php:624
+msgid "Invalid theme updates value entered"
+msgstr "テーマの更新通知の入力値が正しくありません"
+
+#: wp-updates-notifier.php:632
+msgid "Invalid hide updates value entered"
+msgstr "本体からの更新通知を隠すかどうかの入力値が正しくありません"
+
+#: wp-updates-notifier.php:644
+msgid "This is a test message from WP Updates Notifier."
+msgstr "WP Updates Notifier からのテストメールです。"
+
+#: wp-updates-notifier.php:655
+msgid "WordPress Cron"
+msgstr "WordPress Cron"
+
+#: wp-updates-notifier.php:656
+msgid "Other Cron"
+msgstr "その他の Cron"
+
+#: wp-updates-notifier.php:660
+msgid "Cron Command: "
+msgstr "Cron コマンド: "
+
+#: wp-updates-notifier.php:681
+msgid "Separate multiple email address with a comma (,)"
+msgstr "複数送信の場合はメールアドレスを半角コンマで区切る"
+
+#: wp-updates-notifier.php:693 wp-updates-notifier.php:705
+#: wp-updates-notifier.php:719
+msgid "No"
+msgstr "いいえ"
+
+#: wp-updates-notifier.php:695 wp-updates-notifier.php:707
+#: wp-updates-notifier.php:718
+msgid "Yes"
+msgstr "はい"
+
+#: wp-updates-notifier.php:697
+msgid "Yes but only active plugins"
+msgstr "有効化されているプラグインのみ"
+
+#: wp-updates-notifier.php:709
+msgid "Yes but only active themes"
+msgstr "使用中のテーマのみ"
+
+#. Plugin URI of the plugin/theme
+msgid "http://l3rady.com/projects/wp-updates-notifier/"
+msgstr "http://l3rady.com/projects/wp-updates-notifier/"
+
+#. Description of the plugin/theme
+msgid ""
+"Sends email to notify you if there are any updates for your WordPress site. "
+"Can notify about core, plugin and theme updates."
+msgstr "お使いの WordPress に利用可能な更新が見つかった際にメールでお知らせします。本体だけでなく、テーマやプラグインの更新にも対応しています。"
+
+#. Author of the plugin/theme
+msgid "Scott Cariss"
+msgstr "Scott Cariss"
+
+#. Author URI of the plugin/theme
+msgid "http://l3rady.com/"
+msgstr "http://l3rady.com/"
