@@ -10,7 +10,7 @@ Text Domain: wp-updates-notifier
 Domain Path: /languages
 */
 
-/*  Copyright 2013  Scott Cariss  (email : scott@l3rady.com)
+/*  Copyright 2014  Scott Cariss  (email : scott@l3rady.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,8 +34,8 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 	class sc_WPUpdatesNotifier {
 		const OPT_FIELD         = "sc_wpun_settings";
 		const OPT_VERSION_FIELD = "sc_wpun_settings_ver";
-		const OPT_VERSION = "5.0";
-		const CRON_NAME = "sc_wpun_update_check";
+		const OPT_VERSION       = "5.0";
+		const CRON_NAME         = "sc_wpun_update_check";
 
 		public static function init() {
 			// Check settings are up to date
@@ -74,19 +74,19 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			if ( self::OPT_VERSION != $current_ver ) { // is the version the same as this plugin?
 				$options  = (array) get_option( self::OPT_FIELD ); // get current settings from DB
 				$defaults = array( // Here are our default values for this plugin
-					'cron_method'    => 'wordpress', // Cron method to be used for scheduling scans
-					'frequency'      => 'hourly',
-					'notify_to'      => get_option( 'admin_email' ),
-					'notify_from'    => get_option( 'admin_email' ),
-					'notify_plugins' => 1,
-					'notify_themes'  => 1,
-					'hide_updates'   => 1,
-					'notified'       => array(
+					'cron_method'     => 'wordpress', // Cron method to be used for scheduling scans
+					'frequency'       => 'hourly',
+					'notify_to'       => get_option( 'admin_email' ),
+					'notify_from'     => get_option( 'admin_email' ),
+					'notify_plugins'  => 1,
+					'notify_themes'   => 1,
+					'hide_updates'    => 1,
+					'notified'        => array(
 						'core'   => "",
 						'plugin' => array(),
 						'theme'  => array(),
 					),
-					'security_key'   => sha1( microtime( true ) . mt_rand( 10000, 90000 ) ), // Generate a random key to be used for Other Cron Method,
+					'security_key'    => sha1( microtime( true ) . mt_rand( 10000, 90000 ) ), // Generate a random key to be used for Other Cron Method,
 					'last_check_time' => false
 				);
 				// Intersect current options with defaults. Basically removing settings that are obsolete
