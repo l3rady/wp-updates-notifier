@@ -199,7 +199,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				$this_plugin = plugin_basename( __FILE__ );
 			}
 			if ( $file == $this_plugin ) {
-				$settings_link = '<a href="' . site_url() . '/wp-admin/options-general.php?page=wp-updates-notifier">' . __( "Settings", "wp-updates-notifier" ) . '</a>';
+				$settings_link = '<a href="' . admin_url( 'options-general.php?page=wp-updates-notifier' ) . '">' . __( "Settings", "wp-updates-notifier" ) . '</a>';
 				array_unshift( $links, $settings_link );
 			}
 			return $links;
@@ -415,7 +415,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 */
 		public function send_notification_email( $message ) {
 			$settings = self::getSetOptions( self::OPT_FIELD ); // get settings
-			$subject  = sprintf( __( "WP Updates Notifier: Updates Available @ %s", "wp-updates-notifier" ), site_url() );
+			$subject  = sprintf( __( "WP Updates Notifier: Updates Available @ %s", "wp-updates-notifier" ), home_url() );
 			add_filter( 'wp_mail_from', array( __CLASS__, 'sc_wpun_wp_mail_from' ) ); // add from filter
 			add_filter( 'wp_mail_from_name', array( __CLASS__, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
 			add_filter( 'wp_mail_content_type', array( __CLASS__, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter
