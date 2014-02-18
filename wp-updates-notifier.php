@@ -34,7 +34,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 	class sc_WPUpdatesNotifier {
 		const OPT_FIELD         = "sc_wpun_settings";
 		const OPT_VERSION_FIELD = "sc_wpun_settings_ver";
-		const OPT_VERSION       = "5.0";
+		const OPT_VERSION       = "6.0";
 		const CRON_NAME         = "sc_wpun_update_check";
 
 		public static function init() {
@@ -76,6 +76,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				$defaults = array( // Here are our default values for this plugin
 					'cron_method'     => 'wordpress', // Cron method to be used for scheduling scans
 					'frequency'       => 'hourly',
+					'resend'          => 0,
 					'notify_to'       => get_option( 'admin_email' ),
 					'notify_from'     => get_option( 'admin_email' ),
 					'notify_plugins'  => 1,
@@ -562,6 +563,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			add_settings_section( "sc_wpun_settings_main", __( "Settings", "wp-updates-notifier" ), array( __CLASS__, "sc_wpun_settings_main_text" ), "wp-updates-notifier" ); // Make settings main section
 			add_settings_field( "sc_wpun_settings_main_cron_method", __( "Cron Method", "wp-updates-notifier" ), array( __CLASS__, "sc_wpun_settings_main_field_cron_method" ), "wp-updates-notifier", "sc_wpun_settings_main" );
 			add_settings_field( "sc_wpun_settings_main_frequency", __( "Frequency to check", "wp-updates-notifier" ), array( __CLASS__, "sc_wpun_settings_main_field_frequency" ), "wp-updates-notifier", "sc_wpun_settings_main" );
+			add_settings_field( "sc_wpun_settings_main_resend", __( "Resend notifications", "wp-updates-notifier" ), array( __CLASS__, "sc_wpun_settings_main_field_resend" ), "wp-updates-notifier", "sc_wpun_settings_main" );
 			add_settings_field( "sc_wpun_settings_main_notify_to", __( "Notify email to", "wp-updates-notifier" ), array( __CLASS__, "sc_wpun_settings_main_field_notify_to" ), "wp-updates-notifier", "sc_wpun_settings_main" );
 			add_settings_field( "sc_wpun_settings_main_notify_from", __( "Notify email from", "wp-updates-notifier" ), array( __CLASS__, "sc_wpun_settings_main_field_notify_from" ), "wp-updates-notifier", "sc_wpun_settings_main" );
 			add_settings_field( "sc_wpun_settings_main_notify_plugins", __( "Notify about plugin updates?", "wp-updates-notifier" ), array( __CLASS__, "sc_wpun_settings_main_field_notify_plugins" ), "wp-updates-notifier", "sc_wpun_settings_main" );
@@ -589,6 +591,14 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			}
 			else {
 				add_settings_error( "sc_wpun_settings_main_frequency", "sc_wpun_settings_main_frequency_error", __( "Invalid frequency entered", "wp-updates-notifier" ), "error" );
+			}
+
+			$sanitized_resend = absint( isset( $input['resend'] ) ? $input['resend'] : 0 );
+			if ( $sanitized_resend >= 0 && $sanitized_resend <= 2 ) {
+				$valid['resend'] = $sanitized_resend;
+			}
+			else {
+				add_settings_error( "sc_wpun_settings_main_resend", "sc_wpun_settings_main_resend_error", __( "Invalid resend notifications value entered", "wp-updates-notifier" ), "error" );
 			}
 
 			$emails_to = explode( ",", $input['notify_to'] );
@@ -679,10 +689,22 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			$options = self::getSetOptions( self::OPT_FIELD );
 			?>
 			<select id="sc_wpun_settings_main_frequency" name="<?php echo self::OPT_FIELD; ?>[frequency]">
-			<?php foreach ( self::get_schedules() as $k => $v ): ?>
-				<option value="<?php echo $k; ?>" <?php selected( $options['frequency'], $k ); ?>><?php echo $v['display']; ?></option>
-			<?php endforeach; ?>
-			<select>
+				<?php foreach ( self::get_schedules() as $k => $v ): ?>
+					<option value="<?php echo $k; ?>" <?php selected( $options['frequency'], $k ); ?>><?php echo $v['display']; ?></option>
+				<?php endforeach; ?>
+			</select>
+		<?php
+		}
+
+		public function sc_wpun_settings_main_field_resend() {
+			$options = self::getSetOptions( self::OPT_FIELD );
+			?>
+			<label><input name="<?php echo self::OPT_FIELD; ?>[resend]" type="radio" value="0" <?php checked( $options['resend'], 0 ); ?> /> <?php esc_html_e( 'Never resend update notifications.', 'wp-updates-notifier' ); ?>
+			</label><br />
+			<label><input name="<?php echo self::OPT_FIELD; ?>[resend]" type="radio" value="1" <?php checked( $options['resend'], 1 ); ?> /> <?php esc_html_e( 'Only resend update notifications when new ones become available.', 'wp-updates-notifier' ); ?>
+			</label><br />
+			<label><input name="<?php echo self::OPT_FIELD; ?>[resend]" type="radio" value="2" <?php checked( $options['resend'], 2 ); ?> /> <?php esc_html_e( 'Always resend update notifications while there are updates available.', 'wp-updates-notifier' ); ?>
+			</label>
 		<?php
 		}
 
