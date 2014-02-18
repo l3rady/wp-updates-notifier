@@ -4,7 +4,7 @@ Plugin Name: WP Updates Notifier
 Plugin URI: https://github.com/l3rady/wp-updates-notifier
 Description: Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
 Author: Scott Cariss
-Version: 1.4
+Version: 1.4.1
 Author URI: http://l3rady.com/
 Text Domain: wp-updates-notifier
 Domain Path: /languages
@@ -199,7 +199,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				$this_plugin = plugin_basename( __FILE__ );
 			}
 			if ( $file == $this_plugin ) {
-				$settings_link = '<a href="' . site_url() . '/wp-admin/options-general.php?page=wp-updates-notifier">' . __( "Settings", "wp-updates-notifier" ) . '</a>';
+				$settings_link = '<a href="' . admin_url( 'options-general.php?page=wp-updates-notifier' ) . '">' . __( "Settings", "wp-updates-notifier" ) . '</a>';
 				array_unshift( $links, $settings_link );
 			}
 			return $links;
@@ -415,7 +415,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		 */
 		public function send_notification_email( $message ) {
 			$settings = self::getSetOptions( self::OPT_FIELD ); // get settings
-			$subject  = sprintf( __( "WP Updates Notifier: Updates Available @ %s", "wp-updates-notifier" ), site_url() );
+			$subject  = sprintf( __( "WP Updates Notifier: Updates Available @ %s", "wp-updates-notifier" ), home_url() );
 			add_filter( 'wp_mail_from', array( __CLASS__, 'sc_wpun_wp_mail_from' ) ); // add from filter
 			add_filter( 'wp_mail_from_name', array( __CLASS__, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
 			add_filter( 'wp_mail_content_type', array( __CLASS__, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter
