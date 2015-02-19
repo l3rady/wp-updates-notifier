@@ -463,7 +463,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 				}
 
 				if ( ! empty( $options['notify_from'] ) ) { // If an email address has been set, override the WordPress default.
-					$email['header'][] = 'From: ' . self::sc_wpun_wp_mail_from_name() . ' <' . $options['notify_from'] . '>';
+					$email['headers'][] = 'From: ' . self::sc_wpun_wp_mail_from_name() . ' <' . $options['notify_from'] . '>';
 				}
 			}
 
