@@ -457,8 +457,14 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function filter_auto_core_update_email( $email ) {
 			$options = self::getSetOptions( self::OPT_FIELD ); // Get settings
 
-			if ( 0 != $options['notify_automatic'] && ! empty( $options['notify_to'] ) ) { // If an email address has been set, override the WordPress default.
-				$email['to'] = $options['notify_to'];
+			if ( 0 != $options['notify_automatic'] ) {
+				if ( ! empty( $options['notify_to'] ) ) { // If an email address has been set, override the WordPress default.
+					$email['to'] = $options['notify_to'];
+				}
+
+				if ( ! empty( $options['notify_from'] ) ) { // If an email address has been set, override the WordPress default.
+					$email['header'][] = 'From: ' . self::sc_wpun_wp_mail_from_name() . ' <' . $options['notify_from'] . '>';
+				}
 			}
 
 			return $email;
