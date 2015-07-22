@@ -103,3 +103,39 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 = 1.0 =
 * Initial release
+
+== Filters ==
+
+Two filters have been provided to allow you to alter the email subject and email content being sent by WP Updates Notifier.
+
+`updates_notifier_email_subject`
+
+@parameters: $email_subject - the email subject to be filtered.
+
+<strong>Example:</strong>
+`
+/* 
+*	Alter the email subject being sent by WP Updates Notifier 
+*/
+function alter_email_subject_in_updates_notifier( $email_subject ) {
+	$email_subject = 'This is the new email subject for updates notifier';
+	return $email_subject;
+}
+add_filter( 'updates_notifier_email_subject', 'alter_email_subject_in_updates_notifier' );
+`
+
+`updates_notifier_email_content`
+
+@parameters: $message - the content of the email to be filtered
+
+<strong>Example:</strong>
+`
+/* 
+*	Alter the email content being sent by WP Updates Notifier 
+*/
+function alter_email_content_in_updates_notifier( $message ) {
+	$message = 'This is our new email content that will override the default.';
+	return $message;
+}
+add_filter( 'updates_notifier_email_content', 'alter_email_content_in_updates_notifier' );
+`
