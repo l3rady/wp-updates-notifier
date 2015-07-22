@@ -7,6 +7,7 @@ Contribuors: Scott Cariss, eherman24
 Version: 1.4.2
 Text Domain: wp-updates-notifier
 Domain Path: /languages
+License: GPL3+
 */
 
 /*  Copyright 2014  Scott Cariss  (email : scott@l3rady.com)
