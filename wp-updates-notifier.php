@@ -7,6 +7,7 @@ Contribuors: Scott Cariss, eherman24
 Version: 1.4.2
 Text Domain: wp-updates-notifier
 Domain Path: /languages
+License: GPL3+
 */
 
 /*  Copyright 2014  Scott Cariss  (email : scott@l3rady.com)
@@ -60,7 +61,6 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			add_action( 'wp_ajax_sc_wpun_check', array( __CLASS__, 'sc_wpun_check' ) ); // Admin ajax hook for remote cron method.
 			add_action( 'wp_ajax_nopriv_sc_wpun_check', array( __CLASS__, 'sc_wpun_check' ) ); // Admin ajax hook for remote cron method.
 		}
-
 
 		/**
 		 * Check if this plugin settings are up to date. Firstly check the version in
@@ -420,7 +420,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			add_filter( 'wp_mail_from', array( __CLASS__, 'sc_wpun_wp_mail_from' ) ); // add from filter
 			add_filter( 'wp_mail_from_name', array( __CLASS__, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
 			add_filter( 'wp_mail_content_type', array( __CLASS__, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter
-			wp_mail( $settings['notify_to'], $subject, $message ); // send email
+			wp_mail( $settings['notify_to'], apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', $message ) ); // send email
 			remove_filter( 'wp_mail_from', array( __CLASS__, 'sc_wpun_wp_mail_from' ) ); // remove from filter
 			remove_filter( 'wp_mail_from_name', array( __CLASS__, 'sc_wpun_wp_mail_from_name' ) ); // remove from name filter
 			remove_filter( 'wp_mail_content_type', array( __CLASS__, 'sc_wpun_wp_mail_content_type' ) ); // remove content type filter

@@ -5,6 +5,7 @@ Tags: admin, theme, monitor, plugin, notification, upgrade, security
 Requires at least: 3.1
 Tested up to: 4.3
 Stable tag: 1.4.3
+License: GPLv3 or later
 
 Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
 
@@ -103,3 +104,47 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 = 1.0 =
 * Initial release
+
+== Upgrade Notice ==
+
+= 1.4.3 =
+* Repaired all PHP errors being thrown
+* Two new filters added to allow you to alter the email content (sc_wpun_email_subject, sc_wpun_email_content - see readme.txt for examples)
+
+== Filters ==
+
+Two filters have been provided to allow you to alter the email subject and email content being sent by WP Updates Notifier.
+
+<h4>sc_wpun_email_subject</h4>
+
+@parameters:<br /> 
+$email_subject - the email subject to be filtered.
+
+<strong>Example:</strong>
+`
+/* 
+*	Alter the email subject being sent by WP Updates Notifier 
+*/
+function alter_wp_updates_notifier_email_subject( $email_subject ) {
+	$email_subject = 'This is the new email subject for updates notifier';
+	return $email_subject;
+}
+add_filter( 'sc_wpun_email_subject', 'alter_wp_updates_notifier_email_subject' );
+`
+
+<h4>sc_wpun_email_content</h4>
+
+@parameters:<br />
+$message - the content of the email to be filtered
+
+<strong>Example:</strong>
+`
+/* 
+*	Alter the email content being sent by WP Updates Notifier 
+*/
+function alter_wp_updates_notifier_email_content( $message ) {
+	$message = 'This is our new email content that will override the default.';
+	return $message;
+}
+add_filter( 'sc_wpun_email_content', 'alter_wp_updates_notifier_email_content' );
+`
