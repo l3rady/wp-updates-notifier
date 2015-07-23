@@ -109,13 +109,13 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 = 1.4.3 =
 * Repaired all PHP errors being thrown
-* Two new filters added to allow you to alter the email content (updates_notifier_email_subject, updates_notifier_email_content - see readme.txt for examples)
+* Two new filters added to allow you to alter the email content (sc_wpun_email_subject, sc_wpun_email_content - see readme.txt for examples)
 
 == Filters ==
 
 Two filters have been provided to allow you to alter the email subject and email content being sent by WP Updates Notifier.
 
-<h4>updates_notifier_email_subject</h4>
+<h4>sc_wpun_email_subject</h4>
 
 @parameters:<br /> 
 $email_subject - the email subject to be filtered.
@@ -125,14 +125,14 @@ $email_subject - the email subject to be filtered.
 /* 
 *	Alter the email subject being sent by WP Updates Notifier 
 */
-function alter_email_subject_in_updates_notifier( $email_subject ) {
+function alter_wp_updates_notifier_email_subject( $email_subject ) {
 	$email_subject = 'This is the new email subject for updates notifier';
 	return $email_subject;
 }
-add_filter( 'updates_notifier_email_subject', 'alter_email_subject_in_updates_notifier' );
+add_filter( 'sc_wpun_email_subject', 'alter_wp_updates_notifier_email_subject' );
 `
 
-<h4>updates_notifier_email_content</h4>
+<h4>sc_wpun_email_content</h4>
 
 @parameters:<br />
 $message - the content of the email to be filtered
@@ -142,9 +142,9 @@ $message - the content of the email to be filtered
 /* 
 *	Alter the email content being sent by WP Updates Notifier 
 */
-function alter_email_content_in_updates_notifier( $message ) {
+function alter_wp_updates_notifier_email_content( $message ) {
 	$message = 'This is our new email content that will override the default.';
 	return $message;
 }
-add_filter( 'updates_notifier_email_content', 'alter_email_content_in_updates_notifier' );
+add_filter( 'sc_wpun_email_content', 'alter_wp_updates_notifier_email_content' );
 `
