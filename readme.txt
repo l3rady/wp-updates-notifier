@@ -56,9 +56,10 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 = 1.4.3 =
 * Repaired all PHP errors being thrown
+* Two new filters added to allow you to alter the email content (sc_wpun_email_subject, sc_wpun_email_content - see readme.txt for examples)
 
 = 1.4.2 =
-* Added an option that allow the plugin to notify the provided email about WordPress core automatic updates.
+* Added an option that allows the plugin to notify the provided email about WordPress core automatic updates.
 
 = 1.4.1 =
 * Switch from using site_url() to home_url() in email subject line so not to link to a 404 page.
@@ -104,12 +105,6 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 = 1.0 =
 * Initial release
-
-== Upgrade Notice ==
-
-= 1.4.3 =
-* Repaired all PHP errors being thrown
-* Two new filters added to allow you to alter the email content (sc_wpun_email_subject, sc_wpun_email_content - see readme.txt for examples)
 
 == Filters ==
 

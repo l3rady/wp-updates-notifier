@@ -3,14 +3,14 @@
 Plugin Name: WP Updates Notifier
 Plugin URI: https://github.com/l3rady/wp-updates-notifier
 Description: Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
-Contribuors: Scott Cariss, eherman24
-Version: 1.4.2
+Contributors: l3rady, eherman24
+Version: 1.4.3
 Text Domain: wp-updates-notifier
 Domain Path: /languages
 License: GPL3+
 */
 
-/*  Copyright 2014  Scott Cariss  (email : scott@l3rady.com)
+/*  Copyright 2015  Scott Cariss  (email : scott@l3rady.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -1,5 +1,5 @@
 <?php
-/*  Copyright 2014  Scott Cariss  (email : scott@l3rady.com)
+/*  Copyright 2015  Scott Cariss  (email : scott@l3rady.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
