@@ -39,11 +39,16 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		const OPT_VERSION       = "5.0";
 		const CRON_NAME         = "sc_wpun_update_check";
 
+		static $didInit = false;
+
 		public function __construct() {
-			$this->init();
+			if (!self::$didInit) {
+				$this->init();
+				self::$didInit = true;
+			}
 		}
 
-		protected function init() {
+		private function init() {
 			// Check settings are up to date
 			$this->settingsUpToDate();
 			// Create Activation and Deactivation Hooks
