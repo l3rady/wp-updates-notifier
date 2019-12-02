@@ -72,7 +72,7 @@
 			Verify that the text_domain is set to the desired text-domain.
 			Multiple valid text domains can be provided as a comma-delimited list.
 			 -->
-			<property name="text_domain" type="array" value="aam-meeting" />
+			<property name="text_domain" type="array" value="wp-updates-notifier" />
 		</properties>
 	</rule>
 
