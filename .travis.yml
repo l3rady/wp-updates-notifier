@@ -1,0 +1,63 @@
+language: php
+
+matrix:
+  include:
+    - php: 5.3
+      env: WP_VERSION=4.7.6
+      dist: precise
+    - php: 5.3
+      env: WP_VERSION=latest
+      dist: precise
+    - php: 5.6
+      env: WP_VERSION=latest
+    - php: 5.6
+      env: WP_TRAVISCI=phpcs
+    - php: 7.0
+      env: WP_VERSION=latest
+    - php: 7.0
+      env: WP_VERSION=nightly
+    - php: 7.1
+      env: WP_VERSION=latest
+    - php: 7.2
+      env: WP_VERSION=latest
+  fast_finish: true
+  allow_failures:
+    - php: 7.2
+
+branches:
+  only:
+    - master
+    - dev
+
+before_script:
+  # Turn off Xdebug. See https://core.trac.wordpress.org/changeset/40138.
+  - phpenv config-rm xdebug.ini || echo "Xdebug not available"
+  - export OG_DIR="$(pwd)"
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+
+  # Set up phpcs.
+  - |
+    if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
+      composer global require automattic/vipwpcs
+      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/automattic/vipwpcs
+    fi
+
+  - phpenv rehash
+
+  # For debugging.
+  - pwd
+  - echo $PATH
+
+script:
+  - find . -path ./vendor -prune -o -type "f" -iname "*.php" | xargs -L "1" php -l
+
+  # WordPress Coding Standards.
+  #
+  # These are the same across PHP and WordPress, so we need to run them only once.
+  #
+  # @link https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards
+  # @link http://pear.php.net/package/PHP_CodeSniffer/
+  - |
+    if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
+      phpcs -n
+    fi
