@@ -58,7 +58,7 @@ before_script:
     if [[ "$WP_PHPCS" == "1" ]] ; then
       echo $PATH
       composer global require automattic/vipwpcs dealerdirect/phpcodesniffer-composer-installer
-      phpcs --config-set installed_paths $HOME/.config/.composer/vendor/wp-coding-standards/wpcs,$HOME/.config/.composer/vendor/automattic/vipwpcs
+      phpcs --config-set installed_paths $HOME/.config/composer/vendor/wp-coding-standards/wpcs,$HOME/.config/composer/vendor/automattic/vipwpcs
       phpcs --config-show
     fi
  
@@ -83,9 +83,9 @@ script:
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
       pwd
-      ls $HOME/.config/.composer/vendor/
-      ls $HOME/.config/.composer/vendor/wp-coding-standards
-      ls $HOME/.config/.composer/vendor/automattic
+      ls $HOME/.config/composer/vendor/
+      ls $HOME/.config/composer/vendor/wp-coding-standards
+      ls $HOME/.config/composer/vendor/automattic
       phpcs --config-show
       phpcs -i
       which phpcs
