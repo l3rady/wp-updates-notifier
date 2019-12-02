@@ -59,7 +59,7 @@ before_script:
       echo $PATH
       composer global require automattic/vipwpcs
       which phpcs
-      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/automattic/vipwpcs
+      phpcs --config-set installed_paths $HOME/.config/.composer/vendor/wp-coding-standards/wpcs,$HOME/.config/.composer/vendor/automattic/vipwpcs
     fi
  
 # Run test script commands.
@@ -82,7 +82,7 @@ script:
   # @link http://pear.php.net/package/PHP_CodeSniffer/
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
-      phpcs
+      phpcs -i
     fi
 
   # # Run the plugin's unit tests in standalone mode.
