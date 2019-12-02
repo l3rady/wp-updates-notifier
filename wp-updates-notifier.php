@@ -553,7 +553,6 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			$time_format = get_option( 'time_format' );
 			?>
 			<div class="wrap">
-				<?php screen_icon(); ?>
 				<h2><?php _e( "Updates Notifier", "wp-updates-notifier" ); ?></h2>
 
 				<p>
