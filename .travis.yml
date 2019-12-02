@@ -82,6 +82,7 @@ script:
   # @link http://pear.php.net/package/PHP_CodeSniffer/
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
+      pwd
       phpcs -i
     fi
 
