@@ -98,7 +98,7 @@ if ( !class_exists( 'sc_WPUpdatesNotifier' ) ) {
 						'plugin' => array(),
 						'theme'  => array(),
 					),
-					'security_key'     => sha1( microtime( true ) . mt_rand( 10000, 90000 ) ), // Generate a random key to be used for Other Cron Method,
+					'security_key'     => sha1( microtime( true ) . wp_rand( 10000, 90000 ) ), // Generate a random key to be used for Other Cron Method,
 					'last_check_time'  => false
 				);
 				// Intersect current options with defaults. Basically removing settings that are obsolete
