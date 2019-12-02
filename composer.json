@@ -7,7 +7,7 @@
     }
   ],
   "require-dev": {
-    "squizlabs/php_codesniffer": "2.*",
+    "dealerdirect/phpcodesniffer-composer-installer": "*",
     "wp-coding-standards/wpcs": "^1"
   },
   "scripts": {
