@@ -694,14 +694,14 @@ if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_main_field_cron_method() {
 			$options = $this->getSetOptions( self::OPT_FIELD );
 			?>
-			<select name="<?php echo self::OPT_FIELD; ?>[cron_method]">
+			<select name="<?php echo esc_attr( self::OPT_FIELD ); ?>[cron_method]">
 				<option value="wordpress" <?php selected( $options['cron_method'], 'WordPress' ); ?>><?php esc_html_e( 'WordPress Cron', 'wp-updates-notifier' ); ?></option>
 				<option value="other" <?php selected( $options['cron_method'], 'other' ); ?>><?php esc_html_e( 'Other Cron', 'wp-updates-notifier' ); ?></option>
 			</select>
 			<div>
 				<br />
 				<span class="description"><?php esc_html_e( 'Cron Command: ', 'wp-updates-notifier' ); ?></span>
-				<pre>wget -q "<?php echo admin_url( '/admin-ajax.php?action=sc_wpun_check&sc_wpun_key=' . $options['security_key'] ); ?>" -O /dev/null >/dev/null 2>&amp;1</pre>
+				<pre>wget -q "<?php echo esc_attr( admin_url( '/admin-ajax.php?action=sc_wpun_check&sc_wpun_key=' . $options['security_key'] ) ); ?>" -O /dev/null >/dev/null 2>&amp;1</pre>
 			</div>
 			<?php
 		}
@@ -709,9 +709,9 @@ if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_main_field_frequency() {
 			$options = $this->getSetOptions( self::OPT_FIELD );
 			?>
-			<select id="sc_wpun_settings_main_frequency" name="<?php echo self::OPT_FIELD; ?>[frequency]">
+			<select id="sc_wpun_settings_main_frequency" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[frequency]">
 			<?php foreach ( $this->get_schedules() as $k => $v ) : ?>
-				<option value="<?php echo $k; ?>" <?php selected( $options['frequency'], $k ); ?>><?php echo $v['display']; ?></option>
+				<option value="<?php echo esc_attr( $k ); ?>" <?php selected( $options['frequency'], $k ); ?>><?php echo esc_html( $v['display'] ); ?></option>
 			<?php endforeach; ?>
 			<select>
 			<?php
@@ -720,7 +720,7 @@ if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_main_field_notify_to() {
 			$options = $this->getSetOptions( self::OPT_FIELD );
 			?>
-			<input id="sc_wpun_settings_main_notify_to" class="regular-text" name="<?php echo self::OPT_FIELD; ?>[notify_to]" value="<?php echo $options['notify_to']; ?>" />
+			<input id="sc_wpun_settings_main_notify_to" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_to]" value="<?php echo esc_attr( $options['notify_to'] ); ?>" />
 			<span class="description"><?php esc_html_e( 'Separate multiple email address with a comma (,)', 'wp-updates-notifier' ); ?></span>
 												<?php
 		}
@@ -728,18 +728,18 @@ if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_main_field_notify_from() {
 			$options = $this->getSetOptions( self::OPT_FIELD );
 			?>
-			<input id="sc_wpun_settings_main_notify_from" class="regular-text" name="<?php echo self::OPT_FIELD; ?>[notify_from]" value="<?php echo $options['notify_from']; ?>" />
+			<input id="sc_wpun_settings_main_notify_from" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_from]" value="<?php echo esc_attr( $options['notify_from'] ); ?>" />
 																								<?php
 		}
 
 		public function sc_wpun_settings_main_field_notify_plugins() {
 			$options = $this->getSetOptions( self::OPT_FIELD );
 			?>
-			<label><input name="<?php echo self::OPT_FIELD; ?>[notify_plugins]" type="radio" value="0" <?php checked( $options['notify_plugins'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="0" <?php checked( $options['notify_plugins'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
 			</label><br />
-			<label><input name="<?php echo self::OPT_FIELD; ?>[notify_plugins]" type="radio" value="1" <?php checked( $options['notify_plugins'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="1" <?php checked( $options['notify_plugins'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
 			</label><br />
-			<label><input name="<?php echo self::OPT_FIELD; ?>[notify_plugins]" type="radio" value="2" <?php checked( $options['notify_plugins'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active plugins', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="2" <?php checked( $options['notify_plugins'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active plugins', 'wp-updates-notifier' ); ?>
 			</label>
 			<?php
 		}
@@ -747,11 +747,11 @@ if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_main_field_notify_themes() {
 			$options = $this->getSetOptions( self::OPT_FIELD );
 			?>
-			<label><input name="<?php echo self::OPT_FIELD; ?>[notify_themes]" type="radio" value="0" <?php checked( $options['notify_themes'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_themes]" type="radio" value="0" <?php checked( $options['notify_themes'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
 			</label><br />
-			<label><input name="<?php echo self::OPT_FIELD; ?>[notify_themes]" type="radio" value="1" <?php checked( $options['notify_themes'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_themes]" type="radio" value="1" <?php checked( $options['notify_themes'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
 			</label><br />
-			<label><input name="<?php echo self::OPT_FIELD; ?>[notify_themes]" type="radio" value="2" <?php checked( $options['notify_themes'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active themes', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_themes]" type="radio" value="2" <?php checked( $options['notify_themes'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active themes', 'wp-updates-notifier' ); ?>
 			</label>
 			<?php
 		}
@@ -759,7 +759,7 @@ if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_main_field_notify_automatic() {
 			$options = $this->getSetOptions( self::OPT_FIELD );
 			?>
-			<label><input name="<?php echo self::OPT_FIELD; ?>[notify_automatic]" type="checkbox" value="1" <?php checked( $options['notify_automatic'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_automatic]" type="checkbox" value="1" <?php checked( $options['notify_automatic'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
 			</label>
 			<?php
 		}
@@ -767,7 +767,7 @@ if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
 		public function sc_wpun_settings_main_field_hide_updates() {
 			$options = $this->getSetOptions( self::OPT_FIELD );
 			?>
-			<select id="sc_wpun_settings_main_hide_updates" name="<?php echo self::OPT_FIELD; ?>[hide_updates]">
+			<select id="sc_wpun_settings_main_hide_updates" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[hide_updates]">
 				<option value="1" <?php selected( $options['hide_updates'], 1 ); ?>><?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?></option>
 				<option value="0" <?php selected( $options['hide_updates'], 0 ); ?>><?php esc_html_e( 'No', 'wp-updates-notifier' ); ?></option>
 			</select>
