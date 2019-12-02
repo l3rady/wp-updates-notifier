@@ -58,8 +58,8 @@ before_script:
     if [[ "$WP_PHPCS" == "1" ]] ; then
       echo $PATH
       composer global require automattic/vipwpcs dealerdirect/phpcodesniffer-composer-installer
-      which phpcs
       phpcs --config-set installed_paths $HOME/.config/.composer/vendor/wp-coding-standards/wpcs,$HOME/.config/.composer/vendor/automattic/vipwpcs
+      phpcs --config-show
     fi
  
 # Run test script commands.
@@ -83,7 +83,9 @@ script:
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
       pwd
+      phpcs --config-show
       phpcs -i
+      phpcs .
     fi
 
   # # Run the plugin's unit tests in standalone mode.
