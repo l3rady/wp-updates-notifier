@@ -38,6 +38,8 @@ before_script:
   # Set up phpcs.
   - |
     if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
+      travis_retry composer install
+      export PATH=$PATH:`pwd`/vendor/bin/
       composer global require automattic/vipwpcs
       phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/automattic/vipwpcs
     fi
