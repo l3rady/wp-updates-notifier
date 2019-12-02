@@ -61,5 +61,5 @@ script:
   # @link http://pear.php.net/package/PHP_CodeSniffer/
   - |
     if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
-      phpcs -n
+      phpcs -p -s -v -n --standard=./phpcs.ruleset.xml --extensions=php
     fi
