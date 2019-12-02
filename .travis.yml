@@ -89,7 +89,7 @@ script:
       phpcs --config-show
       phpcs -i
       which phpcs
-      phpcs .
+      phpcs --standard=phpcs.xml.dist .
     fi
 
   # # Run the plugin's unit tests in standalone mode.
