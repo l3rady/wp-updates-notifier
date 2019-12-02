@@ -36,8 +36,7 @@ matrix:
 before_script:
   # Turn off Xdebug. See https://core.trac.wordpress.org/changeset/40138.
   - phpenv config-rm xdebug.ini || echo "Xdebug not available"
-
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+  - export PATH="$HOME/.config/composer/vendor/bin:$HOME/.composer/vendor/bin:$PATH"
 
   # # Couple the PHPUnit version to the PHP version.
   # - |
@@ -58,8 +57,8 @@ before_script:
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
       echo $PATH
-      which phpcs
       composer global require automattic/vipwpcs
+      which phpcs
       phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/automattic/vipwpcs
     fi
  
