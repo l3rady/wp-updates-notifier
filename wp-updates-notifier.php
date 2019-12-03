@@ -573,8 +573,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					} else {
 						$scan_date = sprintf(
 							__( '%1$1s @ %2$2s', 'wp-updates-notifier' ),
-							date( $date_format, $options['last_check_time'] ),
-							date( $time_format, $options['last_check_time'] )
+							gmdate( $date_format, $options['last_check_time'] ),
+							gmdate( $time_format, $options['last_check_time'] )
 						);
 					}
 
@@ -698,7 +698,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		public function send_test_email( $settings_errors ) {
-			if ( isset( $settings_errors[0]['type'] ) && $settings_errors[0]['type'] === 'updated' ) {
+			if ( isset( $settings_errors[0]['type'] ) && 'updated' === $settings_errors[0]['type'] ) {
 				$this->send_notification_email( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
 			}
 			return $settings_errors;
