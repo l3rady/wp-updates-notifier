@@ -68,7 +68,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		private function init() {
 			// Check settings are up to date
-			$this->settingsUpToDate();
+			$this->settings_up_to_date();
 			// Create Activation and Deactivation Hooks
 			register_activation_hook( __FILE__, array( $this, 'activate' ) );
 			register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
@@ -295,8 +295,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Check to see if any plugin updates.
 		 *
-		 * @param string $message     holds message to be sent via notification
-		 * @param int    $allOrActive should we look for all plugins or just active ones
+		 * @param string $message     Holds message to be sent via notification.
+		 * @param int    $allOrActive Should we look for all plugins or just active ones.
 		 *
 		 * @return bool
 		 */
