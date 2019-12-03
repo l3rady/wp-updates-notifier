@@ -1,19 +1,30 @@
 <?php
+/**
+ * Entry point for the plugin.
+ *
+ * This file is read by WordPress to generate the plugin information in the
+ * admin panel.
+ *
+ * @link    https://github.com/l3rady/wp-updates-notifier
+ * @since   1.5.0
+ * @package WP_Plugin
+ */
+
 /*
-Plugin Name: WP Updates Notifier
-Plugin URI: https://github.com/l3rady/wp-updates-notifier
-Description: Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
-Contributors: l3rady, eherman24
-Version: 1.4.4
-Author: Scott Cariss
-Author URI: http://l3rady.com/
-Text Domain: wp-updates-notifier
-Domain Path: /languages
-License: GPL3+
+ * Plugin Name: WP Updates Notifier
+ * Plugin URI: https://github.com/l3rady/wp-updates-notifier
+ * Description: Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
+ * Contributors: l3rady, eherman24, alleyinteractive
+ * Version: 1.5.0
+ * Author: Scott Cariss
+ * Author URI: http://l3rady.com/
+ * Text Domain: wp-updates-notifier
+ * Domain Path: /languages
+ * License: GPL3+
 */
 
 /*
-  Copyright 2015  Scott Cariss  (email : scott@l3rady.com)
+	Copyright 2015  Scott Cariss  (email : scott@l3rady.com)
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -33,23 +44,25 @@ License: GPL3+
 // Only load class if it hasn't already been loaded
 if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
-	// WP Updates Notifier - All the magic happens here!
+	/**
+	 * WP Updates Notifier - All the magic happens here!
+	 */
 	class SC_WP_Updates_Notifier {
 		const OPT_FIELD         = 'sc_wpun_settings';
 		const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
 		const OPT_VERSION       = '5.0';
 		const CRON_NAME         = 'sc_wpun_update_check';
 
-		static $didInit = false;
+		public static $did_init = false;
 
 		public function __construct() {
-			add_action( 'plugins_loaded', array( $this, 'runInit' ) );
+			add_action( 'plugins_loaded', array( $this, 'run_init' ) );
 		}
 
-		public function runInit() {
-			if ( ! self::$didInit ) {
+		public function run_init() {
+			if ( ! self::$did_init ) {
 				$this->init();
-				self::$didInit = true;
+				self::$did_init = true;
 			}
 		}
 
@@ -85,7 +98,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return void
 		 */
-		private function settingsUpToDate() {
+		private function settings_up_to_date() {
 			$current_ver = $this->getSetOptions( self::OPT_VERSION_FIELD ); // Get current plugin version
 			if ( self::OPT_VERSION !== $current_ver ) { // is the version the same as this plugin?
 				$options  = (array) get_option( self::OPT_FIELD ); // get current settings from DB
@@ -119,13 +132,13 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Filter for when getting or settings this plugins settings
 		 *
-		 * @param string     $field    Option field name of where we are getting or setting plugin settings
-		 * @param bool|mixed $settings False if getting settings else an array with settings you are saving
+		 * @param string     $field    Option field name of where we are getting or setting plugin settings.
+		 * @param bool|mixed $settings False if getting settings else an array with settings you are saving.
 		 *
 		 * @return bool|mixed True or false if setting or an array of settings if getting
 		 */
-		private function getSetOptions( $field, $settings = false ) {
-			if ( $settings === false ) {
+		private function get_set_options( $field, $settings = false ) {
+			if ( false === $settings ) {
 				return apply_filters( 'sc_wpun_get_options_filter', get_option( $field ), $field );
 			}
 
@@ -162,7 +175,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 */
 		public function enable_cron( $manual_interval = false ) {
 			$options         = $this->getSetOptions( self::OPT_FIELD ); // Get settings
-			$currentSchedule = wp_get_schedule( self::CRON_NAME ); // find if a schedule already exists
+			$current_schedule = wp_get_schedule( self::CRON_NAME ); // find if a schedule already exists
 
 			// if a manual cron interval is set, use this
 			if ( false !== $manual_interval ) {
@@ -173,7 +186,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				do_action( 'sc_wpun_disable_cron' ); // Make sure no cron is setup as we are manual
 			} else {
 				// check if the current schedule matches the one set in settings
-				if ( $currentSchedule === $options['frequency'] ) {
+				if ( $current_schedule === $options['frequency'] ) {
 					return;
 				}
 
@@ -204,13 +217,13 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Adds the settings link under the plugin on the plugin screen.
 		 *
-		 * @param array  $links
-		 * @param string $file
+		 * @param array  $links Links to list on the plugin screen.
+		 * @param string $file Filename.
 		 *
 		 * @return array $links
 		 */
 		public function plugin_action_links( $links, $file ) {
-			if ( $file === plugin_basename( __FILE__ ) ) {
+			if ( plugin_basename( __FILE__ ) === $file ) {
 				$settings_link = '<a href="' . admin_url( 'options-general.php?page=wp-updates-notifier' ) . '">' . __( 'Settings', 'wp-updates-notifier' ) . '</a>';
 				array_unshift( $links, $settings_link );
 			}
@@ -251,7 +264,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Checks to see if any WP core updates
 		 *
-		 * @param string $message holds message to be sent via notification
+		 * @param string $message holds message to be sent via notification.
 		 *
 		 * @return bool
 		 */

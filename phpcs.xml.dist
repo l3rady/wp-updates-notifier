@@ -106,4 +106,39 @@
 		</properties>
 	</rule>
 
+	<rule ref="Squiz.Commenting.InlineComment.InvalidEndChar">
+		<!--
+		TODO: Turn this back on and add end characters to inline comments.
+		-->
+		<severity>0</severity>
+	</rule>
+
+	<rule ref="Squiz.Commenting.FunctionComment.Missing">
+		<!--
+		TODO: Turn this back on and add comments.
+		-->
+		<severity>0</severity>
+	</rule>
+
+	<rule ref="Squiz.Commenting.VariableComment.Missing">
+		<!--
+		TODO: Turn this back on and add comments.
+		-->
+		<severity>0</severity>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n.MissingTranslatorsComment">
+		<!--
+		TODO: Turn this back on and add comments.
+		-->
+		<severity>0</severity>
+	</rule>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound">
+		<!--
+		TODO: Turn this back on and add comments.
+		-->
+		<severity>0</severity>
+	</rule>
+
 </ruleset>
