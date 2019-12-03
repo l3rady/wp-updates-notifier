@@ -296,11 +296,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * Check to see if any plugin updates.
 		 *
 		 * @param string $message     Holds message to be sent via notification.
-		 * @param int    $allOrActive Should we look for all plugins or just active ones.
+		 * @param int    $all_or_active Should we look for all plugins or just active ones.
 		 *
 		 * @return bool
 		 */
-		private function plugins_update_check( &$message, $allOrActive ) {
+		private function plugins_update_check( &$message, $all_or_active ) {
 			global $wp_version;
 			$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
 			$settings       = $this->get_set_options( self::OPT_FIELD ); // get settings
@@ -308,7 +308,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates
 			if ( ! empty( $update_plugins->response ) ) { // any plugin updates available?
 				$plugins_need_update = $update_plugins->response; // plugins that need updating
-				if ( 2 === $allOrActive ) { // are we to check just active plugins?
+				if ( 2 === $all_or_active ) { // are we to check just active plugins?
 					$active_plugins      = array_flip( get_option( 'active_plugins' ) ); // find which plugins are active
 					$plugins_need_update = array_intersect_key( $plugins_need_update, $active_plugins ); // only keep plugins that are active
 				}
@@ -349,18 +349,18 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Check to see if any theme updates.
 		 *
-		 * @param string $message     holds message to be sent via notification
-		 * @param int    $allOrActive should we look for all themes or just active ones
+		 * @param string $message     Holds message to be sent via notification.
+		 * @param int    $all_or_active Should we look for all themes or just active ones.
 		 *
 		 * @return bool
 		 */
-		private function themes_update_check( &$message, $allOrActive ) {
+		private function themes_update_check( &$message, $all_or_active ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 			do_action( 'wp_update_themes' ); // force WP to check for theme updates
 			$update_themes = get_site_transient( 'update_themes' ); // get information of updates
 			if ( ! empty( $update_themes->response ) ) { // any theme updates available?
 				$themes_need_update = $update_themes->response; // themes that need updating
-				if ( 2 === $allOrActive ) { // are we to check just active themes?
+				if ( 2 === $all_or_active ) { // are we to check just active themes?
 					$active_theme       = array( get_option( 'template' ) => array() ); // find current theme that is active
 					$themes_need_update = array_intersect_key( $themes_need_update, $active_theme ); // only keep theme that is active
 				}
@@ -387,7 +387,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Filter for removing plugins from update list if already been notified about
 		 *
-		 * @param array $plugins_need_update
+		 * @param array $plugins_need_update Array of plugins that need an update.
 		 *
 		 * @return array $plugins_need_update
 		 */
@@ -407,7 +407,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Filter for removing themes from update list if already been notified about
 		 *
-		 * @param array $themes_need_update
+		 * @param array $themes_need_update Array of themes that need an update.
 		 *
 		 * @return array $themes_need_update
 		 */
@@ -427,7 +427,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Sends email notification.
 		 *
-		 * @param string $message holds message to be sent in body of email
+		 * @param string $message Holds message to be sent in body of email.
 		 *
 		 * @return void
 		 */
@@ -542,7 +542,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 
-		/*
+		/**
 		 * EVERYTHING SETTINGS
 		 *
 		 * I'm not going to comment any of this as its all pretty
