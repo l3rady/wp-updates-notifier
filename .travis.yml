@@ -4,6 +4,11 @@
 # Xenial image has PHP versions 5.6,7.1,7.2 pre-installed
 dist: xenial
 
+# Xenial does not start mysql or memcached by default
+services:
+  - mysql
+  - memcached
+
 # Declare project language.
 # @link http://about.travis-ci.org/docs/user/languages/php/
 language: php
@@ -12,6 +17,11 @@ language: php
 branches:
   only:
     - master
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - ./vendor
 
 matrix:
   fast_finish: true
@@ -36,22 +46,24 @@ matrix:
 before_script:
   # Turn off Xdebug. See https://core.trac.wordpress.org/changeset/40138.
   - phpenv config-rm xdebug.ini || echo "Xdebug not available"
+  
   - export PATH="$HOME/.config/composer/vendor/bin:$PATH"
 
-  # # Couple the PHPUnit version to the PHP version.
-  # - |
-  #   case "$TRAVIS_PHP_VERSION" in
-  #     7.*)
-  #       echo "Using PHPUnit 6.1"
-  #       composer global require "phpunit/phpunit=6.1.*"
-  #       ;;
-  #     *)
-  #       echo "Using PHPUnit 4.8"
-  #       composer global require "phpunit/phpunit=4.8.*"
-  #       ;;
-  #   esac
-  # # Set up WordPress installation.
-  # - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
+  # Couple the PHPUnit version to the PHP version.
+  - |
+    case "$TRAVIS_PHP_VERSION" in
+      7.*)
+        echo "Using PHPUnit 6.1"
+        composer global require "phpunit/phpunit=6.1.*"
+        ;;
+      *)
+        echo "Using PHPUnit 4.8"
+        composer global require "phpunit/phpunit=4.8.*"
+        ;;
+    esac
+  
+  # Set up WordPress installation.
+  - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
 
   # Set up phpcs.
   - |
@@ -83,17 +95,17 @@ script:
       phpcs
     fi
 
-  # # Run the plugin's unit tests in standalone mode.
-  # - |
-  #   if [[ ! -z "$WP_VERSION" ]] ; then
-  #     phpunit
-  #   fi
+  # Run the plugin's unit tests in standalone mode.
+  - |
+    if [[ ! -z "$WP_VERSION" ]] ; then
+      phpunit
+    fi
 
-  # # Run the plugin's unit tests in multisite mode.
-  # - |
-  #   if [[ ! -z "$WP_VERSION" ]] ; then
-  #     WP_MULTISITE=1 phpunit
-  #   fi
+  # Run the plugin's unit tests in multisite mode.
+  - |
+    if [[ ! -z "$WP_VERSION" ]] ; then
+      WP_MULTISITE=1 phpunit
+    fi
  
 # Receive notifications for build results.
 # @link http://docs.travis-ci.com/user/notifications/#Email-notifications
