@@ -18,24 +18,24 @@ branches:
   only:
     - master
 
-# cache:
-#   directories:
-#     - $HOME/.composer/cache
-#     - ./vendor
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - ./vendor
 
 matrix:
   fast_finish: true
   include:
     - php: 7.3
       env: WP_VERSION=latest WP_PHPCS=1
-    # - php: 7.2
-    #   env: WP_VERSION=latest PHP_LINT=1
-    # - php: 7.1
-    #   env: WP_VERSION=latest PHP_LINT=1
-    # - php: 7.0
-    #   env: WP_VERSION=latest PHP_LINT=1
-    # - php: 5.6
-    #   env: WP_VERSION=latest PHP_LINT=1
+    - php: 7.2
+      env: WP_VERSION=latest PHP_LINT=1
+    - php: 7.1
+      env: WP_VERSION=latest PHP_LINT=1
+    - php: 7.0
+      env: WP_VERSION=latest PHP_LINT=1
+    - php: 5.6
+      env: WP_VERSION=latest PHP_LINT=1
     - php: 7.3
       env: WP_VERSION=nightly
 
@@ -45,23 +45,23 @@ matrix:
 before_script:
   # Turn off Xdebug. See https://core.trac.wordpress.org/changeset/40138.
   - phpenv config-rm xdebug.ini || echo "Xdebug not available"
- 
-  # This path addition is needed for phpcs.
-  - export PATH="$HOME/.config/composer/vendor/bin:$PATH"
 
-  # # Couple the PHPUnit version to the PHP version.
-  # - |
-  #   # case "$TRAVIS_PHP_VERSION" in
-  #   #   7.*)
-  #   #     echo "Using PHPUnit 6.1"
-  #   #     composer global require "phpunit/phpunit=6.1.*"
-  #   #     ;;
-  #   #   *)
-  #   #     echo "Using PHPUnit 4.8"
-  #   #     composer global require "phpunit/phpunit=4.8.*"
-  #   #     ;;
-  #   # esac
-  
+  # This path addition is needed for phpcs.
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+
+  # Couple the PHPUnit version to the PHP version.
+  - |
+    case "$TRAVIS_PHP_VERSION" in
+      7.*)
+        echo "Using PHPUnit 6.1"
+        composer global require "phpunit/phpunit=6.1.*"
+        ;;
+      *)
+        echo "Using PHPUnit 4.8"
+        composer global require "phpunit/phpunit=4.8.*"
+        ;;
+    esac
+
   # # Set up WordPress installation.
   # - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
 
@@ -69,10 +69,10 @@ before_script:
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
       composer global require automattic/vipwpcs
-      phpcs --config-set installed_paths $HOME/.config/composer/vendor/wp-coding-standards/wpcs,$HOME/.config/composer/vendor/automattic/vipwpcs
+      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/automattic/vipwpcs
       phpcs --config-show
     fi
- 
+
 # Run test script commands.
 # Default is specific to project language.
 # All commands must exit with code 0 on success. Anything else is considered failure.
@@ -84,9 +84,7 @@ script:
     if [[ "$PHP_LINT" == "1" ]] ; then
       find . -type "f" -iname "*.php" -not -path "./vendor/*" | xargs -L "1" php -l
     fi
-
-  - echo $PATH
-
+#
   # WordPress Coding Standards.
   #
   # These are the same across PHP and WordPress, so we need to run them only once.
@@ -98,14 +96,13 @@ script:
       phpcs
     fi
 
-  # Alter PATH so that phpunit can be found, then run phpunit and then with multi site. 
+  # Run phpunit and phpunit multi-site.
   - |
     if [[ ! -z "$WP_VERSION" ]] ; then
-      export PATH="$HOME/.composer/vendor/bin:$PATH"
       phpunit
       WP_MULTISITE=1 phpunit
     fi
- 
+
 # Receive notifications for build results.
 # @link http://docs.travis-ci.com/user/notifications/#Email-notifications
 notifications:
