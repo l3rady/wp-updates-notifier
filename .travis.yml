@@ -45,8 +45,8 @@ matrix:
 before_script:
   # Turn off Xdebug. See https://core.trac.wordpress.org/changeset/40138.
   - phpenv config-rm xdebug.ini || echo "Xdebug not available"
-  
-  - export PATH="$HOME/.composer/vendor/bin:$HOME/.config/composer/vendor/bin:$PATH"
+ 
+  - export PATH="$HOME/.config/composer/vendor/bin:$PATH"
 
   # Couple the PHPUnit version to the PHP version.
   - |
@@ -82,6 +82,8 @@ script:
     if [[ "$PHP_LINT" == "1" ]] ; then
       find . -type "f" -iname "*.php" -not -path "./vendor/*" | xargs -L "1" php -l
     fi
+
+  - echo $PATH
 
   # WordPress Coding Standards.
   #
