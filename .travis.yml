@@ -98,8 +98,7 @@ script:
   # Run the plugin's unit tests in standalone mode.
   - |
     if [[ ! -z "$WP_VERSION" ]] ; then
-      which phpunit
-      phpunit --version  
+      phpunit
     fi
 
   # Run the plugin's unit tests in multisite mode.

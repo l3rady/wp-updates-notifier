@@ -25,4 +25,25 @@ class sc_WPUpdatesNotifier_Tests extends WP_UnitTestCase {
 		$this->settings = new Settings();
 	}
 
+	/**
+	 * Ensures that the basic email functions return the correct values.
+	 *
+	 * @see sc_WPUpdatesNotifier::sc_wpun_wp_mail_*
+	 *
+	 * @access public
+	 */
+	public function testEmailInfo() {
+	
+		// Test email content type.
+		$this->assertEquals(
+			'WP Updates Notifier',
+			sc_WPUpdatesNotifier::sc_wpun_wp_mail_from_name()
+		);
+
+		// Test email content type.
+		$this->assertEquals(
+			'text/plain',
+			sc_WPUpdatesNotifier::sc_wpun_wp_mail_content_type()
+		);
+	}
 }
