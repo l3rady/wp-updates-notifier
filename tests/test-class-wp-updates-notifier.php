@@ -30,18 +30,18 @@ class SC_WP_Updates_Notifier_Tests extends WP_UnitTestCase {
 	 * @access public
 	 */
 	public function testEmailInfo() {
-		$SC_WP_Updates_Notifier = new SC_WP_Updates_Notifier();
+		$sc_wp_updates_notifier = new SC_WP_Updates_Notifier();
 	
 		// Test email content type.
 		$this->assertEquals(
 			'WP Updates Notifier',
-			$SC_WP_Updates_Notifier->sc_wpun_wp_mail_from_name()
+			$sc_wp_updates_notifier->sc_wpun_wp_mail_from_name()
 		);
 
 		// Test email content type.
 		$this->assertEquals(
 			'text/plain',
-			$SC_WP_Updates_Notifier->sc_wpun_wp_mail_content_type()
+			$sc_wp_updates_notifier->sc_wpun_wp_mail_content_type()
 		);
 	}
 }
