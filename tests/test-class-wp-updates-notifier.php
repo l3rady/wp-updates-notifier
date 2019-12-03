@@ -20,7 +20,6 @@ class sc_WPUpdatesNotifier_Tests extends WP_UnitTestCase {
 	 */
 	public function setUp() {
 		parent::setup();
-		$this->settings = new Settings();
 	}
 
 	/**
