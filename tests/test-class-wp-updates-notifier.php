@@ -8,8 +8,6 @@
  * @subpackage Tests
  */
 
-use \Apple_Exporter\Settings;
-
 /**
  * A class which is used to test the sc_WPUpdatesNotifier class.
  */
