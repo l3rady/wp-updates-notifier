@@ -31,10 +31,10 @@ License: GPL3+
 */
 
 // Only load class if it hasn't already been loaded
-if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
+if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 	// WP Updates Notifier - All the magic happens here!
-	class sc_WPUpdatesNotifier {
+	class SC_WP_Updates_Notifier {
 		const OPT_FIELD         = 'sc_wpun_settings';
 		const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
 		const OPT_VERSION       = '5.0';
@@ -781,4 +781,4 @@ if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
 	}
 }
 
-new sc_WPUpdatesNotifier();
+new SC_WP_Updates_Notifier();

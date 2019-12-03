@@ -1,17 +1,17 @@
 <?php
 /**
- * Publish to WP Updates Notifier Tests: sc_WPUpdatesNotifier class
+ * Publish to WP Updates Notifier Tests: SC_WP_Updates_Notifier class
  *
- * Contains a class which is used to test the sc_WPUpdatesNotifier class.
+ * Contains a class which is used to test the SC_WP_Updates_Notifier class.
  *
- * @package sc_WPUpdatesNotifier
+ * @package SC_WP_Updates_Notifier
  * @subpackage Tests
  */
 
 /**
- * A class which is used to test the sc_WPUpdatesNotifier class.
+ * A class which is used to test the SC_WP_Updates_Notifier class.
  */
-class sc_WPUpdatesNotifier_Tests extends WP_UnitTestCase {
+class SC_WP_Updates_Notifier_Tests extends WP_UnitTestCase {
 	
 	/**
 	 * A function containing operations to be run before each test function.
@@ -25,23 +25,23 @@ class sc_WPUpdatesNotifier_Tests extends WP_UnitTestCase {
 	/**
 	 * Ensures that the basic email functions return the correct values.
 	 *
-	 * @see sc_WPUpdatesNotifier::sc_wpun_wp_mail_*
+	 * @see SC_WP_Updates_Notifier::sc_wpun_wp_mail_*
 	 *
 	 * @access public
 	 */
 	public function testEmailInfo() {
-		$sc_WPUpdatesNotifier = new sc_WPUpdatesNotifier();
+		$SC_WP_Updates_Notifier = new SC_WP_Updates_Notifier();
 	
 		// Test email content type.
 		$this->assertEquals(
 			'WP Updates Notifier',
-			$sc_WPUpdatesNotifier->sc_wpun_wp_mail_from_name()
+			$SC_WP_Updates_Notifier->sc_wpun_wp_mail_from_name()
 		);
 
 		// Test email content type.
 		$this->assertEquals(
 			'text/plain',
-			$sc_WPUpdatesNotifier->sc_wpun_wp_mail_content_type()
+			$SC_WP_Updates_Notifier->sc_wpun_wp_mail_content_type()
 		);
 	}
 }
