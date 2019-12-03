@@ -46,13 +46,13 @@ if ( ! class_exists( 'sc_WPUpdatesNotifier' ) ) {
 			add_action( 'plugins_loaded', array( $this, 'runInit' ) );
 		}
 
-		private function runInit() {
+		public function runInit() {
 			if ( ! self::$didInit ) {
 				$this->init();
 				self::$didInit = true;
 			}
 		}
-		
+
 		private function init() {
 			// Check settings are up to date
 			$this->settingsUpToDate();
