@@ -174,7 +174,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function enable_cron( $manual_interval = false ) {
-			$options         = $this->get_set_options( self::OPT_FIELD ); // Get settings
+			$options          = $this->get_set_options( self::OPT_FIELD ); // Get settings
 			$current_schedule = wp_get_schedule( self::CRON_NAME ); // find if a schedule already exists
 
 			// if a manual cron interval is set, use this
@@ -191,7 +191,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				}
 
 				// check the cron setting is valid
-				if ( ! in_array( $options['frequency'], $this->get_intervals() ) ) {
+				if ( ! in_array( $options['frequency'], $this->get_intervals(), true ) ) {
 					return;
 				}
 
@@ -602,7 +602,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_settings_field( 'sc_wpun_settings_main_cron_method', __( 'Cron Method', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_cron_method' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_frequency', __( 'Frequency to check', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_frequency' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
-			add_settings_field( 'sc_wpun_settings_main_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );         
+			add_settings_field( 'sc_wpun_settings_main_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_plugins', __( 'Notify about plugin updates?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_plugins' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_themes', __( 'Notify about theme updates?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_themes' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_automatic', __( 'Notify automatic core updates to this address?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_automatic' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
@@ -693,7 +693,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_cron_method', 'sc_wpun_settings_main_cron_method_error', __( 'Invalid cron method selected', 'wp-updates-notifier' ), 'error' );
 			}
-			
+
 			return $valid;
 		}
 
