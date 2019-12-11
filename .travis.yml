@@ -26,7 +26,7 @@ matrix:
   fast_finish: true
   include:
     - php: 7.3
-      env: WP_VERSION=latest WP_PHPCS=1
+      env: WP_VERSION=latest PHP_LINT=1 WP_PHPCS=1
     - php: 7.2
       env: WP_VERSION=latest PHP_LINT=1
     - php: 7.1
