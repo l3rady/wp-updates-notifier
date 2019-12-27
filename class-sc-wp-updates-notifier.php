@@ -514,7 +514,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		public function sc_wpun_check() {
 			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
-
+			// Todo
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended
 			if ( ! isset( $_GET['sc_wpun_key'] ) || $options['security_key'] !== $_GET['sc_wpun_key'] || 'other' !== $options['cron_method'] ) {
 				return;
@@ -616,13 +616,13 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		public function sc_wpun_settings_validate( $input ) {
 			check_admin_referer( 'sc_wpun_settings-options' );
 			$valid = $this->get_set_options( self::OPT_FIELD );
-
+			// Todo
 			if ( isset( $input['cron_method'] ) && in_array( $input['cron_method'], array( 'wordpress', 'other' ), true ) ) {
 				$valid['cron_method'] = $input['cron_method'];
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_cron_method', 'sc_wpun_settings_main_cron_method_error', __( 'Invalid cron method selected', 'wp-updates-notifier' ), 'error' );
 			}
-
+			// Todo
 			if ( 'other' === $valid['cron_method'] ) {
 				$input['frequency'] = 'manual';
 			}
@@ -692,7 +692,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( isset( $_POST['submitwithemail'] ) ) {
 				add_filter( 'pre_set_transient_settings_errors', array( $this, 'send_test_email' ) );
 			}
-
+			// Todo
 			if ( isset( $input['cron_method'] ) && in_array( $input['cron_method'], array( 'wordpress', 'other' ), true ) ) {
 				$valid['cron_method'] = $input['cron_method'];
 			} else {
@@ -711,7 +711,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		public function sc_wpun_settings_main_text() {
 		}
-
+		
+		// Todo
 		public function sc_wpun_settings_main_field_cron_method() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
