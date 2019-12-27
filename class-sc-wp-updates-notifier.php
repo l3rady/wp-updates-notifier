@@ -50,7 +50,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 	class SC_WP_Updates_Notifier {
 		const OPT_FIELD         = 'sc_wpun_settings';
 		const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-		const OPT_VERSION       = '6.0';
+		const OPT_VERSION       = '7.0';
 		const CRON_NAME         = 'sc_wpun_update_check';
 
 		public static $did_init = false;
@@ -101,19 +101,20 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( self::OPT_VERSION !== $current_ver ) { // is the version the same as this plugin?
 				$options  = (array) get_option( self::OPT_FIELD ); // get current settings from DB
 				$defaults = array( // Here are our default values for this plugin
-					'frequency'        => 'hourly',
-					'notify_to'        => get_option( 'admin_email' ),
-					'notify_from'      => get_option( 'admin_email' ),
-					'notify_plugins'   => 1,
-					'notify_themes'    => 1,
-					'notify_automatic' => 1,
-					'hide_updates'     => 1,
-					'notified'         => array(
+					'frequency'           => 'hourly',
+					'notification_method' => 'email',
+					'notify_to'           => get_option( 'admin_email' ),
+					'notify_from'         => get_option( 'admin_email' ),
+					'notify_plugins'      => 1,
+					'notify_themes'       => 1,
+					'notify_automatic'    => 1,
+					'hide_updates'        => 1,
+					'notified'            => array(
 						'core'   => '',
 						'plugin' => array(),
 						'theme'  => array(),
 					),
-					'last_check_time'  => false,
+					'last_check_time'     => false,
 				);
 				// Intersect current options with defaults. Basically removing settings that are obsolete
 				$options = array_intersect_key( $options, $defaults );
@@ -585,6 +586,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			register_setting( self::OPT_FIELD, self::OPT_FIELD, array( $this, 'sc_wpun_settings_validate' ) ); // Register Main Settings
 			add_settings_section( 'sc_wpun_settings_main', __( 'Settings', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_text' ), 'wp-updates-notifier' ); // Make settings main section
 			add_settings_field( 'sc_wpun_settings_main_frequency', __( 'Frequency to check', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_frequency' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
+			add_settings_field( 'sc_wpun_settings_main_notification_method', __( 'Notification Method', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notification_method' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_plugins', __( 'Notify about plugin updates?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_plugins' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
@@ -596,6 +598,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		public function sc_wpun_settings_validate( $input ) {
 			check_admin_referer( 'sc_wpun_settings-options' );
 			$valid = $this->get_set_options( self::OPT_FIELD );
+
+			if ( isset( $input['notification_method'] ) && in_array( $input['notification_method'], array( 'email', 'web' ), true ) ) {
+				$valid['notification_method'] = $input['notification_method'];
+			} else {
+				add_settings_error( 'sc_wpun_settings_main_notification_method', 'sc_wpun_settings_main_notification_method_error', __( 'Invalid notification method selected', 'wp-updates-notifier' ), 'error' );
+			}
 
 			if ( in_array( $input['frequency'], $this->get_intervals(), true ) ) {
 				$valid['frequency'] = $input['frequency'];
@@ -684,6 +692,16 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				<option value="<?php echo esc_attr( $k ); ?>" <?php selected( $options['frequency'], $k ); ?>><?php echo esc_html( $v['display'] ); ?></option>
 			<?php endforeach; ?>
 			<select>
+			<?php
+		}
+
+		public function sc_wpun_settings_main_field_notification_method() {
+			$options = $this->get_set_options( self::OPT_FIELD );
+			?>
+			<select name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notification_method]">
+				<option value="email" <?php selected( $options['notification_method'], 'Email' ); ?>><?php esc_html_e( 'Email', 'wp-updates-notifier' ); ?></option>
+				<option value="web" <?php selected( $options['notification_method'], 'Web Payload (Slack)' ); ?>><?php esc_html_e( 'Web Payload (Slack)', 'wp-updates-notifier' ); ?></option>
+			</select>
 			<?php
 		}
 
