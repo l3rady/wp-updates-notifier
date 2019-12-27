@@ -563,7 +563,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 						);
 					}
 
-					esc_html_e( __( 'Last scanned: ', 'wp-updates-notifier' ) . $scan_date );
+					echo esc_html( __( 'Last scanned: ', 'wp-updates-notifier' ) . $scan_date );
 					?>
 					</span>
 				</p>
