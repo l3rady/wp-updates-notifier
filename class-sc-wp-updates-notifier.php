@@ -553,7 +553,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				<p>
 					<span class="description">
 					<?php
-					if ( false === $options['last_check_time'] ) {
+					if ( empty( $options['last_check_time'] ) ) {
 						$scan_date = __( 'Never', 'wp-updates-notifier' );
 					} else {
 						$scan_date = sprintf(
@@ -563,7 +563,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 						);
 					}
 
-					esc_html( __( 'Last scanned: ', 'wp-updates-notifier' ) . $scan_date );
+					esc_html_e( __( 'Last scanned: ', 'wp-updates-notifier' ) . $scan_date );
 					?>
 					</span>
 				</p>
