@@ -101,7 +101,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$options  = (array) get_option( self::OPT_FIELD ); // get current settings from DB
 				$defaults = array( // Here are our default values for this plugin
 					'frequency'              => 'hourly',
-					'email_notifications'    => 1,
+					'email_notifications'    => 0,
 					'notify_to'              => get_option( 'admin_email' ),
 					'notify_from'            => get_option( 'admin_email' ),
 					'slack_notifications'    => 0,
@@ -253,7 +253,16 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( $core_updated || $plugins_updated || $themes_updated ) { // Did anything come back as need updating?
 				$message  = __( 'There are updates available for your WordPress site:', 'wp-updates-notifier' ) . "\n" . $message . "\n";
 				$message .= sprintf( __( 'Please visit %s to update.', 'wp-updates-notifier' ), admin_url( 'update-core.php' ) );
-				$this->send_notifications( $message ); // send our notification email.
+
+				// Send email notification.
+				if ( 1 === $options['email_notifications'] ) {
+					send_email_message( $message );
+				}
+
+				// Send slack notification.
+				if ( 1 === $options['slack_notifications'] ) {
+					send_slack_message( $message );
+				}
 			}
 
 			$this->log_last_check_time();
