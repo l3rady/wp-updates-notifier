@@ -508,7 +508,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * Adds JS to admin settings screen for this plugin
 		 */
 		public function admin_register_scripts_styles() {
-			wp_register_script( 'wp_updates_monitor_js_function', plugins_url( 'js/function.js', __FILE__ ), array( 'jquery' ), '1.0', true );
+			wp_register_script( 'wp_updates_monitor_js_function', plugins_url( 'js/function.js', __FILE__ ), array(), '1.0', true );
 		}
 
 
