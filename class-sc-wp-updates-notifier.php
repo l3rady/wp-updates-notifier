@@ -595,11 +595,17 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_settings_field( 'sc_wpun_settings_main_notify_automatic', __( 'Notify automatic core updates to this address?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_automatic' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_hide_updates', __( 'Hide core WP update nag from non-admin users?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_hide_updates' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 
-			add_settings_section( 'sc_wpun_settings_email_notifications', __( 'Email Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_text' ), 'wp-updates-notifier' ); // Make email notifications section
+			// Email notification settings.
+			add_settings_section( 'sc_wpun_settings_email_notifications', __( 'Email Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_text' ), 'wp-updates-notifier' ); 
 			add_settings_field( 'sc_wpun_settings_email_notifications_email_notifications', __( 'Send email notifications?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_email_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 			add_settings_field( 'sc_wpun_settings_email_notifications_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 			add_settings_field( 'sc_wpun_settings_email_notifications_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 
+			// Slack notification settings.
+			add_settings_section( 'sc_wpun_settings_slack_notifications', __( 'Slack Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_text' ), 'wp-updates-notifier' ); 
+			add_settings_field( 'sc_wpun_settings_slack_notifications_slack_notifications', __( 'Send slack notifications?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
+			add_settings_field( 'sc_wpun_settings_slack_notifications_slack_webhook_url', __( 'Webhook url', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_webhook_url' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
+			add_settings_field( 'sc_wpun_settings_slack_notifications_slack_channel_override', __( 'Channel to notify', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_channel_override' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
 		}
 
 		public function sc_wpun_settings_validate( $input ) {
@@ -703,6 +709,46 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not send test email. Email settings are invalid.', 'wp-updates-notifier' ), 'error' );
 				}
 			}
+
+			// Validate slack settings.
+			if ( ! empty( $input['slack_webhook_url'] ) ) {
+				if ( false === filter_var( $input['slack_webhook_url'], FILTER_VALIDATE_URL ) ) {
+					add_settings_error( 'sc_wpun_settings_slack_notifications_slack_webhook_url', 'sc_wpun_settings_slack_notifications_slack_webhook_url_error', __( 'Invalid webhook url entered', 'wp-updates-notifier' ), 'error' );
+				} else {
+					$valid['slack_webhook_url'] = $input['slack_webhook_url'];
+				}
+			} else {
+				$valid['slack_webhook_url'] = '';
+			}
+
+			if ( ! empty( $input['slack_channel_override'] ) ) {
+				if ( '#' !== substr( $input['slack_channel_override'], 0, 1 ) && '@' !== substr( $input['slack_channel_override'], 0, 1 ) ) {
+					add_settings_error( 'sc_wpun_settings_slack_notifications_slack_channel_override', 'sc_wpun_settings_slack_notifications_slack_channel_override_error', __( 'Channel name must start with a # or @', 'wp-updates-notifier' ), 'error' );
+				} elseif ( strpos( $input['slack_channel_override'], ' ' ) ) {
+					add_settings_error( 'sc_wpun_settings_slack_notifications_slack_channel_override', 'sc_wpun_settings_slack_notifications_slack_channel_override_error', __( 'Channel name must not contain a space', 'wp-updates-notifier' ), 'error' );
+				} else {
+					$valid['slack_channel_override'] = $input['slack_channel_override'];
+				}
+			} else {
+				$valid['slack_channel_override'] = '';
+			}
+
+			$slack_notifications = absint( isset( $input['slack_notifications'] ) ? $input['slack_notifications'] : 0 );
+			if ( $slack_notifications > 1 ) {
+				add_settings_error( 'sc_wpun_settings_slack_notifications_slack_notifications', 'sc_wpun_settings_slack_notifications_slack_notifications_error', __( 'Invalid notification slack value entered', 'wp-updates-notifier' ), 'error' );
+			}
+
+			if ( 1 === $slack_notifications ) {
+				if ( '' === $valid['slack_webhook_url'] ) {
+					add_settings_error( 'sc_wpun_settings_slack_notifications_slack_webhook_url', 'sc_wpun_settings_slack_notifications_slack_webhook_url_error', __( 'No to slack webhoook url entered', 'wp-updates-notifier' ), 'error' );
+					$slack_notifications = 0;
+				} else {
+					$slack_notifications = 1;
+				}
+			} else {
+				$slack_notifications = 0;
+			}
+			$valid['slack_notifications'] = $slack_notifications;
 			
 			return $valid;
 		}
@@ -715,9 +761,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		public function sc_wpun_settings_main_text() {
-		}
-
-		public function sc_wpun_settings_email_notifications_text() {
 		}
 
 		public function sc_wpun_settings_main_field_frequency() {
@@ -773,6 +816,17 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		// Email settings.
+		public function sc_wpun_settings_email_notifications_text() {
+		}
+
+		public function sc_wpun_settings_email_notifications_field_email_notifications() {
+			$options = $this->get_set_options( self::OPT_FIELD );
+			?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[email_notifications]" type="checkbox" value="1" <?php checked( $options['email_notifications'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+			</label>
+			<?php
+		}
 
 		public function sc_wpun_settings_email_notifications_field_notify_to() {
 			$options = $this->get_set_options( self::OPT_FIELD );
@@ -789,11 +843,30 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
-		public function sc_wpun_settings_email_notifications_field_email_notifications() {
+		// Email settings.
+		public function sc_wpun_settings_slack_notifications_text() {
+		}
+
+		public function sc_wpun_settings_slack_notifications_field_slack_notifications() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
-			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[email_notifications]" type="checkbox" value="1" <?php checked( $options['email_notifications'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[slack_notifications]" type="checkbox" value="1" <?php checked( $options['slack_notifications'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
 			</label>
+			<?php
+		}
+
+		public function sc_wpun_settings_slack_notifications_field_slack_webhook_url() {
+			$options = $this->get_set_options( self::OPT_FIELD );
+			?>
+			<input id="sc_wpun_settings_slack_notifications_slack_webhook_url" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[slack_webhook_url]" value="<?php echo esc_attr( $options['slack_webhook_url'] ); ?>" />
+			<?php
+		}
+
+		public function sc_wpun_settings_slack_notifications_field_slack_channel_override() {
+			$options = $this->get_set_options( self::OPT_FIELD );
+			?>
+			<input id="sc_wpun_settings_slack_notifications_slack_channel_override" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[slack_channel_override]" value="<?php echo esc_attr( $options['slack_channel_override'] ); ?>" />
+			<span class="description"><?php esc_html_e( 'Not requred.' ); ?></span>
 			<?php
 		}
 		/**** END EVERYTHING SETTINGS */
