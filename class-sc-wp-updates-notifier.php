@@ -428,7 +428,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @param string $message Holds message to be sent in body of email.
 		 *
-		 * @return void
+		 * @return bool Whether the email contents were sent successfully.
 		 */
 		public function send_email_message( $message ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
@@ -438,11 +438,13 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
 			add_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter
 			// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-			wp_mail( $settings['notify_to'], apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', $message ) ); // send email
+			$response = wp_mail( $settings['notify_to'], apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', $message ) ); // send email
 			// phpcs:enable
 			remove_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // remove from filter
 			remove_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // remove from name filter
 			remove_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // remove content type filter
+
+			return $response;
 		}
 
 
@@ -451,7 +453,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @param string $message Holds message to be posted to slack.
 		 *
-		 * @return void
+		 * @return bool Success or failure.
 		 */
 		public function send_slack_message( $message ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
@@ -865,7 +867,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
-		// Email settings.
+		/** Email settings **/
+
 		public function sc_wpun_settings_email_notifications_text() {
 		}
 
@@ -892,7 +895,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
-		// Email settings.
+		/** Slack settings **/
+
 		public function sc_wpun_settings_slack_notifications_text() {
 		}
 
@@ -915,7 +919,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
 			<input id="sc_wpun_settings_slack_notifications_slack_channel_override" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[slack_channel_override]" value="<?php echo esc_attr( $options['slack_channel_override'] ); ?>" />
-			<span class="description"><?php esc_html_e( 'Not requred.' ); ?></span>
+			<span class="description"><?php esc_html_e( 'Not requred.', 'wp-updates-notifier' ); ?></span>
 			<?php
 		}
 		/**** END EVERYTHING SETTINGS */
