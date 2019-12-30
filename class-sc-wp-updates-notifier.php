@@ -83,7 +83,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_action( 'admin_menu', array( $this, 'admin_settings_menu' ) ); // Add menu to options
 			add_action( 'admin_init', array( $this, 'admin_settings_init' ) ); // Add admin init functions
 			add_action( 'admin_init', array( $this, 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins
-			add_action( 'admin_init', array( $this, 'admin_register_scripts_styles' ) );
 			add_action( 'sc_wpun_enable_cron', array( $this, 'enable_cron' ) ); // action to enable cron
 			add_action( 'sc_wpun_disable_cron', array( $this, 'disable_cron' ) ); // action to disable cron
 			add_action( self::CRON_NAME, array( $this, 'do_update_check' ) ); // action to link cron task to actual task
@@ -504,14 +503,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 
-		/**
-		 * Adds JS to admin settings screen for this plugin
-		 */
-		public function admin_register_scripts_styles() {
-			wp_register_script( 'wp_updates_monitor_js_function', plugins_url( 'js/function.js', __FILE__ ), array(), '1.0', true );
-		}
-
-
 		private function get_schedules() {
 			$schedules = wp_get_schedules();
 			uasort( $schedules, array( $this, 'sort_by_interval' ) );
@@ -539,11 +530,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 */
 		public function admin_settings_menu() {
 			$page = add_options_page( 'Updates Notifier', 'Updates Notifier', 'manage_options', 'wp-updates-notifier', array( $this, 'settings_page' ) );
-			add_action( "admin_print_scripts-{$page}", array( $this, 'enqueue_plugin_script' ) );
-		}
-
-		public function enqueue_plugin_script() {
-			wp_enqueue_script( 'wp_updates_monitor_js_function' );
 		}
 
 		public function settings_page() {
