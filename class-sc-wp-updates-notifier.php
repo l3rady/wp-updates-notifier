@@ -586,53 +586,32 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		public function admin_settings_init() {
-			register_setting( self::OPT_FIELD, self::OPT_FIELD, array( $this, 'sc_wpun_settings_validate' ) ); // Register Main Settings
+			register_setting( self::OPT_FIELD, self::OPT_FIELD, array( $this, 'sc_wpun_settings_validate' ) ); // Register Settings
+
 			add_settings_section( 'sc_wpun_settings_main', __( 'Settings', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_text' ), 'wp-updates-notifier' ); // Make settings main section
 			add_settings_field( 'sc_wpun_settings_main_frequency', __( 'Frequency to check', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_frequency' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
-			add_settings_field( 'sc_wpun_settings_main_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
-			add_settings_field( 'sc_wpun_settings_main_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_plugins', __( 'Notify about plugin updates?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_plugins' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_themes', __( 'Notify about theme updates?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_themes' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_automatic', __( 'Notify automatic core updates to this address?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_automatic' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_hide_updates', __( 'Hide core WP update nag from non-admin users?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_hide_updates' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
+
+			add_settings_section( 'sc_wpun_settings_email_notifications', __( 'Email Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_text' ), 'wp-updates-notifier' ); // Make email notifications section
+			add_settings_field( 'sc_wpun_settings_email_notifications_email_notifications', __( 'Send email notifications?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_email_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
+			add_settings_field( 'sc_wpun_settings_email_notifications_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
+			add_settings_field( 'sc_wpun_settings_email_notifications_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
+
 		}
 
 		public function sc_wpun_settings_validate( $input ) {
 			check_admin_referer( 'sc_wpun_settings-options' );
 			$valid = $this->get_set_options( self::OPT_FIELD );
 
+			// Validate main settings.
 			if ( in_array( $input['frequency'], $this->get_intervals(), true ) ) {
 				$valid['frequency'] = $input['frequency'];
 				do_action( 'sc_wpun_enable_cron', $input['frequency'] );
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_frequency', 'sc_wpun_settings_main_frequency_error', __( 'Invalid frequency entered', 'wp-updates-notifier' ), 'error' );
-			}
-
-			$emails_to = explode( ',', $input['notify_to'] );
-			if ( $emails_to ) {
-				$sanitized_emails = array();
-				$was_error        = false;
-				foreach ( $emails_to as $email_to ) {
-					$address = sanitize_email( trim( $email_to ) );
-					if ( ! is_email( $address ) ) {
-						add_settings_error( 'sc_wpun_settings_main_notify_to', 'sc_wpun_settings_main_notify_to_error', __( 'One or more email to addresses are invalid', 'wp-updates-notifier' ), 'error' );
-						$was_error = true;
-						break;
-					}
-					$sanitized_emails[] = $address;
-				}
-				if ( ! $was_error ) {
-					$valid['notify_to'] = implode( ',', $sanitized_emails );
-				}
-			} else {
-				add_settings_error( 'sc_wpun_settings_main_notify_to', 'sc_wpun_settings_main_notify_to_error', __( 'No email to address entered', 'wp-updates-notifier' ), 'error' );
-			}
-
-			$sanitized_email_from = sanitize_email( $input['notify_from'] );
-			if ( is_email( $sanitized_email_from ) ) {
-				$valid['notify_from'] = $sanitized_email_from;
-			} else {
-				add_settings_error( 'sc_wpun_settings_main_notify_from', 'sc_wpun_settings_main_notify_from_error', __( 'Invalid email from entered', 'wp-updates-notifier' ), 'error' );
 			}
 
 			$sanitized_notify_plugins = absint( isset( $input['notify_plugins'] ) ? $input['notify_plugins'] : 0 );
@@ -663,8 +642,66 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				add_settings_error( 'sc_wpun_settings_main_hide_updates', 'sc_wpun_settings_main_hide_updates_error', __( 'Invalid hide updates value entered', 'wp-updates-notifier' ), 'error' );
 			}
 
+			// Validate email notification settings.
+			if ( ! empty( $input['notify_to'] ) ) {
+				$emails_to = explode( ',', $input['notify_to'] );
+				if ( $emails_to ) {
+					$sanitized_emails = array();
+					$was_error        = false;
+					foreach ( $emails_to as $email_to ) {
+						$address = sanitize_email( trim( $email_to ) );
+						if ( ! is_email( $address ) ) {
+							add_settings_error( 'sc_wpun_settings_email_notifications_notify_to', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'One or more email to addresses are invalid', 'wp-updates-notifier' ), 'error' );
+							$was_error = true;
+							break;
+						}
+						$sanitized_emails[] = $address;
+					}
+					if ( ! $was_error ) {
+						$valid['notify_to'] = implode( ',', $sanitized_emails );
+					}
+				}
+			} else {
+				$valid['notify_to'] = '';
+			}
+
+			if ( ! empty( $input['notify_from'] ) ) {
+				$sanitized_email_from = sanitize_email( $input['notify_from'] );
+				if ( is_email( $sanitized_email_from ) ) {
+					$valid['notify_from'] = $sanitized_email_from;
+				} else {
+					add_settings_error( 'sc_wpun_settings_email_notifications_notify_from', 'sc_wpun_settings_email_notifications_notify_from_error', __( 'Invalid email from entered', 'wp-updates-notifier' ), 'error' );
+				}
+			} else {
+				$valid['notify_from'] = '';
+			}
+
+			$email_notifications = absint( isset( $input['email_notifications'] ) ? $input['email_notifications'] : 0 );
+			if ( $email_notifications > 1 ) {
+				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Invalid notification email value entered', 'wp-updates-notifier' ), 'error' );
+			}
+
+			if ( 1 === $email_notifications ) {
+				if ( '' === $input['notify_to'] ) {
+					add_settings_error( 'sc_wpun_settings_email_notifications_notify_to', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'No to email to address entered', 'wp-updates-notifier' ), 'error' );
+					$email_notifications = 0;
+				} elseif ( '' === $input['notify_from'] ) {
+					add_settings_error( 'sc_wpun_settings_email_notifications_notify_from', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'No from email to address entered', 'wp-updates-notifier' ), 'error' );
+					$email_notifications = 0;
+				} else {
+					$email_notifications = 1;
+				}
+			} else {
+				$email_notifications = 0;
+			}
+			$valid['email_notifications'] = $email_notifications;
+
 			if ( isset( $_POST['submitwithemail'] ) ) {
-				add_filter( 'pre_set_transient_settings_errors', array( $this, 'send_test_email' ) );
+				if ( '' !== $valid['notify_to'] && '' !== $valid['notify_from'] ) {
+					add_filter( 'pre_set_transient_settings_errors', array( $this, 'send_test_email' ) );
+				} else {
+					add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not send test email. Email settings are invalid.', 'wp-updates-notifier' ), 'error' );
+				}
 			}
 			
 			return $valid;
@@ -680,6 +717,9 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		public function sc_wpun_settings_main_text() {
 		}
 
+		public function sc_wpun_settings_email_notifications_text() {
+		}
+
 		public function sc_wpun_settings_main_field_frequency() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -688,21 +728,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				<option value="<?php echo esc_attr( $k ); ?>" <?php selected( $options['frequency'], $k ); ?>><?php echo esc_html( $v['display'] ); ?></option>
 			<?php endforeach; ?>
 			<select>
-			<?php
-		}
-
-		public function sc_wpun_settings_main_field_notify_to() {
-			$options = $this->get_set_options( self::OPT_FIELD );
-			?>
-			<input id="sc_wpun_settings_main_notify_to" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_to]" value="<?php echo esc_attr( $options['notify_to'] ); ?>" />
-			<span class="description"><?php esc_html_e( 'Separate multiple email address with a comma (,)', 'wp-updates-notifier' ); ?></span>
-			<?php
-		}
-
-		public function sc_wpun_settings_main_field_notify_from() {
-			$options = $this->get_set_options( self::OPT_FIELD );
-			?>
-			<input id="sc_wpun_settings_main_notify_from" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_from]" value="<?php echo esc_attr( $options['notify_from'] ); ?>" />
 			<?php
 		}
 
@@ -745,6 +770,30 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				<option value="1" <?php selected( $options['hide_updates'], 1 ); ?>><?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?></option>
 				<option value="0" <?php selected( $options['hide_updates'], 0 ); ?>><?php esc_html_e( 'No', 'wp-updates-notifier' ); ?></option>
 			</select>
+			<?php
+		}
+
+
+		public function sc_wpun_settings_email_notifications_field_notify_to() {
+			$options = $this->get_set_options( self::OPT_FIELD );
+			?>
+			<input id="sc_wpun_settings_email_notifications_notify_to" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_to]" value="<?php echo esc_attr( $options['notify_to'] ); ?>" />
+			<span class="description"><?php esc_html_e( 'Separate multiple email address with a comma (,)', 'wp-updates-notifier' ); ?></span>
+			<?php
+		}
+
+		public function sc_wpun_settings_email_notifications_field_notify_from() {
+			$options = $this->get_set_options( self::OPT_FIELD );
+			?>
+			<input id="sc_wpun_settings_email_notifications_notify_from" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_from]" value="<?php echo esc_attr( $options['notify_from'] ); ?>" />
+			<?php
+		}
+
+		public function sc_wpun_settings_email_notifications_field_email_notifications() {
+			$options = $this->get_set_options( self::OPT_FIELD );
+			?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[email_notifications]" type="checkbox" value="1" <?php checked( $options['email_notifications'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+			</label>
 			<?php
 		}
 		/**** END EVERYTHING SETTINGS */
