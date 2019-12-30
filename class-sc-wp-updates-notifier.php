@@ -572,6 +572,18 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		public function settings_page() {
+			// Trigger tests if they are ready to be sent.
+			$sc_wpun_send_test_slack = get_transient( 'sc_wpun_send_test_slack' );
+			if ( isset( $sc_wpun_send_test_slack ) && $sc_wpun_send_test_slack ) {
+				delete_transient( 'sc_wpun_send_test_slack' );
+				$this->send_test_slack();
+			}
+			$sc_wpun_send_test_email = get_transient( 'sc_wpun_send_test_email' );
+			if ( isset( $sc_wpun_send_test_email ) && $sc_wpun_send_test_email ) {
+				delete_transient( 'sc_wpun_send_test_email' );
+				$this->send_test_email();
+			}
+
 			$options     = $this->get_set_options( self::OPT_FIELD );
 			$date_format = get_option( 'date_format' );
 			$time_format = get_option( 'time_format' );
@@ -772,7 +784,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 			if ( isset( $_POST['submitwithemail'] ) ) {
 				if ( '' !== $valid['notify_to'] && '' !== $valid['notify_from'] ) {
-					add_filter( 'pre_set_transient_settings_errors', array( $this, 'send_test_email' ) );
+					set_transient( 'sc_wpun_send_test_email', 1 );
 				} else {
 					add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not send test email. Email settings are invalid.', 'wp-updates-notifier' ), 'error' );
 				}
@@ -780,7 +792,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 			if ( isset( $_POST['submitwithslack'] ) ) {
 				if ( '' !== $valid['slack_webhook_url'] ) {
-					add_filter( 'pre_set_transient_settings_errors', array( $this, 'send_test_slack' ) );
+					set_transient( 'sc_wpun_send_test_slack', 1 );
 				} else {
 					add_settings_error( 'sc_wpun_settings_email_notifications_slack_notifications', 'sc_wpun_settings_email_notifications_slack_notifications_error', __( 'Can not post test slack message. Slack settings are invalid.', 'wp-updates-notifier' ), 'error' );
 				}
@@ -789,18 +801,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			return $valid;
 		}
 
-		public function send_test_email( $settings_errors ) {
-			if ( isset( $settings_errors[0]['type'] ) && 'updated' === $settings_errors[0]['type'] ) {
-				$this->send_email_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
-			}
-			return $settings_errors;
+		public function send_test_email() {
+			$this->send_email_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
 		}
 
-		public function send_test_slack( $settings_errors ) {
-			if ( isset( $settings_errors[0]['type'] ) && 'updated' === $settings_errors[0]['type'] ) {
-				$this->send_slack_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
-			}
-			return $settings_errors;
+		public function send_test_slack() {
+			$this->send_slack_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
 		}
 
 		public function sc_wpun_settings_main_text() {
