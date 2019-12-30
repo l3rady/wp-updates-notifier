@@ -253,7 +253,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( $core_updated || $plugins_updated || $themes_updated ) { // Did anything come back as need updating?
 				$message  = __( 'There are updates available for your WordPress site:', 'wp-updates-notifier' ) . "\n" . $message . "\n";
 				$message .= sprintf( __( 'Please visit %s to update.', 'wp-updates-notifier' ), admin_url( 'update-core.php' ) );
-				$this->send_notification_email( $message ); // send our notification email.
+				$this->send_notifications( $message ); // send our notification email.
 			}
 
 			$this->log_last_check_time();
@@ -424,14 +424,15 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 
 		/**
-		 * Sends email notification.
+		 * Sends email message.
 		 *
 		 * @param string $message Holds message to be sent in body of email.
 		 *
 		 * @return void
 		 */
-		public function send_notification_email( $message ) {
+		public function send_email_message( $message ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
+	
 			$subject  = sprintf( __( 'WP Updates Notifier: Updates Available @ %s', 'wp-updates-notifier' ), home_url() );
 			add_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // add from filter
 			add_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
@@ -442,6 +443,44 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			remove_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // remove from filter
 			remove_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // remove from name filter
 			remove_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // remove content type filter
+		}
+
+
+		/**
+		 * Sends slack post.
+		 *
+		 * @param string $message Holds message to be posted to slack.
+		 *
+		 * @return void
+		 */
+		public function send_slack_message( $message ) {
+			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
+
+			$payload = array(
+				'username' => 'WP Updates Notifier',
+				'icon_emoji' => ':robot_face:',
+				'text' => $message,
+			);
+
+			if ( ! empty( $settings['slack_channel_override'] ) && '' !== $settings['slack_channel_override'] ) {
+				$payload['channel'] = $settings['slack_channel_override'];
+			}
+
+			$response = wp_remote_post(
+				$settings['slack_webhook_url'], 
+				array(
+					'method' => 'POST',
+					'body' => array(
+						'payload' => json_encode( $payload ),
+					),
+				) 
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return false;
+			} else {
+				return true;
+			}
 		}
 
 		public function sc_wpun_wp_mail_from() {
@@ -566,6 +605,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					<p>&nbsp;</p>
 					<input class="button-primary" name="Submit" type="submit" value="<?php esc_html_e( 'Save settings', 'wp-updates-notifier' ); ?>" />
 					<input class="button" name="submitwithemail" type="submit" value="<?php esc_html_e( 'Save settings with test email', 'wp-updates-notifier' ); ?>" />
+					<input class="button" name="submitwithslack" type="submit" value="<?php esc_html_e( 'Save settings with test slack post', 'wp-updates-notifier' ); ?>" />
 				</form>
 			</div>
 			<?php
@@ -688,14 +728,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 			$valid['email_notifications'] = $email_notifications;
 
-			if ( isset( $_POST['submitwithemail'] ) ) {
-				if ( '' !== $valid['notify_to'] && '' !== $valid['notify_from'] ) {
-					add_filter( 'pre_set_transient_settings_errors', array( $this, 'send_test_email' ) );
-				} else {
-					add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not send test email. Email settings are invalid.', 'wp-updates-notifier' ), 'error' );
-				}
-			}
-
 			// Validate slack settings.
 			if ( ! empty( $input['slack_webhook_url'] ) ) {
 				if ( false === filter_var( $input['slack_webhook_url'], FILTER_VALIDATE_URL ) ) {
@@ -736,12 +768,37 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 			$valid['slack_notifications'] = $slack_notifications;
 			
+			// Parse sending test notifiations.
+
+			if ( isset( $_POST['submitwithemail'] ) ) {
+				if ( '' !== $valid['notify_to'] && '' !== $valid['notify_from'] ) {
+					add_filter( 'pre_set_transient_settings_errors', array( $this, 'send_test_email' ) );
+				} else {
+					add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not send test email. Email settings are invalid.', 'wp-updates-notifier' ), 'error' );
+				}
+			}
+
+			if ( isset( $_POST['submitwithslack'] ) ) {
+				if ( '' !== $valid['slack_webhook_url'] ) {
+					add_filter( 'pre_set_transient_settings_errors', array( $this, 'send_test_slack' ) );
+				} else {
+					add_settings_error( 'sc_wpun_settings_email_notifications_slack_notifications', 'sc_wpun_settings_email_notifications_slack_notifications_error', __( 'Can not post test slack message. Slack settings are invalid.', 'wp-updates-notifier' ), 'error' );
+				}
+			}
+
 			return $valid;
 		}
 
 		public function send_test_email( $settings_errors ) {
 			if ( isset( $settings_errors[0]['type'] ) && 'updated' === $settings_errors[0]['type'] ) {
-				$this->send_notification_email( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
+				$this->send_email_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
+			}
+			return $settings_errors;
+		}
+
+		public function send_test_slack( $settings_errors ) {
+			if ( isset( $settings_errors[0]['type'] ) && 'updated' === $settings_errors[0]['type'] ) {
+				$this->send_slack_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
 			}
 			return $settings_errors;
 		}
