@@ -15,7 +15,7 @@
  * Plugin URI: https://github.com/l3rady/wp-updates-notifier
  * Description: Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
  * Contributors: l3rady, eherman24, alleyinteractive
- * Version: 1.5.0
+ * Version: 1.6.0
  * Author: Scott Cariss
  * Author URI: http://l3rady.com/
  * Text Domain: wp-updates-notifier
@@ -442,7 +442,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		public function send_email_message( $message ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 	
-			$subject  = sprintf( __( 'WP Updates Notifier: Updates Available @ %s', 'wp-updates-notifier' ), home_url() );
+			$subject = sprintf( __( 'WP Updates Notifier: Updates Available @ %s', 'wp-updates-notifier' ), home_url() );
 			add_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // add from filter
 			add_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
 			add_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter
@@ -468,9 +468,9 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 
 			$payload = array(
-				'username' => 'WP Updates Notifier',
+				'username'   => 'WP Updates Notifier',
 				'icon_emoji' => ':robot_face:',
-				'text' => $message,
+				'text'       => $message,
 			);
 
 			if ( ! empty( $settings['slack_channel_override'] ) && '' !== $settings['slack_channel_override'] ) {
@@ -481,8 +481,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$settings['slack_webhook_url'], 
 				array(
 					'method' => 'POST',
-					'body' => array(
-						'payload' => json_encode( $payload ),
+					'body'   => array(
+						'payload' => wp_json_encode( $payload ),
 					),
 				) 
 			);
@@ -579,7 +579,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * much straight forward use of the WordPress Settings API.
 		 */
 		public function admin_settings_menu() {
-			$page = add_options_page( 'Updates Notifier', 'Updates Notifier', 'manage_options', 'wp-updates-notifier', array( $this, 'settings_page' ) );
+			add_options_page( 'Updates Notifier', 'Updates Notifier', 'manage_options', 'wp-updates-notifier', array( $this, 'settings_page' ) );
 		}
 
 		public function settings_page() {
@@ -877,7 +877,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/** Email settings **/
-
 		public function sc_wpun_settings_email_notifications_text() {
 		}
 
@@ -905,7 +904,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/** Slack settings **/
-
 		public function sc_wpun_settings_slack_notifications_text() {
 		}
 
