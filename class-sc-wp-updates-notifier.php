@@ -256,12 +256,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 				// Send email notification.
 				if ( 1 === $options['email_notifications'] ) {
-					send_email_message( $message );
+					$this->send_email_message( $message );
 				}
 
 				// Send slack notification.
 				if ( 1 === $options['slack_notifications'] ) {
-					send_slack_message( $message );
+					$this->send_slack_message( $message );
 				}
 			}
 
