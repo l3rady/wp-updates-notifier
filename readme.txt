@@ -54,13 +54,16 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 == Changelog ==
 
-= 1.5=
+= 1.5.1 =
+* Removed ability to trigger with external cron job (a potential security risk)
+
+= 1.5 =
 * Bring up to WordPress coding standards
 * PHPCS ruleset
 * Travis testing
 * Base for unit testing
 
-= 1.4.4=
+= 1.4.4 =
 * Avoid PHP Strict notices
 * PHP 7 compatibility
 * Minor cleanup on some internal code
