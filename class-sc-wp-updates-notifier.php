@@ -15,7 +15,7 @@
  * Plugin URI: https://github.com/l3rady/wp-updates-notifier
  * Description: Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
  * Contributors: l3rady, eherman24, alleyinteractive
- * Version: 1.5.0
+ * Version: 1.5.1
  * Author: Scott Cariss
  * Author URI: http://l3rady.com/
  * Text Domain: wp-updates-notifier
