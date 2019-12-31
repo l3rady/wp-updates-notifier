@@ -251,7 +251,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$themes_updated = false; // no theme updates
 			}
 			if ( $core_updated || $plugins_updated || $themes_updated ) { // Did anything come back as need updating?
-				$message  = __( 'There are updates available for your WordPress site:', 'wp-updates-notifier' ) . "\n" . $message . "\n";
+				$message  = __( 'There are updates available for your WordPress site:', 'wp-updates-notifier' ) . ' ' . get_bloginfo() . ' @ ' . get_bloginfo( 'url' ) . "\n" . $message . "\n";
 				$message .= sprintf( __( 'Please visit %s to update.', 'wp-updates-notifier' ), admin_url( 'update-core.php' ) );
 
 				// Send email notification.
