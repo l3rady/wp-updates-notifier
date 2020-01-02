@@ -496,20 +496,39 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			return is_wp_error( $response );
 		}
 
+		/**
+		 * Get the from email address.
+		 * 
+		 * @return String email address.
+		 */
 		public function sc_wpun_wp_mail_from() {
 			$settings = $this->get_set_options( self::OPT_FIELD );
 			return $settings['notify_from'];
 		}
 
+		/**
+		 * Get the name to send email from.
+		 * 
+		 * @return String From Name.
+		 */
 		public function sc_wpun_wp_mail_from_name() {
 			return __( 'WP Updates Notifier', 'wp-updates-notifier' );
 		}
 
+		/**
+		 * Email type.
+		 * 
+		 * @return String email type.
+		 */
 		public function sc_wpun_wp_mail_content_type() {
 			return 'text/plain';
 		}
 
-
+		/**
+		 * Change the last time checked.
+		 *
+		 * @return void
+		 */
 		private function log_last_check_time() {
 			$options                    = $this->get_set_options( self::OPT_FIELD );
 			$options['last_check_time'] = time();
@@ -554,36 +573,51 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 		}
 
-
+		/**
+		 * Get cron schedules. 
+		 * 
+		 * @return Array cron schedules.
+		 */
 		private function get_schedules() {
 			$schedules = wp_get_schedules();
 			uasort( $schedules, array( $this, 'sort_by_interval' ) );
 			return $schedules;
 		}
 
-
+		/**
+		 * Get cron intervals. 
+		 * 
+		 * @return Array cron intervals.
+		 */
 		private function get_intervals() {
 			$intervals   = array_keys( $this->get_schedules() );
 			$intervals[] = 'manual';
 			return $intervals;
 		}
 
-
+		/**
+		 * Simple sort function. 
+		 * 
+		 * @return int Frequency internval.
+		 */
 		private function sort_by_interval( $a, $b ) {
 			return $a['interval'] - $b['interval'];
 		}
 
-
 		/**
-		 * EVERYTHING SETTINGS
-		 *
-		 * I'm not going to comment any of this as its all pretty
-		 * much straight forward use of the WordPress Settings API.
+		 * Add admin menu.
+		 * 
+		 * @return void
 		 */
 		public function admin_settings_menu() {
 			add_options_page( __( 'Updates Notifier', 'wp-updates-notifier' ), __( 'Updates Notifier', 'wp-updates-notifier' ), 'manage_options', 'wp-updates-notifier', array( $this, 'settings_page' ) );
 		}
 
+		/**
+		 * Output settings page and trigger sending tests.
+		 * 
+		 * @return void
+		 */
 		public function settings_page() {
 			// Trigger tests if they are ready to be sent.
 			$sc_wpun_send_test_slack = get_transient( 'sc_wpun_send_test_slack' );
@@ -636,6 +670,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		/**
+		 * Add all of the settings for the settings page.
+		 * 
+		 * @return void
+		 */
 		public function admin_settings_init() {
 			register_setting( self::OPT_FIELD, self::OPT_FIELD, array( $this, 'sc_wpun_settings_validate' ) ); // Register Settings
 
@@ -659,6 +698,13 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_settings_field( 'sc_wpun_settings_slack_notifications_slack_channel_override', __( 'Channel to notify', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_channel_override' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
 		}
 
+		/**
+		 * Validate and sanitize all of the settings from the page form.
+		 *
+		 * @param array $input Array of unsanitized options from the page form.
+		 * 
+		 * @return array Array of sanitized and validated settings.
+		 */
 		public function sc_wpun_settings_validate( $input ) {
 			check_admin_referer( 'sc_wpun_settings-options' );
 			$valid = $this->get_set_options( self::OPT_FIELD );
@@ -809,17 +855,37 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			return $valid;
 		}
 
+		/**
+		 * Send a test email.
+		 * 
+		 * @return void
+		 */
 		public function send_test_email() {
 			$this->send_email_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
 		}
 
+		/**
+		 * Send a test slack message.
+		 * 
+		 * @return void
+		 */
 		public function send_test_slack() {
 			$this->send_slack_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
 		}
 
+		/**
+		 * Output the text at the top of the main settings section (function is required even if it outputs nothing).
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_main_text() {
 		}
 
+		/**
+		 * Settings field for frequency.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_main_field_frequency() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -831,6 +897,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		/**
+		 * Settings field for notify plugins.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_main_field_notify_plugins() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -843,6 +914,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		/**
+		 * Settings field for notify themes.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_main_field_notify_themes() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -855,6 +931,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		/**
+		 * Settings field for notify automatic.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_main_field_notify_automatic() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -863,6 +944,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		/**
+		 * Settings field for hiding updates.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_main_field_hide_updates() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -873,10 +959,19 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
-		/** Email settings **/
+		/**
+		 * Output the text at the top of the email settings section (function is required even if it outputs nothing).
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_email_notifications_text() {
 		}
 
+		/**
+		 * Settings field for email notifications.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_email_notifications_field_email_notifications() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -885,6 +980,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		/**
+		 * Settings field for email to field.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_email_notifications_field_notify_to() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -893,6 +993,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		/**
+		 * Settings field for email from field.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_email_notifications_field_notify_from() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -900,10 +1005,19 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
-		/** Slack settings **/
+		/**
+		 * Output the text at the top of the slack settings section (function is required even if it outputs nothing).
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_slack_notifications_text() {
 		}
 
+		/**
+		 * Settings field for slack notifications.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_slack_notifications_field_slack_notifications() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -912,6 +1026,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		/**
+		 * Settings field for slack webhook url.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_slack_notifications_field_slack_webhook_url() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -919,6 +1038,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<?php
 		}
 
+		/**
+		 * Settings field for slack channel override.
+		 * 
+		 * @return void
+		 */
 		public function sc_wpun_settings_slack_notifications_field_slack_channel_override() {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
@@ -926,7 +1050,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			<span class="description"><?php esc_html_e( 'Not requred.', 'wp-updates-notifier' ); ?></span>
 			<?php
 		}
-		/**** END EVERYTHING SETTINGS */
 	}
 }
 
