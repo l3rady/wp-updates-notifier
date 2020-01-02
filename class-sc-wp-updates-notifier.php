@@ -118,6 +118,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					),
 					'last_check_time'        => false,
 				);
+
+				// If we are upgrading from settings before settings version 7, turn on email notifications by default.
+				if ( intval( $current_ver ) < 7 ) {
+					$defaults['email_notifications'] = 1;
+				}
+
 				// Intersect current options with defaults. Basically removing settings that are obsolete
 				$options = array_intersect_key( $options, $defaults );
 				// Merge current settings with defaults. Basically adding any new settings with defaults that we dont have.
