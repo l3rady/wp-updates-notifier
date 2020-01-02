@@ -587,12 +587,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		public function settings_page() {
 			// Trigger tests if they are ready to be sent.
 			$sc_wpun_send_test_slack = get_transient( 'sc_wpun_send_test_slack' );
-			if ( isset( $sc_wpun_send_test_slack ) && $sc_wpun_send_test_slack ) {
+			if ( $sc_wpun_send_test_slack ) {
 				delete_transient( 'sc_wpun_send_test_slack' );
 				$this->send_test_slack();
 			}
 			$sc_wpun_send_test_email = get_transient( 'sc_wpun_send_test_email' );
-			if ( isset( $sc_wpun_send_test_email ) && $sc_wpun_send_test_email ) {
+			if ( $sc_wpun_send_test_email ) {
 				delete_transient( 'sc_wpun_send_test_email' );
 				$this->send_test_email();
 			}
