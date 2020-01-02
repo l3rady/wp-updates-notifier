@@ -257,7 +257,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$themes_updated = false; // no theme updates
 			}
 			if ( $core_updated || $plugins_updated || $themes_updated ) { // Did anything come back as need updating?
-				$message  = __( 'There are updates available for your WordPress site:', 'wp-updates-notifier' ) . ' ' . esc_html( get_bloginfo() ) . ' @ ' . esc_url( home_url() ) . "\n" . esc_html( $message ) . "\n";
+				$message  = __( 'There are updates available for your WordPress site:', 'wp-updates-notifier' ) . ' ' . esc_html( get_bloginfo() ) . ' @ ' . esc_url( home_url() ) . "\n" . $message . "\n";
 				$message .= sprintf( __( 'Please visit %s to update.', 'wp-updates-notifier' ), admin_url( 'update-core.php' ) );
 
 				// Send email notification.
@@ -453,7 +453,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
 			add_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter
 			// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-			$response = wp_mail( $settings['notify_to'], apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', $message ) ); // send email
+			$response = wp_mail( $settings['notify_to'], apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', esc_html( $message ) ) ); // send email
 			// phpcs:enable
 			remove_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // remove from filter
 			remove_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // remove from name filter
@@ -474,9 +474,9 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 
 			$payload = array(
-				'username'   => 'WP Updates Notifier',
+				'username'   => __( 'WP Updates Notifier', 'wp-updates-notifier' ),
 				'icon_emoji' => ':robot_face:',
-				'text'       => $message,
+				'text'       => esc_html( $message ),
 			);
 
 			if ( ! empty( $settings['slack_channel_override'] ) && '' !== $settings['slack_channel_override'] ) {
