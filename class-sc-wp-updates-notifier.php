@@ -739,18 +739,13 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 
 			if ( 1 === $email_notifications ) {
-				if ( '' === $input['notify_to'] ) {
-					add_settings_error( 'sc_wpun_settings_email_notifications_notify_to', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'No to email to address entered', 'wp-updates-notifier' ), 'error' );
-					$email_notifications = 0;
-				} elseif ( '' === $input['notify_from'] ) {
-					add_settings_error( 'sc_wpun_settings_email_notifications_notify_from', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'No from email to address entered', 'wp-updates-notifier' ), 'error' );
-					$email_notifications = 0;
-				} else {
+				if ( ! empty( $valid['notify_to'] ) && ! empty( $valid['notify_from'] ) ) {
 					$email_notifications = 1;
+				} else {
+					add_settings_error( 'sc_wpun_settings_email_notifications_notify_from', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'Can not enable email notifications, addresses are not valid', 'wp-updates-notifier' ), 'error' );
+					$email_notifications = 0;
 				}
-			} else {
-				$email_notifications = 0;
-			}
+			} 
 			$valid['email_notifications'] = $email_notifications;
 
 			// Validate slack settings.
