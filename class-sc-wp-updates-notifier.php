@@ -597,7 +597,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Simple sort function. 
-		 * 
+		 * @param  int $a Integer for sorting.
+		 * @param  int $b Integer for sorting.
 		 * @return int Frequency internval.
 		 */
 		private function sort_by_interval( $a, $b ) {
