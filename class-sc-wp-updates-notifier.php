@@ -493,11 +493,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				) 
 			);
 
-			if ( is_wp_error( $response ) ) {
-				return false;
-			} else {
-				return true;
-			}
+			return is_wp_error( $response );
 		}
 
 		public function sc_wpun_wp_mail_from() {
