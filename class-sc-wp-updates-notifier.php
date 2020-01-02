@@ -734,7 +734,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 
 			$email_notifications = absint( isset( $input['email_notifications'] ) ? $input['email_notifications'] : 0 );
-			if ( $email_notifications > 1 ) {
+			if ( 1 < $email_notifications ) {
 				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Invalid notification email value entered', 'wp-updates-notifier' ), 'error' );
 			}
 
