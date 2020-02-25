@@ -503,7 +503,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			 *
 			 * @since 1.6.1
 			 *
-			 * @param String  $username Username string.
+			 * @param string  $username Username string.
 			 */
 			$username = __( 'WP Updates Notifier', 'wp-updates-notifier' );
 			$username = apply_filters( 'sc_wpun_slack_username', $username );
