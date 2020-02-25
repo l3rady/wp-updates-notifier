@@ -471,7 +471,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			 *
 			 * @since 1.6.1
 			 *
-			 * @param String  $message Email message.
+			 * @param string  $message Email message.
 			 */
 			$message = apply_filters( 'sc_wpun_email_content', $message );
 
