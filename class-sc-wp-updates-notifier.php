@@ -515,7 +515,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			 *
 			 * @since 1.6.1
 			 *
-			 * @param String  $user_icon Emoji string.
+			 * @param string  $user_icon Emoji string.
 			 */
 			$user_icon = ':robot_face:';
 			$user_icon = apply_filters( 'sc_wpun_slack_user_icon', $user_icon );
