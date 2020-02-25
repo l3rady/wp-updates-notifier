@@ -455,7 +455,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			 *
 			 * @since 1.6.1
 			 *
-			 * @param String  $subject Email subject line.
+			 * @param string  $subject Email subject line.
 			 */
 			$subject = sprintf( __( 'WP Updates Notifier: Updates Available @ %s', 'wp-updates-notifier' ), home_url() );
 			$subject = apply_filters( 'sc_wpun_email_subject', $subject );
