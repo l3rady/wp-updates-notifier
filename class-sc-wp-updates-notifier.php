@@ -559,7 +559,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			 *
 			 * @since 1.6.1
 			 *
-			 * @param String  $settings['slack_webhook_url'] Webhook url.
+			 * @param string  $settings['slack_webhook_url'] Webhook url.
 			 */
 			$slack_webhook_url = apply_filters( 'sc_wpun_slack_webhook_url', $settings['slack_webhook_url'] );
 
