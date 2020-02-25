@@ -548,7 +548,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			 *
 			 * @since 1.6.1
 			 *
-			 * @param String  $payload['channel'] Slack channel.
+			 * @param string  $payload['channel'] Slack channel.
 			 */
 			$payload['channel'] = apply_filters( 'sc_wpun_slack_channel', $payload['channel'] );
 
