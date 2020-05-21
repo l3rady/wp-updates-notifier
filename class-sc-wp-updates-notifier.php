@@ -335,7 +335,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 						$info        = plugins_api( 'plugin_information', array( 'slug' => $data->slug ) ); // get repository plugin info
 						$message    .= "\n" . sprintf( __( 'Plugin: %1$s is out of date. Please update from version %2$s to %3$s', 'wp-updates-notifier' ), $plugin_info['Name'], $plugin_info['Version'], $data->new_version ) . "\n";
 						$message    .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), $data->url ) . "\n";
-						$message    .= "\t" . sprintf( __( 'Changelog: %1$s%2$s', 'wp-updates-notifier' ), $data->url, 'changelog/' ) . "\n";
+						$message    .= "\t" . sprintf( __( 'Changelog: %1$s%2$s', 'wp-updates-notifier' ), $data->url, '#developers' ) . "\n";
 						if ( isset( $info->tested ) && version_compare( $info->tested, $wp_version, '>=' ) ) {
 							$compat = sprintf( __( 'Compatibility with WordPress %1$s: 100%% (according to its author)', 'wp-updates-notifier' ), $cur_wp_version );
 						} elseif ( isset( $info->compatibility[ $wp_version ][ $data->new_version ] ) ) {
