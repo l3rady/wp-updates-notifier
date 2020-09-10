@@ -447,7 +447,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 */
 		public function send_email_message( $message ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
-	
+
 			$subject = sprintf( __( 'WP Updates Notifier: Updates Available @ %s', 'wp-updates-notifier' ), home_url() );
 			add_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // add from filter
 			add_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
@@ -484,13 +484,13 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 
 			$response = wp_remote_post(
-				$settings['slack_webhook_url'], 
+				$settings['slack_webhook_url'],
 				array(
 					'method' => 'POST',
 					'body'   => array(
 						'payload' => wp_json_encode( $payload ),
 					),
-				) 
+				)
 			);
 
 			return is_wp_error( $response );
@@ -498,7 +498,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Get the from email address.
-		 * 
+		 *
 		 * @return String email address.
 		 */
 		public function sc_wpun_wp_mail_from() {
@@ -508,7 +508,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Get the name to send email from.
-		 * 
+		 *
 		 * @return String From Name.
 		 */
 		public function sc_wpun_wp_mail_from_name() {
@@ -517,7 +517,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Email type.
-		 * 
+		 *
 		 * @return String email type.
 		 */
 		public function sc_wpun_wp_mail_content_type() {
@@ -574,8 +574,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Get cron schedules. 
-		 * 
+		 * Get cron schedules.
+		 *
 		 * @return Array cron schedules.
 		 */
 		private function get_schedules() {
@@ -585,8 +585,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Get cron intervals. 
-		 * 
+		 * Get cron intervals.
+		 *
 		 * @return Array cron intervals.
 		 */
 		private function get_intervals() {
@@ -596,11 +596,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Simple sort function. 
-		 * 
+		 * Simple sort function.
+		 *
 		 * @param  int $a Integer for sorting.
 		 * @param  int $b Integer for sorting.
-		 * 
+		 *
 		 * @return int Frequency internval.
 		 */
 		private function sort_by_interval( $a, $b ) {
@@ -609,7 +609,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Add admin menu.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function admin_settings_menu() {
@@ -618,7 +618,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Output settings page and trigger sending tests.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function settings_page() {
@@ -675,7 +675,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Add all of the settings for the settings page.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function admin_settings_init() {
@@ -689,13 +689,13 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_settings_field( 'sc_wpun_settings_main_hide_updates', __( 'Hide core WP update nag from non-admin users?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_hide_updates' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 
 			// Email notification settings.
-			add_settings_section( 'sc_wpun_settings_email_notifications', __( 'Email Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_text' ), 'wp-updates-notifier' ); 
+			add_settings_section( 'sc_wpun_settings_email_notifications', __( 'Email Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_text' ), 'wp-updates-notifier' );
 			add_settings_field( 'sc_wpun_settings_email_notifications_email_notifications', __( 'Send email notifications?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_email_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 			add_settings_field( 'sc_wpun_settings_email_notifications_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 			add_settings_field( 'sc_wpun_settings_email_notifications_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 
 			// Slack notification settings.
-			add_settings_section( 'sc_wpun_settings_slack_notifications', __( 'Slack Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_text' ), 'wp-updates-notifier' ); 
+			add_settings_section( 'sc_wpun_settings_slack_notifications', __( 'Slack Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_text' ), 'wp-updates-notifier' );
 			add_settings_field( 'sc_wpun_settings_slack_notifications_slack_notifications', __( 'Send slack notifications?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
 			add_settings_field( 'sc_wpun_settings_slack_notifications_slack_webhook_url', __( 'Webhook url', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_webhook_url' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
 			add_settings_field( 'sc_wpun_settings_slack_notifications_slack_channel_override', __( 'Channel to notify', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_channel_override' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
@@ -705,7 +705,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * Validate and sanitize all of the settings from the page form.
 		 *
 		 * @param array $input Array of unsanitized options from the page form.
-		 * 
+		 *
 		 * @return array Array of sanitized and validated settings.
 		 */
 		public function sc_wpun_settings_validate( $input ) {
@@ -794,7 +794,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					add_settings_error( 'sc_wpun_settings_email_notifications_notify_from', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'Can not enable email notifications, addresses are not valid', 'wp-updates-notifier' ), 'error' );
 					$email_notifications = 0;
 				}
-			} 
+			}
 			$valid['email_notifications'] = $email_notifications;
 
 			// Validate slack settings.
@@ -836,7 +836,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$slack_notifications = 0;
 			}
 			$valid['slack_notifications'] = $slack_notifications;
-			
+
 			// Parse sending test notifiations.
 
 			if ( isset( $_POST['submitwithemail'] ) ) {
@@ -860,7 +860,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Send a test email.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function send_test_email() {
@@ -869,7 +869,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Send a test slack message.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function send_test_slack() {
@@ -878,7 +878,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Output the text at the top of the main settings section (function is required even if it outputs nothing).
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_text() {
@@ -886,7 +886,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for frequency.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_frequency() {
@@ -902,7 +902,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for notify plugins.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_notify_plugins() {
@@ -919,7 +919,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for notify themes.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_notify_themes() {
@@ -936,7 +936,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for notify automatic.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_notify_automatic() {
@@ -949,7 +949,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for hiding updates.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_hide_updates() {
@@ -964,7 +964,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Output the text at the top of the email settings section (function is required even if it outputs nothing).
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_email_notifications_text() {
@@ -972,7 +972,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for email notifications.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_email_notifications_field_email_notifications() {
@@ -985,7 +985,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for email to field.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_email_notifications_field_notify_to() {
@@ -998,7 +998,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for email from field.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_email_notifications_field_notify_from() {
@@ -1010,7 +1010,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Output the text at the top of the slack settings section (function is required even if it outputs nothing).
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_slack_notifications_text() {
@@ -1018,7 +1018,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for slack notifications.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_slack_notifications_field_slack_notifications() {
@@ -1031,7 +1031,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for slack webhook url.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_slack_notifications_field_slack_webhook_url() {
@@ -1043,7 +1043,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Settings field for slack channel override.
-		 * 
+		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_slack_notifications_field_slack_channel_override() {
