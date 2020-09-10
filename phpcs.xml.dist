@@ -7,6 +7,7 @@
 	 p flag: Show progress of the run.
 	 s flag: Show sniff codes in all reports.
 	-->
+	
 	<arg value="ps" />
 
 	<!-- Strip the filepaths down to the relevant bit. -->
