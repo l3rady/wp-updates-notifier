@@ -53,6 +53,29 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		const OPT_VERSION       = '7.0';
 		const CRON_NAME         = 'sc_wpun_update_check';
 
+		const MARKUP_VARS_SLACK = array(
+			'i_start'     => '_',
+			'i_end'       => '_',
+			'line_break'  => '
+',
+			'link_start'  => '<',
+			'link_middle' => '|',
+			'link_end'    => '>',
+			'b_start'     => '*',
+			'b_end'       => '*',
+		);
+
+		const MARKUP_VARS_EMAIL = array(
+			'i_start'     => '<i>',
+			'i_end'       => '</i>',
+			'line_break'  => '<br>',
+			'link_start'  => '<a href="',
+			'link_middle' => '">',
+			'link_end'    => '</a>',
+			'b_start'     => '<b>',
+			'b_end'       => '</b>',
+		);
+
 		public static $did_init = false;
 
 		public function __construct() {
@@ -260,12 +283,14 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 				// Send email notification.
 				if ( 1 === $options['email_notifications'] ) {
-					$this->send_email_message( $updates );
+					$message = $this->prepare_message( $updates, self::MARKUP_VARS_EMAIL );
+					$this->send_email_message( $message );
 				}
 
 				// Send slack notification.
 				if ( 1 === $options['slack_notifications'] ) {
-					$this->send_slack_message( $updates );
+					$message = $this->prepare_message( $updates, self::MARKUP_VARS_SLACK );
+					$this->send_slack_message( $message );
 				}
 			}
 
@@ -333,7 +358,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 							'name'          => $plugin_info['Name'],
 							'old_version'   => $plugin_info['Version'],
 							'new_version'   => $data->new_version,
-							'url'           => $data->url,
 							'changelog_url' => $data->url . 'changelog/',
 						);
 
@@ -435,6 +459,45 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 
 		/**
+		 * Prepare the message.
+		 *
+		 * @param array $updates Array of all of the updates to notifiy about.
+		 * @param array $markup_vars Array of the markup characters to use.
+		 *
+		 * @return string Message to be sent.
+		 */
+		public function prepare_message( $updates, $markup_vars ) {
+			$message = $markup_vars['i_start'] . __( 'Updates Available', 'wp-updates-notifier' ) . $markup_vars['i_end'] . $markup_vars['line_break'] . $markup_vars['b_start'] . esc_html( get_bloginfo() ) . $markup_vars['b_end'] . ' - ' . $markup_vars['link_start'] . esc_url( home_url() ) . $markup_vars['link_middle'] . esc_url( home_url() ) . $markup_vars['link_end'] . $markup_vars['line_break'];
+
+			if ( ! empty( $updates['core'] ) ) {
+				$message .= $markup_vars['line_break'] . $markup_vars['b_start'] . $markup_vars['link_start'] . esc_url( admin_url( 'update-core.php' ) ) . $markup_vars['link_middle'] . __( 'WordPress Core', 'wp-updates-notifier' ) . $markup_vars['link_end'] . $markup_vars['b_end'] . ' (' . $updates['core']['old_version'] . __( ' to ', 'wp-updates-notifier' ) . $updates['core']['old_version'] . ')' . $markup_vars['line_break'];
+			}
+
+			if ( ! empty( $updates['plugin'] ) ) {
+				$message .= $markup_vars['line_break'] . $markup_vars['b_start'] . $markup_vars['link_start'] . esc_url( admin_url( 'plugins.php' ) ) . $markup_vars['link_middle'] . __( 'Plugin Updates', 'wp-updates-notifier' ) . $markup_vars['link_end'] . $markup_vars['b_end'] . $markup_vars['line_break'];
+				foreach ( $updates['plugin'] as $plugin ) {
+					$message .= '	' . $plugin['name'];
+					if ( ! empty( $plugin['old_version'] ) && ! empty( $plugin['new_version'] ) ) {
+						$message .= ' (' . $plugin['old_version'] . __( ' to ', 'wp-updates-notifier' ) . $markup_vars['link_start'] . esc_url( $plugin['changelog_url'] ) . $markup_vars['link_middle'] . $plugin['old_version'] . $markup_vars['link_end'] . ')' . $markup_vars['line_break'];
+					}
+				}
+			}
+
+			if ( ! empty( $updates['theme'] ) ) {
+				$message .= $markup_vars['line_break'] . $markup_vars['b_start'] . $markup_vars['link_start'] . esc_url( admin_url( 'themes.php' ) ) . $markup_vars['link_middle'] . __( 'Theme Updates', 'wp-updates-notifier' ) . $markup_vars['link_end'] . $markup_vars['b_end'] . $markup_vars['line_break'];
+				foreach ( $updates['theme'] as $theme ) {
+					$message .= '	' . $theme['name'];
+					if ( ! empty( $theme['old_version'] ) && ! empty( $theme['new_version'] ) ) {
+						$message .= ' (' . $theme['old_version'] . __( ' to ', 'wp-updates-notifier' ) . $theme['old_version'] . ')' . $markup_vars['line_break'];
+					}
+				}
+			}
+
+			return $message;
+		}
+
+
+		/**
 		 * Sends email message.
 		 *
 		 * @param string $message Holds message to be sent in body of email.
@@ -449,7 +512,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
 			add_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter
 			// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-			$response = wp_mail( $settings['notify_to'], apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', esc_html( $message ) ) ); // send email
+			$response = wp_mail( $settings['notify_to'], apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', $message ) ); // send email
 			// phpcs:enable
 			remove_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // remove from filter
 			remove_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // remove from name filter
@@ -472,7 +535,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$payload = array(
 				'username'   => __( 'WP Updates Notifier', 'wp-updates-notifier' ),
 				'icon_emoji' => ':robot_face:',
-				'text'       => esc_html( $message ),
+				'text'       => $message,
 			);
 
 			if ( ! empty( $settings['slack_channel_override'] ) && '' !== $settings['slack_channel_override'] ) {
@@ -517,7 +580,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return String email type.
 		 */
 		public function sc_wpun_wp_mail_content_type() {
-			return 'text/plain';
+			return 'text/html';
 		}
 
 		/**
