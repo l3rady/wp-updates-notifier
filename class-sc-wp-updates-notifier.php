@@ -256,7 +256,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			} else {
 				$updates['theme'] = false; // no theme updates
 			}
-			if ( ! empty( $updates ) ) { // Did anything come back as need updating?
+			if ( ! empty( $updates['core'] ) || ! empty( $updates['plugin'] ) || ! empty( $updates['theme'] ) ) { // Did anything come back as need updating?
 
 				// Send email notification.
 				if ( 1 === $options['email_notifications'] ) {
