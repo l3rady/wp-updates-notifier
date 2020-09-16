@@ -411,10 +411,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating
 						$theme_info      = wp_get_theme( $key ); // get theme info
 						$theme_updates[] = array(
-							'name'          => $theme_info['Name'],
-							'old_version'   => $theme_info['Name'],
-							'new_version'   => $data['new_version'],
+							'name'        => $theme_info['Name'],
+							'old_version' => $theme_info['Name'],
+							'new_version' => $data['new_version'],
 						);
+
 						$settings['notified']['theme'][ $key ] = $data['new_version']; // set theme version we are notifying about
 					}
 					$this->get_set_options( self::OPT_FIELD, $settings ); // save settings
