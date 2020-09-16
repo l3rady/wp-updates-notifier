@@ -56,8 +56,8 @@ before_script:
         composer global require "phpunit/phpunit=6.1.*"
         ;;
       *)
-        echo "Using PHPUnit 4.8"
-        composer global require "phpunit/phpunit=4.8.*"
+        echo "Using PHPUnit 5.4"
+        composer global require "phpunit/phpunit=5.4.*"
         ;;
     esac
 
