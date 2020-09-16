@@ -56,6 +56,8 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 = 1.6.1 =
 * Added filters for email and slack notifications
+* Added formating for html emails and fancy slack messages
+* Moved message composition to its own function
 
 = 1.6 =
 * Added slack notifications and testing button
@@ -137,13 +139,13 @@ Two filters have been provided to allow you to alter the email subject and email
 
 <h4>sc_wpun_email_subject</h4>
 
-@parameters:<br /> 
+@parameters:<br />
 $email_subject - the email subject to be filtered.
 
 <strong>Example:</strong>
 `
-/* 
-*	Alter the email subject being sent by WP Updates Notifier 
+/*
+*	Alter the email subject being sent by WP Updates Notifier
 */
 function alter_wp_updates_notifier_email_subject( $email_subject ) {
 	$email_subject = 'This is the new email subject for updates notifier';
@@ -159,8 +161,8 @@ $message - the content of the email to be filtered
 
 <strong>Example:</strong>
 `
-/* 
-*	Alter the email content being sent by WP Updates Notifier 
+/*
+*	Alter the email content being sent by WP Updates Notifier
 */
 function alter_wp_updates_notifier_email_content( $message ) {
 	$message = 'This is our new email content that will override the default.';
