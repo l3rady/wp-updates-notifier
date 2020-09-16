@@ -279,6 +279,18 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			} else {
 				$updates['theme'] = false; // no theme updates
 			}
+
+			/**
+			 * Filters the updates before their parsed for sending.
+			 *
+			 * Change the updates array of core, plugins, and themes to be notified about.
+			 *
+			 * @since 1.6.1
+			 *
+			 * @param array  $updates Array of updates to notify about.
+			 */
+			$updates = apply_filters( 'sc_wpun_updates', $updates );
+
 			if ( ! empty( $updates['core'] ) || ! empty( $updates['plugin'] ) || ! empty( $updates['theme'] ) ) { // Did anything come back as need updating?
 
 				// Send email notification.
