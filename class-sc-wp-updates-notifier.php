@@ -281,7 +281,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 
 			/**
-			 * Filters the updates before their parsed for sending.
+			 * Filters the updates before they're parsed for sending.
 			 *
 			 * Change the updates array of core, plugins, and themes to be notified about.
 			 *
