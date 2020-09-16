@@ -7,6 +7,7 @@
 	 p flag: Show progress of the run.
 	 s flag: Show sniff codes in all reports.
 	-->
+
 	<arg value="ps" />
 
 	<!-- Strip the filepaths down to the relevant bit. -->
@@ -38,9 +39,6 @@
 		<!-- Turn off some rules that we don't like. -->
 		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found" />
 	</rule>
-
-	<!-- Use the VIP Go ruleset. -->
-	<rule ref="WordPress-VIP-Go" />
 
 	<!-- The version set here matches the minimum version tested in .travis.yml.  -->
 	<config name="minimum_supported_wp_version" value="4.9" />
@@ -95,20 +93,6 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array" value="sc_,ai_,_ai" />
-		</properties>
-	</rule>
-
-	<rule ref="Generic.PHP.ForbiddenFunctions">
-		<properties>
-			<!--
-			WordPress.com VIP does not propagate wp_cache_set data across datacenters,
-			largely to avoid attempting to propagate large (>50k) data for batcache.
-			-->
-			<property name="forbiddenFunctions" type="array" value="wp_cache_add=>wp_cache_set" />
-			<!-- This is the newer format, only supported in PHPCS 3.3.0+
-			<property name="forbiddenFunctions" type="array">
-				<element key="wp_cache_add" value="wp_cache_set"/>
-			</property> -->
 		</properties>
 	</rule>
 
