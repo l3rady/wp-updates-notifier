@@ -447,7 +447,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 */
 		public function send_email_message( $message ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
-	
+
 			/**
 			 * Filters the email subject.
 			 *
@@ -463,7 +463,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // add from filter
 			add_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
 			add_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter
-		
+
 			/**
 			 * Filters the email content.
 			 *
@@ -507,7 +507,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			 */
 			$username = __( 'WP Updates Notifier', 'wp-updates-notifier' );
 			$username = apply_filters( 'sc_wpun_slack_username', $username );
-			
+
 			/**
 			 * Filters the Slack user icon.
 			 *
@@ -564,7 +564,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$slack_webhook_url = apply_filters( 'sc_wpun_slack_webhook_url', $settings['slack_webhook_url'] );
 
 			$response = wp_remote_post(
-				$slack_webhook_url, 
+				$slack_webhook_url,
 				array(
 					'method' => 'POST',
 					'body'   => array(
