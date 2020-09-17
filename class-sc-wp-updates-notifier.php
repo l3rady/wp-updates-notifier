@@ -15,7 +15,7 @@
  * Plugin URI: https://github.com/l3rady/wp-updates-notifier
  * Description: Sends email or Slack message to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
  * Contributors: l3rady, eherman24, alleyinteractive
- * Version: 1.6.0
+ * Version: 1.6.1
  * Author: Scott Cariss
  * Author URI: http://l3rady.com/
  * Text Domain: wp-updates-notifier
@@ -52,6 +52,29 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
 		const OPT_VERSION       = '7.0';
 		const CRON_NAME         = 'sc_wpun_update_check';
+
+		const MARKUP_VARS_SLACK = array(
+			'i_start'     => '_',
+			'i_end'       => '_',
+			'line_break'  => '
+',
+			'link_start'  => '<',
+			'link_middle' => '|',
+			'link_end'    => '>',
+			'b_start'     => '*',
+			'b_end'       => '*',
+		);
+
+		const MARKUP_VARS_EMAIL = array(
+			'i_start'     => '<i>',
+			'i_end'       => '</i>',
+			'line_break'  => '<br>',
+			'link_start'  => '<a href="',
+			'link_middle' => '">',
+			'link_end'    => '</a>',
+			'b_start'     => '<b>',
+			'b_end'       => '</b>',
+		);
 
 		public static $did_init = false;
 
@@ -243,30 +266,42 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function do_update_check() {
-			$options      = $this->get_set_options( self::OPT_FIELD ); // get settings
-			$message      = ''; // start with a blank message
-			$core_updated = $this->core_update_check( $message ); // check the WP core for updates
+			$options         = $this->get_set_options( self::OPT_FIELD ); // get settings
+			$updates         = array(); // store all of the updates here.
+			$updates['core'] = $this->core_update_check(); // check the WP core for updates
 			if ( 0 !== $options['notify_plugins'] ) { // are we to check for plugin updates?
-				$plugins_updated = $this->plugins_update_check( $message, $options['notify_plugins'] ); // check for plugin updates
+				$updates['plugin'] = $this->plugins_update_check( $options['notify_plugins'] ); // check for plugin updates
 			} else {
-				$plugins_updated = false; // no plugin updates
+				$updates['plugin'] = false; // no plugin updates
 			}
 			if ( 0 !== $options['notify_themes'] ) { // are we to check for theme updates?
-				$themes_updated = $this->themes_update_check( $message, $options['notify_themes'] ); // check for theme updates
+				$updates['theme'] = $this->themes_update_check( $options['notify_themes'] ); // check for theme updates
 			} else {
-				$themes_updated = false; // no theme updates
+				$updates['theme'] = false; // no theme updates
 			}
-			if ( $core_updated || $plugins_updated || $themes_updated ) { // Did anything come back as need updating?
-				$message  = __( 'There are updates available for your WordPress site:', 'wp-updates-notifier' ) . ' ' . esc_html( get_bloginfo() ) . ' @ ' . esc_url( home_url() ) . "\n" . $message . "\n";
-				$message .= sprintf( __( 'Please visit %s to update.', 'wp-updates-notifier' ), admin_url( 'update-core.php' ) );
+
+			/**
+			 * Filters the updates before they're parsed for sending.
+			 *
+			 * Change the updates array of core, plugins, and themes to be notified about.
+			 *
+			 * @since 1.6.1
+			 *
+			 * @param array  $updates Array of updates to notify about.
+			 */
+			$updates = apply_filters( 'sc_wpun_updates', $updates );
+
+			if ( ! empty( $updates['core'] ) || ! empty( $updates['plugin'] ) || ! empty( $updates['theme'] ) ) { // Did anything come back as need updating?
 
 				// Send email notification.
 				if ( 1 === $options['email_notifications'] ) {
+					$message = $this->prepare_message( $updates, self::MARKUP_VARS_EMAIL );
 					$this->send_email_message( $message );
 				}
 
 				// Send slack notification.
 				if ( 1 === $options['slack_notifications'] ) {
+					$message = $this->prepare_message( $updates, self::MARKUP_VARS_SLACK );
 					$this->send_slack_message( $message );
 				}
 			}
@@ -278,11 +313,9 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Checks to see if any WP core updates
 		 *
-		 * @param string $message holds message to be sent via notification.
-		 *
-		 * @return bool
+		 * @return array Array of core updates.
 		 */
-		private function core_update_check( &$message ) {
+		private function core_update_check() {
 			global $wp_version;
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 			do_action( 'wp_version_check' ); // force WP to check its core for updates
@@ -292,10 +325,13 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					require_once ABSPATH . WPINC . '/version.php'; // Including this because some plugins can mess with the real version stored in the DB.
 					$new_core_ver                 = $update_core->updates[0]->current; // The new WP core version
 					$old_core_ver                 = $wp_version; // the old WP core version
-					$message                     .= "\n" . sprintf( __( 'WP-Core: WordPress is out of date. Please update from version %1$s to %2$s', 'wp-updates-notifier' ), $old_core_ver, $new_core_ver ) . "\n";
+					$core_updates                 = array(
+						'old_version' => $old_core_ver,
+						'new_version' => $new_core_ver,
+					);
 					$settings['notified']['core'] = $new_core_ver; // set core version we are notifying about
 					$this->get_set_options( self::OPT_FIELD, $settings ); // update settings
-					return true; // we have updates so return true
+					return $core_updates; // we have updates so return the array of updates
 				} else {
 					return false; // There are updates but we have already notified in the past.
 				}
@@ -309,17 +345,15 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Check to see if any plugin updates.
 		 *
-		 * @param string $message     Holds message to be sent via notification.
-		 * @param int    $all_or_active Should we look for all plugins or just active ones.
+		 * @param int $all_or_active Should we look for all plugins or just active ones.
 		 *
 		 * @return bool
 		 */
-		private function plugins_update_check( &$message, $all_or_active ) {
-			global $wp_version;
-			$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
-			$settings       = $this->get_set_options( self::OPT_FIELD ); // get settings
+		private function plugins_update_check( $all_or_active ) {
+			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 			do_action( 'wp_update_plugins' ); // force WP to check plugins for updates
 			$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates
+			$plugin_updates = array(); // array to store all of the plugin updates
 			if ( ! empty( $update_plugins->response ) ) { // any plugin updates available?
 				$plugins_need_update = $update_plugins->response; // plugins that need updating
 				if ( 2 === $all_or_active ) { // are we to check just active plugins?
@@ -331,24 +365,18 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					require_once ABSPATH . 'wp-admin/includes/plugin-install.php'; // Required for plugin API
 					require_once ABSPATH . WPINC . '/version.php'; // Required for WP core version
 					foreach ( $plugins_need_update as $key => $data ) { // loop through the plugins that need updating
-						$plugin_info = get_plugin_data( WP_PLUGIN_DIR . '/' . $key ); // get local plugin info
-						$info        = plugins_api( 'plugin_information', array( 'slug' => $data->slug ) ); // get repository plugin info
-						$message    .= "\n" . sprintf( __( 'Plugin: %1$s is out of date. Please update from version %2$s to %3$s', 'wp-updates-notifier' ), $plugin_info['Name'], $plugin_info['Version'], $data->new_version ) . "\n";
-						$message    .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), $data->url ) . "\n";
-						$message    .= "\t" . sprintf( __( 'Changelog: %1$s%2$s', 'wp-updates-notifier' ), $data->url, 'changelog/' ) . "\n";
-						if ( isset( $info->tested ) && version_compare( $info->tested, $wp_version, '>=' ) ) {
-							$compat = sprintf( __( 'Compatibility with WordPress %1$s: 100%% (according to its author)', 'wp-updates-notifier' ), $cur_wp_version );
-						} elseif ( isset( $info->compatibility[ $wp_version ][ $data->new_version ] ) ) {
-							$compat = $info->compatibility[ $wp_version ][ $data->new_version ];
-							$compat = sprintf( __( 'Compatibility with WordPress %1$s: %2$d%% (%3$d "works" votes out of %4$d total)', 'wp-updates-notifier' ), $wp_version, $compat[0], $compat[2], $compat[1] );
-						} else {
-							$compat = sprintf( __( 'Compatibility with WordPress %1$s: Unknown', 'wp-updates-notifier' ), $wp_version );
-						}
-						$message                               .= "\t" . sprintf( __( 'Compatibility: %s', 'wp-updates-notifier' ), $compat ) . "\n";
+						$plugin_info      = get_plugin_data( WP_PLUGIN_DIR . '/' . $key ); // get local plugin info
+						$plugin_updates[] = array(
+							'name'          => $plugin_info['Name'],
+							'old_version'   => $plugin_info['Version'],
+							'new_version'   => $data->new_version,
+							'changelog_url' => $data->url . 'changelog/',
+						);
+
 						$settings['notified']['plugin'][ $key ] = $data->new_version; // set plugin version we are notifying about
 					}
 					$this->get_set_options( self::OPT_FIELD, $settings ); // save settings
-					return true; // we have plugin updates return true
+					return $plugin_updates; // we have plugin updates return the array
 				}
 			} else {
 				if ( 0 !== count( $settings['notified']['plugin'] ) ) { // is there any plugin notifications?
@@ -363,15 +391,15 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Check to see if any theme updates.
 		 *
-		 * @param string $message     Holds message to be sent via notification.
-		 * @param int    $all_or_active Should we look for all themes or just active ones.
+		 * @param int $all_or_active Should we look for all themes or just active ones.
 		 *
 		 * @return bool
 		 */
-		private function themes_update_check( &$message, $all_or_active ) {
+		private function themes_update_check( $all_or_active ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 			do_action( 'wp_update_themes' ); // force WP to check for theme updates
 			$update_themes = get_site_transient( 'update_themes' ); // get information of updates
+			$theme_updates = array(); // array to store all the theme updates
 			if ( ! empty( $update_themes->response ) ) { // any theme updates available?
 				$themes_need_update = $update_themes->response; // themes that need updating
 				if ( 2 === $all_or_active ) { // are we to check just active themes?
@@ -381,12 +409,17 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$themes_need_update = apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ); // additional filtering of themes need update
 				if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 					foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating
-						$theme_info                            = wp_get_theme( $key ); // get theme info
-						$message                              .= "\n" . sprintf( __( 'Theme: %1$s is out of date. Please update from version %2$s to %3$s', 'wp-updates-notifier' ), $theme_info['Name'], $theme_info['Version'], $data['new_version'] ) . "\n";
+						$theme_info      = wp_get_theme( $key ); // get theme info
+						$theme_updates[] = array(
+							'name'        => $theme_info['Name'],
+							'old_version' => $theme_info['Name'],
+							'new_version' => $data['new_version'],
+						);
+
 						$settings['notified']['theme'][ $key ] = $data['new_version']; // set theme version we are notifying about
 					}
 					$this->get_set_options( self::OPT_FIELD, $settings ); // save settings
-					return true; // we have theme updates return true
+					return $theme_updates; // we have theme updates return the array of updates
 				}
 			} else {
 				if ( 0 !== count( $settings['notified']['theme'] ) ) { // is there any theme notifications?
@@ -439,6 +472,63 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 
 		/**
+		 * Prepare the message.
+		 *
+		 * @param array $updates Array of all of the updates to notifiy about.
+		 * @param array $markup_vars Array of the markup characters to use.
+		 *
+		 * @return string Message to be sent.
+		 */
+		public function prepare_message( $updates, $markup_vars ) {
+			$message = $markup_vars['i_start'] . esc_html( __( 'Updates Available', 'wp-updates-notifier' ) )
+			. $markup_vars['i_end'] . $markup_vars['line_break'] . $markup_vars['b_start']
+			. esc_html( get_bloginfo() ) . $markup_vars['b_end'] . ' - '
+			. $markup_vars['link_start'] . esc_url( home_url() ) . $markup_vars['link_middle']
+			. esc_url( home_url() ) . $markup_vars['link_end'] . $markup_vars['line_break'];
+
+			if ( ! empty( $updates['core'] ) ) {
+				$message .= $markup_vars['line_break'] . $markup_vars['b_start'] . $markup_vars['link_start']
+				. esc_url( admin_url( 'update-core.php' ) ) . $markup_vars['link_middle']
+				. esc_html( __( 'WordPress Core', 'wp-updates-notifier' ) ) . $markup_vars['link_end']
+				. $markup_vars['b_end'] . ' (' . $updates['core']['old_version'] . esc_html( __( ' to ', 'wp-updates-notifier' ) )
+				. $updates['core']['new_version'] . ')' . $markup_vars['line_break'];
+			}
+
+			if ( ! empty( $updates['plugin'] ) ) {
+				$message .= $markup_vars['line_break'] . $markup_vars['b_start'] . $markup_vars['link_start']
+				. esc_url( admin_url( 'plugins.php?plugin_status=upgrade' ) ) . $markup_vars['link_middle']
+				. esc_html( __( 'Plugin Updates', 'wp-updates-notifier' ) ) . $markup_vars['link_end']
+				. $markup_vars['b_end'] . $markup_vars['line_break'];
+
+				foreach ( $updates['plugin'] as $plugin ) {
+					$message .= '	' . $plugin['name'];
+					if ( ! empty( $plugin['old_version'] ) && ! empty( $plugin['new_version'] ) ) {
+						$message .= ' (' . $plugin['old_version'] . esc_html( __( ' to ', 'wp-updates-notifier' ) )
+						. $markup_vars['link_start'] . esc_url( $plugin['changelog_url'] ) . $markup_vars['link_middle']
+						. $plugin['new_version'] . $markup_vars['link_end'] . ')' . $markup_vars['line_break'];
+					}
+				}
+			}
+
+			if ( ! empty( $updates['theme'] ) ) {
+				$message .= $markup_vars['line_break'] . $markup_vars['b_start'] . $markup_vars['link_start']
+				. esc_url( admin_url( 'themes.php' ) ) . $markup_vars['link_middle'] . esc_html( __( 'Theme Updates', 'wp-updates-notifier' ) )
+				. $markup_vars['link_end'] . $markup_vars['b_end'] . $markup_vars['line_break'];
+
+				foreach ( $updates['theme'] as $theme ) {
+					$message .= '	' . $theme['name'];
+					if ( ! empty( $theme['old_version'] ) && ! empty( $theme['new_version'] ) ) {
+						$message .= ' (' . $theme['old_version'] . esc_html( __( ' to ', 'wp-updates-notifier' ) )
+						. $theme['new_version'] . ')' . $markup_vars['line_break'];
+					}
+				}
+			}
+
+			return $message;
+		}
+
+
+		/**
 		 * Sends email message.
 		 *
 		 * @param string $message Holds message to be sent in body of email.
@@ -448,12 +538,35 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		public function send_email_message( $message ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 
+			/**
+			 * Filters the email subject.
+			 *
+			 * Change the subject line that gets sent in the email.
+			 *
+			 * @since 1.6.1
+			 *
+			 * @param string  $subject Email subject line.
+			 */
 			$subject = sprintf( __( 'WP Updates Notifier: Updates Available @ %s', 'wp-updates-notifier' ), home_url() );
+			$subject = apply_filters( 'sc_wpun_email_subject', $subject );
+
 			add_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // add from filter
 			add_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter
 			add_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter
+
+			/**
+			 * Filters the email content.
+			 *
+			 * Change the message that gets sent in the email.
+			 *
+			 * @since 1.6.1
+			 *
+			 * @param string  $message Email message.
+			 */
+			$message = apply_filters( 'sc_wpun_email_content', $message );
+
 			// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-			$response = wp_mail( $settings['notify_to'], apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', esc_html( $message ) ) ); // send email
+			$response = wp_mail( $settings['notify_to'], apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', $message ) ); // send email
 			// phpcs:enable
 			remove_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // remove from filter
 			remove_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // remove from name filter
@@ -473,18 +586,75 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		public function send_slack_message( $message ) {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 
+			/**
+			 * Filters the Slack username.
+			 *
+			 * Change the username that is used to post to Slack.
+			 *
+			 * @since 1.6.1
+			 *
+			 * @param string  $username Username string.
+			 */
+			$username = __( 'WP Updates Notifier', 'wp-updates-notifier' );
+			$username = apply_filters( 'sc_wpun_slack_username', $username );
+
+			/**
+			 * Filters the Slack user icon.
+			 *
+			 * Change the user icon that is posted to Slack.
+			 *
+			 * @since 1.6.1
+			 *
+			 * @param string  $user_icon Emoji string.
+			 */
+			$user_icon = ':robot_face:';
+			$user_icon = apply_filters( 'sc_wpun_slack_user_icon', $user_icon );
+
+			/**
+			 * Filters the slack message content.
+			 *
+			 * Change the message content that is posted to Slack.
+			 *
+			 * @since 1.6.1
+			 *
+			 * @param String  $message Message posted to Slack.
+			 */
+			$message = apply_filters( 'sc_wpun_slack_content', $message );
+
 			$payload = array(
-				'username'   => __( 'WP Updates Notifier', 'wp-updates-notifier' ),
-				'icon_emoji' => ':robot_face:',
-				'text'       => esc_html( $message ),
+				'username'   => $username,
+				'icon_emoji' => $user_icon,
+				'text'       => $message,
 			);
 
 			if ( ! empty( $settings['slack_channel_override'] ) && '' !== $settings['slack_channel_override'] ) {
 				$payload['channel'] = $settings['slack_channel_override'];
 			}
 
+			/**
+			 * Filters the Slack channel.
+			 *
+			 * Change the Slack channel to post to.
+			 *
+			 * @since 1.6.1
+			 *
+			 * @param string  $payload['channel'] Slack channel.
+			 */
+			$payload['channel'] = apply_filters( 'sc_wpun_slack_channel', $payload['channel'] );
+
+			/**
+			 * Filters the Slack webhook url.
+			 *
+			 * Change the webhook url that is called by the plugin to post to Slack.
+			 *
+			 * @since 1.6.1
+			 *
+			 * @param string  $settings['slack_webhook_url'] Webhook url.
+			 */
+			$slack_webhook_url = apply_filters( 'sc_wpun_slack_webhook_url', $settings['slack_webhook_url'] );
+
 			$response = wp_remote_post(
-				$settings['slack_webhook_url'],
+				$slack_webhook_url,
 				array(
 					'method' => 'POST',
 					'body'   => array(
@@ -521,7 +691,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return String email type.
 		 */
 		public function sc_wpun_wp_mail_content_type() {
-			return 'text/plain';
+			return 'text/html';
 		}
 
 		/**
