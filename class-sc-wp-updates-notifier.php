@@ -491,12 +491,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				. esc_url( admin_url( 'update-core.php' ) ) . $markup_vars['link_middle']
 				. esc_html( __( 'WordPress Core', 'wp-updates-notifier' ) ) . $markup_vars['link_end']
 				. $markup_vars['b_end'] . ' (' . $updates['core']['old_version'] . esc_html( __( ' to ', 'wp-updates-notifier' ) )
-				. $updates['core']['old_version'] . ')' . $markup_vars['line_break'];
+				. $updates['core']['new_version'] . ')' . $markup_vars['line_break'];
 			}
 
 			if ( ! empty( $updates['plugin'] ) ) {
 				$message .= $markup_vars['line_break'] . $markup_vars['b_start'] . $markup_vars['link_start']
-				. esc_url( admin_url( 'plugins.php' ) ) . $markup_vars['link_middle']
+				. esc_url( admin_url( 'plugins.php?plugin_status=upgrade' ) ) . $markup_vars['link_middle']
 				. esc_html( __( 'Plugin Updates', 'wp-updates-notifier' ) ) . $markup_vars['link_end']
 				. $markup_vars['b_end'] . $markup_vars['line_break'];
 
@@ -505,7 +505,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					if ( ! empty( $plugin['old_version'] ) && ! empty( $plugin['new_version'] ) ) {
 						$message .= ' (' . $plugin['old_version'] . esc_html( __( ' to ', 'wp-updates-notifier' ) )
 						. $markup_vars['link_start'] . esc_url( $plugin['changelog_url'] ) . $markup_vars['link_middle']
-						. $plugin['old_version'] . $markup_vars['link_end'] . ')' . $markup_vars['line_break'];
+						. $plugin['new_version'] . $markup_vars['link_end'] . ')' . $markup_vars['line_break'];
 					}
 				}
 			}
@@ -519,7 +519,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					$message .= '	' . $theme['name'];
 					if ( ! empty( $theme['old_version'] ) && ! empty( $theme['new_version'] ) ) {
 						$message .= ' (' . $theme['old_version'] . esc_html( __( ' to ', 'wp-updates-notifier' ) )
-						. $theme['old_version'] . ')' . $markup_vars['line_break'];
+						. $theme['new_version'] . ')' . $markup_vars['line_break'];
 					}
 				}
 			}
