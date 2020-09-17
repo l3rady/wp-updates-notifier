@@ -55,6 +55,7 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 == Changelog ==
 
 = 1.6.1 =
+* Removed option to check inactive plugins and themes
 * Added filters for email and slack notifications
 * Added formating for html emails and fancy slack messages
 * Moved message composition to its own function

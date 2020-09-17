@@ -50,7 +50,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 	class SC_WP_Updates_Notifier {
 		const OPT_FIELD         = 'sc_wpun_settings';
 		const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-		const OPT_VERSION       = '7.0';
+		const OPT_VERSION       = '8.0';
 		const CRON_NAME         = 'sc_wpun_update_check';
 
 		const MARKUP_VARS_SLACK = array(
@@ -270,12 +270,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$updates         = array(); // store all of the updates here.
 			$updates['core'] = $this->core_update_check(); // check the WP core for updates
 			if ( 0 !== $options['notify_plugins'] ) { // are we to check for plugin updates?
-				$updates['plugin'] = $this->plugins_update_check( $options['notify_plugins'] ); // check for plugin updates
+				$updates['plugin'] = $this->plugins_update_check(); // check for plugin updates
 			} else {
 				$updates['plugin'] = false; // no plugin updates
 			}
 			if ( 0 !== $options['notify_themes'] ) { // are we to check for theme updates?
-				$updates['theme'] = $this->themes_update_check( $options['notify_themes'] ); // check for theme updates
+				$updates['theme'] = $this->themes_update_check(); // check for theme updates
 			} else {
 				$updates['theme'] = false; // no theme updates
 			}
@@ -345,21 +345,17 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Check to see if any plugin updates.
 		 *
-		 * @param int $all_or_active Should we look for all plugins or just active ones.
-		 *
 		 * @return bool
 		 */
-		private function plugins_update_check( $all_or_active ) {
+		private function plugins_update_check() {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 			do_action( 'wp_update_plugins' ); // force WP to check plugins for updates
 			$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates
 			$plugin_updates = array(); // array to store all of the plugin updates
 			if ( ! empty( $update_plugins->response ) ) { // any plugin updates available?
 				$plugins_need_update = $update_plugins->response; // plugins that need updating
-				if ( 2 === $all_or_active ) { // are we to check just active plugins?
-					$active_plugins      = array_flip( get_option( 'active_plugins' ) ); // find which plugins are active
-					$plugins_need_update = array_intersect_key( $plugins_need_update, $active_plugins ); // only keep plugins that are active
-				}
+				$active_plugins      = array_flip( get_option( 'active_plugins' ) ); // find which plugins are active
+				$plugins_need_update = array_intersect_key( $plugins_need_update, $active_plugins ); // only keep plugins that are active
 				$plugins_need_update = apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ); // additional filtering of plugins need update
 				if ( count( $plugins_need_update ) >= 1 ) { // any plugins need updating after all the filtering gone on above?
 					require_once ABSPATH . 'wp-admin/includes/plugin-install.php'; // Required for plugin API
@@ -391,21 +387,17 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Check to see if any theme updates.
 		 *
-		 * @param int $all_or_active Should we look for all themes or just active ones.
-		 *
 		 * @return bool
 		 */
-		private function themes_update_check( $all_or_active ) {
+		private function themes_update_check() {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
 			do_action( 'wp_update_themes' ); // force WP to check for theme updates
 			$update_themes = get_site_transient( 'update_themes' ); // get information of updates
 			$theme_updates = array(); // array to store all the theme updates
 			if ( ! empty( $update_themes->response ) ) { // any theme updates available?
 				$themes_need_update = $update_themes->response; // themes that need updating
-				if ( 2 === $all_or_active ) { // are we to check just active themes?
-					$active_theme       = array( get_option( 'template' ) => array() ); // find current theme that is active
-					$themes_need_update = array_intersect_key( $themes_need_update, $active_theme ); // only keep theme that is active
-				}
+				$active_theme       = array( get_option( 'template' ) => array() ); // find current theme that is active
+				$themes_need_update = array_intersect_key( $themes_need_update, $active_theme ); // only keep theme that is active
 				$themes_need_update = apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ); // additional filtering of themes need update
 				if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 					foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating
@@ -891,14 +883,14 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 
 			$sanitized_notify_plugins = absint( isset( $input['notify_plugins'] ) ? $input['notify_plugins'] : 0 );
-			if ( $sanitized_notify_plugins >= 0 && $sanitized_notify_plugins <= 2 ) {
+			if ( $sanitized_notify_plugins >= 0 && $sanitized_notify_plugins <= 1 ) {
 				$valid['notify_plugins'] = $sanitized_notify_plugins;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_notify_plugins', 'sc_wpun_settings_main_notify_plugins_error', __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ), 'error' );
 			}
 
 			$sanitized_notify_themes = absint( isset( $input['notify_themes'] ) ? $input['notify_themes'] : 0 );
-			if ( $sanitized_notify_themes >= 0 && $sanitized_notify_themes <= 2 ) {
+			if ( $sanitized_notify_themes >= 0 && $sanitized_notify_themes <= 1 ) {
 				$valid['notify_themes'] = $sanitized_notify_themes;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_notify_themes', 'sc_wpun_settings_main_notify_themes_error', __( 'Invalid theme updates value entered', 'wp-updates-notifier' ), 'error' );
@@ -1080,9 +1072,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			?>
 			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="0" <?php checked( $options['notify_plugins'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
 			</label><br />
-			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="1" <?php checked( $options['notify_plugins'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
-			</label><br />
-			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="2" <?php checked( $options['notify_plugins'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active plugins', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="1" <?php checked( $options['notify_plugins'], 1 ); ?> /> <?php esc_html_e( 'Yes (only checks active plugins)', 'wp-updates-notifier' ); ?>
 			</label>
 			<?php
 		}
@@ -1097,9 +1087,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			?>
 			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_themes]" type="radio" value="0" <?php checked( $options['notify_themes'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
 			</label><br />
-			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_themes]" type="radio" value="1" <?php checked( $options['notify_themes'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
-			</label><br />
-			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_themes]" type="radio" value="2" <?php checked( $options['notify_themes'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active themes', 'wp-updates-notifier' ); ?>
+			<label><input name="<?php echo esc_attr( self::OPT_FIELD ); ?>[notify_themes]" type="radio" value="1" <?php checked( $options['notify_themes'], 1 ); ?> /> <?php esc_html_e( 'Yes (only checks active themes)', 'wp-updates-notifier' ); ?>
 			</label>
 			<?php
 		}
