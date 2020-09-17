@@ -50,7 +50,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 	class SC_WP_Updates_Notifier {
 		const OPT_FIELD         = 'sc_wpun_settings';
 		const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-		const OPT_VERSION       = '8.0';
+		const OPT_VERSION       = '7.0';
 		const CRON_NAME         = 'sc_wpun_update_check';
 
 		const MARKUP_VARS_SLACK = array(
