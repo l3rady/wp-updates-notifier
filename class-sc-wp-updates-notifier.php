@@ -281,10 +281,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( 1 === $options['notify_plugins'] ) {
 				if ( 'update_notifications' === $column_name ) {
 					if ( is_plugin_active( $plugin_file ) ) {
+						$nonce = wp_create_nonce( 'toggle_plugin_notification_' . hash( 'md5', $plugin_file ) );
 						if ( isset( $options['disabled_plugins'][ $plugin_file ] ) ) {
-							echo '<button class="sc_wpun_btn sc_wpun_btn_disable" data-func="enable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Disabled', 'wp-updates-notifier' ) ) . '</button>';
+							echo '<button class="sc_wpun_btn sc_wpun_btn_disable" data-nonce="' . esc_html( $nonce ) . '" data-toggle="enable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Notifications Disabled', 'wp-updates-notifier' ) ) . '</button>';
 						} else {
-							echo '<button class="sc_wpun_btn sc_wpun_btn_enable" data-func="disable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Enabled', 'wp-updates-notifier' ) ) . '</button>';
+							echo '<button class="sc_wpun_btn sc_wpun_btn_enable" data-nonce="' . esc_html( $nonce ) . '" data-toggle="disable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Notifications Enabled', 'wp-updates-notifier' ) ) . '</button>';
 						}
 					}
 				}
@@ -348,7 +349,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					color: green;
 				}
 
-
 				</style>';
 			}
 		}
@@ -366,12 +366,16 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 					var data = {
 						'action': 'toggle_plugin_notification',
-						'toggle': $(e.target).data().func,
+						'toggle': $(e.target).data().toggle,
 						'plugin_file': $(e.target).data().file,
+						'_wpnonce': $(e.target).data().nonce,
 					};
 
 					jQuery.post(ajaxurl, data, function(response) {
 						console.log(response);
+						if ( 'success' == response ) {
+							console.log( 'yay' );
+						}
 					});
 				});
 			});
@@ -381,7 +385,27 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 
 		public function toggle_plugin_notification() {
-			echo $_POST['plugin_file'] . $_POST['toggle'];
+			if ( isset( $_POST['plugin_file'] ) && isset( $_POST['toggle'] ) && current_user_can( 'update_plugins' ) && current_user_can( 'manage_options' ) ) {
+				$plugin_file = sanitize_text_field( wp_unslash( $_POST['plugin_file'] ) );
+				$toggle      = sanitize_text_field( wp_unslash( $_POST['toggle'] ) );
+
+				// Verify the nonce
+				check_ajax_referer( 'toggle_plugin_notification_' . hash( 'md5', $plugin_file ) );
+
+				$options        = $this->get_set_options( self::OPT_FIELD ); // get settings
+				$active_plugins = array_flip( get_option( 'active_plugins' ) );
+
+				if ( 'disable' === $toggle ) {
+					$options['disabled_plugins'][ $plugin_file ] = 1;
+					echo 'success';
+				} elseif ( 'enable' === $toggle ) {
+					unset( $options['disabled_plugins'][ $plugin_file ] );
+					echo 'success';
+				} else {
+					echo 'failure';
+				}
+				$output = $this->get_set_options( self::OPT_FIELD, $options ); // update settings
+			}
 			wp_die();
 		}
 
