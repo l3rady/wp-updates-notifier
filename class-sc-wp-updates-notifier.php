@@ -109,6 +109,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_action( 'sc_wpun_enable_cron', array( $this, 'enable_cron' ) ); // action to enable cron
 			add_action( 'sc_wpun_disable_cron', array( $this, 'disable_cron' ) ); // action to disable cron
 			add_action( self::CRON_NAME, array( $this, 'do_update_check' ) ); // action to link cron task to actual task
+			add_action( 'manage_plugins_custom_column', array( $this, 'manage_plugins_custom_column' ), 10, 3 ); // Filter the column data on the plugins page.
+			add_action( 'manage_plugins_columns', array( $this, 'manage_plugins_columns' ) ); // Filter the column headers on the plugins page.
+			add_action( 'admin_head', array( $this, 'custom_admin_css' ) ); // Custom css for the admin plugins.php page.
+			add_action( 'admin_footer', array( $this, 'custom_admin_js' ) ); // Custom js for the admin plugins.php page.
+			add_action( 'wp_ajax_toggle_plugin_notification',  array( $this, 'toggle_plugin_notification' ) ); // Ajax function to toggle the notifications for a plugin on the plugin.php page.
 		}
 
 		/**
@@ -130,6 +135,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					'slack_notifications'    => 0,
 					'slack_webhook_url'      => '',
 					'slack_channel_override' => '',
+					'disabled_plugins'       => array(),
 					'notify_plugins'         => 1,
 					'notify_themes'          => 1,
 					'notify_automatic'       => 1,
@@ -145,6 +151,10 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				// If we are upgrading from settings before settings version 7, turn on email notifications by default.
 				if ( intval( $current_ver ) < 7 ) {
 					$defaults['email_notifications'] = 1;
+				}
+
+				foreach ( get_option( 'plugins' ) as $plugin_file ) {
+					print_r( $plugin_file );
 				}
 
 				// Intersect current options with defaults. Basically removing settings that are obsolete
@@ -256,6 +266,123 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				array_unshift( $links, $settings_link );
 			}
 			return $links;
+		}
+
+
+		/**
+		 * Alter the columns on the plugins page to show enable and disable notifications.
+		 *
+		 * @param string $column_name Name of the column.
+		 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
+		 * @param array  $plugin_data An array of plugin data.
+		 */
+		public function manage_plugins_custom_column( $column_name, $plugin_file, $plugin_data ) {
+			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
+			if ( 1 === $options['notify_plugins'] ) {
+				if ( 'update_notifications' === $column_name ) {
+					if ( is_plugin_active( $plugin_file ) ) {
+						if ( isset( $options['disabled_plugins'][ $plugin_file ] ) ) {
+							echo '<button class="sc_wpun_btn sc_wpun_btn_disable" data-func="enable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Disabled', 'wp-updates-notifier' ) ) . '</button>';
+						} else {
+							echo '<button class="sc_wpun_btn sc_wpun_btn_enable" data-func="disable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Enabled', 'wp-updates-notifier' ) ) . '</button>';
+						}
+					}
+				}
+			}
+		}
+
+
+		/**
+		 * Alter the columns on the plugins page to show enable and disable notifications.
+		 *
+		 * @param array $column_headers An array of column headers.
+		 */
+		public function manage_plugins_columns( $column_headers ) {
+			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
+			if ( 1 === $options['notify_plugins'] ) {
+				$column_headers['update_notifications'] = __( 'Update Notifications', 'wp-updates-notifier' );
+			}
+			return $column_headers;
+		}
+
+
+		/**
+		 * Custom css for the plugins.php page.
+		 */
+		public function custom_admin_css() {
+			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
+			if ( 1 === $options['notify_plugins'] ) {
+				echo '<style type="text/css">
+
+				.column-update_notifications{
+					width: 15%;
+				}
+
+				.sc_wpun_btn:before {
+					font-family: "dashicons";
+					display: inline-block;
+					-webkit-font-smoothing: antialiased;
+					font: normal 20px/1;
+					vertical-align: top;
+					margin-right: 5px;
+					margin-right: 0.5rem;
+				}
+
+				.sc_wpun_btn_enable:before {
+					content: "\f12a";
+					color: green;
+				}
+
+				.sc_wpun_btn_disable:before {
+					content: "\f153";
+					color: red;
+				}
+
+				.sc_wpun_btn_enable:hover:before {
+					content: "\f153";
+					color: red;
+				}
+
+				.sc_wpun_btn_disable:hover:before {
+					content: "\f12a";
+					color: green;
+				}
+
+
+				</style>';
+			}
+		}
+
+
+		/**
+		 * Custom js for the plugins.php page.
+		 */
+		public function custom_admin_js() {
+			?>
+			<script type="text/javascript" >
+			jQuery(document).ready(function($) {
+				$( '.sc_wpun_btn' ).click(function(e) {
+					e.preventDefault();
+
+					var data = {
+						'action': 'toggle_plugin_notification',
+						'toggle': $(e.target).data().func,
+						'plugin_file': $(e.target).data().file,
+					};
+
+					jQuery.post(ajaxurl, data, function(response) {
+						console.log(response);
+					});
+				});
+			});
+			</script>
+			<?php
+		}
+
+
+		public function toggle_plugin_notification() {
+			echo $_POST['plugin_file'] . $_POST['toggle'];
+			wp_die();
 		}
 
 
