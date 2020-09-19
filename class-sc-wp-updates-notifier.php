@@ -153,10 +153,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					$defaults['email_notifications'] = 1;
 				}
 
-				foreach ( get_option( 'plugins' ) as $plugin_file ) {
-					print_r( $plugin_file );
-				}
-
 				// Intersect current options with defaults. Basically removing settings that are obsolete
 				$options = array_intersect_key( $options, $defaults );
 				// Merge current settings with defaults. Basically adding any new settings with defaults that we dont have.
@@ -374,7 +370,17 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					jQuery.post(ajaxurl, data, function(response) {
 						console.log(response);
 						if ( 'success' == response ) {
-							console.log( 'yay' );
+							if ( 'disable' == $(e.target).data().toggle ) {
+								$(e.target).data( 'toggle', 'enable' );
+								$(e.target).removeClass( 'sc_wpun_btn_enable' );
+								$(e.target).addClass( 'sc_wpun_btn_disable' );
+								$(e.target).text( '<?php echo esc_html( __( 'Notifications Disabled', 'wp-updates-notifier' ) ); ?>' );
+							} else {
+								$(e.target).data( 'toggle', 'disable' );
+								$(e.target).removeClass( 'sc_wpun_btn_disable' );
+								$(e.target).addClass( 'sc_wpun_btn_enable' );
+								$(e.target).text( '<?php echo esc_html( __( 'Notifications Enabled', 'wp-updates-notifier' ) ); ?>' );
+							}
 						}
 					});
 				});
@@ -1022,7 +1028,10 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return array Array of sanitized and validated settings.
 		 */
 		public function sc_wpun_settings_validate( $input ) {
-			check_admin_referer( 'sc_wpun_settings-options' );
+			// disabled plugins will only be set through the plugins page, so we only check the admin referer for the options page if they aren't set
+			if ( ! isset( $input['disabled_plugins'] ) ) {
+				check_admin_referer( 'sc_wpun_settings-options' );
+			}
 			$valid = $this->get_set_options( self::OPT_FIELD );
 
 			// Validate main settings.
@@ -1109,6 +1118,16 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				}
 			}
 			$valid['email_notifications'] = $email_notifications;
+
+			$active_plugins = array_flip( get_option( 'active_plugins' ) );
+			$valid['disabled_plugins'] = array();
+			if ( ! empty( $input['disabled_plugins'] ) ) {
+				foreach ( $input['disabled_plugins'] as $new_disabled_plugin => $val ) {
+					if ( isset( $active_plugins[ $new_disabled_plugin ] ) ) {
+						$valid['disabled_plugins'][ $new_disabled_plugin ] = 1;
+					}
+				}
+			}
 
 			// Validate slack settings.
 			if ( ! empty( $input['slack_webhook_url'] ) ) {
