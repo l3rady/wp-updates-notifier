@@ -391,6 +391,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 
 		public function toggle_plugin_notification() {
+			check_ajax_referer( 'toggle_plugin_notification' );
 			if ( isset( $_POST['plugin_file'] ) && isset( $_POST['toggle'] ) && current_user_can( 'update_plugins' ) && current_user_can( 'manage_options' ) ) {
 				$plugin_file = sanitize_text_field( wp_unslash( $_POST['plugin_file'] ) );
 				$toggle      = sanitize_text_field( wp_unslash( $_POST['toggle'] ) );
