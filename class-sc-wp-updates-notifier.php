@@ -1047,7 +1047,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			// disabled plugins will only be set through the plugins page, so we only check the admin referer for the options page if they aren't set
 			if ( ! isset( $input['disabled_plugins'] ) ) {
 				check_admin_referer( 'sc_wpun_settings-options' );
-			}else {
+			} else {
 				check_ajax_referer( 'toggle_plugin_notification' );
 			}
 			$valid = $this->get_set_options( self::OPT_FIELD );
