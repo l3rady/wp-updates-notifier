@@ -114,7 +114,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_action( 'manage_plugins_columns', array( $this, 'manage_plugins_columns' ) ); // Filter the column headers on the plugins page.
 			add_action( 'admin_head', array( $this, 'custom_admin_css' ) ); // Custom css for the admin plugins.php page.
 			add_action( 'admin_footer', array( $this, 'custom_admin_js' ) ); // Custom js for the admin plugins.php page.
-			add_action( 'wp_ajax_toggle_plugin_notification',  array( $this, 'toggle_plugin_notification' ) ); // Ajax function to toggle the notifications for a plugin on the plugin.php page.
+			add_action( 'wp_ajax_toggle_plugin_notification', array( $this, 'toggle_plugin_notification' ) ); // Ajax function to toggle the notifications for a plugin on the plugin.php page.
 		}
 
 		/**
@@ -364,7 +364,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 						'action': 'toggle_plugin_notification',
 						'toggle': $(e.target).data().toggle,
 						'plugin_file': $(e.target).data().file,
-						'_wpnonce': "<?php echo wp_create_nonce( 'toggle_plugin_notification' ); ?>",
+						'_wpnonce': "<?php esc_html_e( wp_create_nonce( 'toggle_plugin_notification' ) ); ?>",
 					};
 
 					jQuery.post(ajaxurl, data, function(response) {
@@ -1137,7 +1137,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 			$valid['email_notifications'] = $email_notifications;
 
-			$active_plugins = array_flip( get_option( 'active_plugins' ) );
+			$active_plugins            = array_flip( get_option( 'active_plugins' ) );
 			$valid['disabled_plugins'] = array();
 			if ( ! empty( $input['disabled_plugins'] ) ) {
 				foreach ( $input['disabled_plugins'] as $new_disabled_plugin => $val ) {
