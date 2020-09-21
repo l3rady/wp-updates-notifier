@@ -100,6 +100,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			// Add Filters
 			add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 2 ); // Add settings link to plugin in plugin list
 			add_filter( 'sc_wpun_plugins_need_update', array( $this, 'check_plugins_against_notified' ) ); // Filter out plugins that need update if already been notified
+			add_filter( 'sc_wpun_plugins_need_update', array( $this, 'check_plugins_against_disabled' ) ); // Filter out plugins that are disabled
 			add_filter( 'sc_wpun_themes_need_update', array( $this, 'check_themes_against_notified' ) ); // Filter out themes that need update if already been notified
 			add_filter( 'auto_core_update_email', array( $this, 'filter_auto_core_update_email' ), 1 ); // Filter the background update notification email.
 			// Add Actions
@@ -277,11 +278,10 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( 1 === $options['notify_plugins'] ) {
 				if ( 'update_notifications' === $column_name ) {
 					if ( is_plugin_active( $plugin_file ) ) {
-						$nonce = wp_create_nonce( 'toggle_plugin_notification_' . hash( 'md5', $plugin_file ) );
 						if ( isset( $options['disabled_plugins'][ $plugin_file ] ) ) {
-							echo '<button class="sc_wpun_btn sc_wpun_btn_disable" data-nonce="' . esc_html( $nonce ) . '" data-toggle="enable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Notifications Disabled', 'wp-updates-notifier' ) ) . '</button>';
+							echo '<button class="sc_wpun_btn sc_wpun_btn_disable" data-toggle="enable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Notifications Disabled', 'wp-updates-notifier' ) ) . '</button>';
 						} else {
-							echo '<button class="sc_wpun_btn sc_wpun_btn_enable" data-nonce="' . esc_html( $nonce ) . '" data-toggle="disable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Notifications Enabled', 'wp-updates-notifier' ) ) . '</button>';
+							echo '<button class="sc_wpun_btn sc_wpun_btn_enable" data-toggle="disable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Notifications Enabled', 'wp-updates-notifier' ) ) . '</button>';
 						}
 					}
 				}
@@ -364,7 +364,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 						'action': 'toggle_plugin_notification',
 						'toggle': $(e.target).data().toggle,
 						'plugin_file': $(e.target).data().file,
-						'_wpnonce': $(e.target).data().nonce,
+						'_wpnonce': "<?php echo wp_create_nonce( 'toggle_plugin_notification' ); ?>",
 					};
 
 					jQuery.post(ajaxurl, data, function(response) {
@@ -394,9 +394,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( isset( $_POST['plugin_file'] ) && isset( $_POST['toggle'] ) && current_user_can( 'update_plugins' ) && current_user_can( 'manage_options' ) ) {
 				$plugin_file = sanitize_text_field( wp_unslash( $_POST['plugin_file'] ) );
 				$toggle      = sanitize_text_field( wp_unslash( $_POST['toggle'] ) );
-
-				// Verify the nonce
-				check_ajax_referer( 'toggle_plugin_notification_' . hash( 'md5', $plugin_file ) );
 
 				$options        = $this->get_set_options( self::OPT_FIELD ); // get settings
 				$active_plugins = array_flip( get_option( 'active_plugins' ) );
@@ -594,6 +591,24 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					if ( $data->new_version === $settings['notified']['plugin'][ $key ] ) { // does this plugin version match that of the one that's been notified?
 						unset( $plugins_need_update[ $key ] ); // don't notify this plugin as has already been notified
 					}
+				}
+			}
+			return $plugins_need_update;
+		}
+
+
+		/**
+		 * Filter for removing plugins from update list if they are disabled
+		 *
+		 * @param array $plugins_need_update Array of plugins that need an update.
+		 *
+		 * @return array $plugins_need_update
+		 */
+		public function check_plugins_against_disabled( $plugins_need_update ) {
+			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
+			foreach ( $plugins_need_update as $key => $data ) { // loop through plugins that need update
+				if ( isset( $settings['disabled_plugins'][ $key ] ) ) { // is this plugin's notifications disabled
+					unset( $plugins_need_update[ $key ] ); // don't notify this plugin
 				}
 			}
 			return $plugins_need_update;
@@ -1031,6 +1046,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			// disabled plugins will only be set through the plugins page, so we only check the admin referer for the options page if they aren't set
 			if ( ! isset( $input['disabled_plugins'] ) ) {
 				check_admin_referer( 'sc_wpun_settings-options' );
+			}else {
+				check_ajax_referer( 'toggle_plugin_notification' );
 			}
 			$valid = $this->get_set_options( self::OPT_FIELD );
 
