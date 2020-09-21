@@ -364,7 +364,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 						'action': 'toggle_plugin_notification',
 						'toggle': $(e.target).data().toggle,
 						'plugin_file': $(e.target).data().file,
-						'_wpnonce': "<?php esc_html_e( wp_create_nonce( 'toggle_plugin_notification' ) ); ?>",
+						'_wpnonce': "<?php echo esc_html( wp_create_nonce( 'toggle_plugin_notification' ) ); ?>",
 					};
 
 					jQuery.post(ajaxurl, data, function(response) {
