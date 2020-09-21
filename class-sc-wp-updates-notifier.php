@@ -550,7 +550,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$theme_updates = array(); // array to store all the theme updates
 			if ( ! empty( $update_themes->response ) ) { // any theme updates available?
 				$themes_need_update = $update_themes->response; // themes that need updating
-				$active_theme       = array( get_option( 'template' ) => array() ); // find current theme that is active
+				$active_theme       = array( ( (string) get_option( 'template' ) ) => array() ); // find current theme that is active
 				$themes_need_update = array_intersect_key( $themes_need_update, $active_theme ); // only keep theme that is active
 				$themes_need_update = apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ); // additional filtering of themes need update
 				if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
