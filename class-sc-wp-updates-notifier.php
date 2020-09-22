@@ -15,7 +15,7 @@
  * Plugin URI: https://github.com/l3rady/wp-updates-notifier
  * Description: Sends email or Slack message to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
  * Contributors: l3rady, eherman24, alleyinteractive
- * Version: 1.6.1
+ * Version: 1.7.0
  * Author: Scott Cariss
  * Author URI: http://l3rady.com/
  * Text Domain: wp-updates-notifier
@@ -50,7 +50,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 	class SC_WP_Updates_Notifier {
 		const OPT_FIELD         = 'sc_wpun_settings';
 		const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-		const OPT_VERSION       = '7.0';
+		const OPT_VERSION       = '8.0';
 		const CRON_NAME         = 'sc_wpun_update_check';
 
 		const MARKUP_VARS_SLACK = array(
@@ -100,6 +100,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			// Add Filters
 			add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 2 ); // Add settings link to plugin in plugin list
 			add_filter( 'sc_wpun_plugins_need_update', array( $this, 'check_plugins_against_notified' ) ); // Filter out plugins that need update if already been notified
+			add_filter( 'sc_wpun_plugins_need_update', array( $this, 'check_plugins_against_disabled' ) ); // Filter out plugins that are disabled
 			add_filter( 'sc_wpun_themes_need_update', array( $this, 'check_themes_against_notified' ) ); // Filter out themes that need update if already been notified
 			add_filter( 'auto_core_update_email', array( $this, 'filter_auto_core_update_email' ), 1 ); // Filter the background update notification email.
 			// Add Actions
@@ -109,6 +110,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_action( 'sc_wpun_enable_cron', array( $this, 'enable_cron' ) ); // action to enable cron
 			add_action( 'sc_wpun_disable_cron', array( $this, 'disable_cron' ) ); // action to disable cron
 			add_action( self::CRON_NAME, array( $this, 'do_update_check' ) ); // action to link cron task to actual task
+			add_action( 'manage_plugins_custom_column', array( $this, 'manage_plugins_custom_column' ), 10, 3 ); // Filter the column data on the plugins page.
+			add_action( 'manage_plugins_columns', array( $this, 'manage_plugins_columns' ) ); // Filter the column headers on the plugins page.
+			add_action( 'admin_head', array( $this, 'custom_admin_css' ) ); // Custom css for the admin plugins.php page.
+			add_action( 'admin_footer', array( $this, 'custom_admin_js' ) ); // Custom js for the admin plugins.php page.
+			add_action( 'wp_ajax_toggle_plugin_notification', array( $this, 'toggle_plugin_notification' ) ); // Ajax function to toggle the notifications for a plugin on the plugin.php page.
 		}
 
 		/**
@@ -130,6 +136,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					'slack_notifications'    => 0,
 					'slack_webhook_url'      => '',
 					'slack_channel_override' => '',
+					'disabled_plugins'       => array(),
 					'notify_plugins'         => 1,
 					'notify_themes'          => 1,
 					'notify_automatic'       => 1,
@@ -256,6 +263,165 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				array_unshift( $links, $settings_link );
 			}
 			return $links;
+		}
+
+
+		/**
+		 * Alter the columns on the plugins page to show enable and disable notifications.
+		 *
+		 * @param string $column_name Name of the column.
+		 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
+		 * @param array  $plugin_data An array of plugin data.
+		 */
+		public function manage_plugins_custom_column( $column_name, $plugin_file, $plugin_data ) {
+			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
+			if ( 1 === $options['notify_plugins'] ) {
+				if ( 'update_notifications' === $column_name ) {
+					if ( is_plugin_active( $plugin_file ) ) {
+						if ( isset( $options['disabled_plugins'][ $plugin_file ] ) ) {
+							echo '<button class="sc_wpun_btn sc_wpun_btn_disable" data-toggle="enable" data-file="' . esc_attr( $plugin_file ) . '">' . esc_attr( __( 'Notifications Disabled', 'wp-updates-notifier' ) ) . '</button>';
+						} else {
+							echo '<button class="sc_wpun_btn sc_wpun_btn_enable" data-toggle="disable" data-file="' . esc_attr( $plugin_file ) . '">' . esc_attr( __( 'Notifications Enabled', 'wp-updates-notifier' ) ) . '</button>';
+						}
+					}
+				}
+			}
+		}
+
+
+		/**
+		 * Alter the columns on the plugins page to show enable and disable notifications.
+		 *
+		 * @param array $column_headers An array of column headers.
+		 */
+		public function manage_plugins_columns( $column_headers ) {
+			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
+			if ( 1 === $options['notify_plugins'] ) {
+				$column_headers['update_notifications'] = __( 'Update Notifications', 'wp-updates-notifier' );
+			}
+			return $column_headers;
+		}
+
+
+		/**
+		 * Custom css for the plugins.php page.
+		 *
+		 * @return void
+		 */
+		public function custom_admin_css() {
+			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
+			if ( 1 === $options['notify_plugins'] ) {
+				echo '<style type="text/css">
+
+				.column-update_notifications{
+					width: 15%;
+				}
+
+				.sc_wpun_btn:before {
+					font-family: "dashicons";
+					display: inline-block;
+					-webkit-font-smoothing: antialiased;
+					font: normal 20px/1;
+					vertical-align: top;
+					margin-right: 5px;
+					margin-right: 0.5rem;
+				}
+
+				.sc_wpun_btn_enable:before {
+					content: "\f12a";
+					color: green;
+				}
+
+				.sc_wpun_btn_disable:before {
+					content: "\f153";
+					color: red;
+				}
+
+				.sc_wpun_btn_enable:hover:before {
+					content: "\f153";
+					color: red;
+				}
+
+				.sc_wpun_btn_disable:hover:before {
+					content: "\f12a";
+					color: green;
+				}
+
+				</style>';
+			}
+		}
+
+
+		/**
+		 * Custom js for the plugins.php page.
+		 *
+		 * @return void
+		 */
+		public function custom_admin_js() {
+			global $pagenow;
+			if ( 'plugins.php' === $pagenow ) :
+				?>
+				<script type="text/javascript" >
+				jQuery(document).ready(function($) {
+					$( '.sc_wpun_btn' ).click(function(e) {
+						e.preventDefault();
+
+						var data = {
+							'action': 'toggle_plugin_notification',
+							'toggle': $(e.target).data().toggle,
+							'plugin_file': $(e.target).data().file,
+							'_wpnonce': "<?php echo esc_attr( wp_create_nonce( 'toggle_plugin_notification' ) ); ?>",
+						};
+
+						jQuery.post(ajaxurl, data, function(response) {
+							if ( 'success' == response ) {
+								if ( 'disable' == $(e.target).data().toggle ) {
+									$(e.target).data( 'toggle', 'enable' );
+									$(e.target).removeClass( 'sc_wpun_btn_enable' );
+									$(e.target).addClass( 'sc_wpun_btn_disable' );
+									$(e.target).text( '<?php echo esc_html( __( 'Notifications Disabled', 'wp-updates-notifier' ) ); ?>' );
+								} else {
+									$(e.target).data( 'toggle', 'disable' );
+									$(e.target).removeClass( 'sc_wpun_btn_disable' );
+									$(e.target).addClass( 'sc_wpun_btn_enable' );
+									$(e.target).text( '<?php echo esc_html( __( 'Notifications Enabled', 'wp-updates-notifier' ) ); ?>' );
+								}
+							}
+						});
+					});
+				});
+				</script>
+				<?php
+			endif;
+		}
+
+
+		/**
+		 * Function to flip the notifications off / on for a plugin.
+		 *
+		 * @return void
+		 */
+		public function toggle_plugin_notification() {
+			check_ajax_referer( 'toggle_plugin_notification' );
+			if ( isset( $_POST['plugin_file'] ) && isset( $_POST['toggle'] ) && current_user_can( 'update_plugins' ) && current_user_can( 'manage_options' ) ) {
+				$plugin_file = sanitize_text_field( wp_unslash( $_POST['plugin_file'] ) );
+				$toggle      = sanitize_text_field( wp_unslash( $_POST['toggle'] ) );
+
+				$options        = $this->get_set_options( self::OPT_FIELD ); // get settings
+				$active_plugins = array_flip( get_option( 'active_plugins' ) );
+
+				if ( 'disable' === $toggle ) {
+					$options['disabled_plugins'][ $plugin_file ] = 1;
+					echo 'success';
+				} elseif ( 'enable' === $toggle ) {
+					unset( $options['disabled_plugins'][ $plugin_file ] );
+					echo 'success';
+				} else {
+					echo 'failure';
+				}
+				$output = $this->get_set_options( self::OPT_FIELD, $options ); // update settings
+			}
+			die();
 		}
 
 
@@ -437,6 +603,24 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					if ( $data->new_version === $settings['notified']['plugin'][ $key ] ) { // does this plugin version match that of the one that's been notified?
 						unset( $plugins_need_update[ $key ] ); // don't notify this plugin as has already been notified
 					}
+				}
+			}
+			return $plugins_need_update;
+		}
+
+
+		/**
+		 * Filter for removing plugins from update list if they are disabled
+		 *
+		 * @param array $plugins_need_update Array of plugins that need an update.
+		 *
+		 * @return array $plugins_need_update
+		 */
+		public function check_plugins_against_disabled( $plugins_need_update ) {
+			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings
+			foreach ( $plugins_need_update as $key => $data ) { // loop through plugins that need update
+				if ( isset( $settings['disabled_plugins'][ $key ] ) ) { // is this plugin's notifications disabled
+					unset( $plugins_need_update[ $key ] ); // don't notify this plugin
 				}
 			}
 			return $plugins_need_update;
@@ -871,7 +1055,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return array Array of sanitized and validated settings.
 		 */
 		public function sc_wpun_settings_validate( $input ) {
-			check_admin_referer( 'sc_wpun_settings-options' );
+			// disabled plugins will only be set through the plugins page, so we only check the admin referer for the options page if they aren't set
+			if ( ! isset( $input['disabled_plugins'] ) ) {
+				check_admin_referer( 'sc_wpun_settings-options' );
+			} else {
+				check_ajax_referer( 'toggle_plugin_notification' );
+			}
 			$valid = $this->get_set_options( self::OPT_FIELD );
 
 			// Validate main settings.
@@ -958,6 +1147,16 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				}
 			}
 			$valid['email_notifications'] = $email_notifications;
+
+			$active_plugins            = array_flip( get_option( 'active_plugins' ) );
+			$valid['disabled_plugins'] = array();
+			if ( ! empty( $input['disabled_plugins'] ) ) {
+				foreach ( $input['disabled_plugins'] as $new_disabled_plugin => $val ) {
+					if ( isset( $active_plugins[ $new_disabled_plugin ] ) ) {
+						$valid['disabled_plugins'][ $new_disabled_plugin ] = 1;
+					}
+				}
+			}
 
 			// Validate slack settings.
 			if ( ! empty( $input['slack_webhook_url'] ) ) {
