@@ -279,9 +279,9 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				if ( 'update_notifications' === $column_name ) {
 					if ( is_plugin_active( $plugin_file ) ) {
 						if ( isset( $options['disabled_plugins'][ $plugin_file ] ) ) {
-							echo '<button class="sc_wpun_btn sc_wpun_btn_disable" data-toggle="enable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Notifications Disabled', 'wp-updates-notifier' ) ) . '</button>';
+							echo '<button class="sc_wpun_btn sc_wpun_btn_disable" data-toggle="enable" data-file="' . esc_attr( $plugin_file ) . '">' . esc_attr( __( 'Notifications Disabled', 'wp-updates-notifier' ) ) . '</button>';
 						} else {
-							echo '<button class="sc_wpun_btn sc_wpun_btn_enable" data-toggle="disable" data-file="' . esc_html( $plugin_file ) . '">' . esc_html( __( 'Notifications Enabled', 'wp-updates-notifier' ) ) . '</button>';
+							echo '<button class="sc_wpun_btn sc_wpun_btn_enable" data-toggle="disable" data-file="' . esc_attr( $plugin_file ) . '">' . esc_attr( __( 'Notifications Enabled', 'wp-updates-notifier' ) ) . '</button>';
 						}
 					}
 				}
@@ -305,6 +305,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Custom css for the plugins.php page.
+		 *
+		 * @return void
 		 */
 		public function custom_admin_css() {
 			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
@@ -352,44 +354,53 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Custom js for the plugins.php page.
+		 *
+		 * @return void
 		 */
 		public function custom_admin_js() {
-			?>
-			<script type="text/javascript" >
-			jQuery(document).ready(function($) {
-				$( '.sc_wpun_btn' ).click(function(e) {
-					e.preventDefault();
+			global $pagenow;
+			if ( 'plugins.php' === $pagenow ) :
+				?>
+				<script type="text/javascript" >
+				jQuery(document).ready(function($) {
+					$( '.sc_wpun_btn' ).click(function(e) {
+						e.preventDefault();
 
-					var data = {
-						'action': 'toggle_plugin_notification',
-						'toggle': $(e.target).data().toggle,
-						'plugin_file': $(e.target).data().file,
-						'_wpnonce': "<?php echo esc_attr( wp_create_nonce( 'toggle_plugin_notification' ) ); ?>",
-					};
+						var data = {
+							'action': 'toggle_plugin_notification',
+							'toggle': $(e.target).data().toggle,
+							'plugin_file': $(e.target).data().file,
+							'_wpnonce': "<?php echo esc_attr( wp_create_nonce( 'toggle_plugin_notification' ) ); ?>",
+						};
 
-					jQuery.post(ajaxurl, data, function(response) {
-						console.log(response);
-						if ( 'success' == response ) {
-							if ( 'disable' == $(e.target).data().toggle ) {
-								$(e.target).data( 'toggle', 'enable' );
-								$(e.target).removeClass( 'sc_wpun_btn_enable' );
-								$(e.target).addClass( 'sc_wpun_btn_disable' );
-								$(e.target).text( '<?php echo esc_html( __( 'Notifications Disabled', 'wp-updates-notifier' ) ); ?>' );
-							} else {
-								$(e.target).data( 'toggle', 'disable' );
-								$(e.target).removeClass( 'sc_wpun_btn_disable' );
-								$(e.target).addClass( 'sc_wpun_btn_enable' );
-								$(e.target).text( '<?php echo esc_html( __( 'Notifications Enabled', 'wp-updates-notifier' ) ); ?>' );
+						jQuery.post(ajaxurl, data, function(response) {
+							if ( 'success' == response ) {
+								if ( 'disable' == $(e.target).data().toggle ) {
+									$(e.target).data( 'toggle', 'enable' );
+									$(e.target).removeClass( 'sc_wpun_btn_enable' );
+									$(e.target).addClass( 'sc_wpun_btn_disable' );
+									$(e.target).text( '<?php echo esc_html( __( 'Notifications Disabled', 'wp-updates-notifier' ) ); ?>' );
+								} else {
+									$(e.target).data( 'toggle', 'disable' );
+									$(e.target).removeClass( 'sc_wpun_btn_disable' );
+									$(e.target).addClass( 'sc_wpun_btn_enable' );
+									$(e.target).text( '<?php echo esc_html( __( 'Notifications Enabled', 'wp-updates-notifier' ) ); ?>' );
+								}
 							}
-						}
+						});
 					});
 				});
-			});
-			</script>
-			<?php
+				</script>
+				<?php
+			endif;
 		}
 
 
+		/**
+		 * Function to flip the notifications off / on for a plugin.
+		 *
+		 * @return void
+		 */
 		public function toggle_plugin_notification() {
 			check_ajax_referer( 'toggle_plugin_notification' );
 			if ( isset( $_POST['plugin_file'] ) && isset( $_POST['toggle'] ) && current_user_can( 'update_plugins' ) && current_user_can( 'manage_options' ) ) {
@@ -410,7 +421,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				}
 				$output = $this->get_set_options( self::OPT_FIELD, $options ); // update settings
 			}
-			wp_die();
+			die();
 		}
 
 
