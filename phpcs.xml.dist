@@ -40,6 +40,9 @@
 		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found" />
 	</rule>
 
+	<!-- Use the VIP Go ruleset. -->
+	<rule ref="WordPress-VIP-Go" />
+
 	<!-- The version set here matches the minimum version tested in .travis.yml.  -->
 	<config name="minimum_supported_wp_version" value="4.9" />
 
@@ -50,15 +53,6 @@
 		and the trailing newline rule at the same time.
 		-->
 		<type>warning</type>
-
-		<!--
-		Once your PHP files have been filled in, you might be able
-		to start checking for compliance again with an
-		exclude-pattern like these:
-
-		<exclude-pattern>themes(/vip)?/[^/]+/[^/]+\.php$</exclude-pattern>
-		<exclude-pattern>themes(/vip)?/[^/]+/template-parts/*</exclude-pattern>
-		-->
 	</rule>
 
 	<rule ref="Generic.Files.OneObjectStructurePerFile">

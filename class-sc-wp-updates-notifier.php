@@ -406,9 +406,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( isset( $_POST['plugin_file'] ) && isset( $_POST['toggle'] ) && current_user_can( 'update_plugins' ) && current_user_can( 'manage_options' ) ) {
 				$plugin_file = sanitize_text_field( wp_unslash( $_POST['plugin_file'] ) );
 				$toggle      = sanitize_text_field( wp_unslash( $_POST['toggle'] ) );
-
-				$options        = $this->get_set_options( self::OPT_FIELD ); // get settings
-				$active_plugins = array_flip( get_option( 'active_plugins' ) );
+				$options     = $this->get_set_options( self::OPT_FIELD ); // get settings
 
 				if ( 'disable' === $toggle ) {
 					$options['disabled_plugins'][ $plugin_file ] = 1;
@@ -419,7 +417,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				} else {
 					echo 'failure';
 				}
-				$output = $this->get_set_options( self::OPT_FIELD, $options ); // update settings
+				$this->get_set_options( self::OPT_FIELD, $options ); // update settings
 			}
 			die();
 		}
