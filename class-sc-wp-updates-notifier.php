@@ -110,7 +110,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_action( 'sc_wpun_enable_cron', array( $this, 'enable_cron' ) ); // action to enable cron
 			add_action( 'sc_wpun_disable_cron', array( $this, 'disable_cron' ) ); // action to disable cron
 			add_action( self::CRON_NAME, array( $this, 'do_update_check' ) ); // action to link cron task to actual task
-			add_action( 'manage_plugins_custom_column', array( $this, 'manage_plugins_custom_column' ), 10, 3 ); // Filter the column data on the plugins page.
+			add_action( 'manage_plugins_custom_column', array( $this, 'manage_plugins_custom_column' ), 10, 2 ); // Filter the column data on the plugins page.
 			add_action( 'manage_plugins_columns', array( $this, 'manage_plugins_columns' ) ); // Filter the column headers on the plugins page.
 			add_action( 'admin_head', array( $this, 'custom_admin_css' ) ); // Custom css for the admin plugins.php page.
 			add_action( 'admin_footer', array( $this, 'custom_admin_js' ) ); // Custom js for the admin plugins.php page.
@@ -273,7 +273,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
 		 * @param array  $plugin_data An array of plugin data.
 		 */
-		public function manage_plugins_custom_column( $column_name, $plugin_file, $plugin_data ) {
+		public function manage_plugins_custom_column( $column_name, $plugin_file ) {
 			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
 			if ( 1 === $options['notify_plugins'] ) {
 				if ( 'update_notifications' === $column_name ) {
