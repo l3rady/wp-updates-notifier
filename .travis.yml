@@ -68,8 +68,6 @@ before_script:
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
       composer g require --dev automattic/vipwpcs dealerdirect/phpcodesniffer-composer-installer
-      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/automattic/vipwpcs
-      phpcs --config-show
     fi
 
 # Run test script commands.
@@ -92,7 +90,7 @@ script:
   # @link http://pear.php.net/package/PHP_CodeSniffer/
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
-      phpcs
+      phpcs -n
     fi
 
   # Run phpunit and phpunit multi-site.
