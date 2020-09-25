@@ -273,6 +273,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
 		 * @param array  $plugin_data An array of plugin data.
 		 */
+		// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		public function manage_plugins_custom_column( $column_name, $plugin_file, $plugin_data ) {
 			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
 			if ( 1 === $options['notify_plugins'] ) {
