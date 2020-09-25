@@ -1003,7 +1003,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					</span>
 				</p>
 
-				<form action="<?php echo esc_attr( admin_url( 'options.php' ) ); ?>" method="post">
+				<form action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" method="post">
 					<?php
 					settings_fields( 'sc_wpun_settings' );
 					do_settings_sections( 'wp-updates-notifier' );
