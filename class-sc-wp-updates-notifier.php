@@ -110,7 +110,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_action( 'sc_wpun_enable_cron', array( $this, 'enable_cron' ) ); // action to enable cron
 			add_action( 'sc_wpun_disable_cron', array( $this, 'disable_cron' ) ); // action to disable cron
 			add_action( self::CRON_NAME, array( $this, 'do_update_check' ) ); // action to link cron task to actual task
-			add_action( 'manage_plugins_custom_column', array( $this, 'manage_plugins_custom_column' ), 10, 2 ); // Filter the column data on the plugins page.
+			add_action( 'manage_plugins_custom_column', array( $this, 'manage_plugins_custom_column' ), 10, 3 ); // Filter the column data on the plugins page.
 			add_action( 'manage_plugins_columns', array( $this, 'manage_plugins_columns' ) ); // Filter the column headers on the plugins page.
 			add_action( 'admin_head', array( $this, 'custom_admin_css' ) ); // Custom css for the admin plugins.php page.
 			add_action( 'admin_footer', array( $this, 'custom_admin_js' ) ); // Custom js for the admin plugins.php page.
@@ -150,7 +150,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				);
 
 				// If we are upgrading from settings before settings version 7, turn on email notifications by default.
-				if ( intval( $current_ver ) < 7 ) {
+				if ( intval( $current_ver ) > 0 && intval( $current_ver ) < 7 ) {
 					$defaults['email_notifications'] = 1;
 				}
 
@@ -271,8 +271,9 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @param string $column_name Name of the column.
 		 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
+		 * @param array  $plugin_data An array of plugin data.
 		 */
-		public function manage_plugins_custom_column( $column_name, $plugin_file ) {
+		public function manage_plugins_custom_column( $column_name, $plugin_file, $plugin_data ) {
 			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
 			if ( 1 === $options['notify_plugins'] ) {
 				if ( 'update_notifications' === $column_name ) {
@@ -429,47 +430,51 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function do_update_check() {
-			$options         = $this->get_set_options( self::OPT_FIELD ); // get settings
-			$updates         = array(); // store all of the updates here.
-			$updates['core'] = $this->core_update_check(); // check the WP core for updates
-			if ( 0 !== $options['notify_plugins'] ) { // are we to check for plugin updates?
-				$updates['plugin'] = $this->plugins_update_check(); // check for plugin updates
-			} else {
-				$updates['plugin'] = false; // no plugin updates
-			}
-			if ( 0 !== $options['notify_themes'] ) { // are we to check for theme updates?
-				$updates['theme'] = $this->themes_update_check(); // check for theme updates
-			} else {
-				$updates['theme'] = false; // no theme updates
-			}
+			$options = $this->get_set_options( self::OPT_FIELD ); // get settings
 
-			/**
-			 * Filters the updates before they're parsed for sending.
-			 *
-			 * Change the updates array of core, plugins, and themes to be notified about.
-			 *
-			 * @since 1.6.1
-			 *
-			 * @param array  $updates Array of updates to notify about.
-			 */
-			$updates = apply_filters( 'sc_wpun_updates', $updates );
-
-			if ( ! empty( $updates['core'] ) || ! empty( $updates['plugin'] ) || ! empty( $updates['theme'] ) ) { // Did anything come back as need updating?
-
-				// Send email notification.
-				if ( 1 === $options['email_notifications'] ) {
-					$message = $this->prepare_message( $updates, self::MARKUP_VARS_EMAIL );
-					$this->send_email_message( $message );
+			// Lets only do a check if one of the notification systems is set, if not, no one will get the message!
+			if ( 1 === $options['email_notifications'] || 1 === $options['slack_notifications'] ) {
+				$updates         = array(); // store all of the updates here.
+				$updates['core'] = $this->core_update_check(); // check the WP core for updates
+				if ( 0 !== $options['notify_plugins'] ) { // are we to check for plugin updates?
+					$updates['plugin'] = $this->plugins_update_check(); // check for plugin updates
+				} else {
+					$updates['plugin'] = false; // no plugin updates
+				}
+				if ( 0 !== $options['notify_themes'] ) { // are we to check for theme updates?
+					$updates['theme'] = $this->themes_update_check(); // check for theme updates
+				} else {
+					$updates['theme'] = false; // no theme updates
 				}
 
-				// Send slack notification.
-				if ( 1 === $options['slack_notifications'] ) {
-					$message = $this->prepare_message( $updates, self::MARKUP_VARS_SLACK );
-					$this->send_slack_message( $message );
-				}
-			}
+				/**
+				 * Filters the updates before they're parsed for sending.
+				 *
+				 * Change the updates array of core, plugins, and themes to be notified about.
+				 *
+				 * @since 1.6.1
+				 *
+				 * @param array  $updates Array of updates to notify about.
+				 */
+				$updates = apply_filters( 'sc_wpun_updates', $updates );
 
-			$this->log_last_check_time();
+				if ( ! empty( $updates['core'] ) || ! empty( $updates['plugin'] ) || ! empty( $updates['theme'] ) ) { // Did anything come back as need updating?
+
+					// Send email notification.
+					if ( 1 === $options['email_notifications'] ) {
+						$message = $this->prepare_message( $updates, self::MARKUP_VARS_EMAIL );
+						$this->send_email_message( $message );
+					}
+
+					// Send slack notification.
+					if ( 1 === $options['slack_notifications'] ) {
+						$message = $this->prepare_message( $updates, self::MARKUP_VARS_SLACK );
+						$this->send_slack_message( $message );
+					}
+				}
+
+				$this->log_last_check_time();
+			}
 		}
 
 
