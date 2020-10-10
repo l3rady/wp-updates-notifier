@@ -1410,7 +1410,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$options = $this->get_set_options( self::OPT_FIELD );
 			?>
 			<input id="sc_wpun_settings_slack_notifications_slack_channel_override" class="regular-text" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[slack_channel_override]" value="<?php echo esc_attr( $options['slack_channel_override'] ); ?>" />
-			<span class="description"><?php esc_html_e( 'Not requred.', 'wp-updates-notifier' ); ?></span>
+			<span class="description"><?php esc_html_e( 'Not required.', 'wp-updates-notifier' ); ?></span>
 			<?php
 		}
 	}
