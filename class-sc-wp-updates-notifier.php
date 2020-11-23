@@ -406,6 +406,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function toggle_plugin_notification() {
+			echo 'inside toggle_plugin_notification';
 			check_ajax_referer( 'toggle_plugin_notification' );
 			if ( isset( $_POST['plugin_file'] ) && isset( $_POST['toggle'] ) && current_user_can( 'update_plugins' ) && current_user_can( 'manage_options' ) ) {
 				$plugin_file = sanitize_text_field( wp_unslash( $_POST['plugin_file'] ) );
@@ -1066,8 +1067,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			// disabled plugins will only be set through the plugins page, so we only check the admin referer for the options page if they aren't set
 			if ( ! isset( $input['disabled_plugins'] ) ) {
 				check_admin_referer( 'sc_wpun_settings-options' );
-			} else {
-				check_ajax_referer( 'toggle_plugin_notification' );
 			}
 			$valid = $this->get_set_options( self::OPT_FIELD );
 
