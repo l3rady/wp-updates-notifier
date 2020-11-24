@@ -20,7 +20,7 @@ branches:
 
 cache:
   directories:
-    - $HOME/.composer/cache
+    - $HOME/.config/composer/cache
 
 matrix:
   fast_finish: true
@@ -46,7 +46,7 @@ before_script:
   - phpenv config-rm xdebug.ini || echo "Xdebug not available"
 
   # This path addition is needed for phpcs.
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+  - export PATH="${HOME}/.config/composer/vendor/bin:${PATH}"
 
   # Couple the PHPUnit version to the PHP version.
   - |
