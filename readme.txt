@@ -54,6 +54,11 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 == Changelog ==
 
+= 1.7.1 =
+* Removed filtering of emails that go out from WP Core about updates
+* Changed settings page to be all radio buttons and clarified language in descriptions of settings
+* Core was checking all the time, even if it was set not to, this is fixed now
+
 = 1.7.0 =
 * Plugins can now have notifications turned on and off individually
 * Buttons added to the Plugins page to manage each plugin's notification setting
