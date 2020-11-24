@@ -434,7 +434,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 			// Lets only do a check if one of the notification systems is set, if not, no one will get the message!
 			if ( 1 === $options['email_notifications'] || 1 === $options['slack_notifications'] ) {
-				$updates         = array(); // store all of the updates here.
+				$updates = array(); // store all of the updates here.
 				if ( 0 !== $options['notify_automatic'] ) { // should we notify about core updates?
 					$updates['core'] = $this->core_update_check(); // check the WP core for updates
 				} else {
