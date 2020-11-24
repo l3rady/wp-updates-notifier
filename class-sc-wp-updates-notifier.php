@@ -407,6 +407,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 */
 		public function toggle_plugin_notification() {
 			check_ajax_referer( 'toggle_plugin_notification' );
+			echo "inside check_ajax_referer";
 			if ( isset( $_POST['plugin_file'] ) ) { echo "one"; }
 			if ( isset( $_POST['toggle'] ) ) { echo "two"; }
 			if ( current_user_can( 'update_plugins' ) ) { echo "three"; }
