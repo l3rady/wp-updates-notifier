@@ -25,14 +25,14 @@ cache:
 matrix:
   fast_finish: true
   include:
-    # - php: 7.3
-    #   env: WP_VERSION=latest PHP_LINT=1 WP_PHPCS=1
-    # - php: 7.2
-    #   env: WP_VERSION=latest PHP_LINT=1
-    # - php: 7.1
-    #   env: WP_VERSION=latest PHP_LINT=1
-    # - php: 7.0
-    #   env: WP_VERSION=latest PHP_LINT=1
+    - php: 7.3
+      env: WP_VERSION=latest PHP_LINT=1 WP_PHPCS=1
+    - php: 7.2
+      env: WP_VERSION=latest PHP_LINT=1
+    - php: 7.1
+      env: WP_VERSION=latest PHP_LINT=1
+    - php: 7.0
+      env: WP_VERSION=latest PHP_LINT=1
     - php: 5.6
       env: WP_VERSION=latest PHP_LINT=1
     - php: 7.3
@@ -50,7 +50,6 @@ before_script:
 
   # Couple the PHPUnit version to the PHP version.
   - |
-    echo "$TRAVIS_PHP_VERSION"
     case "$TRAVIS_PHP_VERSION" in
       7.*)
         echo "Using PHPUnit 6.1"
