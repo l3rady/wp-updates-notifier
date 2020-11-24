@@ -102,7 +102,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_filter( 'sc_wpun_plugins_need_update', array( $this, 'check_plugins_against_notified' ) ); // Filter out plugins that need update if already been notified
 			add_filter( 'sc_wpun_plugins_need_update', array( $this, 'check_plugins_against_disabled' ) ); // Filter out plugins that are disabled
 			add_filter( 'sc_wpun_themes_need_update', array( $this, 'check_themes_against_notified' ) ); // Filter out themes that need update if already been notified
-			add_filter( 'auto_core_update_email', array( $this, 'filter_auto_core_update_email' ), 1 ); // Filter the background update notification email.
 			// Add Actions
 			add_action( 'admin_menu', array( $this, 'admin_settings_menu' ) ); // Add menu to options
 			add_action( 'admin_init', array( $this, 'admin_settings_init' ) ); // Add admin init functions
@@ -436,7 +435,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			// Lets only do a check if one of the notification systems is set, if not, no one will get the message!
 			if ( 1 === $options['email_notifications'] || 1 === $options['slack_notifications'] ) {
 				$updates         = array(); // store all of the updates here.
-				$updates['core'] = $this->core_update_check(); // check the WP core for updates
+				if ( 0 !== $options['notify_automatic'] ) { // should we notify about core updates?
+					$updates['core'] = $this->core_update_check(); // check the WP core for updates
+				} else {
+					$updates['core'] = false; // no core updates
+				}
 				if ( 0 !== $options['notify_plugins'] ) { // are we to check for plugin updates?
 					$updates['plugin'] = $this->plugins_update_check(); // check for plugin updates
 				} else {
@@ -883,30 +886,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$options['last_check_time'] = time();
 			$this->get_set_options( self::OPT_FIELD, $options );
 		}
-
-		/**
-		 * Filter the background update notification email
-		 *
-		 * @param array $email Array of email arguments that will be passed to wp_mail().
-		 *
-		 * @return array Modified array containing the new email address.
-		 */
-		public function filter_auto_core_update_email( $email ) {
-			$options = $this->get_set_options( self::OPT_FIELD ); // Get settings
-
-			if ( 0 !== $options['notify_automatic'] ) {
-				if ( ! empty( $options['notify_to'] ) ) { // If an email address has been set, override the WordPress default.
-					$email['to'] = $options['notify_to'];
-				}
-
-				if ( ! empty( $options['notify_from'] ) ) { // If an email address has been set, override the WordPress default.
-					$email['headers'][] = 'From: ' . $this->sc_wpun_wp_mail_from_name() . ' <' . $options['notify_from'] . '>';
-				}
-			}
-
-			return $email;
-		}
-
 
 		/**
 		 * Removes the update nag for non admin users.
