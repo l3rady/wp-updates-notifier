@@ -148,7 +148,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		private function settings_up_to_date() {
 			$current_ver = $this->get_set_options( self::OPT_VERSION_FIELD ); // Get current plugin version
 			if ( self::OPT_VERSION !== $current_ver ) { // is the version the same as this plugin?
-				$options  = (array) get_option( self::OPT_FIELD ); // get current settings from DB
+				$options = (array) get_option( self::OPT_FIELD ); // get current settings from DB
 
 				// Get the default settings from the CONST
 				$defaults = self::DEFAULT_SETTINGS;
