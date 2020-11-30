@@ -4,7 +4,7 @@ Donate link: http://l3rady.com/donate
 Tags: admin, theme, monitor, plugin, notification, upgrade, security
 Requires at least: 3.1
 Tested up to: 5.3
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv3 or later
 
 Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
@@ -53,6 +53,9 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 2. Email alert
 
 == Changelog ==
+
+= 1.7.1 =
+* Button to reset default settings
 
 = 1.7.0 =
 * Plugins can now have notifications turned on and off individually

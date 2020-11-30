@@ -76,6 +76,27 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			'b_end'       => '</b>',
 		);
 
+		const DEFAULT_SETTINGS = array(
+			'frequency'              => 'hourly',
+			'email_notifications'    => 0,
+			'notify_to'              => '',
+			'notify_from'            => '',
+			'slack_notifications'    => 0,
+			'slack_webhook_url'      => '',
+			'slack_channel_override' => '',
+			'disabled_plugins'       => array(),
+			'notify_plugins'         => 1,
+			'notify_themes'          => 1,
+			'notify_automatic'       => 1,
+			'hide_updates'           => 1,
+			'notified'               => array(
+				'core'   => '',
+				'plugin' => array(),
+				'theme'  => array(),
+			),
+			'last_check_time'        => false,
+		);
+
 		public static $did_init = false;
 
 		public function __construct() {
@@ -127,28 +148,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		private function settings_up_to_date() {
 			$current_ver = $this->get_set_options( self::OPT_VERSION_FIELD ); // Get current plugin version
 			if ( self::OPT_VERSION !== $current_ver ) { // is the version the same as this plugin?
-				$options  = (array) get_option( self::OPT_FIELD ); // get current settings from DB
-				$defaults = array( // Here are our default values for this plugin
-					'frequency'              => 'hourly',
-					'email_notifications'    => 0,
-					'notify_to'              => get_option( 'admin_email' ),
-					'notify_from'            => get_option( 'admin_email' ),
-					'slack_notifications'    => 0,
-					'slack_webhook_url'      => '',
-					'slack_channel_override' => '',
-					'disabled_plugins'       => array(),
-					'notify_plugins'         => 1,
-					'notify_themes'          => 1,
-					'notify_automatic'       => 1,
-					'hide_updates'           => 1,
-					'notified'               => array(
-						'core'   => '',
-						'plugin' => array(),
-						'theme'  => array(),
-					),
-					'last_check_time'        => false,
-				);
+				$options = (array) get_option( self::OPT_FIELD ); // get current settings from DB
 
+				// Get the default settings from the CONST
+				$defaults = self::DEFAULT_SETTINGS;
+			
 				// If we are upgrading from settings before settings version 7, turn on email notifications by default.
 				if ( intval( $current_ver ) > 0 && intval( $current_ver ) < 7 ) {
 					$defaults['email_notifications'] = 1;
@@ -176,7 +180,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( false === $settings ) {
 				return apply_filters( 'sc_wpun_get_options_filter', get_option( $field ), $field );
 			}
-
 			return update_option( $field, apply_filters( 'sc_wpun_put_options_filter', $settings, $field ) );
 		}
 
@@ -1017,6 +1020,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					<input class="button-primary" name="Submit" type="submit" value="<?php esc_html_e( 'Save settings', 'wp-updates-notifier' ); ?>" />
 					<input class="button" name="submitwithemail" type="submit" value="<?php esc_html_e( 'Save settings with test email', 'wp-updates-notifier' ); ?>" />
 					<input class="button" name="submitwithslack" type="submit" value="<?php esc_html_e( 'Save settings with test slack post', 'wp-updates-notifier' ); ?>" />
+					<br><br>
+					<input class="button" name="restoredefaults" type="submit" value="<?php esc_html_e( 'Restore Default Settings', 'wp-updates-notifier' ); ?>" />
 				</form>
 			</div>
 			<?php
@@ -1217,6 +1222,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				} else {
 					add_settings_error( 'sc_wpun_settings_email_notifications_slack_notifications', 'sc_wpun_settings_email_notifications_slack_notifications_error', __( 'Can not post test slack message. Slack settings are invalid.', 'wp-updates-notifier' ), 'error' );
 				}
+			}
+
+			if ( isset( $_POST['restoredefaults'] ) ) {
+				// override all settings
+				$valid = self::DEFAULT_SETTINGS;
 			}
 
 			return $valid;
