@@ -4,7 +4,7 @@ Donate link: http://l3rady.com/donate
 Tags: admin, theme, monitor, plugin, notification, upgrade, security
 Requires at least: 3.1
 Tested up to: 5.3
-Stable tag: 1.6
+Stable tag: 1.7.1
 License: GPLv3 or later
 
 Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
@@ -53,6 +53,22 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 2. Email alert
 
 == Changelog ==
+
+= 1.7.1 =
+* Removed filtering of emails that go out from WP Core about updates
+* Changed settings page to be all radio buttons and clarified language in descriptions of settings
+* Core was checking all the time, even if it was set not to, this is fixed now
+* Button to reset default settings
+
+= 1.7.0 =
+* Plugins can now have notifications turned on and off individually
+* Buttons added to the Plugins page to manage each plugin's notification setting
+
+= 1.6.1 =
+* Removed option to check inactive plugins and themes
+* Added filters for email and slack notifications
+* Added formating for html emails and fancy slack messages
+* Moved message composition to its own function
 
 = 1.6 =
 * Added slack notifications and testing button
@@ -134,13 +150,13 @@ Two filters have been provided to allow you to alter the email subject and email
 
 <h4>sc_wpun_email_subject</h4>
 
-@parameters:<br /> 
+@parameters:<br />
 $email_subject - the email subject to be filtered.
 
 <strong>Example:</strong>
 `
-/* 
-*	Alter the email subject being sent by WP Updates Notifier 
+/*
+*	Alter the email subject being sent by WP Updates Notifier
 */
 function alter_wp_updates_notifier_email_subject( $email_subject ) {
 	$email_subject = 'This is the new email subject for updates notifier';
@@ -156,8 +172,8 @@ $message - the content of the email to be filtered
 
 <strong>Example:</strong>
 `
-/* 
-*	Alter the email content being sent by WP Updates Notifier 
+/*
+*	Alter the email content being sent by WP Updates Notifier
 */
 function alter_wp_updates_notifier_email_content( $message ) {
 	$message = 'This is our new email content that will override the default.';

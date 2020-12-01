@@ -7,6 +7,7 @@
 	 p flag: Show progress of the run.
 	 s flag: Show sniff codes in all reports.
 	-->
+
 	<arg value="ps" />
 
 	<!-- Strip the filepaths down to the relevant bit. -->
@@ -52,15 +53,6 @@
 		and the trailing newline rule at the same time.
 		-->
 		<type>warning</type>
-
-		<!--
-		Once your PHP files have been filled in, you might be able
-		to start checking for compliance again with an
-		exclude-pattern like these:
-
-		<exclude-pattern>themes(/vip)?/[^/]+/[^/]+\.php$</exclude-pattern>
-		<exclude-pattern>themes(/vip)?/[^/]+/template-parts/*</exclude-pattern>
-		-->
 	</rule>
 
 	<rule ref="Generic.Files.OneObjectStructurePerFile">
@@ -95,20 +87,6 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array" value="sc_,ai_,_ai" />
-		</properties>
-	</rule>
-
-	<rule ref="Generic.PHP.ForbiddenFunctions">
-		<properties>
-			<!--
-			WordPress.com VIP does not propagate wp_cache_set data across datacenters,
-			largely to avoid attempting to propagate large (>50k) data for batcache.
-			-->
-			<property name="forbiddenFunctions" type="array" value="wp_cache_add=>wp_cache_set" />
-			<!-- This is the newer format, only supported in PHPCS 3.3.0+
-			<property name="forbiddenFunctions" type="array">
-				<element key="wp_cache_add" value="wp_cache_set"/>
-			</property> -->
 		</properties>
 	</rule>
 

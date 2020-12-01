@@ -20,7 +20,7 @@ branches:
 
 cache:
   directories:
-    - $HOME/.composer/cache
+    - $HOME/.config/composer/cache
 
 matrix:
   fast_finish: true
@@ -46,7 +46,7 @@ before_script:
   - phpenv config-rm xdebug.ini || echo "Xdebug not available"
 
   # This path addition is needed for phpcs.
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+  - export PATH="${HOME}/.config/composer/vendor/bin:${PATH}"
 
   # Couple the PHPUnit version to the PHP version.
   - |
@@ -56,8 +56,8 @@ before_script:
         composer global require "phpunit/phpunit=6.1.*"
         ;;
       *)
-        echo "Using PHPUnit 4.8"
-        composer global require "phpunit/phpunit=4.8.*"
+        echo "Using PHPUnit 5.4"
+        composer global require "phpunit/phpunit=5.4.*"
         ;;
     esac
 
@@ -67,9 +67,7 @@ before_script:
   # Set up phpcs.
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
-      composer global require automattic/vipwpcs
-      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/automattic/vipwpcs
-      phpcs --config-show
+      composer g require --dev automattic/vipwpcs dealerdirect/phpcodesniffer-composer-installer
     fi
 
 # Run test script commands.
@@ -92,7 +90,7 @@ script:
   # @link http://pear.php.net/package/PHP_CodeSniffer/
   - |
     if [[ "$WP_PHPCS" == "1" ]] ; then
-      phpcs
+      phpcs -n
     fi
 
   # Run phpunit and phpunit multi-site.

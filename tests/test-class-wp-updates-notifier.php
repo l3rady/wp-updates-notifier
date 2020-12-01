@@ -12,7 +12,7 @@
  * A class which is used to test the SC_WP_Updates_Notifier class.
  */
 class SC_WP_Updates_Notifier_Tests extends WP_UnitTestCase {
-	
+
 	/**
 	 * A function containing operations to be run before each test function.
 	 *
@@ -31,7 +31,7 @@ class SC_WP_Updates_Notifier_Tests extends WP_UnitTestCase {
 	 */
 	public function testEmailInfo() {
 		$sc_wp_updates_notifier = new SC_WP_Updates_Notifier();
-	
+
 		// Test email content type.
 		$this->assertEquals(
 			'WP Updates Notifier',
@@ -40,7 +40,7 @@ class SC_WP_Updates_Notifier_Tests extends WP_UnitTestCase {
 
 		// Test email content type.
 		$this->assertEquals(
-			'text/plain',
+			'text/html',
 			$sc_wp_updates_notifier->sc_wpun_wp_mail_content_type()
 		);
 	}
