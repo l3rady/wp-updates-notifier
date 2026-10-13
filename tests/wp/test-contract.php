@@ -170,7 +170,10 @@ class Test_Contract extends WPUN_Test_Case {
 		);
 		$this->set_updates();
 		$this->plugin()->do_update_check();
+		$this->assertContains( 'sc_wpun_state', $put, 'Saving the run state must run the put filter.' );
 
+		update_option( 'sc_wpun_settings_ver', '7.0' );
+		$this->call_private( 'settings_up_to_date' );
 		$this->assertContains( 'sc_wpun_settings', $put, 'Saving settings must run the put filter.' );
 	}
 

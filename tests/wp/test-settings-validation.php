@@ -73,48 +73,22 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Run state saved during an admin request is kept, not replaced by the stored copy.
+	 * The run state is not part of the settings: the sanitizer drops it if a caller passes it.
 	 */
-	public function test_internal_saves_keep_the_run_state() {
-		$notified = array(
-			'core'   => '99.0.0',
-			'plugin' => array( 'hello.php' => '2.0.0' ),
-			'theme'  => array(),
-		);
-
+	public function test_the_run_state_is_not_stored_in_the_settings() {
 		update_option(
 			'sc_wpun_settings',
-			$this->settings(
+			array_merge(
+				$this->settings(),
 				array(
-					'notified'        => $notified,
-					'last_check_time' => 1234567890,
+					'notified'        => array( 'core' => '99.0.0' ),
+					'last_check_time' => 1,
 				)
 			)
 		);
 
-		$this->assertSame( $notified, $this->stored_settings()['notified'] );
-		$this->assertSame( 1234567890, $this->stored_settings()['last_check_time'] );
-	}
-
-	/**
-	 * The form never sends the run state, so saving the form keeps it.
-	 */
-	public function test_saving_the_form_keeps_the_run_state() {
-		$this->save_settings(
-			array(
-				'notified' => array(
-					'core'   => '99.0.0',
-					'plugin' => array(),
-					'theme'  => array(),
-				),
-			)
-		);
-		$form = $this->settings();
-		unset( $form['notified'], $form['last_check_time'] );
-
-		$result = $this->plugin()->sc_wpun_settings_validate( $form );
-
-		$this->assertSame( '99.0.0', $result['notified']['core'] );
+		$this->assertArrayNotHasKey( 'notified', $this->stored_settings() );
+		$this->assertArrayNotHasKey( 'last_check_time', $this->stored_settings() );
 	}
 
 	/**

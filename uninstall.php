@@ -36,3 +36,4 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 delete_option( 'sc_wpun_settings' );
 delete_option( 'sc_wpun_settings_ver' );
+delete_option( 'sc_wpun_state' );
