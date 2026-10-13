@@ -584,8 +584,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( ! empty( $pending ) ) { // any plugin updates available?
 				$plugins_need_update = $pending; // plugins that need updating.
 				if ( 2 === $all_or_active ) { // are we to check just active plugins?
-					$active_plugins      = array_flip( get_option( 'active_plugins' ) ); // find which plugins are active.
-					$plugins_need_update = array_intersect_key( $plugins_need_update, $active_plugins ); // only keep plugins that are active.
+					$plugins_need_update = array_intersect_key( $plugins_need_update, array_flip( $this->active_plugins() ) ); // only keep plugins that are active.
 				}
 				$plugins_need_update = apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ); // additional filtering of plugins need update.
 				$plugins_need_update = is_array( $plugins_need_update ) ? $plugins_need_update : array();
@@ -643,8 +642,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			if ( ! empty( $pending ) ) { // any theme updates available?
 				$themes_need_update = $pending; // themes that need updating.
 				if ( 2 === $all_or_active ) { // are we to check just active themes?
-					$active_theme       = array( get_option( 'template' ) => array() ); // find current theme that is active.
-					$themes_need_update = array_intersect_key( $themes_need_update, $active_theme ); // only keep theme that is active.
+					$active_themes      = array_flip( array_unique( array( get_stylesheet(), get_template() ) ) ); // The active theme and, for a child theme, its parent.
+					$themes_need_update = array_intersect_key( $themes_need_update, $active_themes ); // only keep theme that is active.
 				}
 				$themes_need_update = apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ); // additional filtering of themes need update.
 				$themes_need_update = is_array( $themes_need_update ) ? $themes_need_update : array();
@@ -661,6 +660,22 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			return false; // No theme updates so return false.
 		}
 
+
+		/**
+		 * Plugins active on this site, including those network-activated on multisite.
+		 *
+		 * @return string[] Plugin files relative to the plugins directory.
+		 */
+		private function active_plugins(): array {
+			$active = array_filter( (array) get_option( 'active_plugins', array() ), 'is_string' );
+
+			if ( is_multisite() ) {
+				$network = array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) );
+				$active  = array_merge( $active, array_filter( $network, 'is_string' ) );
+			}
+
+			return array_values( array_unique( $active ) );
+		}
 
 		/**
 		 * Filter for removing plugins from update list if already been notified about
