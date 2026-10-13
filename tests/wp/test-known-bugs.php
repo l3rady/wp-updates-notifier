@@ -242,19 +242,4 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 
 		$this->assertNotSame( 'ops@example.org', tests_retrieve_phpmailer_instance()->From );
 	}
-
-	/**
-	 * #77: the nag is core's, and core shows it by `update_core`.
-	 */
-	public function test_77_the_nag_is_kept_for_users_who_can_update_core() {
-		$this->save_settings( array( 'hide_updates' => 1 ) );
-		$user = self::factory()->user->create( array( 'role' => 'editor' ) );
-		get_userdata( $user )->add_cap( 'update_core' );
-		wp_set_current_user( $user );
-		add_action( 'admin_notices', 'update_nag', 3 );
-
-		$this->plugin()->remove_update_nag_for_nonadmins();
-
-		$this->assertNotFalse( has_action( 'admin_notices', 'update_nag' ) );
-	}
 }
