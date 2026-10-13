@@ -45,6 +45,10 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Not loaded by WordPress.
+}
+
 // Only load class if it hasn't already been loaded.
 if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
