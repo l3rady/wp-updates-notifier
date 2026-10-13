@@ -24,7 +24,8 @@
  * Author URI: http://l3rady.com/
  * Text Domain: wp-updates-notifier
  * Domain Path: /languages
- * License: GPL3+
+ * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
 */
 
 /*

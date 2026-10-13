@@ -6,7 +6,8 @@ Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.6
-License: GPLv3 or later
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
 
