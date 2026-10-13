@@ -16,6 +16,7 @@ make lint                        # WordPress Coding Standards (errors and warnin
 make fix                         # auto-fix what phpcbf can
 make stan                        # PHPStan level 8 with the WordPress stubs
 make rector                      # PHP 7.4 syntax upgrades still to do (none expected)
+make commits                     # check the commit messages on this branch (Conventional Commits)
 make shell                       # shell in the PHP container
 make up                          # local site: http://localhost:8080, mail in Mailpit on :8025
 make down
