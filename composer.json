@@ -1,0 +1,26 @@
+{
+    "name": "l3rady/wp-updates-notifier",
+    "description": "Sends email or Slack messages to notify you if there are any updates for your WordPress site.",
+    "type": "wordpress-plugin",
+    "homepage": "https://github.com/l3rady/wp-updates-notifier",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Scott Cariss",
+            "email": "scott@cariss.dev"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/l3rady/wp-updates-notifier/issues",
+        "source": "https://github.com/l3rady/wp-updates-notifier"
+    },
+    "require": {
+        "php": ">=7.4"
+    },
+    "config": {
+        "platform": {
+            "php": "7.4.33"
+        },
+        "sort-packages": true
+    }
+}

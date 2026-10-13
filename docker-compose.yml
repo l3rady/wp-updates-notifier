@@ -1,0 +1,147 @@
+name: wp-updates-notifier
+
+x-dev: &dev
+  build: &dev-build
+    context: .
+    dockerfile: docker/Dockerfile
+    target: dev
+    args: &dev-args
+      PHP_VERSION: ${PHP_VERSION:-8.3}
+      HOST_UID: ${HOST_UID:-1000}
+      HOST_GID: ${HOST_GID:-1000}
+  image: wp-updates-notifier:php${PHP_VERSION:-8.3}
+  working_dir: /app
+  volumes:
+    - .:/app
+    - composer-cache:/home/dev/.composer/cache
+
+services:
+  # PHP CLI: linting, static analysis, smoke test.
+  php:
+    <<: *dev
+
+  # Composer helper: `docker compose run --rm composer require ...`
+  composer:
+    <<: *dev
+    entrypoint: ["composer"]
+
+  # CLI with pcov for coverage reports.
+  coverage:
+    build:
+      <<: *dev-build
+      target: coverage
+    image: wp-updates-notifier:php${PHP_VERSION:-8.3}-coverage
+    working_dir: /app
+    volumes:
+      - .:/app
+      - composer-cache:/home/dev/.composer/cache
+
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: wordpress_test
+    # Throwaway test data: keep it in memory.
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  # The plugin's PHPUnit suite on a pinned wordpress-develop checkout. Core's
+  # bootstrap uses tests/phpunit/data/plugins as the plugins directory, so the
+  # plugin is mounted there (read-only).
+  wp-tests:
+    build:
+      <<: *dev-build
+      target: wp-tests
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.3}
+        WP_VERSION: ${WP_VERSION:-7.1.3}
+    image: wp-updates-notifier:php${PHP_VERSION:-8.3}-wp${WP_VERSION:-7.1.3}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/opt/wp-updates-notifier:ro
+      - .:/opt/wordpress-develop/tests/phpunit/data/plugins/wp-updates-notifier:ro
+    environment:
+      WP_DB_HOST: db
+      WP_MULTISITE: ${WP_MULTISITE:-0}
+
+  # ----- Local site for manual testing (`make up`), profile "site" -----
+
+  site-db:
+    profiles: [site]
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: wordpress
+    volumes:
+      - site-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  wordpress:
+    profiles: [site]
+    image: wordpress:php${PHP_VERSION:-8.3}
+    depends_on:
+      site-db:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: site-db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: "1"
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_ENVIRONMENT_TYPE', 'local' );
+    volumes:
+      - site-wp:/var/www/html
+      - .:/var/www/html/wp-content/plugins/wp-updates-notifier
+      - ./docker/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+
+  # WP-CLI against the local site: `docker compose run --rm wp-cli plugin list`
+  wp-cli:
+    profiles: [site]
+    image: wordpress:cli
+    user: "33:33"
+    depends_on:
+      - wordpress
+    volumes:
+      - site-wp:/var/www/html
+      - .:/var/www/html/wp-content/plugins/wp-updates-notifier
+      - ./docker/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+    environment:
+      WORDPRESS_DB_HOST: site-db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_NAME: wordpress
+    entrypoint: ["wp"]
+
+  # Catches all outgoing mail: http://localhost:8025
+  mailpit:
+    profiles: [site]
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+
+  # Echoes every request it receives (a stand-in for a Slack or other webhook):
+  # http://webhook:8080 inside the network, `docker compose logs webhook` to read.
+  webhook:
+    profiles: [site]
+    image: mendhak/http-https-echo:latest
+    environment:
+      HTTP_PORT: "8080"
+
+volumes:
+  composer-cache:
+  site-db:
+  site-wp:
