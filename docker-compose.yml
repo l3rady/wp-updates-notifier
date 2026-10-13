@@ -50,9 +50,8 @@ services:
       timeout: 5s
       retries: 20
 
-  # The plugin's PHPUnit suite on a pinned wordpress-develop checkout. Core's
-  # bootstrap uses tests/phpunit/data/plugins as the plugins directory, so the
-  # plugin is mounted there (read-only).
+  # The plugin's PHPUnit suite on a pinned wordpress-develop checkout, with the
+  # plugin mounted read-only in the checkout's plugins directory.
   wp-tests:
     build:
       <<: *dev-build
@@ -66,7 +65,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/opt/wp-updates-notifier:ro
-      - .:/opt/wordpress-develop/tests/phpunit/data/plugins/wp-updates-notifier:ro
+      - .:/opt/wordpress-develop/src/wp-content/plugins/wp-updates-notifier:ro
     environment:
       WP_DB_HOST: db
       WP_MULTISITE: ${WP_MULTISITE:-0}

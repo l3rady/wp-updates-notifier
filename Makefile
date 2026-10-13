@@ -37,6 +37,17 @@ vendor/autoload.php: composer.json
 
 deps: vendor/autoload.php ## Install Composer dependencies
 
+test-wp: ## Run the WordPress test suite (single site)
+	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+
+test-wp-ms: ## Run the WordPress test suite as multisite
+	$(COMPOSE) run --build --rm -e WP_MULTISITE=1 wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+
+test-known-bugs: ## Run the tests that document open bugs (they are expected to fail)
+	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
+
+test: test-wp test-wp-ms ## Run every test layer
+
 smoke: ## Verify PHP, mysqli and that every PHP file lints
 	$(COMPOSE) run --build --rm php sh docker/smoke.sh
 

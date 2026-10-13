@@ -1,17 +1,29 @@
+<?xml version="1.0"?>
 <phpunit
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
 	bootstrap="tests/bootstrap.php"
-	backupGlobals="false"
 	colors="true"
-	convertErrorsToExceptions="true"
-	convertNoticesToExceptions="true"
-	convertWarningsToExceptions="true"
-	>
-	<php>
-		<const name="WP_UPDATES_NOTIFIER_UNIT_TESTS" value="1" />
-	</php>
+	cacheResult="false"
+	beStrictAboutTestsThatDoNotTestAnything="true"
+	failOnRisky="true"
+	failOnWarning="true"
+>
 	<testsuites>
-		<testsuite>
-			<directory prefix="test-" suffix=".php">./tests/</directory>
+		<!-- Run through WordPress's own test bootstrap and a real database (see docker/wp-tests.sh). -->
+		<testsuite name="wordpress">
+			<directory prefix="test-" suffix=".php">tests/wp</directory>
 		</testsuite>
 	</testsuites>
+
+	<groups>
+		<exclude>
+			<!--
+			Tests that document a bug that is still open. They fail on purpose until
+			the fix lands; the fix removes the tag. Run them with `make test-known-bugs`.
+			-->
+			<group>known-bug</group>
+		</exclude>
+	</groups>
+
 </phpunit>
