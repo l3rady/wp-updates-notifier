@@ -576,7 +576,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
 			do_action( 'wp_update_plugins' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 			$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates.
-			$pending        = is_object( $update_plugins ) && ! empty( $update_plugins->response ) && is_array( $update_plugins->response ) ? $update_plugins->response : array();
+			$pending        = $this->normalise_plugin_updates( is_object( $update_plugins ) && isset( $update_plugins->response ) ? $update_plugins->response : array() );
 
 			// Forget plugins that are no longer waiting for an update (updated or deleted).
 			$notified['plugin'] = array_intersect_key( $notified['plugin'], $pending );
@@ -586,19 +586,24 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				if ( 2 === $all_or_active ) { // are we to check just active plugins?
 					$plugins_need_update = array_intersect_key( $plugins_need_update, array_flip( $this->active_plugins() ) ); // only keep plugins that are active.
 				}
-				$plugins_need_update = apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ); // additional filtering of plugins need update.
-				$plugins_need_update = is_array( $plugins_need_update ) ? $plugins_need_update : array();
+				$plugins_need_update = $this->normalise_plugin_updates( apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ) ); // additional filtering of plugins need update; filters may return anything.
 				if ( count( $plugins_need_update ) >= 1 ) { // any plugins need updating after all the filtering gone on above?
 					require_once ABSPATH . 'wp-admin/includes/plugin-install.php'; // Required for plugin API.
 					foreach ( $plugins_need_update as $key => $data ) { // loop through the plugins that need updating.
 						$plugin_info = get_plugin_data( WP_PLUGIN_DIR . '/' . $key ); // get local plugin info.
-						$info        = plugins_api( 'plugin_information', array( 'slug' => $data->slug ) ); // get repository plugin info.
+						$wporg_slug  = $this->wporg_plugin_slug( $data );
+						$info        = '' !== $wporg_slug ? plugins_api( 'plugin_information', array( 'slug' => $wporg_slug ) ) : null; // get repository plugin info.
 						// translators: 1: Plugin name. 2: Installed plugin version. 3: New plugin version.
 						$message .= "\n" . sprintf( __( 'Plugin: %1$s is out of date. Please update from version %2$s to %3$s', 'wp-updates-notifier' ), $plugin_info['Name'], $plugin_info['Version'], $data->new_version ) . "\n";
-						// translators: %s: URL of the plugin page.
-						$message .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), $data->url ) . "\n";
-						// translators: 1: URL of the plugin page. 2: Path of the changelog page below it.
-						$message .= "\t" . sprintf( __( 'Changelog: %1$s%2$s', 'wp-updates-notifier' ), $data->url, 'changelog/' ) . "\n";
+						if ( '' !== $wporg_slug ) {
+							// translators: %s: URL of the plugin page.
+							$message .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), 'https://wordpress.org/plugins/' . $wporg_slug . '/' ) . "\n";
+							// translators: %s: URL of the changelog of the plugin.
+							$message .= "\t" . sprintf( __( 'Changelog: %s', 'wp-updates-notifier' ), 'https://wordpress.org/plugins/' . $wporg_slug . '/#developers' ) . "\n";
+						} elseif ( '' !== $data->url ) {
+							// translators: %s: URL of the plugin page.
+							$message .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), $data->url ) . "\n";
+						}
 						if ( isset( $info->tested ) && version_compare( $info->tested, $wp_version, '>=' ) ) {
 							// translators: %1$s: WordPress version.
 							$compat = sprintf( __( 'Compatibility with WordPress %1$s: 100%% (according to its author)', 'wp-updates-notifier' ), $cur_wp_version );
@@ -634,7 +639,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		private function themes_update_check( string &$message, $all_or_active, array &$notified ): bool {
 			do_action( 'wp_update_themes' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 			$update_themes = get_site_transient( 'update_themes' ); // get information of updates.
-			$pending       = is_object( $update_themes ) && ! empty( $update_themes->response ) && is_array( $update_themes->response ) ? $update_themes->response : array();
+			$pending       = $this->normalise_theme_updates( is_object( $update_themes ) && isset( $update_themes->response ) ? $update_themes->response : array() );
 
 			// Forget themes that are no longer waiting for an update (updated or deleted).
 			$notified['theme'] = array_intersect_key( $notified['theme'], $pending );
@@ -645,14 +650,17 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 					$active_themes      = array_flip( array_unique( array( get_stylesheet(), get_template() ) ) ); // The active theme and, for a child theme, its parent.
 					$themes_need_update = array_intersect_key( $themes_need_update, $active_themes ); // only keep theme that is active.
 				}
-				$themes_need_update = apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ); // additional filtering of themes need update.
-				$themes_need_update = is_array( $themes_need_update ) ? $themes_need_update : array();
+				$themes_need_update = $this->normalise_theme_updates( apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ) ); // additional filtering of themes need update; filters may return anything.
 				if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 					foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating.
 						$theme_info = wp_get_theme( $key ); // get theme info.
 						// translators: 1: Theme name. 2: Installed theme version. 3: New theme version.
-						$message                           .= "\n" . sprintf( __( 'Theme: %1$s is out of date. Please update from version %2$s to %3$s', 'wp-updates-notifier' ), $theme_info['Name'], $theme_info['Version'], $data['new_version'] ) . "\n";
-						$notified['theme'][ (string) $key ] = (string) $data['new_version']; // set theme version we are notifying about.
+						$message .= "\n" . sprintf( __( 'Theme: %1$s is out of date. Please update from version %2$s to %3$s', 'wp-updates-notifier' ), $theme_info['Name'], $theme_info['Version'], $data['new_version'] ) . "\n";
+						if ( '' !== $data['url'] ) {
+							// translators: %s: URL of the theme page.
+							$message .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), $data['url'] ) . "\n";
+						}
+						$notified['theme'][ (string) $key ] = $data['new_version']; // set theme version we are notifying about.
 					}
 					return true; // we have theme updates return true.
 				}
@@ -660,6 +668,92 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			return false; // No theme updates so return false.
 		}
 
+
+		/**
+		 * Plugin update entries as objects with the properties the plugin reads.
+		 *
+		 * Updaters for plugins outside WordPress.org add their own entries to the
+		 * update_plugins transient, sometimes as arrays, often without `url` or
+		 * `slug`. Entries without a new version are dropped: there is nothing to
+		 * report about them.
+		 *
+		 * @param mixed $response The transient's `response`.
+		 *
+		 * @return array<string, \stdClass> Entries keyed by plugin file, each with string `new_version`, `url`, `slug` and `id`.
+		 */
+		private function normalise_plugin_updates( $response ): array {
+			$updates = array();
+
+			foreach ( is_array( $response ) ? $response : array() as $file => $entry ) {
+				if ( is_array( $entry ) ) {
+					$entry = (object) $entry;
+				} elseif ( is_object( $entry ) && ! $entry instanceof stdClass ) {
+					$entry = (object) get_object_vars( $entry );
+				}
+				if ( ! $entry instanceof stdClass || ! isset( $entry->new_version ) || ! is_scalar( $entry->new_version ) || '' === (string) $entry->new_version ) {
+					continue;
+				}
+
+				$entry->new_version = (string) $entry->new_version;
+				foreach ( array( 'url', 'slug', 'id' ) as $property ) {
+					$entry->$property = isset( $entry->$property ) && is_scalar( $entry->$property ) ? (string) $entry->$property : '';
+				}
+
+				$updates[ (string) $file ] = $entry;
+			}
+
+			return $updates;
+		}
+
+		/**
+		 * Theme update entries as arrays with the keys the plugin reads.
+		 *
+		 * @param mixed $response The update_themes transient's `response`.
+		 *
+		 * @return array<string, array{new_version: string, url: string}> Entries keyed by stylesheet.
+		 */
+		private function normalise_theme_updates( $response ): array {
+			$updates = array();
+
+			foreach ( is_array( $response ) ? $response : array() as $stylesheet => $entry ) {
+				$entry = is_object( $entry ) ? get_object_vars( $entry ) : $entry;
+				if ( ! is_array( $entry ) || ! isset( $entry['new_version'] ) || ! is_scalar( $entry['new_version'] ) || '' === (string) $entry['new_version'] ) {
+					continue;
+				}
+
+				$entry['new_version'] = (string) $entry['new_version'];
+				$entry['url']         = isset( $entry['url'] ) && is_scalar( $entry['url'] ) ? (string) $entry['url'] : '';
+
+				$updates[ (string) $stylesheet ] = $entry;
+			}
+
+			return $updates;
+		}
+
+		/**
+		 * The WordPress.org slug of a plugin update, or an empty string if it does not come from WordPress.org.
+		 *
+		 * WordPress.org entries carry an `id` like "w.org/plugins/akismet" and a URL
+		 * under https://wordpress.org/plugins/; updaters for other plugins do not.
+		 *
+		 * @param \stdClass $entry A normalised plugin update entry.
+		 *
+		 * @return string
+		 */
+		private function wporg_plugin_slug( stdClass $entry ): string {
+			$id         = (string) $entry->id;
+			$slug       = (string) $entry->slug;
+			$from_wporg = 0 === strpos( $id, 'w.org/plugins/' )
+				|| 1 === preg_match( '#^https?://(www\.)?WordPress\.org/plugins/#', (string) $entry->url );
+
+			if ( ! $from_wporg ) {
+				return '';
+			}
+
+			$slug = '' !== $slug ? $slug : basename( $id );
+
+			return 1 === preg_match( '/^[a-z0-9-]+$/', $slug ) ? $slug : '';
+		}
 
 		/**
 		 * Plugins active on this site, including those network-activated on multisite.
