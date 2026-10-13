@@ -499,20 +499,49 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		private function core_update_check( string &$message, array &$notified ): bool {
 			do_action( 'wp_version_check' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 			$update_core = get_site_transient( 'update_core' ); // get information of updates.
-			if ( 'upgrade' === $update_core->updates[0]->response ) { // is WP core update available?
-				if ( $update_core->updates[0]->current !== $notified['core'] ) { // have we already notified about this version?
-					$new_core_ver = $update_core->updates[0]->current; // The new WP core version.
-					$old_core_ver = wp_get_wp_version(); // Read from version.php, so plugins that change the $wp_version global do not affect it.
-					// translators: 1: Installed WordPress version. 2: New WordPress version.
-					$message         .= "\n" . sprintf( __( 'WP-Core: WordPress is out of date. Please update from version %1$s to %2$s', 'wp-updates-notifier' ), $old_core_ver, $new_core_ver ) . "\n";
-					$notified['core'] = (string) $new_core_ver; // set core version we are notifying about.
-					return true; // we have updates so return true.
-				} else {
-					return false; // There are updates but we have already notified in the past.
+
+			// No usable data (new site, api.wordpress.org unreachable): we know nothing,
+			// so keep what was notified instead of forgetting it.
+			if ( ! is_object( $update_core ) || empty( $update_core->updates ) || ! is_array( $update_core->updates ) ) {
+				return false;
+			}
+
+			$new_core_ver = $this->core_upgrade_offer( $update_core->updates );
+			if ( '' === $new_core_ver ) {
+				$notified['core'] = ''; // no updates lets set this nothing.
+				return false; // no updates return false.
+			}
+
+			if ( $new_core_ver === $notified['core'] ) { // have we already notified about this version?
+				return false; // There are updates but we have already notified in the past.
+			}
+
+			$old_core_ver = wp_get_wp_version(); // Read from version.php, so plugins that change the $wp_version global do not affect it.
+			// translators: 1: Installed WordPress version. 2: New WordPress version.
+			$message         .= "\n" . sprintf( __( 'WP-Core: WordPress is out of date. Please update from version %1$s to %2$s', 'wp-updates-notifier' ), $old_core_ver, $new_core_ver ) . "\n";
+			$notified['core'] = $new_core_ver; // set core version we are notifying about.
+			return true; // we have updates so return true.
+		}
+
+		/**
+		 * The version of the first core update offer that is an upgrade.
+		 *
+		 * WordPress lists several offers (the latest release, other locales,
+		 * automatic update packages); only one with the "upgrade" response is
+		 * something to tell the site owner about.
+		 *
+		 * @param array<mixed> $offers The `updates` list of the update_core transient.
+		 *
+		 * @return string The offered version, or an empty string if there is no upgrade.
+		 */
+		private function core_upgrade_offer( array $offers ): string {
+			foreach ( $offers as $offer ) {
+				if ( is_object( $offer ) && isset( $offer->response, $offer->current ) && 'upgrade' === $offer->response && is_scalar( $offer->current ) && '' !== (string) $offer->current ) {
+					return (string) $offer->current;
 				}
 			}
-			$notified['core'] = ''; // no updates lets set this nothing.
-			return false; // no updates return false.
+
+			return '';
 		}
 
 
