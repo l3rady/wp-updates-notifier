@@ -1,6 +1,7 @@
 # Keep GitHub and Composer archives to what the plugin needs at runtime, in step
 # with .distignore (which the release build and the WordPress.org deploy use).
 /.claude                       export-ignore
+/.distignore                   export-ignore
 /.dockerignore                 export-ignore
 /.gitattributes                export-ignore
 /.github                       export-ignore

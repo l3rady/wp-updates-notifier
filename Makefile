@@ -21,7 +21,7 @@ COMMITS_FROM ?= origin/main
 COMMITS_TO   ?= HEAD
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean
+.PHONY: help build shell composer deps dist dist-check test-dist lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -75,6 +75,15 @@ rector-fix: deps ## Apply Rector's upgrades, then run make fix and make lint
 
 test-release: ## Rehearse the scripts the release workflow runs (copyright year, stable tag)
 	$(COMPOSE) run --build --rm php sh tests/bin/test-release-scripts.sh
+
+dist: ## Build build/wp-updates-notifier-<version>.zip (runtime files only)
+	$(COMPOSE) run --build --rm php sh bin/build-dist.sh
+
+dist-check: ## Check the zip: allowlisted contents, version, .gitattributes in step with .distignore
+	$(COMPOSE) run --build --rm php sh bin/check-dist.sh
+
+test-dist: ## Install the zip into a fresh WordPress, activate, deactivate and uninstall it
+	$(COMPOSE) run --build --rm dist sh bin/test-dist.sh
 
 smoke: ## Verify PHP, mysqli and that every PHP file lints
 	$(COMPOSE) run --build --rm php sh docker/smoke.sh
