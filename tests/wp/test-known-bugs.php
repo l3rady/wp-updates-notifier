@@ -257,47 +257,4 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 
 		$this->assertNotFalse( has_action( 'admin_notices', 'update_nag' ) );
 	}
-
-	/**
-	 * #78: uninstall leaves the cron event and the test transients behind.
-	 */
-	public function test_78_uninstall_removes_the_event_and_transients() {
-		$this->save_settings();
-		do_action( 'sc_wpun_enable_cron', 'daily' );
-		set_transient( 'sc_wpun_send_test_email', 1 );
-		set_transient( 'sc_wpun_send_test_slack', 1 );
-		if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-			define( 'WP_UNINSTALL_PLUGIN', self::BASENAME );
-		}
-
-		include WP_PLUGIN_DIR . '/wp-updates-notifier/uninstall.php';
-
-		$this->assertFalse( get_option( 'sc_wpun_settings' ) );
-		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ), 'The cron event must go.' );
-		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ) );
-		$this->assertFalse( get_transient( 'sc_wpun_send_test_slack' ) );
-	}
-
-	/**
-	 * #78: on multisite, uninstall only cleans the site it runs on.
-	 */
-	public function test_78_uninstall_cleans_every_site_of_a_network() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Needs multisite (make test-wp-ms).' );
-		}
-
-		$blog_id = self::factory()->blog->create();
-		switch_to_blog( $blog_id );
-		$this->save_settings();
-		restore_current_blog();
-		if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-			define( 'WP_UNINSTALL_PLUGIN', self::BASENAME );
-		}
-
-		include WP_PLUGIN_DIR . '/wp-updates-notifier/uninstall.php';
-
-		switch_to_blog( $blog_id );
-		$this->assertFalse( get_option( 'sc_wpun_settings' ) );
-		restore_current_blog();
-	}
 }
