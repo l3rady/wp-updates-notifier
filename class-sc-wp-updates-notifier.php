@@ -609,11 +609,55 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				}
 
 				if ( ! empty( $options['notify_from'] ) ) { // If an email address has been set, override the WordPress default.
-					$email['headers'][] = 'From: ' . $this->sc_wpun_wp_mail_from_name() . ' <' . $options['notify_from'] . '>';
+					$email['headers'] = $this->normalise_mail_headers( $email['headers'] ?? array() );
+
+					if ( ! $this->has_mail_header( $email['headers'], 'From' ) ) {
+						$email['headers'][] = 'From: ' . $this->sc_wpun_wp_mail_from_name() . ' <' . $options['notify_from'] . '>';
+					}
 				}
 			}
 
 			return $email;
+		}
+
+		/**
+		 * Turn mail headers into a list of header lines, the way wp_mail() reads them.
+		 *
+		 * Core builds the automatic update emails with `headers` as an empty string, and
+		 * other filters may pass a newline-separated string or an array.
+		 *
+		 * @param mixed $headers Headers as a string, an array or anything else.
+		 *
+		 * @return array<mixed> List of header lines (an array passed in is returned as it is).
+		 */
+		private function normalise_mail_headers( $headers ): array {
+			if ( is_array( $headers ) ) {
+				return $headers;
+			}
+
+			if ( ! is_string( $headers ) || '' === trim( $headers ) ) {
+				return array();
+			}
+
+			return array_values( array_filter( array_map( 'trim', explode( "\n", str_replace( "\r\n", "\n", $headers ) ) ) ) );
+		}
+
+		/**
+		 * Whether a list of header lines already contains the given header.
+		 *
+		 * @param array<mixed> $headers List of header lines.
+		 * @param string       $name    Header name, for example "From".
+		 *
+		 * @return bool
+		 */
+		private function has_mail_header( array $headers, string $name ): bool {
+			foreach ( $headers as $header ) {
+				if ( is_string( $header ) && 0 === stripos( ltrim( $header ), $name . ':' ) ) {
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 
