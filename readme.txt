@@ -1,6 +1,6 @@
 === Plugin Name ===
-Contributors: l3rady, eherman24, alleyinteractive
-Donate link: http://l3rady.com/donate
+Contributors: l3rady, alleyinteractive
+Donate link: https://scott.cariss.dev/donate
 Tags: admin, theme, monitor, plugin, notification, upgrade, security
 Requires at least: 6.7
 Tested up to: 7.1
