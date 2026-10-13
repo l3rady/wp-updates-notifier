@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "last-release-sha": "0fe9b8cf16dde231a92295e232d5a3a4d94eb305",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "package-name": "wp-updates-notifier",
+      "include-component-in-tag": false,
+      "include-v-in-tag": true,
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        "class-sc-wp-updates-notifier.php"
+      ]
+    }
+  }
+}

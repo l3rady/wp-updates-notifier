@@ -21,3 +21,16 @@ Thanks for helping. Everything runs in Docker, so the only things you need are
 - A bug fix needs a test that fails without the fix. Tests for a bug that is
   still open carry `@group known-bug` (see `tests/wp/test-known-bugs.php`); the
   fix removes the tag.
+
+## Releases
+
+Merging to `main` changes no version. [release-please](https://github.com/googleapis/release-please)
+keeps one **Release PR** open that collects the next version and the
+`CHANGELOG.md` entry from the commit messages: `fix` is a patch, `feat` a minor,
+and `!` with a `BREAKING CHANGE:` footer a major (`docs`, `chore`, `build`, `ci`,
+`test` and `style` do not release by themselves). Merging the Release PR creates
+the `vX.Y.Z` tag and the GitHub release. To force a version, add a
+`Release-As: 2.0.0` footer to a commit.
+
+The workflow also sets the copyright year and the `readme.txt` stable tag on the
+Release PR's branch.

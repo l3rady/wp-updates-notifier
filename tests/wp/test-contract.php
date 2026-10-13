@@ -26,6 +26,7 @@ class Test_Contract extends WPUN_Test_Case {
 		$data = get_plugin_data( $file, false, false );
 		$this->assertSame( 'WP Updates Notifier', $data['Name'] );
 		$this->assertSame( 'wp-updates-notifier', $data['TextDomain'] );
+		$this->assertMatchesRegularExpression( '/^\d+\.\d+\.\d+$/', $data['Version'], 'release-please needs a full semantic version, and its markers must not break the header.' );
 	}
 
 	/**
