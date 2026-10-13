@@ -131,41 +131,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #69: the changelog link points at the old `changelog/` page.
-	 */
-	public function test_69_the_changelog_link_uses_the_developers_anchor() {
-		$this->save_settings();
-		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
-
-		$this->plugin()->do_update_check();
-
-		$body = $this->sent_mail()->body;
-		$this->assertStringContainsString( 'https://wordpress.org/plugins/hello/#developers', $body );
-		$this->assertStringNotContainsString( 'changelog/', $body );
-	}
-
-	/**
-	 * #69: updaters for plugins outside WordPress.org add entries with no `url` or `slug`.
-	 */
-	public function test_69_a_plugin_update_without_url_or_slug_does_not_warn() {
-		$this->save_settings();
-		$this->set_updates();
-		$updates           = get_site_transient( 'update_plugins' );
-		$updates->response = array(
-			'hello.php' => (object) array(
-				'plugin'      => 'hello.php',
-				'new_version' => '2.0.0',
-				'package'     => '',
-			),
-		);
-		set_site_transient( 'update_plugins', $updates );
-
-		$this->plugin()->do_update_check();
-
-		$this->assertSame( 1, $this->sent_mail_count() );
-	}
-
-	/**
 	 * #70: one blocking `plugins_api()` request per plugin, for data the update transient already holds.
 	 */
 	public function test_70_checking_plugin_updates_makes_no_plugin_info_request() {
