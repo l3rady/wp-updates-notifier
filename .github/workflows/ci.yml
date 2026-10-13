@@ -52,6 +52,27 @@ jobs:
       - name: Rehearse the release scripts
         run: make test-release
 
+  # The plugin zip as users get it: runtime files only, and it installs,
+  # activates, deactivates and uninstalls cleanly in a fresh WordPress.
+  dist:
+    if: github.event_name != 'schedule'
+    name: dist (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.5']
+    env:
+      PHP_VERSION: ${{ matrix.php }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the zip
+        run: make dist
+      - name: Check its contents
+        run: make dist-check
+      - name: Install it into WordPress
+        run: make test-dist
+
   # Every PHP file must lint on every supported PHP version.
   smoke:
     if: github.event_name != 'schedule'
