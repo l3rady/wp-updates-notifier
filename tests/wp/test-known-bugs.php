@@ -30,7 +30,17 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 
 		$this->fake_http(
 			'api.wordpress.org/plugins/info',
-			$this->fake_response( 200, wp_json_encode( array( 'name' => 'Hello Dolly', 'slug' => 'hello-dolly', 'version' => '9.9.9', 'tested' => '99.0' ) ) )
+			$this->fake_response(
+				200,
+				wp_json_encode(
+					array(
+						'name'    => 'Hello Dolly',
+						'slug'    => 'hello-dolly',
+						'version' => '9.9.9',
+						'tested'  => '99.0',
+					)
+				)
+			)
 		);
 	}
 
@@ -99,7 +109,12 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	 * #63: core builds `headers` as a string, and the filter appends to it as an array.
 	 */
 	public function test_63_the_automatic_core_update_email_filter_handles_string_headers() {
-		$this->save_settings( array( 'notify_automatic' => 1, 'notify_from' => 'notifier@example.org' ) );
+		$this->save_settings(
+			array(
+				'notify_automatic' => 1,
+				'notify_from'      => 'notifier@example.org',
+			)
+		);
 
 		$email = apply_filters(
 			'auto_core_update_email',
@@ -170,8 +185,8 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	public function test_67_saving_settings_does_not_queue_a_test_in_a_global_transient() {
 		$this->save_settings();
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
-		$_REQUEST['_wpnonce']        = wp_create_nonce( 'sc_wpun_settings-options' );
-		$_POST['submitwithemail']    = 'Save settings with test email';
+		$_REQUEST['_wpnonce']     = wp_create_nonce( 'sc_wpun_settings-options' );
+		$_POST['submitwithemail'] = 'Save settings with test email';
 
 		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
 
@@ -185,7 +200,18 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->set_updates();
 		delete_site_transient( 'update_core' );
-		$this->fake_http( 'api.wordpress.org/core/version-check', $this->fake_response( 200, wp_json_encode( array( 'offers' => array(), 'translations' => array() ) ) ) );
+		$this->fake_http(
+			'api.wordpress.org/core/version-check',
+			$this->fake_response(
+				200,
+				wp_json_encode(
+					array(
+						'offers'       => array(),
+						'translations' => array(),
+					)
+				)
+			)
+		);
 
 		$this->plugin()->do_update_check();
 
@@ -212,8 +238,8 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	public function test_69_a_plugin_update_without_url_or_slug_does_not_warn() {
 		$this->save_settings();
 		$this->set_updates();
-		$updates                     = get_site_transient( 'update_plugins' );
-		$updates->response           = array(
+		$updates           = get_site_transient( 'update_plugins' );
+		$updates->response = array(
 			'hello.php' => (object) array(
 				'plugin'      => 'hello.php',
 				'new_version' => '2.0.0',
