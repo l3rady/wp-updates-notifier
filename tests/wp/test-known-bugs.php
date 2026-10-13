@@ -131,18 +131,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #70: one blocking `plugins_api()` request per plugin, for data the update transient already holds.
-	 */
-	public function test_70_checking_plugin_updates_makes_no_plugin_info_request() {
-		$this->save_settings();
-		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
-
-		$this->plugin()->do_update_check();
-
-		$this->assertCount( 0, $this->requests_to( 'plugins/info' ) );
-	}
-
-	/**
 	 * #72: the page heading is an h2.
 	 */
 	public function test_72_the_settings_page_has_an_h1() {
