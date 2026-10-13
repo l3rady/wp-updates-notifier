@@ -572,8 +572,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return bool
 		 */
 		private function plugins_update_check( string &$message, $all_or_active, array &$notified ): bool {
-			$wp_version     = wp_get_wp_version();
-			$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
 			do_action( 'wp_update_plugins' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 			$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates.
 			$pending        = $this->normalise_plugin_updates( is_object( $update_plugins ) && isset( $update_plugins->response ) ? $update_plugins->response : array() );
@@ -588,11 +586,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				}
 				$plugins_need_update = $this->normalise_plugin_updates( apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ) ); // additional filtering of plugins need update; filters may return anything.
 				if ( count( $plugins_need_update ) >= 1 ) { // any plugins need updating after all the filtering gone on above?
-					require_once ABSPATH . 'wp-admin/includes/plugin-install.php'; // Required for plugin API.
+					if ( ! function_exists( 'get_plugin_data' ) ) {
+						require_once ABSPATH . 'wp-admin/includes/plugin.php'; // Not loaded in cron requests.
+					}
 					foreach ( $plugins_need_update as $key => $data ) { // loop through the plugins that need updating.
-						$plugin_info = get_plugin_data( WP_PLUGIN_DIR . '/' . $key ); // get local plugin info.
+						$plugin_info = get_plugin_data( WP_PLUGIN_DIR . '/' . $key, false, false ); // get local plugin info.
 						$wporg_slug  = $this->wporg_plugin_slug( $data );
-						$info        = '' !== $wporg_slug ? plugins_api( 'plugin_information', array( 'slug' => $wporg_slug ) ) : null; // get repository plugin info.
 						// translators: 1: Plugin name. 2: Installed plugin version. 3: New plugin version.
 						$message .= "\n" . sprintf( __( 'Plugin: %1$s is out of date. Please update from version %2$s to %3$s', 'wp-updates-notifier' ), $plugin_info['Name'], $plugin_info['Version'], $data->new_version ) . "\n";
 						if ( '' !== $wporg_slug ) {
@@ -604,19 +603,9 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 							// translators: %s: URL of the plugin page.
 							$message .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), $data->url ) . "\n";
 						}
-						if ( isset( $info->tested ) && version_compare( $info->tested, $wp_version, '>=' ) ) {
-							// translators: %1$s: WordPress version.
-							$compat = sprintf( __( 'Compatibility with WordPress %1$s: 100%% (according to its author)', 'wp-updates-notifier' ), $cur_wp_version );
-						} elseif ( isset( $info->compatibility[ $wp_version ][ $data->new_version ] ) ) {
-							$compat = $info->compatibility[ $wp_version ][ $data->new_version ];
-							// translators: 1: WordPress version. 2: Percentage of votes. 3: Number of votes that it works. 4: Total number of votes.
-							$compat = sprintf( __( 'Compatibility with WordPress %1$s: %2$d%% (%3$d "works" votes out of %4$d total)', 'wp-updates-notifier' ), $wp_version, $compat[0], $compat[2], $compat[1] );
-						} else {
-							// translators: %1$s: WordPress version.
-							$compat = sprintf( __( 'Compatibility with WordPress %1$s: Unknown', 'wp-updates-notifier' ), $wp_version );
+						foreach ( $this->plugin_compatibility_notes( $data ) as $note ) {
+							$message .= "\t" . $note . "\n";
 						}
-						// translators: %s: Description of the compatibility with the installed WordPress version.
-						$message                            .= "\t" . sprintf( __( 'Compatibility: %s', 'wp-updates-notifier' ), $compat ) . "\n";
 						$notified['plugin'][ (string) $key ] = (string) $data->new_version; // set plugin version we are notifying about.
 					}
 					return true; // we have plugin updates return true.
@@ -728,6 +717,61 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 
 			return $updates;
+		}
+
+		/**
+		 * Lines about whether a plugin update suits this site, from the update data.
+		 *
+		 * WordPress.org puts `tested`, `requires` and `requires_php` in each entry of
+		 * the update_plugins transient, so no request per plugin is needed. "Tested
+		 * up to 6.5" covers every 6.5.x release, so only major.minor is compared.
+		 *
+		 * @param \stdClass $entry A normalised plugin update entry.
+		 *
+		 * @return string[]
+		 */
+		private function plugin_compatibility_notes( stdClass $entry ): array {
+			$site_wp = $this->major_minor( wp_get_wp_version() );
+			$tested  = isset( $entry->tested ) && is_scalar( $entry->tested ) ? (string) $entry->tested : '';
+			$notes   = array();
+
+			if ( '' === $tested ) {
+				// translators: %s: WordPress version of the site, for example 6.5.
+				$notes[] = sprintf( __( 'Compatibility with WordPress %s: unknown', 'wp-updates-notifier' ), $site_wp );
+			} elseif ( version_compare( $this->major_minor( $tested ), $site_wp, '>=' ) ) {
+				// translators: %s: WordPress version of the site, for example 6.5.
+				$notes[] = sprintf( __( 'Compatibility with WordPress %s: tested by its author', 'wp-updates-notifier' ), $site_wp );
+			} else {
+				// translators: 1: WordPress version of the site. 2: Latest WordPress version the plugin was tested with.
+				$notes[] = sprintf( __( 'Compatibility with WordPress %1$s: not tested yet (tested up to %2$s)', 'wp-updates-notifier' ), $site_wp, $tested );
+			}
+
+			$requires_php = isset( $entry->requires_php ) && is_scalar( $entry->requires_php ) ? (string) $entry->requires_php : '';
+			if ( '' !== $requires_php && version_compare( PHP_VERSION, $requires_php, '<' ) ) {
+				// translators: 1: PHP version the update needs. 2: PHP version of the site.
+				$notes[] = sprintf( __( 'Warning: this version needs PHP %1$s; the site runs PHP %2$s.', 'wp-updates-notifier' ), $requires_php, PHP_VERSION );
+			}
+
+			$requires_wp = isset( $entry->requires ) && is_scalar( $entry->requires ) ? (string) $entry->requires : '';
+			if ( '' !== $requires_wp && version_compare( wp_get_wp_version(), $requires_wp, '<' ) ) {
+				// translators: 1: WordPress version the update needs. 2: WordPress version of the site.
+				$notes[] = sprintf( __( 'Warning: this version needs WordPress %1$s; the site runs WordPress %2$s.', 'wp-updates-notifier' ), $requires_wp, wp_get_wp_version() );
+			}
+
+			return $notes;
+		}
+
+		/**
+		 * The major.minor part of a version, for example 6.5 from 6.5.3 or 6.6-RC1.
+		 *
+		 * @param string $version Version.
+		 *
+		 * @return string
+		 */
+		private function major_minor( string $version ): string {
+			$parts = explode( '.', (string) preg_replace( '/-.*$/', '', $version ) );
+
+			return implode( '.', array_slice( $parts, 0, 2 ) );
 		}
 
 		/**
