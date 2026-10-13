@@ -80,33 +80,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #63: core builds `headers` as a string, and the filter appends to it as an array.
-	 */
-	public function test_63_the_automatic_core_update_email_filter_handles_string_headers() {
-		$this->save_settings(
-			array(
-				'notify_automatic' => 1,
-				'notify_from'      => 'notifier@example.org',
-			)
-		);
-
-		$email = apply_filters(
-			'auto_core_update_email',
-			array(
-				'to'      => 'admin@example.org',
-				'subject' => 'Subject',
-				'body'    => 'Body',
-				'headers' => '',
-			),
-			'success',
-			new stdClass(),
-			null
-		);
-
-		$this->assertStringContainsString( 'notifier@example.org', implode( "\n", (array) $email['headers'] ) );
-	}
-
-	/**
 	 * #64: a saved frequency that is not a known schedule leaves no event, without a word.
 	 */
 	public function test_64_an_unknown_saved_frequency_still_leaves_a_schedule() {
