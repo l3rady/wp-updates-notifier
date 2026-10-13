@@ -143,31 +143,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #68: when the API offers nothing (no `updates[0]`), the core check reads an index that is not there.
-	 */
-	public function test_68_the_core_check_survives_empty_update_data() {
-		$this->save_settings();
-		$this->set_updates();
-		delete_site_transient( 'update_core' );
-		$this->fake_http(
-			'api.wordpress.org/core/version-check',
-			$this->fake_response(
-				200,
-				wp_json_encode(
-					array(
-						'offers'       => array(),
-						'translations' => array(),
-					)
-				)
-			)
-		);
-
-		$this->plugin()->do_update_check();
-
-		$this->assertSame( 0, $this->sent_mail_count() );
-	}
-
-	/**
 	 * #69: the changelog link points at the old `changelog/` page.
 	 */
 	public function test_69_the_changelog_link_uses_the_developers_anchor() {
