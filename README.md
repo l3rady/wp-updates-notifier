@@ -52,6 +52,16 @@ make up                          # local site: http://localhost:8080, mail in Ma
 make down
 ```
 
+### Building the plugin zip
+
+```sh
+make dist                        # build/wp-updates-notifier-<version>.zip, runtime files only
+make dist-check                  # check its contents (and that .gitattributes matches .distignore)
+make test-dist                   # install it into a fresh WordPress, activate, deactivate, uninstall
+```
+
+`.distignore` lists what stays out of the zip; the WordPress.org deploy uses the same list.
+
 ### Tests
 
 ```sh

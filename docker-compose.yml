@@ -31,6 +31,16 @@ services:
     volumes:
       - .:/app:ro
 
+  # Installs the built zip into a fresh WordPress (`make test-dist`).
+  dist:
+    <<: *dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WP_VERSION: ${WP_VERSION:-7.1.3}
+      WP_DB_HOST: db
+
   # Composer helper: `docker compose run --rm composer require ...`
   composer:
     <<: *dev

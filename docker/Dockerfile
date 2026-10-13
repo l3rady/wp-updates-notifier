@@ -25,12 +25,14 @@ RUN . /etc/os-release \
     fi
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip \
+    && apt-get install -y --no-install-recommends git unzip zip rsync libzip-dev \
     && rm -rf /var/lib/apt/lists/* \
-    && docker-php-ext-install mysqli
+    && docker-php-ext-install mysqli zip
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/zz-wp-updates-notifier.ini
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# WP-CLI, to install the built plugin into a fresh WordPress (make test-dist).
+COPY --from=wordpress:cli /usr/local/bin/wp /usr/local/bin/wp
 
 # ---------------------------------------------------------------------------
 # dev: non-root user matching the host so bind-mounted files stay owned by you
