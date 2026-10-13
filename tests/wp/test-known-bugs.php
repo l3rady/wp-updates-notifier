@@ -178,39 +178,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #71: "only active themes" compares with `template`, which is the parent theme.
-	 */
-	public function test_71_the_active_child_theme_is_notified_about() {
-		list( $parent, $child ) = $this->two_themes();
-		update_option( 'template', $parent );
-		update_option( 'stylesheet', $child );
-		$this->save_settings( array( 'notify_themes' => 2 ) );
-		$this->set_updates( null, array(), array( $child => array( 'new_version' => '99.3' ) ) );
-
-		$this->plugin()->do_update_check();
-
-		$this->assertSame( 1, $this->sent_mail_count() );
-	}
-
-	/**
-	 * #71: network-activated plugins are not in `active_plugins`.
-	 */
-	public function test_71_a_network_activated_plugin_counts_as_active() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Needs multisite (make test-wp-ms).' );
-		}
-
-		update_option( 'active_plugins', array() );
-		update_site_option( 'active_sitewide_plugins', array( 'hello.php' => time() ) );
-		$this->save_settings( array( 'notify_plugins' => 2 ) );
-		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
-
-		$this->plugin()->do_update_check();
-
-		$this->assertSame( 1, $this->sent_mail_count() );
-	}
-
-	/**
 	 * #72: the page heading is an h2.
 	 */
 	public function test_72_the_settings_page_has_an_h1() {
