@@ -49,7 +49,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	public function test_the_upgrade_produces_the_current_shape( $name, $version, array $options ) {
 		$this->upgrade_from( $version, $options );
 
-		$this->assertSame( '7.0', get_option( 'sc_wpun_settings_ver' ), $name );
+		$this->assertSame( '8.0', get_option( 'sc_wpun_settings_ver' ), $name );
 		$this->assertEqualsCanonicalizing( array_keys( $this->settings() ), array_keys( $this->stored_settings() ), $name );
 	}
 
@@ -66,12 +66,35 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->upgrade_from( $version, $options );
 		$stored = $this->stored_settings();
 
-		foreach ( array( 'frequency', 'notify_to', 'notify_from', 'notify_plugins', 'notify_themes', 'hide_updates', 'notified', 'last_check_time' ) as $key ) {
+		foreach ( array( 'frequency', 'notify_to', 'notify_from', 'notify_plugins', 'notify_themes', 'hide_updates' ) as $key ) {
 			$this->assertSame( $options[ $key ], $stored[ $key ], "$name: $key" );
 		}
 
 		$this->assertArrayNotHasKey( 'cron_method', $stored, $name );
 		$this->assertArrayNotHasKey( 'security_key', $stored, $name );
+	}
+
+	/**
+	 * Settings version 8 moved what was notified and when the last check ran into their own option.
+	 *
+	 * @dataProvider fixtures
+	 *
+	 * @param string $name    Fixture name.
+	 * @param string $version Settings version.
+	 * @param array  $options Saved settings.
+	 */
+	public function test_the_run_state_moves_to_its_own_option( $name, $version, array $options ) {
+		delete_option( 'sc_wpun_state' );
+
+		$this->upgrade_from( $version, $options );
+		$stored = $this->stored_settings();
+		$state  = $this->stored_state();
+
+		$this->assertArrayNotHasKey( 'notified', $stored, $name );
+		$this->assertArrayNotHasKey( 'last_check_time', $stored, $name );
+		$this->assertSame( $options['notified'], $state['notified'], $name );
+		$this->assertSame( (int) $options['last_check_time'], $state['last_check_time'], $name );
+		$this->assertArrayNotHasKey( 'sc_wpun_state', wp_load_alloptions(), "$name: the run state should not be autoloaded." );
 	}
 
 	/**
@@ -96,7 +119,9 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 
 		$this->upgrade_from( $fixtures['1.6.0']['version'], $fixtures['1.6.0']['options'] );
 
-		$this->assertSame( $fixtures['1.6.0']['options'], $this->stored_settings() );
+		$expected = $fixtures['1.6.0']['options'];
+		unset( $expected['notified'], $expected['last_check_time'] );
+		$this->assertSame( $expected, $this->stored_settings() );
 	}
 
 	/**
