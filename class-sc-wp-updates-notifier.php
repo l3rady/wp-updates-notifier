@@ -18,6 +18,8 @@
  * x-release-please-start-version
  * Version: 1.6.0
  * x-release-please-end
+ * Requires at least: 6.7
+ * Requires PHP: 7.4
  * Author: Scott Cariss
  * Author URI: http://l3rady.com/
  * Text Domain: wp-updates-notifier
@@ -60,7 +62,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @var bool
 		 */
-		public static $did_init = false;
+		public static bool $did_init = false;
 
 		/**
 		 * Initialise the plugin when all plugins are loaded.
@@ -93,7 +95,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return void
 		 */
-		private function init() {
+		private function init(): void {
 			// Check settings are up to date.
 			$this->settings_up_to_date();
 			// Internationalization.
@@ -120,7 +122,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return void
 		 */
-		private function settings_up_to_date() {
+		private function settings_up_to_date(): void {
 			$current_ver = $this->get_set_options( self::OPT_VERSION_FIELD ); // Get current plugin version.
 			if ( self::OPT_VERSION !== $current_ver ) { // is the version the same as this plugin?
 				$options  = (array) get_option( self::OPT_FIELD ); // get current settings from DB.
@@ -330,16 +332,14 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return bool
 		 */
-		private function core_update_check( &$message ) {
-			global $wp_version;
+		private function core_update_check( string &$message ): bool {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings.
 			do_action( 'wp_version_check' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 			$update_core = get_site_transient( 'update_core' ); // get information of updates.
 			if ( 'upgrade' === $update_core->updates[0]->response ) { // is WP core update available?
 				if ( $update_core->updates[0]->current !== $settings['notified']['core'] ) { // have we already notified about this version?
-					require_once ABSPATH . WPINC . '/version.php'; // Including this because some plugins can mess with the real version stored in the DB.
 					$new_core_ver = $update_core->updates[0]->current; // The new WP core version.
-					$old_core_ver = $wp_version; // the old WP core version.
+					$old_core_ver = wp_get_wp_version(); // Read from version.php, so plugins that change the $wp_version global do not affect it.
 					// translators: 1: Installed WordPress version. 2: New WordPress version.
 					$message                     .= "\n" . sprintf( __( 'WP-Core: WordPress is out of date. Please update from version %1$s to %2$s', 'wp-updates-notifier' ), $old_core_ver, $new_core_ver ) . "\n";
 					$settings['notified']['core'] = $new_core_ver; // set core version we are notifying about.
@@ -363,8 +363,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return bool
 		 */
-		private function plugins_update_check( &$message, $all_or_active ) {
-			global $wp_version;
+		private function plugins_update_check( string &$message, $all_or_active ): bool {
+			$wp_version     = wp_get_wp_version();
 			$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
 			$settings       = $this->get_set_options( self::OPT_FIELD ); // get settings.
 			do_action( 'wp_update_plugins' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
@@ -378,7 +378,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$plugins_need_update = apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ); // additional filtering of plugins need update.
 				if ( count( $plugins_need_update ) >= 1 ) { // any plugins need updating after all the filtering gone on above?
 					require_once ABSPATH . 'wp-admin/includes/plugin-install.php'; // Required for plugin API.
-					require_once ABSPATH . WPINC . '/version.php'; // Required for WP core version.
 					foreach ( $plugins_need_update as $key => $data ) { // loop through the plugins that need updating.
 						$plugin_info = get_plugin_data( WP_PLUGIN_DIR . '/' . $key ); // get local plugin info.
 						$info        = plugins_api( 'plugin_information', array( 'slug' => $data->slug ) ); // get repository plugin info.
@@ -424,7 +423,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return bool
 		 */
-		private function themes_update_check( &$message, $all_or_active ) {
+		private function themes_update_check( string &$message, $all_or_active ): bool {
 			$settings = $this->get_set_options( self::OPT_FIELD ); // get settings.
 			do_action( 'wp_update_themes' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 			$update_themes = get_site_transient( 'update_themes' ); // get information of updates.
@@ -587,7 +586,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return void
 		 */
-		private function log_last_check_time() {
+		private function log_last_check_time(): void {
 			$options                    = $this->get_set_options( self::OPT_FIELD );
 			$options['last_check_time'] = time();
 			$this->get_set_options( self::OPT_FIELD, $options );
@@ -636,7 +635,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return Array cron schedules.
 		 */
-		private function get_schedules() {
+		private function get_schedules(): array {
 			$schedules = wp_get_schedules();
 			uasort( $schedules, array( $this, 'sort_by_interval' ) );
 			return $schedules;
@@ -647,7 +646,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return Array cron intervals.
 		 */
-		private function get_intervals() {
+		private function get_intervals(): array {
 			$intervals   = array_keys( $this->get_schedules() );
 			$intervals[] = 'manual';
 			return $intervals;
@@ -661,8 +660,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 *
 		 * @return int Frequency internval.
 		 */
-		private function sort_by_interval( $a, $b ) {
-			return $a['interval'] - $b['interval'];
+		private function sort_by_interval( $a, $b ): int {
+			return $a['interval'] <=> $b['interval'];
 		}
 
 		/**
