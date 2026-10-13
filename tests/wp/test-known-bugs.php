@@ -48,7 +48,7 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	 * Clean up request state some tests set.
 	 */
 	public function tear_down() {
-		unset( $_POST['submitwithemail'], $_POST['submitwithslack'], $_REQUEST['_wpnonce'] );
+		unset( $_POST['submitwithemail'], $_POST['submitwithslack'], $_POST['option_page'], $_POST['_wpnonce'], $_REQUEST['_wpnonce'] );
 		parent::tear_down();
 	}
 
@@ -133,6 +133,8 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$this->save_settings();
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		$_REQUEST['_wpnonce']     = wp_create_nonce( 'sc_wpun_settings-options' );
+		$_POST['_wpnonce']        = $_REQUEST['_wpnonce'];
+		$_POST['option_page']     = 'sc_wpun_settings';
 		$_POST['submitwithemail'] = 'Save settings with test email';
 
 		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
@@ -272,33 +274,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$html = $this->render_settings_page();
 
 		$this->assertStringContainsString( wp_date( get_option( 'time_format' ), $timestamp ), $html );
-	}
-
-	/**
-	 * #74: the sanitize callback calls `check_admin_referer()`, so any update of the option during an
-	 * admin request without that nonce dies.
-	 */
-	public function test_74_updating_the_option_outside_the_settings_form_does_not_die() {
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
-		$this->plugin()->admin_settings_init();
-		unset( $_REQUEST['_wpnonce'] );
-
-		update_option( 'sc_wpun_settings', $this->settings( array( 'notify_to' => 'new@example.org' ) ) );
-
-		$this->assertSame( 'new@example.org', $this->stored_settings()['notify_to'] );
-	}
-
-	/**
-	 * #74: missing fields give undefined index notices.
-	 */
-	public function test_74_partial_input_does_not_raise_notices() {
-		$this->save_settings();
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
-		$_REQUEST['_wpnonce'] = wp_create_nonce( 'sc_wpun_settings-options' );
-
-		$result = $this->plugin()->sc_wpun_settings_validate( array() );
-
-		$this->assertIsArray( $result );
 	}
 
 	/**

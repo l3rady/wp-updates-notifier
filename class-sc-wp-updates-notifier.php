@@ -114,6 +114,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_action( 'sc_wpun_disable_cron', array( $this, 'disable_cron' ) ); // action to disable cron.
 			add_action( self::CRON_NAME, array( $this, 'do_update_check' ) ); // action to link cron task to actual task.
 			add_action( 'init', array( $this, 'maybe_schedule' ) ); // Put the check back on the schedule if it is missing.
+			add_action( 'update_option_' . self::OPT_FIELD, array( $this, 'settings_updated' ), 10, 2 ); // Reschedule when the frequency changes.
 		}
 
 		/**
@@ -812,33 +813,47 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return array Array of sanitized and validated settings.
 		 */
 		public function sc_wpun_settings_validate( $input ) {
-			check_admin_referer( 'sc_wpun_settings-options' );
-			$valid = $this->get_set_options( self::OPT_FIELD );
+			// Runs for every update_option() of the settings once admin_init has
+			// registered them, not only for the settings form (options.php checks
+			// the form's nonce itself). Start from the stored settings.
+			$valid = (array) $this->get_set_options( self::OPT_FIELD );
+
+			if ( ! is_array( $input ) ) {
+				return $valid;
+			}
+
+			// Run state is not part of the form; keep it when the caller passes it,
+			// so internal saves made during an admin request are not lost.
+			foreach ( array( 'notified', 'last_check_time' ) as $key ) {
+				if ( array_key_exists( $key, $input ) ) {
+					$valid[ $key ] = $input[ $key ];
+				}
+			}
 
 			// Validate main settings.
-			if ( in_array( $input['frequency'], $this->get_intervals(), true ) ) {
-				$valid['frequency'] = $input['frequency'];
-				do_action( 'sc_wpun_enable_cron', $input['frequency'] );
+			$frequency = $input['frequency'] ?? ( $valid['frequency'] ?? '' );
+			if ( in_array( $frequency, $this->get_intervals(), true ) ) {
+				$valid['frequency'] = $frequency;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_frequency', 'sc_wpun_settings_main_frequency_error', __( 'Invalid frequency entered', 'wp-updates-notifier' ), 'error' );
 			}
 
 			$sanitized_notify_plugins = absint( $input['notify_plugins'] ?? 0 );
-			if ( $sanitized_notify_plugins >= 0 && $sanitized_notify_plugins <= 2 ) {
+			if ( $sanitized_notify_plugins <= 2 ) {
 				$valid['notify_plugins'] = $sanitized_notify_plugins;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_notify_plugins', 'sc_wpun_settings_main_notify_plugins_error', __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ), 'error' );
 			}
 
 			$sanitized_notify_themes = absint( $input['notify_themes'] ?? 0 );
-			if ( $sanitized_notify_themes >= 0 && $sanitized_notify_themes <= 2 ) {
+			if ( $sanitized_notify_themes <= 2 ) {
 				$valid['notify_themes'] = $sanitized_notify_themes;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_notify_themes', 'sc_wpun_settings_main_notify_themes_error', __( 'Invalid theme updates value entered', 'wp-updates-notifier' ), 'error' );
 			}
 
 			$sanitized_notify_automatic = absint( $input['notify_automatic'] ?? 0 );
-			if ( $sanitized_notify_automatic >= 0 && $sanitized_notify_automatic <= 1 ) {
+			if ( $sanitized_notify_automatic <= 1 ) {
 				$valid['notify_automatic'] = $sanitized_notify_automatic;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_notify_automatic', 'sc_wpun_settings_main_notify_automatic_error', __( 'Invalid automatic updates value entered', 'wp-updates-notifier' ), 'error' );
@@ -852,29 +867,26 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 
 			// Validate email notification settings.
-			if ( ! empty( $input['notify_to'] ) ) {
-				$emails_to = explode( ',', $input['notify_to'] );
-				if ( $emails_to ) {
-					$sanitized_emails = array();
-					$was_error        = false;
-					foreach ( $emails_to as $email_to ) {
-						$address = sanitize_email( trim( $email_to ) );
-						if ( ! is_email( $address ) ) {
-							add_settings_error( 'sc_wpun_settings_email_notifications_notify_to', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'One or more email to addresses are invalid', 'wp-updates-notifier' ), 'error' );
-							$was_error = true;
-							break;
-						}
-						$sanitized_emails[] = $address;
+			if ( ! empty( $input['notify_to'] ) && is_string( $input['notify_to'] ) ) {
+				$sanitized_emails = array();
+				$was_error        = false;
+				foreach ( explode( ',', $input['notify_to'] ) as $email_to ) {
+					$address = sanitize_email( trim( $email_to ) );
+					if ( ! is_email( $address ) ) {
+						add_settings_error( 'sc_wpun_settings_email_notifications_notify_to', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'One or more email to addresses are invalid', 'wp-updates-notifier' ), 'error' );
+						$was_error = true;
+						break;
 					}
-					if ( ! $was_error ) {
-						$valid['notify_to'] = implode( ',', $sanitized_emails );
-					}
+					$sanitized_emails[] = $address;
+				}
+				if ( ! $was_error ) {
+					$valid['notify_to'] = implode( ',', $sanitized_emails );
 				}
 			} else {
 				$valid['notify_to'] = '';
 			}
 
-			if ( ! empty( $input['notify_from'] ) ) {
+			if ( ! empty( $input['notify_from'] ) && is_string( $input['notify_from'] ) ) {
 				$sanitized_email_from = sanitize_email( $input['notify_from'] );
 				if ( is_email( $sanitized_email_from ) ) {
 					$valid['notify_from'] = $sanitized_email_from;
@@ -894,27 +906,28 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				if ( ! empty( $valid['notify_to'] ) && ! empty( $valid['notify_from'] ) ) {
 					$email_notifications = 1;
 				} else {
-					add_settings_error( 'sc_wpun_settings_email_notifications_notify_from', 'sc_wpun_settings_email_notifications_notify_to_error', __( 'Can not enable email notifications, addresses are not valid', 'wp-updates-notifier' ), 'error' );
+					add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not enable email notifications, addresses are not valid', 'wp-updates-notifier' ), 'error' );
 					$email_notifications = 0;
 				}
 			}
 			$valid['email_notifications'] = $email_notifications;
 
 			// Validate slack settings.
-			if ( ! empty( $input['slack_webhook_url'] ) ) {
-				if ( false === filter_var( $input['slack_webhook_url'], FILTER_VALIDATE_URL ) ) {
+			if ( ! empty( $input['slack_webhook_url'] ) && is_string( $input['slack_webhook_url'] ) ) {
+				$webhook_url = $this->sanitize_webhook_url( $input['slack_webhook_url'] );
+				if ( '' === $webhook_url ) {
 					add_settings_error( 'sc_wpun_settings_slack_notifications_slack_webhook_url', 'sc_wpun_settings_slack_notifications_slack_webhook_url_error', __( 'Invalid webhook url entered', 'wp-updates-notifier' ), 'error' );
 				} else {
-					$valid['slack_webhook_url'] = $input['slack_webhook_url'];
+					$valid['slack_webhook_url'] = $webhook_url;
 				}
 			} else {
 				$valid['slack_webhook_url'] = '';
 			}
 
-			if ( ! empty( $input['slack_channel_override'] ) ) {
-				if ( '#' !== substr( $input['slack_channel_override'], 0, 1 ) && '@' !== substr( $input['slack_channel_override'], 0, 1 ) ) {
+			if ( ! empty( $input['slack_channel_override'] ) && is_string( $input['slack_channel_override'] ) ) {
+				if ( ! preg_match( '/^[#@]/', $input['slack_channel_override'] ) ) {
 					add_settings_error( 'sc_wpun_settings_slack_notifications_slack_channel_override', 'sc_wpun_settings_slack_notifications_slack_channel_override_error', __( 'Channel name must start with a # or @', 'wp-updates-notifier' ), 'error' );
-				} elseif ( strpos( $input['slack_channel_override'], ' ' ) ) {
+				} elseif ( preg_match( '/\s/', $input['slack_channel_override'] ) ) {
 					add_settings_error( 'sc_wpun_settings_slack_notifications_slack_channel_override', 'sc_wpun_settings_slack_notifications_slack_channel_override_error', __( 'Channel name must not contain a space', 'wp-updates-notifier' ), 'error' );
 				} else {
 					$valid['slack_channel_override'] = $input['slack_channel_override'];
@@ -940,9 +953,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			}
 			$valid['slack_notifications'] = $slack_notifications;
 
-			// Parse sending test notifiations.
+			// Test sends are only queued from the settings form itself (see #67).
+			if ( ! $this->is_settings_form_submission() ) {
+				return $valid;
+			}
 
-			if ( isset( $_POST['submitwithemail'] ) ) {
+			if ( isset( $_POST['submitwithemail'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in is_settings_form_submission().
 				if ( '' !== $valid['notify_to'] && '' !== $valid['notify_from'] ) {
 					set_transient( 'sc_wpun_send_test_email', 1 );
 				} else {
@@ -950,15 +966,61 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				}
 			}
 
-			if ( isset( $_POST['submitwithslack'] ) ) {
+			if ( isset( $_POST['submitwithslack'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in is_settings_form_submission().
 				if ( '' !== $valid['slack_webhook_url'] ) {
 					set_transient( 'sc_wpun_send_test_slack', 1 );
 				} else {
-					add_settings_error( 'sc_wpun_settings_email_notifications_slack_notifications', 'sc_wpun_settings_email_notifications_slack_notifications_error', __( 'Can not post test slack message. Slack settings are invalid.', 'wp-updates-notifier' ), 'error' );
+					add_settings_error( 'sc_wpun_settings_slack_notifications_slack_notifications', 'sc_wpun_settings_slack_notifications_slack_notifications_error', __( 'Can not post test slack message. Slack settings are invalid.', 'wp-updates-notifier' ), 'error' );
 				}
 			}
 
 			return $valid;
+		}
+
+		/**
+		 * Whether this request is the plugin's settings form being saved through options.php.
+		 *
+		 * @return bool
+		 */
+		private function is_settings_form_submission(): bool {
+			if ( ! isset( $_POST['option_page'], $_POST['_wpnonce'] ) || self::OPT_FIELD !== $_POST['option_page'] ) {
+				return false;
+			}
+
+			return false !== wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), self::OPT_FIELD . '-options' );
+		}
+
+		/**
+		 * Accept only an absolute https URL with a host.
+		 *
+		 * @param string $url URL as entered.
+		 *
+		 * @return string The sanitized URL, or an empty string if it is not acceptable.
+		 */
+		private function sanitize_webhook_url( string $url ): string {
+			$url = esc_url_raw( trim( $url ), array( 'https' ) );
+
+			return '' !== $url && '' !== (string) wp_parse_url( $url, PHP_URL_HOST ) ? $url : '';
+		}
+
+		/**
+		 * Reschedule the update check when a saved frequency changes.
+		 *
+		 * Runs on update_option_{option}, so only when the settings really change,
+		 * whoever saves them.
+		 *
+		 * @param mixed $old_value Previous settings.
+		 * @param mixed $value     New settings.
+		 *
+		 * @return void
+		 */
+		public function settings_updated( $old_value, $value ) {
+			$old_frequency = is_array( $old_value ) ? ( $old_value['frequency'] ?? null ) : null;
+			$new_frequency = is_array( $value ) ? ( $value['frequency'] ?? null ) : null;
+
+			if ( is_string( $new_frequency ) && $old_frequency !== $new_frequency ) {
+				$this->enable_cron( $new_frequency );
+			}
 		}
 
 		/**
