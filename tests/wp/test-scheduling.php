@@ -116,6 +116,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 	 */
 	public function test_an_existing_event_is_left_alone() {
 		$this->save_settings( array( 'frequency' => 'daily' ) );
+		wp_clear_scheduled_hook( 'sc_wpun_update_check' ); // Saving a new frequency schedules the check itself.
 		$next = time() + 5000;
 		wp_schedule_event( $next, 'daily', 'sc_wpun_update_check' );
 
