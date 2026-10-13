@@ -1,15 +1,15 @@
-=== Plugin Name ===
+=== WP Updates Notifier ===
 Contributors: l3rady, alleyinteractive
 Donate link: https://scott.cariss.dev/donate
-Tags: admin, theme, monitor, plugin, notification, upgrade, security
+Tags: updates, notifications, email, slack, monitor
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6
+Stable tag: 1.6.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
+Get an email or Slack message when your WordPress site has core, plugin or theme updates waiting.
 
 == Description ==
 
