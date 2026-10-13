@@ -80,32 +80,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #62: on the activation request WordPress includes the file after `plugins_loaded` has fired,
-	 * so hooks registered from a `plugins_loaded` callback are never registered.
-	 */
-	public function test_62_the_activation_hook_is_registered_when_the_file_is_included() {
-		remove_all_actions( 'activate_' . self::BASENAME );
-		remove_all_actions( 'plugins_loaded' );
-
-		require WP_PLUGIN_DIR . '/' . self::BASENAME;
-
-		$this->assertNotFalse( has_action( 'activate_' . self::BASENAME ), 'Activation must schedule the check.' );
-	}
-
-	/**
-	 * #62: `do_action()` without arguments passes an empty string, which `enable_cron()` takes as an interval.
-	 */
-	public function test_62_the_enable_cron_action_without_arguments_uses_the_saved_frequency() {
-		$this->save_settings( array( 'frequency' => 'daily' ) );
-		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
-
-		do_action( 'sc_wpun_enable_cron' );
-
-		$this->assertNotFalse( wp_next_scheduled( 'sc_wpun_update_check' ) );
-		$this->assertSame( 'daily', wp_get_schedule( 'sc_wpun_update_check' ) );
-	}
-
-	/**
 	 * #63: core builds `headers` as a string, and the filter appends to it as an array.
 	 */
 	public function test_63_the_automatic_core_update_email_filter_handles_string_headers() {

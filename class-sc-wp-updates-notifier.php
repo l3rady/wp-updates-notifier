@@ -64,9 +64,16 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 		/**
 		 * Initialise the plugin when all plugins are loaded.
+		 *
+		 * The activation and deactivation hooks are registered here, when the file
+		 * loads: on the activation request WordPress includes this file after
+		 * `plugins_loaded` has already fired, so hooks registered from `init()` would
+		 * never exist in that request.
 		 */
 		public function __construct() {
 			add_action( 'plugins_loaded', array( $this, 'run_init' ) );
+			register_activation_hook( __FILE__, array( $this, 'activate' ) );
+			register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
 		}
 
 		/**
@@ -89,9 +96,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		private function init() {
 			// Check settings are up to date.
 			$this->settings_up_to_date();
-			// Create Activation and Deactivation Hooks.
-			register_activation_hook( __FILE__, array( $this, 'activate' ) );
-			register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
 			// Internationalization.
 			load_plugin_textdomain( 'wp-updates-notifier', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 			// Add Filters.
@@ -106,6 +110,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_action( 'sc_wpun_enable_cron', array( $this, 'enable_cron' ) ); // action to enable cron.
 			add_action( 'sc_wpun_disable_cron', array( $this, 'disable_cron' ) ); // action to disable cron.
 			add_action( self::CRON_NAME, array( $this, 'do_update_check' ) ); // action to link cron task to actual task.
+			add_action( 'init', array( $this, 'maybe_schedule' ) ); // Put the check back on the schedule if it is missing.
 		}
 
 		/**
@@ -177,7 +182,9 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function activate() {
-			do_action( 'sc_wpun_enable_cron' ); // Enable cron.
+			// `plugins_loaded` has not run on the activation request, so a new install has no settings yet.
+			$this->settings_up_to_date();
+			$this->enable_cron();
 		}
 
 
@@ -202,6 +209,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			$options          = $this->get_set_options( self::OPT_FIELD ); // Get settings.
 			$current_schedule = wp_get_schedule( self::CRON_NAME ); // find if a schedule already exists.
 
+			// `do_action()` without arguments passes an empty string: use the saved frequency.
+			if ( ! is_string( $manual_interval ) || '' === $manual_interval ) {
+				$manual_interval = false;
+			}
+
 			// if a manual cron interval is set, use this.
 			if ( false !== $manual_interval ) {
 				$options['frequency'] = $manual_interval;
@@ -225,6 +237,21 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 				// Schedule cron for this plugin.
 				wp_schedule_event( time(), $options['frequency'], self::CRON_NAME );
+			}
+		}
+
+
+		/**
+		 * Puts the update check back on the schedule when it is missing.
+		 *
+		 * Repairs sites where activation never scheduled it, and events lost for any
+		 * other reason. Cheap: WordPress keeps the cron array in an autoloaded option.
+		 *
+		 * @return void
+		 */
+		public function maybe_schedule() {
+			if ( false === wp_next_scheduled( self::CRON_NAME ) ) {
+				$this->enable_cron();
 			}
 		}
 
