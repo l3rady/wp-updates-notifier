@@ -16,8 +16,12 @@ export HOST_GID := $(shell id -g)
 
 COMPOSE := docker compose --progress quiet
 
+# The commits `make commits` checks: everything on this branch that is not on main.
+COMMITS_FROM ?= origin/main
+COMMITS_TO   ?= HEAD
+
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps lint fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-known-bugs coverage matrix up down clean
+.PHONY: help build shell composer deps lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-known-bugs coverage matrix up down clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -50,6 +54,9 @@ test: test-wp test-wp-ms ## Run every test layer
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings)
 	$(COMPOSE) run --build --rm php vendor/bin/phpcs
+
+commits: ## Check that the commits on this branch follow Conventional Commits
+	$(COMPOSE) run --build --rm commitlint --from $(COMMITS_FROM) --to $(COMMITS_TO) --verbose
 
 fix: deps ## Auto-fix coding standard violations with phpcbf
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcbf; s=$$?; [ $$s -le 1 ]'
