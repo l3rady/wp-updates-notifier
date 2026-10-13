@@ -2,8 +2,9 @@
 Contributors: l3rady, eherman24, alleyinteractive
 Donate link: http://l3rady.com/donate
 Tags: admin, theme, monitor, plugin, notification, upgrade, security
-Requires at least: 3.1
-Tested up to: 5.3
+Requires at least: 6.7
+Tested up to: 7.1
+Requires PHP: 7.4
 Stable tag: 1.6
 License: GPLv3 or later
 

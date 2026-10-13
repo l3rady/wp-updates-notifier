@@ -30,6 +30,19 @@ class Test_Contract extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The requirements in the plugin header and in readme.txt agree (WordPress.org reads both).
+	 */
+	public function test_the_plugin_header_and_readme_agree_on_requirements() {
+		$data   = get_plugin_data( WP_PLUGIN_DIR . '/wp-updates-notifier/class-sc-wp-updates-notifier.php', false, false );
+		$readme = file_get_contents( WP_PLUGIN_DIR . '/wp-updates-notifier/readme.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+
+		$this->assertSame( '7.4', $data['RequiresPHP'] );
+		$this->assertSame( '6.7', $data['RequiresWP'] );
+		$this->assertMatchesRegularExpression( '/^Requires PHP:\s*7\.4$/m', $readme );
+		$this->assertMatchesRegularExpression( '/^Requires at least:\s*6\.7$/m', $readme );
+	}
+
+	/**
 	 * Option names and the cron hook are stored in sites' databases.
 	 */
 	public function test_stored_names_are_unchanged() {

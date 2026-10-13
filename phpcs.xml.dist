@@ -12,7 +12,6 @@
 	<file>class-sc-wp-updates-notifier.php</file>
 	<file>uninstall.php</file>
 	<file>rector.php</file>
-	<file>phpstan-bootstrap.php</file>
 	<file>tests</file>
 
 	<exclude-pattern>*/vendor/*</exclude-pattern>
