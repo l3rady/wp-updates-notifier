@@ -8,8 +8,6 @@ parameters:
     paths:
         - class-sc-wp-updates-notifier.php
         - uninstall.php
-    bootstrapFiles:
-        - phpstan-bootstrap.php
     scanFiles:
         - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
     treatPhpDocTypesAsCertain: false
