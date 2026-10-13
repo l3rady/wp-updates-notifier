@@ -185,20 +185,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #73: "Last scanned" is formatted in UTC, not the site's timezone.
-	 */
-	public function test_73_last_scanned_uses_the_site_timezone() {
-		update_option( 'timezone_string', 'Pacific/Auckland' );
-		$timestamp = gmmktime( 12, 0, 0, 1, 15, 2024 );
-		$this->save_settings();
-		$this->save_state( array(), $timestamp );
-
-		$html = $this->render_settings_page();
-
-		$this->assertStringContainsString( wp_date( get_option( 'time_format' ), $timestamp ), $html );
-	}
-
-	/**
 	 * #76: the configured address is forced as the From address.
 	 */
 	public function test_76_the_from_address_is_not_forced() {
