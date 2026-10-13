@@ -11,7 +11,7 @@
 
 return array(
 	// 1.4: settings version 4.0. Had a cron method and an external-cron key, no automatic update flag.
-	'1.4'                  => array(
+	'1.4'                 => array(
 		'version' => '4.0',
 		'options' => array(
 			'cron_method'     => 'wordpress',
@@ -32,7 +32,7 @@ return array(
 	),
 
 	// Later 1.4.x: settings version 5.0 added notify_automatic.
-	'1.4.x'                => array(
+	'1.4.x'               => array(
 		'version' => '5.0',
 		'options' => array(
 			'cron_method'      => 'wordpress',
@@ -54,7 +54,7 @@ return array(
 	),
 
 	// 1.6.0 (current): settings version 7.0, email and Slack as separate notifications.
-	'1.6.0'                => array(
+	'1.6.0'               => array(
 		'version' => '7.0',
 		'options' => array(
 			'frequency'              => 'hourly',
@@ -78,7 +78,7 @@ return array(
 	),
 
 	// The same release with every number saved as a string, as `wp option update`, imports or filters can leave them.
-	'1.6.0-string-values'  => array(
+	'1.6.0-string-values' => array(
 		'version' => '7.0',
 		'options' => array(
 			'frequency'              => 'hourly',

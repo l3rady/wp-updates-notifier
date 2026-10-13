@@ -23,7 +23,17 @@ class Test_Update_Check extends WPUN_Test_Case {
 
 		$this->fake_http(
 			'api.wordpress.org/plugins/info',
-			$this->fake_response( 200, wp_json_encode( array( 'name' => 'Hello Dolly', 'slug' => 'hello-dolly', 'version' => '9.9.9', 'tested' => '99.0' ) ) )
+			$this->fake_response(
+				200,
+				wp_json_encode(
+					array(
+						'name'    => 'Hello Dolly',
+						'slug'    => 'hello-dolly',
+						'version' => '9.9.9',
+						'tested'  => '99.0',
+					)
+				)
+			)
 		);
 	}
 
@@ -101,7 +111,15 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 * After updating, the record is cleared so the next release is reported.
 	 */
 	public function test_the_core_record_is_cleared_once_core_is_current() {
-		$this->save_settings( array( 'notified' => array( 'core' => '99.0.0', 'plugin' => array(), 'theme' => array() ) ) );
+		$this->save_settings(
+			array(
+				'notified' => array(
+					'core'   => '99.0.0',
+					'plugin' => array(),
+					'theme'  => array(),
+				),
+			)
+		);
 		$this->set_updates();
 
 		$this->plugin()->do_update_check();
@@ -290,7 +308,12 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 * Background core updates go to the configured recipient when asked to.
 	 */
 	public function test_the_automatic_core_update_email_is_redirected() {
-		$this->save_settings( array( 'notify_automatic' => 1, 'notify_to' => 'ops@example.org' ) );
+		$this->save_settings(
+			array(
+				'notify_automatic' => 1,
+				'notify_to'        => 'ops@example.org',
+			)
+		);
 
 		$email = apply_filters(
 			'auto_core_update_email',
