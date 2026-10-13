@@ -60,7 +60,8 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		const OPT_FIELD         = 'sc_wpun_settings';
 		const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
 		const OPT_STATE_FIELD   = 'sc_wpun_state';
-		const OPT_VERSION       = '8.0';
+		const OPT_VERSION       = '8.1';
+		const DEFAULT_FREQUENCY = 'hourly';
 		const CRON_NAME         = 'sc_wpun_update_check';
 
 		/**
@@ -138,6 +139,11 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				// If we are upgrading from settings before settings version 7, turn on email notifications by default.
 				if ( intval( $current_ver ) < 7 ) {
 					$defaults['email_notifications'] = 1;
+				}
+
+				// "manual" has meant "never check" since the external cron was removed in 1.5.1. Check daily instead.
+				if ( isset( $options['frequency'] ) && 'manual' === $options['frequency'] ) {
+					$options['frequency'] = 'daily';
 				}
 
 				// Settings version 8 moved the run state (what was notified, when the last check ran) to its own option.
@@ -369,25 +375,35 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$options['frequency'] = $manual_interval;
 			}
 
-			if ( 'manual' === $options['frequency'] ) {
+			$frequency = $options['frequency'];
+
+			// Kept for code that calls do_action( 'sc_wpun_enable_cron', 'manual' ) to stop the checks.
+			if ( 'manual' === $frequency ) {
 				do_action( 'sc_wpun_disable_cron' ); // Make sure no cron is setup as we are manual.
-			} else {
-				// check if the current schedule matches the one set in settings.
-				if ( $current_schedule === $options['frequency'] ) {
-					return;
-				}
-
-				// check the cron setting is valid.
-				if ( ! in_array( $options['frequency'], $this->get_intervals(), true ) ) {
-					return;
-				}
-
-				// Remove any cron's for this plugin first so we don't end up with multiple cron's doing the same thing.
-				do_action( 'sc_wpun_disable_cron' );
-
-				// Schedule cron for this plugin.
-				wp_schedule_event( time(), $options['frequency'], self::CRON_NAME );
+				return;
 			}
+
+			if ( ! array_key_exists( $frequency, $this->get_frequencies() ) ) {
+				// A schedule that no longer exists (for example one a deactivated plugin
+				// registered): an event that is already running keeps its interval, which
+				// WordPress stored with it. Without one, check at the default frequency
+				// rather than not at all.
+				if ( false !== $current_schedule ) {
+					return;
+				}
+				$frequency = self::DEFAULT_FREQUENCY;
+			}
+
+			// check if the current schedule matches the one set in settings.
+			if ( $current_schedule === $frequency ) {
+				return;
+			}
+
+			// Remove any cron's for this plugin first so we don't end up with multiple cron's doing the same thing.
+			do_action( 'sc_wpun_disable_cron' );
+
+			// Schedule cron for this plugin.
+			wp_schedule_event( time(), $frequency, self::CRON_NAME );
 		}
 
 
@@ -862,34 +878,56 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Get cron schedules.
+		 * The frequencies the plugin offers, shortest first.
 		 *
-		 * @return Array cron schedules.
+		 * A curated list rather than every schedule other plugins register, so the
+		 * choice does not change from site to site and cannot disappear with another
+		 * plugin. Schedules shorter than an hour are never offered: each check also
+		 * asks api.wordpress.org for update data.
+		 *
+		 * @return array<string, array{interval: int, display: string}> Schedules keyed by name.
 		 */
-		private function get_schedules(): array {
+		private function get_frequencies(): array {
+			/**
+			 * Filters the names of the cron schedules offered as check frequencies.
+			 *
+			 * Each must be a registered schedule (see the `cron_schedules` filter) of at
+			 * least an hour.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string[] $names Schedule names. Default hourly, twicedaily, daily and weekly.
+			 */
+			$names     = apply_filters( 'sc_wpun_frequencies', array( 'hourly', 'twicedaily', 'daily', 'weekly' ) );
 			$schedules = wp_get_schedules();
-			uasort( $schedules, array( $this, 'sort_by_interval' ) );
-			return $schedules;
+			$offered   = array();
+
+			foreach ( (array) $names as $name ) {
+				if ( ! is_string( $name ) || ! isset( $schedules[ $name ]['interval'], $schedules[ $name ]['display'] ) ) {
+					continue;
+				}
+
+				$interval = (int) $schedules[ $name ]['interval'];
+				if ( $interval >= HOUR_IN_SECONDS ) {
+					$offered[ $name ] = array(
+						'interval' => $interval,
+						'display'  => (string) $schedules[ $name ]['display'],
+					);
+				}
+			}
+
+			uasort( $offered, array( $this, 'sort_by_interval' ) );
+
+			return $offered;
 		}
 
 		/**
-		 * Get cron intervals.
+		 * Sort schedules by interval, shortest first.
 		 *
-		 * @return Array cron intervals.
-		 */
-		private function get_intervals(): array {
-			$intervals   = array_keys( $this->get_schedules() );
-			$intervals[] = 'manual';
-			return $intervals;
-		}
-
-		/**
-		 * Simple sort function.
+		 * @param array{interval: int} $a A schedule.
+		 * @param array{interval: int} $b A schedule.
 		 *
-		 * @param  int $a Integer for sorting.
-		 * @param  int $b Integer for sorting.
-		 *
-		 * @return int Frequency internval.
+		 * @return int
 		 */
 		private function sort_by_interval( $a, $b ): int {
 			return $a['interval'] <=> $b['interval'];
@@ -1009,7 +1047,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 			// Validate main settings.
 			$frequency = $input['frequency'] ?? ( $valid['frequency'] ?? '' );
-			if ( in_array( $frequency, $this->get_intervals(), true ) ) {
+			if ( array_key_exists( $frequency, $this->get_frequencies() ) ) {
 				$valid['frequency'] = $frequency;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_frequency', 'sc_wpun_settings_main_frequency_error', __( 'Invalid frequency entered', 'wp-updates-notifier' ), 'error' );
@@ -1232,13 +1270,28 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_frequency() {
-			$options = $this->get_settings();
+			$options     = $this->get_settings();
+			$frequencies = $this->get_frequencies();
+			$unavailable = ! array_key_exists( $options['frequency'], $frequencies );
 			?>
 			<select id="sc_wpun_settings_main_frequency" name="<?php echo esc_attr( self::OPT_FIELD ); ?>[frequency]">
-			<?php foreach ( $this->get_schedules() as $k => $v ) : ?>
+			<?php if ( $unavailable ) : ?>
+				<option value="<?php echo esc_attr( $options['frequency'] ); ?>" selected="selected">
+					<?php
+					// translators: %s: Name of the saved schedule.
+					echo esc_html( sprintf( __( '%s (no longer available)', 'wp-updates-notifier' ), $options['frequency'] ) );
+					?>
+				</option>
+			<?php endif; ?>
+			<?php foreach ( $frequencies as $k => $v ) : ?>
 				<option value="<?php echo esc_attr( $k ); ?>" <?php selected( $options['frequency'], $k ); ?>><?php echo esc_html( $v['display'] ); ?></option>
 			<?php endforeach; ?>
-			<select>
+			</select>
+			<?php if ( $unavailable ) : ?>
+				<p class="description sc-wpun-frequency-unavailable">
+					<?php esc_html_e( 'The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it.', 'wp-updates-notifier' ); ?>
+				</p>
+			<?php endif; ?>
 			<?php
 		}
 

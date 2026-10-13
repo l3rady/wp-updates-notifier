@@ -49,7 +49,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	public function test_the_upgrade_produces_the_current_shape( $name, $version, array $options ) {
 		$this->upgrade_from( $version, $options );
 
-		$this->assertSame( '8.0', get_option( 'sc_wpun_settings_ver' ), $name );
+		$this->assertSame( '8.1', get_option( 'sc_wpun_settings_ver' ), $name );
 		$this->assertEqualsCanonicalizing( array_keys( $this->settings() ), array_keys( $this->stored_settings() ), $name );
 	}
 
