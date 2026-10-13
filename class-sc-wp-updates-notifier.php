@@ -750,28 +750,28 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				add_settings_error( 'sc_wpun_settings_main_frequency', 'sc_wpun_settings_main_frequency_error', __( 'Invalid frequency entered', 'wp-updates-notifier' ), 'error' );
 			}
 
-			$sanitized_notify_plugins = absint( isset( $input['notify_plugins'] ) ? $input['notify_plugins'] : 0 );
+			$sanitized_notify_plugins = absint( $input['notify_plugins'] ?? 0 );
 			if ( $sanitized_notify_plugins >= 0 && $sanitized_notify_plugins <= 2 ) {
 				$valid['notify_plugins'] = $sanitized_notify_plugins;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_notify_plugins', 'sc_wpun_settings_main_notify_plugins_error', __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ), 'error' );
 			}
 
-			$sanitized_notify_themes = absint( isset( $input['notify_themes'] ) ? $input['notify_themes'] : 0 );
+			$sanitized_notify_themes = absint( $input['notify_themes'] ?? 0 );
 			if ( $sanitized_notify_themes >= 0 && $sanitized_notify_themes <= 2 ) {
 				$valid['notify_themes'] = $sanitized_notify_themes;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_notify_themes', 'sc_wpun_settings_main_notify_themes_error', __( 'Invalid theme updates value entered', 'wp-updates-notifier' ), 'error' );
 			}
 
-			$sanitized_notify_automatic = absint( isset( $input['notify_automatic'] ) ? $input['notify_automatic'] : 0 );
+			$sanitized_notify_automatic = absint( $input['notify_automatic'] ?? 0 );
 			if ( $sanitized_notify_automatic >= 0 && $sanitized_notify_automatic <= 1 ) {
 				$valid['notify_automatic'] = $sanitized_notify_automatic;
 			} else {
 				add_settings_error( 'sc_wpun_settings_main_notify_automatic', 'sc_wpun_settings_main_notify_automatic_error', __( 'Invalid automatic updates value entered', 'wp-updates-notifier' ), 'error' );
 			}
 
-			$sanitized_hide_updates = absint( isset( $input['hide_updates'] ) ? $input['hide_updates'] : 0 );
+			$sanitized_hide_updates = absint( $input['hide_updates'] ?? 0 );
 			if ( $sanitized_hide_updates <= 1 ) {
 				$valid['hide_updates'] = $sanitized_hide_updates;
 			} else {
@@ -812,7 +812,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$valid['notify_from'] = '';
 			}
 
-			$email_notifications = absint( isset( $input['email_notifications'] ) ? $input['email_notifications'] : 0 );
+			$email_notifications = absint( $input['email_notifications'] ?? 0 );
 			if ( 1 < $email_notifications ) {
 				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Invalid notification email value entered', 'wp-updates-notifier' ), 'error' );
 			}
@@ -850,7 +850,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$valid['slack_channel_override'] = '';
 			}
 
-			$slack_notifications = absint( isset( $input['slack_notifications'] ) ? $input['slack_notifications'] : 0 );
+			$slack_notifications = absint( $input['slack_notifications'] ?? 0 );
 			if ( $slack_notifications > 1 ) {
 				add_settings_error( 'sc_wpun_settings_slack_notifications_slack_notifications', 'sc_wpun_settings_slack_notifications_slack_notifications_error', __( 'Invalid notification slack value entered', 'wp-updates-notifier' ), 'error' );
 			}
