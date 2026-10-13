@@ -21,7 +21,7 @@ COMMITS_FROM ?= origin/main
 COMMITS_TO   ?= HEAD
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-known-bugs coverage matrix up down clean
+.PHONY: help build shell composer deps lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -50,7 +50,7 @@ test-wp-ms: ## Run the WordPress test suite as multisite
 test-known-bugs: ## Run the tests that document open bugs (they are expected to fail)
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 
-test: test-wp test-wp-ms ## Run every test layer
+test: test-wp test-wp-ms test-release ## Run every test layer
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings)
 	$(COMPOSE) run --build --rm php vendor/bin/phpcs
@@ -72,6 +72,9 @@ rector: deps ## Show the PHP 7.4 syntax upgrades Rector would make (changes noth
 
 rector-fix: deps ## Apply Rector's upgrades, then run make fix and make lint
 	$(COMPOSE) run --build --rm php vendor/bin/rector process --no-progress-bar $(ARGS)
+
+test-release: ## Rehearse the scripts the release workflow runs (copyright year, stable tag)
+	$(COMPOSE) run --build --rm php sh tests/bin/test-release-scripts.sh
 
 smoke: ## Verify PHP, mysqli and that every PHP file lints
 	$(COMPOSE) run --build --rm php sh docker/smoke.sh

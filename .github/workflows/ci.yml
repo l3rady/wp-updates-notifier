@@ -43,6 +43,15 @@ jobs:
       - name: PHP 7.4 syntax (Rector dry run)
         run: make rector
 
+  # The scripts the release workflow runs on the Release PR, rehearsed on a copy.
+  release-scripts:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Rehearse the release scripts
+        run: make test-release
+
   # Every PHP file must lint on every supported PHP version.
   smoke:
     if: github.event_name != 'schedule'
