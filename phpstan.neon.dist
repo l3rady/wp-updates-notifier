@@ -1,0 +1,15 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 8
+    phpVersion: 70400
+    paths:
+        - class-sc-wp-updates-notifier.php
+        - uninstall.php
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+    scanFiles:
+        - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+    treatPhpDocTypesAsCertain: false

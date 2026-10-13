@@ -14,6 +14,8 @@ make smoke PHP_VERSION=7.4       # check the environment (default PHP 8.3)
 make matrix                      # smoke test PHP 7.4 to 8.5
 make lint                        # WordPress Coding Standards (errors and warnings fail)
 make fix                         # auto-fix what phpcbf can
+make stan                        # PHPStan level 8 with the WordPress stubs
+make rector                      # PHP 7.4 syntax upgrades still to do (none expected)
 make shell                       # shell in the PHP container
 make up                          # local site: http://localhost:8080, mail in Mailpit on :8025
 make down
