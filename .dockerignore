@@ -1,0 +1,6 @@
+.git
+.github
+vendor
+node_modules
+build
+*.md
