@@ -1,0 +1,110 @@
+name: ci
+
+# The test layers described in the README, run in the same Docker setup used
+# locally (see the Makefile). Lint lives in lint.yml, commit checks in commits.yml.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  # Nightly against WordPress trunk, to notice core changes before a release.
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      wp_version:
+        description: 'WordPress version, tag or branch to test against (for example trunk)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Static analysis with the WordPress stubs, parsing as PHP 7.4.
+  phpstan:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Static analysis (PHPStan)
+        run: make stan
+
+  # Rector must have nothing left to upgrade to PHP 7.4.
+  rector:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: PHP 7.4 syntax (Rector dry run)
+        run: make rector
+
+  # Every PHP file must lint on every supported PHP version.
+  smoke:
+    if: github.event_name != 'schedule'
+    name: smoke (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+    env:
+      PHP_VERSION: ${{ matrix.php }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check PHP and lint every file
+        run: make smoke
+
+  # The plugin's tests on WordPress's own test library with a real database,
+  # on single site and multisite. WordPress 7.1.3 is the latest release; 6.7.9
+  # is the minimum the plugin supports (see #50), so it runs on the oldest PHP
+  # and on the newest PHP that WordPress 6.7 supports.
+  wordpress:
+    if: github.event_name != 'schedule'
+    name: wordpress ${{ matrix.wp }} ${{ matrix.multisite == '1' && 'multisite' || 'single' }} (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        multisite: ['0', '1']
+        include:
+          - { php: '7.4', wp: '7.1.3' }
+          - { php: '8.0', wp: '7.1.3' }
+          - { php: '8.1', wp: '7.1.3' }
+          - { php: '8.2', wp: '7.1.3' }
+          - { php: '8.3', wp: '7.1.3' }
+          - { php: '8.4', wp: '7.1.3' }
+          - { php: '8.5', wp: '7.1.3' }
+          - { php: '7.4', wp: '6.7.9' }
+          - { php: '8.3', wp: '6.7.9' }
+    env:
+      PHP_VERSION: ${{ matrix.php }}
+      WP_VERSION: ${{ inputs.wp_version || matrix.wp }}
+      WP_MULTISITE: ${{ matrix.multisite }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Run the tests
+        run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
+
+  # The same against WordPress trunk every night.
+  wordpress-trunk:
+    if: github.event_name == 'schedule'
+    name: wordpress trunk ${{ matrix.multisite == '1' && 'multisite' || 'single' }} (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.5']
+        multisite: ['0', '1']
+    env:
+      PHP_VERSION: ${{ matrix.php }}
+      WP_VERSION: trunk
+      WP_MULTISITE: ${{ matrix.multisite }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Run the tests against trunk
+        run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
