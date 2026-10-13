@@ -864,16 +864,18 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 
 
 		/**
-		 * Removes the update nag for non admin users.
+		 * Hides WordPress's "update available" notice from users who cannot update WordPress.
+		 *
+		 * The notice is about core updates, and core itself words it by the
+		 * `update_core` capability, so that is what decides who still sees it.
 		 *
 		 * @return void
 		 */
 		public function remove_update_nag_for_nonadmins() {
 			$settings = $this->get_settings(); // get settings.
-			if ( 1 === $settings['hide_updates'] ) { // is this enabled?
-				if ( ! current_user_can( 'update_plugins' ) ) { // can the current user update plugins?
-					remove_action( 'admin_notices', 'update_nag', 3 ); // no they cannot so remove the nag for them.
-				}
+			if ( 1 === $settings['hide_updates'] && ! current_user_can( 'update_core' ) ) {
+				remove_action( 'admin_notices', 'update_nag', 3 );
+				remove_action( 'network_admin_notices', 'update_nag', 3 );
 			}
 		}
 
@@ -1013,7 +1015,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 			add_settings_field( 'sc_wpun_settings_main_notify_plugins', __( 'Notify about plugin updates?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_plugins' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_themes', __( 'Notify about theme updates?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_themes' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 			add_settings_field( 'sc_wpun_settings_main_notify_automatic', __( 'Notify automatic core updates to this address?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_automatic' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
-			add_settings_field( 'sc_wpun_settings_main_hide_updates', __( 'Hide core WP update nag from non-admin users?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_hide_updates' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
+			add_settings_field( 'sc_wpun_settings_main_hide_updates', __( 'Hide the WordPress update notice from users who cannot update WordPress?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_hide_updates' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
 
 			// Email notification settings.
 			add_settings_section( 'sc_wpun_settings_email_notifications', __( 'Email Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_text' ), 'wp-updates-notifier' );
