@@ -2,6 +2,14 @@
     "name": "l3rady/wp-updates-notifier",
     "description": "Sends email or Slack messages to notify you if there are any updates for your WordPress site.",
     "type": "wordpress-plugin",
+    "keywords": [
+        "wordpress",
+        "plugin",
+        "updates",
+        "notifications",
+        "email",
+        "slack"
+    ],
     "homepage": "https://github.com/l3rady/wp-updates-notifier",
     "license": "GPL-2.0-or-later",
     "authors": [
@@ -12,19 +20,11 @@
     ],
     "support": {
         "issues": "https://github.com/l3rady/wp-updates-notifier/issues",
-        "source": "https://github.com/l3rady/wp-updates-notifier"
+        "source": "https://github.com/l3rady/wp-updates-notifier",
+        "security": "https://github.com/l3rady/wp-updates-notifier/blob/main/SECURITY.md"
     },
     "require": {
         "php": ">=7.4"
-    },
-    "config": {
-        "platform": {
-            "php": "7.4.33"
-        },
-        "sort-packages": true,
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
-        }
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.2",
@@ -35,5 +35,26 @@
         "squizlabs/php_codesniffer": "^3.13",
         "szepeviktor/phpstan-wordpress": "^2.0",
         "wp-coding-standards/wpcs": "^3.4"
+    },
+    "config": {
+        "platform": {
+            "php": "7.4.33"
+        },
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "scripts": {
+        "lint": "phpcs",
+        "fix": "phpcbf",
+        "stan": "phpstan analyse --memory-limit=1G",
+        "rector": "rector process --dry-run --no-progress-bar"
+    },
+    "scripts-descriptions": {
+        "lint": "Check the WordPress Coding Standards.",
+        "fix": "Fix what phpcbf can.",
+        "stan": "Run PHPStan.",
+        "rector": "Show PHP 7.4 syntax upgrades still to do."
     }
 }

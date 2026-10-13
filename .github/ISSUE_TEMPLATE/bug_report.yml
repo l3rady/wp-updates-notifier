@@ -1,0 +1,65 @@
+name: Bug report
+description: Something does not work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps that shows the problem.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: WP Updates Notifier, WordPress and PHP.
+      placeholder: "2.0.0, WordPress 7.1.3, PHP 8.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: site
+    attributes:
+      label: Single site or multisite?
+      options:
+        - Single site
+        - Multisite, plugin network-activated
+        - Multisite, plugin activated on some sites
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Which notifications are affected?
+      multiple: true
+      options:
+        - Email
+        - Slack
+        - Automatic update emails
+        - Not about notifications
+  - type: dropdown
+    id: cron
+    attributes:
+      label: Is DISABLE_WP_CRON set?
+      description: With DISABLE_WP_CRON, checks only run when a real cron job calls wp-cron.php.
+      options:
+        - "No"
+        - Yes, and a system cron calls wp-cron.php
+        - Yes, without a system cron
+        - Not sure
+  - type: input
+    id: mail
+    attributes:
+      label: Mail or SMTP plugin
+      description: For email problems, which plugin (if any) sends your site's mail.
+      placeholder: "WP Mail SMTP, Post SMTP, none, …"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Errors or log output
+      description: PHP errors, debug.log lines, or the result of the test send. Remove webhook URLs and other secrets.
+      render: text
