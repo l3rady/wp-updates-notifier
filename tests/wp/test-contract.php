@@ -43,6 +43,31 @@ class Test_Contract extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The licence is stated the same way everywhere, and the licence text ships with the plugin.
+	 */
+	public function test_the_licence_is_stated_consistently() {
+		$dir      = WP_PLUGIN_DIR . '/wp-updates-notifier';
+		$header   = get_file_data(
+			$dir . '/class-sc-wp-updates-notifier.php',
+			array(
+				'License'    => 'License',
+				'LicenseURI' => 'License URI',
+			)
+		);
+		$readme   = file_get_contents( $dir . '/readme.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+		$composer = json_decode( file_get_contents( $dir . '/composer.json' ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+
+		$this->assertSame( 'GPL-2.0-or-later', $header['License'] );
+		$this->assertSame( 'https://www.gnu.org/licenses/gpl-2.0.html', $header['LicenseURI'] );
+		$this->assertMatchesRegularExpression( '/^License:\s*GPL-2\.0-or-later$/m', $readme );
+		$this->assertMatchesRegularExpression( '#^License URI:\s*https://www\.gnu\.org/licenses/gpl-2\.0\.html$#m', $readme );
+		$this->assertSame( 'GPL-2.0-or-later', $composer['license'] );
+		$this->assertFileExists( $dir . '/LICENSE' );
+		$this->assertStringContainsString( 'GNU GENERAL PUBLIC LICENSE', file_get_contents( $dir . '/LICENSE' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+		$this->assertStringContainsString( 'Version 2, June 1991', file_get_contents( $dir . '/LICENSE' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+	}
+
+	/**
 	 * Option names and the cron hook are stored in sites' databases.
 	 */
 	public function test_stored_names_are_unchanged() {
