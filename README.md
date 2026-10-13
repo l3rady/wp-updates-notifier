@@ -1,8 +1,38 @@
 # WP Updates Notifier
 
-Sends email or Slack messages to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
+[![ci](https://github.com/l3rady/wp-updates-notifier/actions/workflows/ci.yml/badge.svg)](https://github.com/l3rady/wp-updates-notifier/actions/workflows/ci.yml)
+[![lint](https://github.com/l3rady/wp-updates-notifier/actions/workflows/lint.yml/badge.svg)](https://github.com/l3rady/wp-updates-notifier/actions/workflows/lint.yml)
+[![WordPress.org version](https://img.shields.io/wordpress/plugin/v/wp-updates-notifier)](https://wordpress.org/plugins/wp-updates-notifier/)
+[![Active installs](https://img.shields.io/wordpress/plugin/installs/wp-updates-notifier)](https://wordpress.org/plugins/wp-updates-notifier/)
+[![Licence: GPL-2.0-or-later](https://img.shields.io/badge/licence-GPL--2.0--or--later-blue)](LICENSE)
 
-Available on [WordPress.org](https://wordpress.org/plugins/wp-updates-notifier/).
+Tells you by email or Slack when your WordPress site has core, plugin or theme updates waiting, so you know without logging in. Useful for sites you rarely visit and for sites you look after for clients.
+
+- Checks on a schedule (hourly, twice daily, daily or weekly) and tells you about each new version once.
+- Core, plugin and theme updates, optionally only for active plugins and themes.
+- Email to one or more addresses, and Slack through an incoming webhook.
+- Can send WordPress's own automatic update emails to the same addresses.
+- Hooks for developers to change what is checked and what is sent.
+
+Requires WordPress 6.7 or newer and PHP 7.4 or newer.
+
+## Installing
+
+- **WordPress.org (recommended):** search for "WP Updates Notifier" under Plugins → Add New, or download it from [wordpress.org/plugins/wp-updates-notifier](https://wordpress.org/plugins/wp-updates-notifier/).
+- **Composer:** through [WordPress Packagist](https://wpackagist.org/): `composer require wpackagist-plugin/wp-updates-notifier`.
+- **Zip:** each [GitHub release](https://github.com/l3rady/wp-updates-notifier/releases) has the plugin zip attached; upload it under Plugins → Add New → Upload Plugin.
+
+Then open **Settings → Updates Notifier** to choose where notifications go.
+
+Checks run on WP-Cron, which only runs when the site gets visits. On a quiet site, or with `DISABLE_WP_CRON`, set up a real cron job that calls `wp-cron.php`.
+
+## Help, bugs and security
+
+- Questions: the [support forum](https://wordpress.org/support/plugin/wp-updates-notifier/).
+- Bugs and ideas: [GitHub issues](https://github.com/l3rady/wp-updates-notifier/issues).
+- Security problems: please report them privately, see [SECURITY.md](SECURITY.md).
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Development
 
