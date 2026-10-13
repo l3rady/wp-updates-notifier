@@ -14,10 +14,10 @@ export WP_VERSION
 export HOST_UID := $(shell id -u)
 export HOST_GID := $(shell id -g)
 
-COMPOSE := docker compose
+COMPOSE := docker compose --progress quiet
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps smoke test test-wp test-wp-ms test-known-bugs coverage matrix up down clean
+.PHONY: help build shell composer deps lint fix smoke test test-wp test-wp-ms test-known-bugs coverage matrix up down clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -31,7 +31,7 @@ shell: ## Open a shell in the PHP container
 composer: ## Run composer, e.g. make composer ARGS="require --dev foo/bar"
 	$(COMPOSE) run --rm composer $(ARGS)
 
-vendor/autoload.php: composer.json
+vendor/autoload.php: composer.json composer.lock
 	$(COMPOSE) run --rm composer install --no-interaction --no-progress
 	@touch $@
 
@@ -47,6 +47,12 @@ test-known-bugs: ## Run the tests that document open bugs (they are expected to 
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 
 test: test-wp test-wp-ms ## Run every test layer
+
+lint: deps ## Check WordPress Coding Standards (fails on errors and warnings)
+	$(COMPOSE) run --build --rm php vendor/bin/phpcs
+
+fix: deps ## Auto-fix coding standard violations with phpcbf
+	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcbf; s=$$?; [ $$s -le 1 ]'
 
 smoke: ## Verify PHP, mysqli and that every PHP file lints
 	$(COMPOSE) run --build --rm php sh docker/smoke.sh
