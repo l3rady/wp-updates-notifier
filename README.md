@@ -58,6 +58,8 @@ make down
 make dist                        # build/wp-updates-notifier-<version>.zip, runtime files only
 make dist-check                  # check its contents (and that .gitattributes matches .distignore)
 make test-dist                   # install it into a fresh WordPress, activate, deactivate, uninstall
+make plugin-check                # WordPress.org's Plugin Check on the zip (fails on errors)
+make check-headers               # plugin header and readme.txt agree and follow WordPress.org's rules
 ```
 
 `.distignore` lists what stays out of the zip; the WordPress.org deploy uses the same list.

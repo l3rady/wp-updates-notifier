@@ -73,6 +73,20 @@ jobs:
       - name: Install it into WordPress
         run: make test-dist
 
+  # WordPress.org's Plugin Check on the zip, and the header and readme.txt rules
+  # it enforces, so a release is never refused at submission.
+  plugin-check:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Plugin header and readme.txt
+        run: make check-headers
+      - name: Build the zip
+        run: make dist
+      - name: Plugin Check
+        run: make plugin-check
+
   # Every PHP file must lint on every supported PHP version.
   smoke:
     if: github.event_name != 'schedule'
