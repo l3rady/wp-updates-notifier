@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Support forum on WordPress.org
+    url: https://wordpress.org/support/plugin/wp-updates-notifier/
+    about: Questions about using the plugin.
+  - name: Report a security problem
+    url: https://github.com/l3rady/wp-updates-notifier/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.
