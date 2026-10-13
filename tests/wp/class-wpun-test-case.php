@@ -30,7 +30,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	/**
 	 * Settings version and key set of the current release, used as the base for fixtures.
 	 */
-	const SETTINGS_VERSION = '8.0';
+	const SETTINGS_VERSION = '8.1';
 
 	/**
 	 * Set up: block the network and reset the mailer.
