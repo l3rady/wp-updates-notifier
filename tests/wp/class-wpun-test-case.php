@@ -30,7 +30,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	/**
 	 * Settings version and key set of the current release, used as the base for fixtures.
 	 */
-	const SETTINGS_VERSION = '7.0';
+	const SETTINGS_VERSION = '8.0';
 
 	/**
 	 * Set up: block the network and reset the mailer.
@@ -136,12 +136,6 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 			'notify_themes'          => 1,
 			'notify_automatic'       => 1,
 			'hide_updates'           => 1,
-			'notified'               => array(
-				'core'   => '',
-				'plugin' => array(),
-				'theme'  => array(),
-			),
-			'last_check_time'        => false,
 		);
 
 		return array_merge( $defaults, $overrides );
@@ -155,6 +149,39 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	protected function save_settings( array $overrides = array() ) {
 		update_option( 'sc_wpun_settings', $this->settings( $overrides ) );
 		update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
+	}
+
+	/**
+	 * Store the run state (what was notified, when the last check ran).
+	 *
+	 * @param array     $notified        Notified versions: [ 'core' => , 'plugin' => [], 'theme' => [] ].
+	 * @param int|false $last_check_time Time of the last check.
+	 */
+	protected function save_state( array $notified = array(), $last_check_time = false ) {
+		update_option(
+			'sc_wpun_state',
+			array(
+				'notified'        => array_merge(
+					array(
+						'core'   => '',
+						'plugin' => array(),
+						'theme'  => array(),
+					),
+					$notified
+				),
+				'last_check_time' => $last_check_time,
+			),
+			false
+		);
+	}
+
+	/**
+	 * Read the stored run state.
+	 *
+	 * @return array
+	 */
+	protected function stored_state() {
+		return (array) get_option( 'sc_wpun_state' );
 	}
 
 	/**

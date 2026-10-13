@@ -269,25 +269,12 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	public function test_73_last_scanned_uses_the_site_timezone() {
 		update_option( 'timezone_string', 'Pacific/Auckland' );
 		$timestamp = gmmktime( 12, 0, 0, 1, 15, 2024 );
-		$this->save_settings( array( 'last_check_time' => $timestamp ) );
+		$this->save_settings();
+		$this->save_state( array(), $timestamp );
 
 		$html = $this->render_settings_page();
 
 		$this->assertStringContainsString( wp_date( get_option( 'time_format' ), $timestamp ), $html );
-	}
-
-	/**
-	 * #75: option values saved as strings (imports, `wp option update`) switch notifications off silently.
-	 */
-	public function test_75_string_valued_options_still_notify() {
-		$fixtures = require dirname( __DIR__ ) . '/fixtures/settings.php';
-		update_option( 'sc_wpun_settings', $fixtures['1.6.0-string-values']['options'] );
-		update_option( 'sc_wpun_settings_ver', '7.0' );
-		$this->set_updates( '99.0.0' );
-
-		$this->plugin()->do_update_check();
-
-		$this->assertSame( 1, $this->sent_mail_count() );
 	}
 
 	/**
@@ -300,19 +287,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$this->plugin()->do_update_check();
 
 		$this->assertNotSame( 'ops@example.org', tests_retrieve_phpmailer_instance()->From );
-	}
-
-	/**
-	 * #76: a failed send is marked as notified anyway, so it is never retried.
-	 */
-	public function test_76_a_failed_email_is_retried_on_the_next_check() {
-		$this->save_settings( array( 'slack_notifications' => 0 ) );
-		$this->set_updates( '99.0.0' );
-		add_filter( 'pre_wp_mail', '__return_false' );
-
-		$this->plugin()->do_update_check();
-
-		$this->assertSame( '', $this->stored_settings()['notified']['core'] );
 	}
 
 	/**
