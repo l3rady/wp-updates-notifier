@@ -34,6 +34,33 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit();
 }
 
-delete_option( 'sc_wpun_settings' );
-delete_option( 'sc_wpun_settings_ver' );
-delete_option( 'sc_wpun_state' );
+/**
+ * Remove everything the plugin stored for the current site.
+ */
+$sc_wpun_uninstall_site = static function () {
+	delete_option( 'sc_wpun_settings' );
+	delete_option( 'sc_wpun_settings_ver' );
+	delete_option( 'sc_wpun_state' );
+	delete_transient( 'sc_wpun_send_test_email' );
+	delete_transient( 'sc_wpun_send_test_slack' );
+
+	// Normally gone already on deactivation, but not if the files were removed or
+	// replaced without one.
+	wp_clear_scheduled_hook( 'sc_wpun_update_check' );
+};
+
+if ( is_multisite() ) {
+	// Settings, state and the event are kept per site, so clean every site.
+	foreach ( get_sites(
+		array(
+			'fields' => 'ids',
+			'number' => 0,
+		)
+	) as $sc_wpun_site_id ) {
+		switch_to_blog( $sc_wpun_site_id );
+		$sc_wpun_uninstall_site();
+		restore_current_blog();
+	}
+} else {
+	$sc_wpun_uninstall_site();
+}
