@@ -1,0 +1,176 @@
+<?php
+/**
+ * What existing sites and other plugins depend on.
+ *
+ * The plugin has tens of thousands of active installs, and code that hooks into it. These tests
+ * pin the names and behaviour that must keep working through every refactor: change one of them
+ * only on purpose, with an upgrade path and a changelog entry.
+ *
+ * @package wp-updates-notifier
+ */
+
+/**
+ * Public contract of the plugin.
+ */
+class Test_Contract extends WPUN_Test_Case {
+
+	/**
+	 * Active plugins are stored by path. Renaming the main file deactivated the plugin on every
+	 * site that updated to 1.6; the planned rename (#90) must keep sites active through a stub.
+	 */
+	public function test_the_main_file_is_a_valid_plugin_at_the_expected_path() {
+		$file = WP_PLUGIN_DIR . '/wp-updates-notifier/class-sc-wp-updates-notifier.php';
+
+		$this->assertFileExists( $file );
+
+		$data = get_plugin_data( $file, false, false );
+		$this->assertSame( 'WP Updates Notifier', $data['Name'] );
+		$this->assertSame( 'wp-updates-notifier', $data['TextDomain'] );
+	}
+
+	/**
+	 * Option names and the cron hook are stored in sites' databases.
+	 */
+	public function test_stored_names_are_unchanged() {
+		$this->assertSame( 'sc_wpun_settings', SC_WP_Updates_Notifier::OPT_FIELD );
+		$this->assertSame( 'sc_wpun_settings_ver', SC_WP_Updates_Notifier::OPT_VERSION_FIELD );
+		$this->assertSame( 'sc_wpun_update_check', SC_WP_Updates_Notifier::CRON_NAME );
+	}
+
+	/**
+	 * Hooks the plugin registers for itself.
+	 */
+	public function test_the_plugin_registers_its_hooks() {
+		$this->assertNotFalse( has_action( 'sc_wpun_update_check' ), 'The cron event needs a callback.' );
+		$this->assertNotFalse( has_action( 'sc_wpun_enable_cron' ) );
+		$this->assertNotFalse( has_action( 'sc_wpun_disable_cron' ) );
+		$this->assertNotFalse( has_action( 'admin_menu' ) );
+		$this->assertNotFalse( has_action( 'admin_init' ) );
+		$this->assertNotFalse( has_filter( 'auto_core_update_email' ) );
+		$this->assertNotFalse( has_filter( 'plugin_action_links' ) );
+		$this->assertNotFalse( has_filter( 'sc_wpun_plugins_need_update' ) );
+		$this->assertNotFalse( has_filter( 'sc_wpun_themes_need_update' ) );
+	}
+
+	/**
+	 * The settings page lives under Settings with this slug, which other code and bookmarks link to.
+	 */
+	public function test_the_settings_page_slug() {
+		global $submenu;
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->plugin()->admin_settings_menu();
+
+		$slugs = wp_list_pluck( $submenu['options-general.php'], 2 );
+		$this->assertContains( 'wp-updates-notifier', $slugs );
+	}
+
+	/**
+	 * Third parties can enable and disable the schedule through the documented actions.
+	 */
+	public function test_the_cron_actions_schedule_and_unschedule() {
+		$this->save_settings( array( 'frequency' => 'daily' ) );
+		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
+
+		do_action( 'sc_wpun_enable_cron', 'daily' );
+		$this->assertNotFalse( wp_next_scheduled( 'sc_wpun_update_check' ) );
+		$this->assertSame( 'daily', wp_get_schedule( 'sc_wpun_update_check' ) );
+
+		do_action( 'sc_wpun_disable_cron' );
+		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ) );
+	}
+
+	/**
+	 * Changing the schedule replaces the event instead of adding a second one.
+	 */
+	public function test_changing_the_frequency_leaves_one_event() {
+		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
+
+		do_action( 'sc_wpun_enable_cron', 'hourly' );
+		do_action( 'sc_wpun_enable_cron', 'daily' );
+
+		$events = array_filter(
+			_get_cron_array(),
+			static function ( $hooks ) {
+				return isset( $hooks['sc_wpun_update_check'] );
+			}
+		);
+		$this->assertCount( 1, $events );
+		$this->assertSame( 'daily', wp_get_schedule( 'sc_wpun_update_check' ) );
+	}
+
+	/**
+	 * Every settings read and write goes through the documented filters.
+	 */
+	public function test_the_options_filters_are_applied() {
+		$this->save_settings( array( 'notify_to' => 'a@example.org' ) );
+
+		add_filter(
+			'sc_wpun_get_options_filter',
+			static function ( $options, $field ) {
+				if ( 'sc_wpun_settings' === $field ) {
+					$options['notify_to'] = 'filtered@example.org';
+				}
+				return $options;
+			},
+			10,
+			2
+		);
+
+		$this->assertSame( 'filtered@example.org', $this->read_setting( 'notify_to' ) );
+
+		$put = array();
+		add_filter(
+			'sc_wpun_put_options_filter',
+			static function ( $settings, $field ) use ( &$put ) {
+				$put[] = $field;
+				return $settings;
+			},
+			10,
+			2
+		);
+		$this->set_updates();
+		$this->plugin()->do_update_check();
+
+		$this->assertContains( 'sc_wpun_settings', $put, 'Saving settings must run the put filter.' );
+	}
+
+	/**
+	 * The email text can be changed with the documented filters.
+	 */
+	public function test_the_email_filters_are_applied() {
+		$this->save_settings();
+		$this->set_updates( '99.0.0' );
+
+		add_filter(
+			'sc_wpun_email_subject',
+			static function () {
+				return 'Custom subject';
+			}
+		);
+		add_filter(
+			'sc_wpun_email_content',
+			static function () {
+				return 'Custom content';
+			}
+		);
+
+		$this->plugin()->do_update_check();
+
+		$mail = $this->sent_mail();
+		$this->assertSame( 'Custom subject', $mail->subject );
+		$this->assertStringContainsString( 'Custom content', $mail->body );
+	}
+
+	/**
+	 * Reads a setting through the plugin's filtered getter (private), as the plugin itself does.
+	 *
+	 * @param string $key Setting key.
+	 * @return mixed
+	 */
+	private function read_setting( $key ) {
+		$options = $this->call_private( 'get_set_options', 'sc_wpun_settings' );
+
+		return $options[ $key ];
+	}
+}
