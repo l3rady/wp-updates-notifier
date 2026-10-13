@@ -977,28 +977,32 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				$this->send_test_email();
 			}
 
-			$options     = $this->get_state();
-			$date_format = get_option( 'date_format' );
-			$time_format = get_option( 'time_format' );
+			$options    = $this->get_state();
+			$next_check = wp_next_scheduled( self::CRON_NAME );
 			?>
 			<div class="wrap">
 				<h2><?php esc_html_e( 'Updates Notifier', 'wp-updates-notifier' ); ?></h2>
 
 				<p>
-					<span class="description">
+					<span class="description sc-wpun-last-check">
 					<?php
 					if ( empty( $options['last_check_time'] ) ) {
-						$scan_date = __( 'Never', 'wp-updates-notifier' );
+						esc_html_e( 'Last checked: never', 'wp-updates-notifier' );
 					} else {
-						$scan_date = sprintf(
-							// translators: 1: Date. 2: Time.
-							__( '%1$1s @ %2$2s', 'wp-updates-notifier' ),
-							gmdate( $date_format, $options['last_check_time'] ),
-							gmdate( $time_format, $options['last_check_time'] )
-						);
+						// translators: %s: Date and time of the last check.
+						echo esc_html( sprintf( __( 'Last checked: %s', 'wp-updates-notifier' ), $this->format_site_time( $options['last_check_time'] ) ) );
 					}
-
-					echo esc_html( __( 'Last scanned: ', 'wp-updates-notifier' ) . $scan_date );
+					?>
+					</span>
+					<br />
+					<span class="description sc-wpun-next-check">
+					<?php
+					if ( false === $next_check ) {
+						esc_html_e( 'Next check: not scheduled. Save the settings to schedule it.', 'wp-updates-notifier' );
+					} else {
+						// translators: %s: Date and time of the next check.
+						echo esc_html( sprintf( __( 'Next check: %s', 'wp-updates-notifier' ), $this->format_site_time( $next_check ) ) );
+					}
 					?>
 					</span>
 				</p>
@@ -1015,6 +1019,22 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 				</form>
 			</div>
 			<?php
+		}
+
+		/**
+		 * A timestamp as a date and time in the site's timezone and formats.
+		 *
+		 * @param int $timestamp Unix timestamp.
+		 *
+		 * @return string
+		 */
+		private function format_site_time( int $timestamp ): string {
+			return sprintf(
+				// translators: 1: Date. 2: Time.
+				__( '%1$s at %2$s', 'wp-updates-notifier' ),
+				wp_date( (string) get_option( 'date_format' ), $timestamp ),
+				wp_date( (string) get_option( 'time_format' ), $timestamp )
+			);
 		}
 
 		/**
