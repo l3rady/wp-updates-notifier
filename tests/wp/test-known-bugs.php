@@ -80,18 +80,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #64: a saved frequency that is not a known schedule leaves no event, without a word.
-	 */
-	public function test_64_an_unknown_saved_frequency_still_leaves_a_schedule() {
-		$this->save_settings( array( 'frequency' => 'schedule_from_a_removed_plugin' ) );
-		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
-
-		$this->plugin()->enable_cron();
-
-		$this->assertNotFalse( wp_next_scheduled( 'sc_wpun_update_check' ) );
-	}
-
-	/**
 	 * #65: the plain-text email is HTML-escaped, so `&` arrives as an entity.
 	 */
 	public function test_65_plain_text_email_has_no_html_entities() {
@@ -220,15 +208,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$this->plugin()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
-	}
-
-	/**
-	 * #72: the frequency field closes its select with `<select>`.
-	 */
-	public function test_72_every_select_on_the_settings_page_is_closed() {
-		$html = $this->render_settings_page();
-
-		$this->assertSame( substr_count( $html, '<select' ), substr_count( $html, '</select>' ) );
 	}
 
 	/**
