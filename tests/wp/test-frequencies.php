@@ -162,7 +162,7 @@ class Test_Frequencies extends WPUN_Test_Case {
 		update_option( 'sc_wpun_settings', $this->settings( array( 'frequency' => 'manual' ) ) );
 		update_option( 'sc_wpun_settings_ver', '8.0' );
 
-		$this->call_private( 'settings_up_to_date' );
+		sc_wpun()->settings()->maybe_upgrade();
 		$this->plugin()->maybe_schedule();
 
 		$this->assertSame( 'daily', $this->stored_settings()['frequency'] );

@@ -293,22 +293,6 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Call a private method of the plugin.
-	 *
-	 * @param string $method Method name.
-	 * @param mixed  ...$args Arguments.
-	 * @return mixed
-	 */
-	protected function call_private( $method, ...$args ) {
-		$reflection = new ReflectionMethod( 'SC_WP_Updates_Notifier', $method );
-		if ( PHP_VERSION_ID < 80100 ) {
-			$reflection->setAccessible( true ); // No effect from PHP 8.1, deprecated in 8.5.
-		}
-
-		return $reflection->invoke( $this->plugin(), ...$args );
-	}
-
-	/**
 	 * Mail captured by the mock mailer.
 	 *
 	 * @return object|false The first sent message (->subject, ->body, ->header, ->to) or false.

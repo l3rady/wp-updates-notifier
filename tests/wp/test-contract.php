@@ -173,7 +173,7 @@ class Test_Contract extends WPUN_Test_Case {
 		$this->assertContains( 'sc_wpun_state', $put, 'Saving the run state must run the put filter.' );
 
 		update_option( 'sc_wpun_settings_ver', '7.0' );
-		$this->call_private( 'settings_up_to_date' );
+		sc_wpun()->settings()->maybe_upgrade();
 		$this->assertContains( 'sc_wpun_settings', $put, 'Saving settings must run the put filter.' );
 	}
 
@@ -211,7 +211,7 @@ class Test_Contract extends WPUN_Test_Case {
 	 * @return mixed
 	 */
 	private function read_setting( $key ) {
-		$options = $this->call_private( 'get_set_options', 'sc_wpun_settings' );
+		$options = sc_wpun()->settings()->read_option( 'sc_wpun_settings' );
 
 		return $options[ $key ];
 	}

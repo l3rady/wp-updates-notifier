@@ -34,7 +34,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		update_option( 'sc_wpun_settings', $options );
 		update_option( 'sc_wpun_settings_ver', $version );
 
-		$this->call_private( 'settings_up_to_date' );
+		sc_wpun()->settings()->maybe_upgrade();
 	}
 
 	/**
@@ -131,7 +131,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->save_settings( array( 'notify_to' => 'untouched@example.org' ) );
 		$before = $this->stored_settings();
 
-		$this->call_private( 'settings_up_to_date' );
+		sc_wpun()->settings()->maybe_upgrade();
 
 		$this->assertSame( $before, $this->stored_settings() );
 	}
@@ -144,7 +144,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		delete_option( 'sc_wpun_settings_ver' );
 		update_option( 'admin_email', 'admin@example.org' );
 
-		$this->call_private( 'settings_up_to_date' );
+		sc_wpun()->settings()->maybe_upgrade();
 
 		$stored = $this->stored_settings();
 		$this->assertSame( 'hourly', $stored['frequency'] );
