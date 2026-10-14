@@ -103,7 +103,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 		$hooked = false;
 		foreach ( $GLOBALS['wp_filter']['init']->callbacks as $callbacks ) {
 			foreach ( $callbacks as $callback ) {
-				if ( is_array( $callback['function'] ) && $callback['function'][0] instanceof SC_WP_Updates_Notifier && 'maybe_schedule' === $callback['function'][1] ) {
+				if ( is_array( $callback['function'] ) && $callback['function'][0] instanceof \WPUN\Scheduler && 'maybe_schedule' === $callback['function'][1] ) {
 					$hooked = true;
 				}
 			}

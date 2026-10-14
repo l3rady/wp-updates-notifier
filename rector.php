@@ -17,6 +17,7 @@ return RectorConfig::configure()
 	->withPaths(
 		array(
 			__DIR__ . '/class-sc-wp-updates-notifier.php',
+			__DIR__ . '/includes',
 			__DIR__ . '/uninstall.php',
 		)
 	)

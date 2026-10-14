@@ -143,8 +143,7 @@ class Test_Plugin_Details extends WPUN_Test_Case {
 				'wp-updates-notifier/class-sc-wp-updates-notifier.php' => 'not an entry',
 			)
 		);
-		$entries = $this->call_private(
-			'normalise_plugin_updates',
+		$entries = sc_wpun()->update_checker()->normalise_plugin_updates(
 			array(
 				'x.php' => array( 'new_version' => '' ),
 				'y.php' => 7,
