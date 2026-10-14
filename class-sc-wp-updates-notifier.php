@@ -55,6 +55,15 @@ require_once __DIR__ . '/includes/class-settings.php';
 require_once __DIR__ . '/includes/class-state.php';
 require_once __DIR__ . '/includes/class-scheduler.php';
 require_once __DIR__ . '/includes/class-notifier.php';
+require_once __DIR__ . '/includes/class-notification-item.php';
+require_once __DIR__ . '/includes/class-notification.php';
+require_once __DIR__ . '/includes/class-notification-renderer.php';
+require_once __DIR__ . '/includes/class-legacy-message.php';
+require_once __DIR__ . '/includes/class-delivery-result.php';
+require_once __DIR__ . '/includes/class-channel-instance.php';
+require_once __DIR__ . '/includes/abstract-class-channel.php';
+require_once __DIR__ . '/includes/class-channel-registry.php';
+require_once __DIR__ . '/includes/class-dispatcher.php';
 require_once __DIR__ . '/includes/class-update-checker.php';
 require_once __DIR__ . '/includes/admin/class-settings-page.php';
 require_once __DIR__ . '/includes/admin/class-update-nag.php';
@@ -454,6 +463,21 @@ if ( ! function_exists( 'sc_wpun' ) ) {
 		$plugin ??= new \WPUN\Plugin();
 
 		return $plugin;
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_register_channel' ) ) {
+	/**
+	 * Register a notification channel. Call it from the `sc_wpun_register_channels` action.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param \WPUN\Channel $channel The channel.
+	 *
+	 * @return bool False if its type is invalid or already registered.
+	 */
+	function sc_wpun_register_channel( \WPUN\Channel $channel ): bool {
+		return sc_wpun()->channels()->register( $channel );
 	}
 }
 // phpcs:enable Universal.Files.SeparateFunctionsFromOO.Mixed

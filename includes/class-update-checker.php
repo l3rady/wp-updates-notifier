@@ -41,6 +41,13 @@ class Update_Checker {
 	private $notifier;
 
 	/**
+	 * The notification built by the last check.
+	 *
+	 * @var Notification|null
+	 */
+	private $last_notification = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings $settings Settings.
@@ -63,24 +70,24 @@ class Update_Checker {
 		$options  = $this->settings->get(); // get settings.
 		$state    = $this->state->get();
 		$notified = $state['notified']; // What this run will record, if a notification goes out.
-		$message  = ''; // start with a blank message.
+		$items    = array(); // What the check finds, in the order of the message.
 
-		$core_updated = $this->core_update_check( $message, $notified ); // check the WP core for updates.
+		$core_updated = $this->core_update_check( $items, $notified ); // check the WP core for updates.
 		if ( 0 !== $options['notify_plugins'] ) { // are we to check for plugin updates?
-			$plugins_updated = $this->plugins_update_check( $message, $options['notify_plugins'], $notified ); // check for plugin updates.
+			$plugins_updated = $this->plugins_update_check( $items, $options['notify_plugins'], $notified ); // check for plugin updates.
 		} else {
 			$plugins_updated = false; // no plugin updates.
 		}
 		if ( 0 !== $options['notify_themes'] ) { // are we to check for theme updates?
-			$themes_updated = $this->themes_update_check( $message, $options['notify_themes'], $notified ); // check for theme updates.
+			$themes_updated = $this->themes_update_check( $items, $options['notify_themes'], $notified ); // check for theme updates.
 		} else {
 			$themes_updated = false; // no theme updates.
 		}
 
+		$this->last_notification = new Notification( get_bloginfo(), home_url(), admin_url( 'update-core.php' ), $items, array( 'source' => 'cron' ) );
+
 		if ( $core_updated || $plugins_updated || $themes_updated ) { // Did anything come back as need updating?
-			$message = __( 'There are updates available for your WordPress site:', 'wp-updates-notifier' ) . ' ' . esc_html( get_bloginfo() ) . ' @ ' . esc_url( home_url() ) . "\n" . $message . "\n";
-			// translators: %s: URL of the WordPress updates screen.
-			$message .= sprintf( __( 'Please visit %s to update.', 'wp-updates-notifier' ), admin_url( 'update-core.php' ) );
+			$message = Legacy_Message::build( $this->last_notification );
 
 			$delivered = false;
 
@@ -108,15 +115,26 @@ class Update_Checker {
 
 
 	/**
+	 * The notification built by the most recent check, for tests.
+	 *
+	 * @internal
+	 *
+	 * @return Notification|null Null before the first check.
+	 */
+	public function last_notification(): ?Notification {
+		return $this->last_notification;
+	}
+
+	/**
 	 * Checks to see if any WP core updates
 	 *
-	 * @param string $message  holds message to be sent via notification.
-	 * @param array  $notified What has been notified about; updated with what this check reports.
+	 * @param Notification_Item[] $items    Collects the items to report.
+	 * @param array               $notified What has been notified about; updated with what this check reports.
 	 * @phpstan-param array{core: string, plugin: array<string, string>, theme: array<string, string>} $notified
 	 *
 	 * @return bool
 	 */
-	private function core_update_check( string &$message, array &$notified ): bool {
+	private function core_update_check( array &$items, array &$notified ): bool {
 		do_action( 'wp_version_check' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_core = get_site_transient( 'update_core' ); // get information of updates.
 
@@ -136,9 +154,16 @@ class Update_Checker {
 			return false; // There are updates but we have already notified in the past.
 		}
 
-		$old_core_ver = wp_get_wp_version(); // Read from version.php, so plugins that change the $wp_version global do not affect it.
-		// translators: 1: Installed WordPress version. 2: New WordPress version.
-		$message         .= "\n" . sprintf( __( 'WP-Core: WordPress is out of date. Please update from version %1$s to %2$s', 'wp-updates-notifier' ), $old_core_ver, $new_core_ver ) . "\n";
+		$old_core_ver     = wp_get_wp_version(); // Read from version.php, so plugins that change the $wp_version global do not affect it.
+		$items[]          = new Notification_Item(
+			array(
+				'type'            => 'core',
+				'key'             => 'core',
+				'name'            => 'WordPress',
+				'current_version' => $old_core_ver,
+				'new_version'     => $new_core_ver,
+			)
+		);
 		$notified['core'] = $new_core_ver; // set core version we are notifying about.
 		return true; // we have updates so return true.
 	}
@@ -168,14 +193,14 @@ class Update_Checker {
 	/**
 	 * Check to see if any plugin updates.
 	 *
-	 * @param string $message     Holds message to be sent via notification.
-	 * @param int    $all_or_active Should we look for all plugins or just active ones.
-	 * @param array  $notified      What has been notified about; updated with what this check reports.
+	 * @param Notification_Item[] $items        Collects the items to report.
+	 * @param int                 $all_or_active Should we look for all plugins or just active ones.
+	 * @param array               $notified      What has been notified about; updated with what this check reports.
 	 * @phpstan-param array{core: string, plugin: array<string, string>, theme: array<string, string>} $notified
 	 *
 	 * @return bool
 	 */
-	private function plugins_update_check( string &$message, $all_or_active, array &$notified ): bool {
+	private function plugins_update_check( array &$items, $all_or_active, array &$notified ): bool {
 		do_action( 'wp_update_plugins' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates.
 		$pending        = $this->normalise_plugin_updates( is_object( $update_plugins ) && isset( $update_plugins->response ) ? $update_plugins->response : array() );
@@ -196,20 +221,25 @@ class Update_Checker {
 				foreach ( $plugins_need_update as $key => $data ) { // loop through the plugins that need updating.
 					$plugin_info = get_plugin_data( WP_PLUGIN_DIR . '/' . $key, false, false ); // get local plugin info.
 					$wporg_slug  = $this->wporg_plugin_slug( $data );
-					// translators: 1: Plugin name. 2: Installed plugin version. 3: New plugin version.
-					$message .= "\n" . sprintf( __( 'Plugin: %1$s is out of date. Please update from version %2$s to %3$s', 'wp-updates-notifier' ), $plugin_info['Name'], $plugin_info['Version'], $data->new_version ) . "\n";
+					$links       = array();
 					if ( '' !== $wporg_slug ) {
-						// translators: %s: URL of the plugin page.
-						$message .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), 'https://wordpress.org/plugins/' . $wporg_slug . '/' ) . "\n";
-						// translators: %s: URL of the changelog of the plugin.
-						$message .= "\t" . sprintf( __( 'Changelog: %s', 'wp-updates-notifier' ), 'https://wordpress.org/plugins/' . $wporg_slug . '/#developers' ) . "\n";
+						$links['details']   = 'https://wordpress.org/plugins/' . $wporg_slug . '/';
+						$links['changelog'] = 'https://wordpress.org/plugins/' . $wporg_slug . '/#developers';
 					} elseif ( '' !== $data->url ) {
-						// translators: %s: URL of the plugin page.
-						$message .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), $data->url ) . "\n";
+						$links['details'] = $data->url;
 					}
-					foreach ( $this->plugin_compatibility_notes( $data ) as $note ) {
-						$message .= "\t" . $note . "\n";
-					}
+					$items[]                             = new Notification_Item(
+						array(
+							'type'            => 'plugin',
+							'key'             => (string) $key,
+							'name'            => $plugin_info['Name'],
+							'current_version' => $plugin_info['Version'],
+							'new_version'     => $data->new_version,
+							'links'           => $links,
+							'notes'           => $this->plugin_compatibility_notes( $data ),
+							'flags'           => $this->plugin_flags( $data ),
+						)
+					);
 					$notified['plugin'][ (string) $key ] = (string) $data->new_version; // set plugin version we are notifying about.
 				}
 				return true; // we have plugin updates return true.
@@ -222,14 +252,14 @@ class Update_Checker {
 	/**
 	 * Check to see if any theme updates.
 	 *
-	 * @param string $message     Holds message to be sent via notification.
-	 * @param int    $all_or_active Should we look for all themes or just active ones.
-	 * @param array  $notified      What has been notified about; updated with what this check reports.
+	 * @param Notification_Item[] $items        Collects the items to report.
+	 * @param int                 $all_or_active Should we look for all themes or just active ones.
+	 * @param array               $notified      What has been notified about; updated with what this check reports.
 	 * @phpstan-param array{core: string, plugin: array<string, string>, theme: array<string, string>} $notified
 	 *
 	 * @return bool
 	 */
-	private function themes_update_check( string &$message, $all_or_active, array &$notified ): bool {
+	private function themes_update_check( array &$items, $all_or_active, array &$notified ): bool {
 		do_action( 'wp_update_themes' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_themes = get_site_transient( 'update_themes' ); // get information of updates.
 		$pending       = $this->normalise_theme_updates( is_object( $update_themes ) && isset( $update_themes->response ) ? $update_themes->response : array() );
@@ -246,13 +276,17 @@ class Update_Checker {
 			$themes_need_update = $this->normalise_theme_updates( apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ) ); // additional filtering of themes need update; filters may return anything.
 			if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 				foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating.
-					$theme_info = wp_get_theme( $key ); // get theme info.
-					// translators: 1: Theme name. 2: Installed theme version. 3: New theme version.
-					$message .= "\n" . sprintf( __( 'Theme: %1$s is out of date. Please update from version %2$s to %3$s', 'wp-updates-notifier' ), $theme_info['Name'], $theme_info['Version'], $data['new_version'] ) . "\n";
-					if ( '' !== $data['url'] ) {
-						// translators: %s: URL of the theme page.
-						$message .= "\t" . sprintf( __( 'Details: %s', 'wp-updates-notifier' ), $data['url'] ) . "\n";
-					}
+					$theme_info                         = wp_get_theme( $key ); // get theme info.
+					$items[]                            = new Notification_Item(
+						array(
+							'type'            => 'theme',
+							'key'             => (string) $key,
+							'name'            => $theme_info['Name'],
+							'current_version' => $theme_info['Version'],
+							'new_version'     => $data['new_version'],
+							'links'           => '' !== $data['url'] ? array( 'details' => $data['url'] ) : array(),
+						)
+					);
 					$notified['theme'][ (string) $key ] = $data['new_version']; // set theme version we are notifying about.
 				}
 				return true; // we have theme updates return true.
@@ -321,6 +355,29 @@ class Update_Checker {
 		}
 
 		return $updates;
+	}
+
+	/**
+	 * The facts the compatibility notes of a plugin update are drawn from.
+	 *
+	 * @param \stdClass $entry A normalised plugin update entry.
+	 *
+	 * @return array<string, string> `tested`, `requires_php` and `requires_wp`, each only if the entry has it.
+	 */
+	private function plugin_flags( stdClass $entry ): array {
+		$flags = array();
+
+		foreach ( array(
+			'tested'       => 'tested',
+			'requires_php' => 'requires_php',
+			'requires'     => 'requires_wp',
+		) as $property => $flag ) {
+			if ( isset( $entry->$property ) && is_scalar( $entry->$property ) && '' !== (string) $entry->$property ) {
+				$flags[ $flag ] = (string) $entry->$property;
+			}
+		}
+
+		return $flags;
 	}
 
 	/**
