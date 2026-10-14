@@ -55,6 +55,10 @@
 	<rule ref="WordPress.Files.FileName">
 		<exclude-pattern>*/tests/*</exclude-pattern>
 	</rule>
+	<!-- The WordPress handbook names the file of an abstract class abstract-class-*.php; WPCS only knows class-*.php. -->
+	<rule ref="WordPress.Files.FileName.InvalidClassFileName">
+		<exclude-pattern>*/includes/abstract-class-*.php</exclude-pattern>
+	</rule>
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<exclude-pattern>*/tests/*</exclude-pattern>
 	</rule>

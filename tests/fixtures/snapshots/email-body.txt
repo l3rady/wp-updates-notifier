@@ -1,0 +1,19 @@
+There are updates available for your WordPress site: {{site_name}} @ {{home_url}}
+
+WP-Core: WordPress is out of date. Please update from version {{wp_version}} to 99.0.0
+
+Plugin: Hello Dolly is out of date. Please update from version 1.7.2 to 2.0.0
+	Details: https://wordpress.org/plugins/hello-dolly/
+	Changelog: https://wordpress.org/plugins/hello-dolly/#developers
+	Compatibility with WordPress {{wp_major_minor}}: not tested yet (tested up to 5.0)
+	Warning: this version needs PHP 99.0; the site runs PHP {{php_version}}.
+	Warning: this version needs WordPress 99.0; the site runs WordPress {{wp_version}}.
+
+Plugin: WP Updates Notifier is out of date. Please update from version {{own_version}} to 4.5.6
+	Details: https://example.com/premium-plugin/
+	Compatibility with WordPress {{wp_major_minor}}: unknown
+
+Theme: {{theme_name}} is out of date. Please update from version {{theme_version}} to 3.1.0
+	Details: https://example.com/themes/default/
+
+Please visit {{admin_update_url}} to update.
