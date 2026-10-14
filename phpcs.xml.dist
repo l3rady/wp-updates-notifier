@@ -10,6 +10,7 @@
 	<arg name="cache" value=".phpcs-cache"/>
 
 	<file>class-sc-wp-updates-notifier.php</file>
+	<file>includes</file>
 	<file>uninstall.php</file>
 	<file>rector.php</file>
 	<file>tests</file>
@@ -41,6 +42,7 @@
 				<element value="sc_wpun"/>
 				<element value="SC_WP_Updates_Notifier"/>
 				<element value="SC_WPUN"/>
+				<element value="WPUN"/>
 			</property>
 		</properties>
 	</rule>
