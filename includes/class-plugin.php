@@ -63,6 +63,20 @@ class Plugin {
 	private $update_checker;
 
 	/**
+	 * Notification channels.
+	 *
+	 * @var Channel_Registry
+	 */
+	private $channels;
+
+	/**
+	 * Dispatcher.
+	 *
+	 * @var Dispatcher
+	 */
+	private $dispatcher;
+
+	/**
 	 * Settings page.
 	 *
 	 * @var Settings_Page
@@ -84,6 +98,8 @@ class Plugin {
 		$this->settings       = new Settings( $this->state );
 		$this->scheduler      = new Scheduler( $this->settings );
 		$this->notifier       = new Notifier( $this->settings );
+		$this->channels       = new Channel_Registry();
+		$this->dispatcher     = new Dispatcher( $this->channels );
 		$this->update_checker = new Update_Checker( $this->settings, $this->state, $this->notifier );
 		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->scheduler, $this->notifier );
 		$this->update_nag     = new Update_Nag( $this->settings );
@@ -132,6 +148,24 @@ class Plugin {
 	 */
 	public function notifier(): Notifier {
 		return $this->notifier;
+	}
+
+	/**
+	 * Notification channels.
+	 *
+	 * @return Channel_Registry
+	 */
+	public function channels(): Channel_Registry {
+		return $this->channels;
+	}
+
+	/**
+	 * Dispatcher.
+	 *
+	 * @return Dispatcher
+	 */
+	public function dispatcher(): Dispatcher {
+		return $this->dispatcher;
 	}
 
 	/**
