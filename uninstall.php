@@ -41,6 +41,7 @@ $sc_wpun_uninstall_site = static function () {
 	delete_option( 'sc_wpun_settings' );
 	delete_option( 'sc_wpun_settings_ver' );
 	delete_option( 'sc_wpun_state' );
+	delete_option( 'sc_wpun_channels' );
 	delete_transient( 'sc_wpun_send_test_email' );
 	delete_transient( 'sc_wpun_send_test_slack' );
 

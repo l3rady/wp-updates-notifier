@@ -30,7 +30,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	/**
 	 * Settings version and key set of the current release, used as the base for fixtures.
 	 */
-	const SETTINGS_VERSION = '8.1';
+	const SETTINGS_VERSION = '9.0';
 
 	/**
 	 * Set up: block the network and reset the mailer.
@@ -142,13 +142,61 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The global settings as the current release stores them, with overrides (no email or Slack keys).
+	 *
+	 * @param array $overrides Values to override.
+	 * @return array
+	 */
+	protected function global_settings( array $overrides = array() ) {
+		return array_intersect_key(
+			$this->settings( $overrides ),
+			array_flip( array( 'frequency', 'notify_plugins', 'notify_themes', 'notify_automatic', 'hide_updates' ) )
+		);
+	}
+
+	/**
 	 * Store settings as the current release would have.
+	 *
+	 * The email and Slack keys are accepted as the 1.x settings had them and are stored as channel
+	 * instances, the way the settings upgrade creates them: email always, Slack when it is configured.
 	 *
 	 * @param array $overrides Values to override.
 	 */
 	protected function save_settings( array $overrides = array() ) {
-		update_option( 'sc_wpun_settings', $this->settings( $overrides ) );
+		$all = $this->settings( $overrides );
+
+		update_option( 'sc_wpun_settings', $this->global_settings( $overrides ) );
 		update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
+
+		delete_option( 'sc_wpun_channels' );
+		$store = sc_wpun_channels();
+		$store->save(
+			new WPUN\Channel_Instance(
+				'email',
+				'email',
+				'Email',
+				1 === (int) $all['email_notifications'],
+				array(
+					'to'   => $all['notify_to'],
+					'from' => $all['notify_from'],
+				)
+			)
+		);
+
+		if ( 1 === (int) $all['slack_notifications'] || '' !== $all['slack_webhook_url'] ) {
+			$store->save(
+				new WPUN\Channel_Instance(
+					'slack',
+					'slack',
+					'Slack',
+					1 === (int) $all['slack_notifications'],
+					array(
+						'webhook_url' => $all['slack_webhook_url'],
+						'channel'     => $all['slack_channel_override'],
+					)
+				)
+			);
+		}
 	}
 
 	/**
@@ -191,6 +239,29 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	 */
 	protected function stored_settings() {
 		return (array) get_option( 'sc_wpun_settings' );
+	}
+
+	/**
+	 * Read a stored channel instance.
+	 *
+	 * @param string $id Instance id.
+	 * @return WPUN\Channel_Instance|null
+	 */
+	protected function stored_instance( $id ) {
+		return sc_wpun_channels()->get( $id );
+	}
+
+	/**
+	 * Read one setting of a stored channel instance.
+	 *
+	 * @param string $id  Instance id.
+	 * @param string $key Setting name.
+	 * @return mixed Null if the instance or the setting does not exist.
+	 */
+	protected function instance_setting( $id, $key ) {
+		$instance = $this->stored_instance( $id );
+
+		return null === $instance ? null : $instance->get_setting( $key );
 	}
 
 	/**

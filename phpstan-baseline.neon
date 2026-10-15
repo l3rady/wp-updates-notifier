@@ -1,7 +1,2 @@
 parameters:
-	ignoreErrors:
-		-
-			message: '#^Strict comparison using \!\=\= between '''' and mixed~\(0\|0\.0\|''''\|''0''\|array\{\}\|false\|null\) will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: includes/class-notifier.php
+	ignoreErrors: []

@@ -15,12 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The plugin settings: their defaults, how they are read and written and how older ones are upgraded.
  *
  * @internal
- * @phpstan-type SettingsData array{frequency: string, email_notifications: int, notify_to: string, notify_from: string, slack_notifications: int, slack_webhook_url: string, slack_channel_override: string, notify_plugins: int, notify_themes: int, notify_automatic: int, hide_updates: int}
+ * @phpstan-type SettingsData array{frequency: string, notify_plugins: int, notify_themes: int, notify_automatic: int, hide_updates: int}
  */
 class Settings {
 	const OPT_FIELD         = 'sc_wpun_settings';
 	const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-	const OPT_VERSION       = '8.1';
+	const OPT_VERSION       = '9.0';
 
 	/**
 	 * Run state storage, written when settings from before version 8 are upgraded.
@@ -30,12 +30,21 @@ class Settings {
 	private $state;
 
 	/**
+	 * Channel instance storage, written when settings from before version 9 are upgraded.
+	 *
+	 * @var Channel_Store
+	 */
+	private $channels;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param State $state Run state storage.
+	 * @param State         $state    Run state storage.
+	 * @param Channel_Store $channels Channel instance storage.
 	 */
-	public function __construct( State $state ) {
-		$this->state = $state;
+	public function __construct( State $state, Channel_Store $channels ) {
+		$this->state    = $state;
+		$this->channels = $channels;
 	}
 
 	/**
@@ -50,11 +59,6 @@ class Settings {
 		if ( self::OPT_VERSION !== $current_ver ) { // is the version the same as this plugin?
 			$options  = (array) get_option( self::OPT_FIELD ); // get current settings from DB.
 			$defaults = $this->default_settings();
-
-			// If we are upgrading from settings before settings version 7, turn on email notifications by default.
-			if ( intval( $current_ver ) < 7 ) {
-				$defaults['email_notifications'] = 1;
-			}
 
 			// "manual" has meant "never check" since the external cron was removed in 1.5.1. Check daily instead.
 			if ( isset( $options['frequency'] ) && 'manual' === $options['frequency'] ) {
@@ -73,6 +77,11 @@ class Settings {
 				);
 			}
 
+			// Settings version 9 moved the email and Slack settings to channel instances.
+			if ( false === get_option( Channel_Store::OPT_FIELD ) ) {
+				$this->migrate_channels( $options, intval( $current_ver ) );
+			}
+
 			// Intersect current options with defaults. Basically removing settings that are obsolete.
 			$options = array_intersect_key( $options, $defaults );
 			// Merge current settings with defaults. Basically adding any new settings with defaults that we dont have.
@@ -83,23 +92,75 @@ class Settings {
 	}
 
 	/**
+	 * Create the email and Slack instances from the settings of before version 9.
+	 *
+	 * @param array<mixed> $options     Stored settings, as they were before the upgrade.
+	 * @param int          $current_ver The settings version being upgraded from (0 for a new install).
+	 *
+	 * @return void
+	 */
+	private function migrate_channels( array $options, int $current_ver ): void {
+		$admin_email = (string) get_option( 'admin_email' );
+
+		// Before settings version 7 there was email only, so the upgrade turned email notifications on.
+		$email_on = $current_ver < 7 || $this->is_on( $options['email_notifications'] ?? 0 );
+
+		$this->channels->save(
+			new Channel_Instance(
+				'email',
+				'email',
+				'Email',
+				$email_on,
+				array(
+					'to'   => $this->string_setting( $options, 'notify_to', $admin_email ),
+					'from' => $this->string_setting( $options, 'notify_from', $admin_email ),
+				)
+			)
+		);
+
+		$slack_on    = $this->is_on( $options['slack_notifications'] ?? 0 );
+		$webhook_url = $this->string_setting( $options, 'slack_webhook_url', '' );
+
+		// Slack is only carried over if it was set up.
+		if ( $slack_on || '' !== $webhook_url ) {
+			$this->channels->save(
+				new Channel_Instance(
+					'slack',
+					'slack',
+					'Slack',
+					$slack_on,
+					array(
+						'webhook_url' => $webhook_url,
+						'channel'     => $this->string_setting( $options, 'slack_channel_override', '' ),
+					)
+				)
+			);
+		}
+	}
+
+	/**
+	 * Whether a stored on/off value is on, the way the settings were read before version 9 (exactly 1).
+	 *
+	 * @param mixed $value Stored value, for example 1 or '1'.
+	 *
+	 * @return bool
+	 */
+	private function is_on( $value ): bool {
+		return is_scalar( $value ) && 1 === absint( $value );
+	}
+
+	/**
 	 * The settings a new install starts with.
 	 *
 	 * @return SettingsData
 	 */
 	public function default_settings(): array {
 		return array(
-			'frequency'              => 'hourly',
-			'email_notifications'    => 0,
-			'notify_to'              => (string) get_option( 'admin_email' ),
-			'notify_from'            => (string) get_option( 'admin_email' ),
-			'slack_notifications'    => 0,
-			'slack_webhook_url'      => '',
-			'slack_channel_override' => '',
-			'notify_plugins'         => 1,
-			'notify_themes'          => 1,
-			'notify_automatic'       => 1,
-			'hide_updates'           => 1,
+			'frequency'        => 'hourly',
+			'notify_plugins'   => 1,
+			'notify_themes'    => 1,
+			'notify_automatic' => 1,
+			'hide_updates'     => 1,
 		);
 	}
 
@@ -117,17 +178,11 @@ class Settings {
 		$defaults = $this->default_settings();
 
 		return array(
-			'frequency'              => $this->string_setting( $stored, 'frequency', $defaults['frequency'] ),
-			'email_notifications'    => $this->int_setting( $stored, 'email_notifications', $defaults['email_notifications'] ),
-			'notify_to'              => $this->string_setting( $stored, 'notify_to', $defaults['notify_to'] ),
-			'notify_from'            => $this->string_setting( $stored, 'notify_from', $defaults['notify_from'] ),
-			'slack_notifications'    => $this->int_setting( $stored, 'slack_notifications', $defaults['slack_notifications'] ),
-			'slack_webhook_url'      => $this->string_setting( $stored, 'slack_webhook_url', $defaults['slack_webhook_url'] ),
-			'slack_channel_override' => $this->string_setting( $stored, 'slack_channel_override', $defaults['slack_channel_override'] ),
-			'notify_plugins'         => $this->int_setting( $stored, 'notify_plugins', $defaults['notify_plugins'] ),
-			'notify_themes'          => $this->int_setting( $stored, 'notify_themes', $defaults['notify_themes'] ),
-			'notify_automatic'       => $this->int_setting( $stored, 'notify_automatic', $defaults['notify_automatic'] ),
-			'hide_updates'           => $this->int_setting( $stored, 'hide_updates', $defaults['hide_updates'] ),
+			'frequency'        => $this->string_setting( $stored, 'frequency', $defaults['frequency'] ),
+			'notify_plugins'   => $this->int_setting( $stored, 'notify_plugins', $defaults['notify_plugins'] ),
+			'notify_themes'    => $this->int_setting( $stored, 'notify_themes', $defaults['notify_themes'] ),
+			'notify_automatic' => $this->int_setting( $stored, 'notify_automatic', $defaults['notify_automatic'] ),
+			'hide_updates'     => $this->int_setting( $stored, 'hide_updates', $defaults['hide_updates'] ),
 		);
 	}
 
