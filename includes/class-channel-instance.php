@@ -172,4 +172,56 @@ final class Channel_Instance {
 	public function get_routing(): array {
 		return $this->routing;
 	}
+
+	/**
+	 * A copy with another label.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $label Label.
+	 *
+	 * @return self
+	 */
+	public function with_label( string $label ): self {
+		return new self( $this->id, $this->type, $label, $this->enabled, $this->settings, $this->routing );
+	}
+
+	/**
+	 * A copy that is switched on or off.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param bool $enabled Whether the instance is switched on.
+	 *
+	 * @return self
+	 */
+	public function with_enabled( bool $enabled ): self {
+		return new self( $this->id, $this->type, $this->label, $enabled, $this->settings, $this->routing );
+	}
+
+	/**
+	 * A copy with other settings (replacing all of them).
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array<string, mixed> $settings Settings.
+	 *
+	 * @return self
+	 */
+	public function with_settings( array $settings ): self {
+		return new self( $this->id, $this->type, $this->label, $this->enabled, $settings, $this->routing );
+	}
+
+	/**
+	 * A copy with other routing rules (replacing all of them).
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array<string, mixed> $routing Routing rules.
+	 *
+	 * @return self
+	 */
+	public function with_routing( array $routing ): self {
+		return new self( $this->id, $this->type, $this->label, $this->enabled, $this->settings, $routing );
+	}
 }

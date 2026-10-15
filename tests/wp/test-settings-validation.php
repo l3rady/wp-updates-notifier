@@ -50,9 +50,108 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * Updating the option outside the settings form (another plugin, a migration, our own code) must not die.
 	 */
 	public function test_updating_the_option_outside_the_settings_form_does_not_die() {
-		update_option( 'sc_wpun_settings', $this->settings( array( 'notify_to' => 'new@example.org' ) ) );
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
 
-		$this->assertSame( 'new@example.org', $this->stored_settings()['notify_to'] );
+		$this->assertSame( 2, $this->stored_settings()['notify_plugins'] );
+	}
+
+	/**
+	 * An update of the global settings alone, with no email or Slack fields, leaves the instances as they are.
+	 */
+	public function test_a_programmatic_update_of_the_global_settings_leaves_the_instances_alone() {
+		$this->save_settings(
+			array(
+				'slack_notifications' => 1,
+				'slack_webhook_url'   => 'https://hooks.slack.com/services/T/B/X',
+			)
+		);
+		$before = sc_wpun_channels()->all();
+
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
+
+		$this->assertSame( 'daily', $this->stored_settings()['frequency'] );
+		$this->assertEquals( $before, sc_wpun_channels()->all() );
+		$this->assertSame( array(), $this->errors() );
+	}
+
+	/**
+	 * Saving the form stores the email and Slack fields in the instances, not in the settings.
+	 */
+	public function test_saving_the_form_updates_the_instances() {
+		$this->plugin()->sc_wpun_settings_validate(
+			$this->settings(
+				array(
+					'email_notifications'    => 1,
+					'notify_to'              => 'a@example.org, b@example.org',
+					'notify_from'            => 'from@example.org',
+					'slack_notifications'    => 1,
+					'slack_webhook_url'      => 'https://hooks.slack.com/services/T/B/X',
+					'slack_channel_override' => '#ops',
+				)
+			)
+		);
+
+		$email = $this->stored_instance( 'email' );
+		$this->assertTrue( $email->is_enabled() );
+		$this->assertSame( 'a@example.org,b@example.org', $email->get_setting( 'to' ) );
+		$this->assertSame( 'from@example.org', $email->get_setting( 'from' ) );
+
+		$slack = $this->stored_instance( 'slack' );
+		$this->assertSame( 'slack', $slack->get_type() );
+		$this->assertTrue( $slack->is_enabled() );
+		$this->assertSame( 'https://hooks.slack.com/services/T/B/X', $slack->get_setting( 'webhook_url' ) );
+		$this->assertSame( '#ops', $slack->get_setting( 'channel' ) );
+
+		$this->assertSame( array(), $this->errors() );
+		$this->assertSame( array_keys( $this->global_settings() ), array_keys( $this->stored_settings() ) );
+	}
+
+	/**
+	 * Saving the form without touching Slack creates no Slack instance; an existing one is updated and keeps its other settings.
+	 */
+	public function test_the_slack_instance_is_created_only_when_there_is_something_to_keep() {
+		delete_option( 'sc_wpun_channels' );
+
+		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
+		$this->assertFalse( sc_wpun_channels()->has( 'slack' ) );
+		$this->assertTrue( sc_wpun_channels()->has( 'email' ) );
+
+		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'slack', 'slack', 'Team chat', true, array( 'extra' => 'kept' ), array( 'types' => array( 'core' ) ) ) );
+		$this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'slack_webhook_url' => 'https://hooks.slack.com/services/T/B/X' ) ) );
+
+		$slack = $this->stored_instance( 'slack' );
+		$this->assertSame( 'Team chat', $slack->get_label() );
+		$this->assertFalse( $slack->is_enabled(), 'The unchecked box turns it off.' );
+		$this->assertSame( 'kept', $slack->get_setting( 'extra' ) );
+		$this->assertSame( 'https://hooks.slack.com/services/T/B/X', $slack->get_setting( 'webhook_url' ) );
+		$this->assertSame( array( 'types' => array( 'core' ) ), $slack->get_routing() );
+	}
+
+	/**
+	 * The settings page shows the instance values, not what an old settings option might still hold.
+	 */
+	public function test_the_settings_page_reads_the_instances() {
+		$this->save_settings(
+			array(
+				'notify_to'              => 'instance@example.org',
+				'slack_notifications'    => 1,
+				'slack_webhook_url'      => 'https://hooks.slack.com/services/T/B/X',
+				'slack_channel_override' => '#instance',
+			)
+		);
+		// Written behind the sanitizer's back, like an option left by an older release.
+		remove_all_filters( 'sanitize_option_sc_wpun_settings' );
+		update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_to' => 'old-option@example.org' ) ) );
+
+		ob_start();
+		$this->plugin()->settings_page();
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'instance@example.org', $html );
+		$this->assertStringNotContainsString( 'old-option@example.org', $html );
+		$this->assertStringContainsString( 'https://hooks.slack.com/services/T/B/X', $html );
+		$this->assertStringContainsString( '#instance', $html );
+		$this->assertMatchesRegularExpression( '/name="sc_wpun_settings\[slack_notifications\]"[^>]*checked/', $html );
 	}
 
 	/**
@@ -98,7 +197,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 		wp_schedule_event( time(), 'hourly', 'sc_wpun_update_check' );
 
-		update_option( 'sc_wpun_settings', $this->settings( array( 'frequency' => 'daily' ) ) );
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
 
 		$this->assertSame( 'daily', wp_get_schedule( 'sc_wpun_update_check' ) );
 	}
@@ -111,7 +210,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$next = time() + 5000;
 		wp_schedule_event( $next, 'hourly', 'sc_wpun_update_check' );
 
-		update_option( 'sc_wpun_settings', $this->settings( array( 'notify_to' => 'other@example.org' ) ) );
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
 
 		$this->assertSame( $next, wp_next_scheduled( 'sc_wpun_update_check' ) );
 	}
@@ -135,13 +234,13 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * @param bool   $accepted Whether it should be accepted.
 	 */
 	public function test_webhook_urls( $url, $accepted ) {
-		$result = $this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'slack_webhook_url' => $url ) ) );
+		$this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'slack_webhook_url' => $url ) ) );
 
 		if ( $accepted ) {
-			$this->assertSame( $url, $result['slack_webhook_url'] );
+			$this->assertSame( $url, $this->instance_setting( 'slack', 'webhook_url' ) );
 			$this->assertArrayNotHasKey( 'sc_wpun_settings_slack_notifications_slack_webhook_url', $this->errors() );
 		} else {
-			$this->assertSame( '', $result['slack_webhook_url'], 'The previous (empty) value is kept.' );
+			$this->assertSame( '', (string) $this->instance_setting( 'slack', 'webhook_url' ), 'The previous (empty) value is kept.' );
 			$this->assertArrayHasKey( 'sc_wpun_settings_slack_notifications_slack_webhook_url', $this->errors() );
 		}
 	}
@@ -167,16 +266,19 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	public function test_channel_names() {
 		$plugin = $this->plugin();
 
-		$this->assertSame( '#ops', $plugin->sc_wpun_settings_validate( $this->settings( array( 'slack_channel_override' => '#ops' ) ) )['slack_channel_override'] );
-		$this->assertSame( '', $plugin->sc_wpun_settings_validate( $this->settings( array( 'slack_channel_override' => 'ops' ) ) )['slack_channel_override'] );
-		$this->assertSame( '', $plugin->sc_wpun_settings_validate( $this->settings( array( 'slack_channel_override' => "#ops\tteam" ) ) )['slack_channel_override'] );
+		$plugin->sc_wpun_settings_validate( $this->settings( array( 'slack_channel_override' => '#ops' ) ) );
+		$this->assertSame( '#ops', $this->instance_setting( 'slack', 'channel' ) );
+		$plugin->sc_wpun_settings_validate( $this->settings( array( 'slack_channel_override' => 'ops' ) ) );
+		$this->assertSame( '#ops', $this->instance_setting( 'slack', 'channel' ), 'The previous value is kept.' );
+		$plugin->sc_wpun_settings_validate( $this->settings( array( 'slack_channel_override' => "#ops\tteam" ) ) );
+		$this->assertSame( '#ops', $this->instance_setting( 'slack', 'channel' ), 'The previous value is kept.' );
 	}
 
 	/**
 	 * Turning email on without addresses is refused, with the error on the email notifications field.
 	 */
 	public function test_email_without_addresses_is_refused_on_the_right_field() {
-		$result = $this->plugin()->sc_wpun_settings_validate(
+		$this->plugin()->sc_wpun_settings_validate(
 			$this->settings(
 				array(
 					'email_notifications' => 1,
@@ -185,7 +287,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 			)
 		);
 
-		$this->assertSame( 0, $result['email_notifications'] );
+		$this->assertFalse( $this->stored_instance( 'email' )->is_enabled() );
 		$this->assertArrayHasKey( 'sc_wpun_settings_email_notifications_email_notifications', $this->errors() );
 	}
 
@@ -195,7 +297,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	public function test_programmatic_updates_do_not_queue_test_sends() {
 		$_POST['submitwithemail'] = 'Save settings with test email';
 
-		update_option( 'sc_wpun_settings', $this->settings( array( 'notify_to' => 'x@example.org' ) ) );
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
 
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ) );
 	}
