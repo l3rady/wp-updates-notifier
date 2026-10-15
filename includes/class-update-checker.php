@@ -41,6 +41,13 @@ class Update_Checker {
 	private $notifier;
 
 	/**
+	 * Channel instance storage, where the email and Slack settings are kept.
+	 *
+	 * @var Channel_Store
+	 */
+	private $channels;
+
+	/**
 	 * The notification built by the last check.
 	 *
 	 * @var Notification|null
@@ -50,14 +57,16 @@ class Update_Checker {
 	/**
 	 * Constructor.
 	 *
-	 * @param Settings $settings Settings.
-	 * @param State    $state    Run state.
-	 * @param Notifier $notifier Notifier.
+	 * @param Settings      $settings Settings.
+	 * @param State         $state    Run state.
+	 * @param Notifier      $notifier Notifier.
+	 * @param Channel_Store $channels Channel instance storage.
 	 */
-	public function __construct( Settings $settings, State $state, Notifier $notifier ) {
+	public function __construct( Settings $settings, State $state, Notifier $notifier, Channel_Store $channels ) {
 		$this->settings = $settings;
 		$this->state    = $state;
 		$this->notifier = $notifier;
+		$this->channels = $channels;
 	}
 
 	/**
@@ -92,12 +101,12 @@ class Update_Checker {
 			$delivered = false;
 
 			// Send email notification.
-			if ( 1 === $options['email_notifications'] && $this->notifier->send_email_message( $message ) ) {
+			if ( $this->is_enabled( 'email' ) && $this->notifier->send_email_message( $message ) ) {
 				$delivered = true;
 			}
 
 			// Send slack notification. send_slack_message() returns true on failure (#66).
-			if ( 1 === $options['slack_notifications'] && ! $this->notifier->send_slack_message( $message ) ) {
+			if ( $this->is_enabled( 'slack' ) && ! $this->notifier->send_slack_message( $message ) ) {
 				$delivered = true;
 			}
 
@@ -113,6 +122,19 @@ class Update_Checker {
 		$this->state->save( $state );
 	}
 
+
+	/**
+	 * Whether the email or Slack instance exists and is switched on.
+	 *
+	 * @param string $id Instance id.
+	 *
+	 * @return bool
+	 */
+	private function is_enabled( string $id ): bool {
+		$instance = $this->channels->get( $id );
+
+		return null !== $instance && $instance->is_enabled();
+	}
 
 	/**
 	 * The notification built by the most recent check, for tests.

@@ -35,6 +35,13 @@ class Plugin {
 	private $settings;
 
 	/**
+	 * Channel instance storage.
+	 *
+	 * @var Channel_Store
+	 */
+	private $channel_store;
+
+	/**
 	 * Run state.
 	 *
 	 * @var State
@@ -95,13 +102,14 @@ class Plugin {
 	 */
 	public function __construct() {
 		$this->state          = new State();
-		$this->settings       = new Settings( $this->state );
+		$this->channel_store  = new Channel_Store();
+		$this->settings       = new Settings( $this->state, $this->channel_store );
 		$this->scheduler      = new Scheduler( $this->settings );
-		$this->notifier       = new Notifier( $this->settings );
+		$this->notifier       = new Notifier( $this->settings, $this->channel_store );
 		$this->channels       = new Channel_Registry();
 		$this->dispatcher     = new Dispatcher( $this->channels );
-		$this->update_checker = new Update_Checker( $this->settings, $this->state, $this->notifier );
-		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->scheduler, $this->notifier );
+		$this->update_checker = new Update_Checker( $this->settings, $this->state, $this->notifier, $this->channel_store );
+		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->scheduler, $this->notifier, $this->channel_store );
 		$this->update_nag     = new Update_Nag( $this->settings );
 	}
 
@@ -112,6 +120,15 @@ class Plugin {
 	 */
 	public function settings(): Settings {
 		return $this->settings;
+	}
+
+	/**
+	 * Channel instance storage.
+	 *
+	 * @return Channel_Store
+	 */
+	public function channel_store(): Channel_Store {
+		return $this->channel_store;
 	}
 
 	/**

@@ -39,8 +39,11 @@ class Test_Settings_State extends WPUN_Test_Case {
 		$fixtures = require dirname( __DIR__ ) . '/fixtures/settings.php';
 		$options  = $fixtures['1.6.0-string-values']['options'];
 		unset( $options['notified'], $options['last_check_time'] );
+		// The email and Slack settings of version 7 become channel instances when the settings are upgraded.
+		delete_option( 'sc_wpun_channels' );
 		update_option( 'sc_wpun_settings', $options );
-		update_option( 'sc_wpun_settings_ver', '8.0' );
+		update_option( 'sc_wpun_settings_ver', $fixtures['1.6.0-string-values']['version'] );
+		sc_wpun()->settings()->maybe_upgrade();
 		$this->set_updates( '99.0.0' );
 
 		$this->plugin()->do_update_check();
@@ -52,13 +55,14 @@ class Test_Settings_State extends WPUN_Test_Case {
 	 * Settings missing keys get their defaults when read.
 	 */
 	public function test_missing_settings_get_defaults() {
-		update_option( 'sc_wpun_settings', array( 'notify_to' => 'only@example.org' ) );
-		update_option( 'sc_wpun_settings_ver', '8.0' );
+		delete_option( 'sc_wpun_channels' );
+		update_option( 'sc_wpun_settings', array( 'frequency' => 'daily' ) );
+		update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
 		$this->plugin()->do_update_check();
 
-		// email_notifications defaults to 0, so nothing is sent, and no notice is raised on the way.
+		// Without an email instance nothing is sent, and no notice is raised on the way.
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
 
@@ -139,7 +143,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		add_filter(
 			'sc_wpun_plugins_need_update',
 			function ( $plugins ) {
-				update_option( 'sc_wpun_settings', $this->settings( array( 'notify_to' => 'saved-meanwhile@example.org' ) ) );
+				update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'weekly' ) ) );
 				return $plugins;
 			},
 			20
@@ -147,7 +151,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 
 		$this->plugin()->do_update_check();
 
-		$this->assertSame( 'saved-meanwhile@example.org', $this->stored_settings()['notify_to'] );
+		$this->assertSame( 'weekly', $this->stored_settings()['frequency'] );
 	}
 
 	/**

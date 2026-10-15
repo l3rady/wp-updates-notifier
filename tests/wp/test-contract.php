@@ -142,13 +142,13 @@ class Test_Contract extends WPUN_Test_Case {
 	 * Every settings read and write goes through the documented filters.
 	 */
 	public function test_the_options_filters_are_applied() {
-		$this->save_settings( array( 'notify_to' => 'a@example.org' ) );
+		$this->save_settings( array( 'frequency' => 'daily' ) );
 
 		add_filter(
 			'sc_wpun_get_options_filter',
 			static function ( $options, $field ) {
 				if ( 'sc_wpun_settings' === $field ) {
-					$options['notify_to'] = 'filtered@example.org';
+					$options['frequency'] = 'weekly';
 				}
 				return $options;
 			},
@@ -156,7 +156,7 @@ class Test_Contract extends WPUN_Test_Case {
 			2
 		);
 
-		$this->assertSame( 'filtered@example.org', $this->read_setting( 'notify_to' ) );
+		$this->assertSame( 'weekly', $this->read_setting( 'frequency' ) );
 
 		$put = array();
 		add_filter(

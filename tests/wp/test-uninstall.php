@@ -28,7 +28,7 @@ class Test_Uninstall extends WPUN_Test_Case {
 	 * @param string $where Label for failure messages.
 	 */
 	private function assert_no_traces( $where ) {
-		foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state' ) as $option ) {
+		foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state', 'sc_wpun_channels' ) as $option ) {
 			$this->assertFalse( get_option( $option ), "$where: $option" );
 		}
 		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ), "$where: cron event" );

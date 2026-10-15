@@ -63,6 +63,7 @@ require_once __DIR__ . '/includes/class-delivery-result.php';
 require_once __DIR__ . '/includes/class-channel-instance.php';
 require_once __DIR__ . '/includes/abstract-class-channel.php';
 require_once __DIR__ . '/includes/class-channel-registry.php';
+require_once __DIR__ . '/includes/class-channel-store.php';
 require_once __DIR__ . '/includes/class-dispatcher.php';
 require_once __DIR__ . '/includes/class-update-checker.php';
 require_once __DIR__ . '/includes/admin/class-settings-page.php';
@@ -478,6 +479,19 @@ if ( ! function_exists( 'sc_wpun_register_channel' ) ) {
 	 */
 	function sc_wpun_register_channel( \WPUN\Channel $channel ): bool {
 		return sc_wpun()->channels()->register( $channel );
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_channels' ) ) {
+	/**
+	 * The store of the configured channel instances.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return \WPUN\Channel_Store
+	 */
+	function sc_wpun_channels(): \WPUN\Channel_Store {
+		return sc_wpun()->channel_store();
 	}
 }
 // phpcs:enable Universal.Files.SeparateFunctionsFromOO.Mixed
