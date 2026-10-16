@@ -209,16 +209,21 @@ class Update_Checker {
 	/**
 	 * The items an instance is to be told about.
 	 *
-	 * Routing rules (item types, active only, core major only, the add-on filter) belong here.
-	 * For now every instance gets everything the global settings let through.
+	 * The instance's routing rules (item types, scope, core major only) and the add-on filter
+	 * are applied by Routing::should_receive().
 	 *
 	 * @param Channel_Instance    $instance The instance.
 	 * @param Notification_Item[] $items    Everything waiting for an update.
 	 *
 	 * @return Notification_Item[]
 	 */
-	private function items_for_instance( Channel_Instance $instance, array $items ): array { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable, Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Seam for routing.
-		return $items;
+	private function items_for_instance( Channel_Instance $instance, array $items ): array {
+		return array_values(
+			array_filter(
+				$items,
+				static fn( Notification_Item $item ): bool => Routing::should_receive( $item, $instance )
+			)
+		);
 	}
 
 	/**
@@ -328,6 +333,7 @@ class Update_Checker {
 				if ( ! function_exists( 'get_plugin_data' ) ) {
 					require_once ABSPATH . 'wp-admin/includes/plugin.php'; // Not loaded in cron requests.
 				}
+				$active_plugins = $this->active_plugins();
 				foreach ( $plugins_need_update as $key => $data ) { // loop through the plugins that need updating.
 					$plugin_info = get_plugin_data( WP_PLUGIN_DIR . '/' . $key, false, false ); // get local plugin info.
 					$wporg_slug  = $this->wporg_plugin_slug( $data );
@@ -347,7 +353,7 @@ class Update_Checker {
 							'new_version'     => $data->new_version,
 							'links'           => $links,
 							'notes'           => $this->plugin_compatibility_notes( $data ),
-							'flags'           => $this->plugin_flags( $data ),
+							'flags'           => array_merge( $this->plugin_flags( $data ), array( 'active' => in_array( (string) $key, $active_plugins, true ) ) ),
 						)
 					);
 				}
@@ -375,9 +381,9 @@ class Update_Checker {
 
 		if ( ! empty( $pending ) ) { // any theme updates available?
 			$themes_need_update = $pending; // themes that need updating.
+			$active_themes      = array_unique( array( get_stylesheet(), get_template() ) ); // The active theme and, for a child theme, its parent.
 			if ( 2 === $all_or_active ) { // are we to check just active themes?
-				$active_themes      = array_flip( array_unique( array( get_stylesheet(), get_template() ) ) ); // The active theme and, for a child theme, its parent.
-				$themes_need_update = array_intersect_key( $themes_need_update, $active_themes ); // only keep theme that is active.
+				$themes_need_update = array_intersect_key( $themes_need_update, array_flip( $active_themes ) ); // only keep theme that is active.
 			}
 			$themes_need_update = $this->normalise_theme_updates( apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ) ); // additional filtering of themes need update; filters may return anything.
 			if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
@@ -391,6 +397,7 @@ class Update_Checker {
 							'current_version' => $theme_info['Version'],
 							'new_version'     => $data['new_version'],
 							'links'           => '' !== $data['url'] ? array( 'details' => $data['url'] ) : array(),
+							'flags'           => array( 'active' => in_array( (string) $key, $active_themes, true ) ),
 						)
 					);
 				}
@@ -495,14 +502,14 @@ class Update_Checker {
 	 * @return string[]
 	 */
 	private function plugin_compatibility_notes( stdClass $entry ): array {
-		$site_wp = $this->major_minor( wp_get_wp_version() );
+		$site_wp = Routing::major_minor( wp_get_wp_version() );
 		$tested  = isset( $entry->tested ) && is_scalar( $entry->tested ) ? (string) $entry->tested : '';
 		$notes   = array();
 
 		if ( '' === $tested ) {
 			// translators: %s: WordPress version of the site, for example 6.5.
 			$notes[] = sprintf( __( 'Compatibility with WordPress %s: unknown', 'wp-updates-notifier' ), $site_wp );
-		} elseif ( version_compare( $this->major_minor( $tested ), $site_wp, '>=' ) ) {
+		} elseif ( version_compare( Routing::major_minor( $tested ), $site_wp, '>=' ) ) {
 			// translators: %s: WordPress version of the site, for example 6.5.
 			$notes[] = sprintf( __( 'Compatibility with WordPress %s: tested by its author', 'wp-updates-notifier' ), $site_wp );
 		} else {
@@ -523,19 +530,6 @@ class Update_Checker {
 		}
 
 		return $notes;
-	}
-
-	/**
-	 * The major.minor part of a version, for example 6.5 from 6.5.3 or 6.6-RC1.
-	 *
-	 * @param string $version Version.
-	 *
-	 * @return string
-	 */
-	private function major_minor( string $version ): string {
-		$parts = explode( '.', (string) preg_replace( '/-.*$/', '', $version ) );
-
-		return implode( '.', array_slice( $parts, 0, 2 ) );
 	}
 
 	/**
