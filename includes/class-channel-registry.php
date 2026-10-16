@@ -151,6 +151,22 @@ class Channel_Registry {
 		 *
 		 * @param Channel_Registry $registry The registry; call its register() method.
 		 */
+		/**
+		 * Fires when the notification channels are first needed, for modules and add-ons to register theirs.
+		 *
+		 * Example:
+		 *
+		 *     add_action(
+		 *         'sc_wpun_register_channels',
+		 *         function ( \WPUN\Channel_Registry $registry ) {
+		 *             $registry->register( new My_Channel() );
+		 *         }
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param Channel_Registry $registry The registry to register channels with.
+		 */
 		do_action( 'sc_wpun_register_channels', $this );
 	}
 }

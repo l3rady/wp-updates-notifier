@@ -215,7 +215,7 @@ class Email_Channel extends Channel {
 		/**
 		 * Filters the subject of the email.
 		 *
-		 * @since 1.0.0 Since 2.0.0 also receives the notification and the instance.
+		 * @since 1.4.3 Since 2.0.0 also receives the notification and the instance.
 		 *
 		 * @param string           $subject      Subject, including the prefix.
 		 * @param Notification     $notification The notification.
@@ -226,7 +226,7 @@ class Email_Channel extends Channel {
 		/**
 		 * Filters the body of the email.
 		 *
-		 * @since 1.0.0 Since 2.0.0 also receives the notification and the instance, and is not HTML-escaped.
+		 * @since 1.4.3 Since 2.0.0 also receives the notification and the instance, and is not HTML-escaped.
 		 *
 		 * @param string           $body         Body: plain text, or HTML if the instance is set to HTML.
 		 * @param Notification     $notification The notification.
@@ -246,6 +246,24 @@ class Email_Channel extends Channel {
 			$headers[] = 'Reply-To: ' . $reply_to;
 		}
 
+		// Site code may still change the whole mail; anything of the wrong shape is ignored.
+		$payload = $this->checked_payload(
+			$this->filter_payload(
+				array(
+					'to'      => $to,
+					'subject' => (string) $subject,
+					'message' => (string) $body,
+					'headers' => $headers,
+				),
+				$notification,
+				$instance
+			),
+			$to,
+			(string) $subject,
+			(string) $body,
+			$headers
+		);
+
 		$error        = null;
 		$content_type = static fn() => $is_html ? 'text/html' : 'text/plain';
 		$capture      = static function ( $wp_error ) use ( &$error ) {
@@ -257,7 +275,7 @@ class Email_Channel extends Channel {
 		add_action( 'wp_mail_failed', $capture );
 		try {
 			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-			$sent = wp_mail( $to, (string) $subject, (string) $body, $headers );
+			$sent = wp_mail( $payload['to'], $payload['subject'], $payload['message'], $payload['headers'] );
 		} finally {
 			remove_filter( 'wp_mail_content_type', $content_type, PHP_INT_MAX );
 			remove_action( 'wp_mail_failed', $capture );
@@ -271,6 +289,50 @@ class Email_Channel extends Channel {
 		$context = $error instanceof \WP_Error ? array( 'error_code' => (string) $error->get_error_code() ) : array();
 
 		return Delivery_Result::failure( $message, 'wp_mail_failed', null, null, $context );
+	}
+
+	/**
+	 * The filtered payload, with any key of the wrong type replaced by the original value.
+	 *
+	 * Header lines must be strings without line breaks, so a filter cannot inject headers.
+	 *
+	 * @param mixed    $payload  What the filters returned.
+	 * @param string[] $to       Original recipients.
+	 * @param string   $subject  Original subject.
+	 * @param string   $message  Original message.
+	 * @param string[] $headers  Original header lines.
+	 *
+	 * @return array{to: string[], subject: string, message: string, headers: string[]}
+	 */
+	private function checked_payload( $payload, array $to, string $subject, string $message, array $headers ): array {
+		$payload = is_array( $payload ) ? $payload : array();
+
+		$recipients = array();
+		if ( isset( $payload['to'] ) && is_array( $payload['to'] ) ) {
+			foreach ( $payload['to'] as $address ) {
+				if ( is_string( $address ) && '' !== trim( $address ) && 1 !== preg_match( '/[\r\n]/', $address ) ) {
+					$recipients[] = trim( $address );
+				}
+			}
+		}
+
+		$lines = array();
+		if ( isset( $payload['headers'] ) && is_array( $payload['headers'] ) ) {
+			foreach ( $payload['headers'] as $line ) {
+				if ( is_string( $line ) && 1 !== preg_match( '/[\r\n]/', $line ) ) {
+					$lines[] = $line;
+				}
+			}
+		} else {
+			$lines = $headers;
+		}
+
+		return array(
+			'to'      => array() !== $recipients ? $recipients : $to,
+			'subject' => isset( $payload['subject'] ) && is_string( $payload['subject'] ) ? $payload['subject'] : $subject,
+			'message' => isset( $payload['message'] ) && is_string( $payload['message'] ) ? $payload['message'] : $message,
+			'headers' => $lines,
+		);
 	}
 
 	/**

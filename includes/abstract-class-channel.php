@@ -143,4 +143,63 @@ abstract class Channel {
 	public function render_settings( Channel_Instance $instance ): ?string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Overridable default.
 		return null;
 	}
+
+	/**
+	 * Let site code change the formatted payload just before the channel sends it.
+	 *
+	 * A channel calls this with whatever it is about to send (an array for an HTTP body, say)
+	 * and sends what comes back. It must check that the value still has the shape it needs,
+	 * because a filter can return anything.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param mixed            $payload      What the channel is about to send.
+	 * @param Notification     $notification What is being delivered.
+	 * @param Channel_Instance $instance     The instance it is delivered through.
+	 *
+	 * @return mixed The payload to send.
+	 */
+	protected function filter_payload( $payload, Notification $notification, Channel_Instance $instance ) {
+		/**
+		 * Filters the payload of any channel just before it is sent.
+		 *
+		 * The shape of the payload is up to the channel; see its documentation. The email
+		 * channel uses `array( 'to' => string[], 'subject' => string, 'message' => string, 'headers' => string[] )`.
+		 *
+		 * Example, add a recipient to every email:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_channel_payload',
+		 *         function ( $payload, $notification, $instance ) {
+		 *             if ( 'email' === $instance->get_type() ) {
+		 *                 $payload['to'][] = 'archive@example.org';
+		 *             }
+		 *             return $payload;
+		 *         },
+		 *         10,
+		 *         3
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param mixed            $payload      The payload.
+		 * @param Notification     $notification What is being delivered.
+		 * @param Channel_Instance $instance     The instance it is delivered through.
+		 */
+		$payload = apply_filters( 'sc_wpun_channel_payload', $payload, $notification, $instance );
+
+		/**
+		 * Filters the payload of the channels of one type just before it is sent.
+		 *
+		 * The dynamic part, `$type`, is the channel type, for example `email`. The arguments are the
+		 * same as for `sc_wpun_channel_payload`.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param mixed            $payload      The payload.
+		 * @param Notification     $notification What is being delivered.
+		 * @param Channel_Instance $instance     The instance it is delivered through.
+		 */
+		return apply_filters( "sc_wpun_channel_payload_{$this->get_type()}", $payload, $notification, $instance );
+	}
 }

@@ -77,8 +77,12 @@ class Notifier {
 			if ( 'email' !== $instance->get_type() || ! $instance->is_enabled() || ! is_string( $to ) || '' === trim( $to ) ) {
 				continue;
 			}
+			/** This filter is documented in modules/email/class-email-channel.php */
+			$mail_subject = apply_filters( 'sc_wpun_email_subject', $subject );
+			/** This filter is documented in modules/email/class-email-channel.php */
+			$mail_body = apply_filters( 'sc_wpun_email_content', $message );
 			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-			if ( wp_mail( $to, apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', $message ) ) ) {
+			if ( wp_mail( $to, $mail_subject, $mail_body ) ) {
 				$sent = true;
 			}
 		}

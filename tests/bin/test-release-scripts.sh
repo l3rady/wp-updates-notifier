@@ -35,4 +35,29 @@ echo "ok: stable tag"
 sed -n '/x-release-please-start-version/,/x-release-please-end/p' "$here/class-sc-wp-updates-notifier.php" | grep -Eq '^ \* Version: [0-9]+\.[0-9]+\.[0-9]+$' || fail "no semver Version line between the release-please markers"
 echo "ok: version markers"
 
+# Hook documentation check: a documented hook passes; a missing @since, a wrong prefix and a missing doc block fail.
+hooks="$work/hooks"
+mkdir -p "$hooks/good" "$hooks/bad"
+cp "$here/bin/check-hooks.php" "$work/bin/"
+cat > "$hooks/good/ok.php" <<'PHP'
+<?php
+/**
+ * Documented.
+ *
+ * @since 2.0.0
+ */
+do_action( 'sc_wpun_documented' );
+/** This filter is documented in elsewhere.php */
+$value = apply_filters( 'sc_wpun_other', 1 );
+do_action( 'wp_version_check' );
+PHP
+php "$work/bin/check-hooks.php" "$hooks/good" >/dev/null || fail "documented hooks were rejected"
+printf '<?php\n/** No version. */\ndo_action( %s );\n' "'sc_wpun_no_since'" > "$hooks/bad/a.php"
+printf '<?php\n/** @since 2.0.0 */\ndo_action( %s );\n' "'other_prefix'" > "$hooks/bad/b.php"
+printf '<?php\n$x = 1;\n\n\n\n\napply_filters( %s, $x );\n' "'sc_wpun_undocumented'" > "$hooks/bad/c.php"
+for f in a b c; do
+	if php "$work/bin/check-hooks.php" "$hooks/bad/$f.php" >/dev/null 2>&1; then fail "bad hook fixture $f was accepted"; fi
+done
+echo "ok: hook documentation check"
+
 echo "OK"

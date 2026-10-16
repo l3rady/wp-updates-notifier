@@ -17,3 +17,5 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Lint (phpcs, WordPress Coding Standards)
         run: make lint
+      - name: Check every hook is documented
+        run: make check-hooks
