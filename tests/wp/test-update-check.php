@@ -236,48 +236,23 @@ class Test_Update_Check extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Slack gets a JSON payload with the message, posted to the configured webhook.
+	 * A stored, enabled Slack instance is kept but never posted to; the email still goes out.
 	 */
-	public function test_slack_receives_the_message() {
+	public function test_a_stored_slack_instance_gets_no_request_and_email_still_sends() {
 		$this->save_settings(
 			array(
-				'email_notifications'    => 0,
 				'slack_notifications'    => 1,
 				'slack_webhook_url'      => self::SLACK_URL,
 				'slack_channel_override' => '#ops',
 			)
 		);
-		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) );
 		$this->set_updates( '99.0.0' );
 
 		$this->plugin()->do_update_check();
 
-		$requests = $this->requests_to( 'hooks.slack.com' );
-		$this->assertCount( 1, $requests );
-		$this->assertSame( self::SLACK_URL, $requests[0]['url'] );
-		$payload = json_decode( $requests[0]['args']['body']['payload'], true );
-		$this->assertSame( '#ops', $payload['channel'] );
-		$this->assertStringContainsString( '99.0.0', $payload['text'] );
-		$this->assertSame( 0, $this->sent_mail_count() );
-	}
-
-	/**
-	 * Both channels can be on at once.
-	 */
-	public function test_email_and_slack_both_send() {
-		$this->save_settings(
-			array(
-				'slack_notifications' => 1,
-				'slack_webhook_url'   => self::SLACK_URL,
-			)
-		);
-		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) );
-		$this->set_updates( '99.0.0' );
-
-		$this->plugin()->do_update_check();
-
+		$this->assertCount( 0, $this->requests_to( 'hooks.slack.com' ) );
 		$this->assertSame( 1, $this->sent_mail_count() );
-		$this->assertCount( 1, $this->requests_to( 'hooks.slack.com' ) );
+		$this->assertSame( self::SLACK_URL, sc_wpun_channels()->get( 'slack' )->get_setting( 'webhook_url' ) );
 	}
 
 	/**

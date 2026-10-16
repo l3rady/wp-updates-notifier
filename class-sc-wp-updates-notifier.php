@@ -13,7 +13,7 @@
 /*
  * Plugin Name: WP Updates Notifier
  * Plugin URI: https://github.com/l3rady/wp-updates-notifier
- * Description: Sends email or Slack message to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
+ * Description: Sends an email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
  * x-release-please-start-version
  * Version: 1.6.0
  * x-release-please-end
@@ -66,6 +66,7 @@ require_once __DIR__ . '/includes/class-channel-registry.php';
 require_once __DIR__ . '/includes/class-channel-store.php';
 require_once __DIR__ . '/includes/class-dispatcher.php';
 require_once __DIR__ . '/includes/class-update-checker.php';
+require_once __DIR__ . '/includes/class-slack-notice.php';
 require_once __DIR__ . '/includes/admin/class-settings-page.php';
 require_once __DIR__ . '/includes/admin/class-update-nag.php';
 require_once __DIR__ . '/includes/class-plugin.php';
@@ -200,13 +201,18 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
 		 *
-		 * @param mixed $message Passed on unchanged.
-		 * @return mixed
+		 * @deprecated 2.0.0
+		 *
+		 * @param mixed $message Ignored.
+		 *
+		 * @return false
 		 */
-		public function send_slack_message( $message ) {
-			return sc_wpun()->notifier()->send_slack_message( $message );
+		public function send_slack_message( $message ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Kept so existing callers keep working.
+			_deprecated_function( __METHOD__, '2.0.0' );
+
+			return false;
 		}
 
 		/**
@@ -313,12 +319,14 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 *
+		 * @deprecated 2.0.0
 		 *
 		 * @return void
 		 */
 		public function send_test_slack() {
-			sc_wpun()->settings_page()->send_test_slack();
+			_deprecated_function( __METHOD__, '2.0.0' );
 		}
 
 		/**
@@ -412,39 +420,47 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 *
+		 * @deprecated 2.0.0
 		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_slack_notifications_text() {
-			sc_wpun()->settings_page()->sc_wpun_settings_slack_notifications_text();
+			_deprecated_function( __METHOD__, '2.0.0' );
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 *
+		 * @deprecated 2.0.0
 		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_slack_notifications_field_slack_notifications() {
-			sc_wpun()->settings_page()->sc_wpun_settings_slack_notifications_field_slack_notifications();
+			_deprecated_function( __METHOD__, '2.0.0' );
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 *
+		 * @deprecated 2.0.0
 		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_slack_notifications_field_slack_webhook_url() {
-			sc_wpun()->settings_page()->sc_wpun_settings_slack_notifications_field_slack_webhook_url();
+			_deprecated_function( __METHOD__, '2.0.0' );
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 *
+		 * @deprecated 2.0.0
 		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_slack_notifications_field_slack_channel_override() {
-			sc_wpun()->settings_page()->sc_wpun_settings_slack_notifications_field_slack_channel_override();
+			_deprecated_function( __METHOD__, '2.0.0' );
 		}
 	}
 }

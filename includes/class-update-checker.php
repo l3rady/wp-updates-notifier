@@ -41,7 +41,7 @@ class Update_Checker {
 	private $notifier;
 
 	/**
-	 * Channel instance storage, where the email and Slack settings are kept.
+	 * Channel instance storage, where the email settings are kept.
 	 *
 	 * @var Channel_Store
 	 */
@@ -98,17 +98,8 @@ class Update_Checker {
 		if ( $core_updated || $plugins_updated || $themes_updated ) { // Did anything come back as need updating?
 			$message = Legacy_Message::build( $this->last_notification );
 
-			$delivered = false;
-
 			// Send email notification.
-			if ( $this->is_enabled( 'email' ) && $this->notifier->send_email_message( $message ) ) {
-				$delivered = true;
-			}
-
-			// Send slack notification. send_slack_message() returns true on failure (#66).
-			if ( $this->is_enabled( 'slack' ) && ! $this->notifier->send_slack_message( $message ) ) {
-				$delivered = true;
-			}
+			$delivered = $this->is_enabled( 'email' ) && $this->notifier->send_email_message( $message );
 
 			// Only remember what was announced if it reached someone, so a failed send is retried.
 			if ( $delivered ) {
@@ -124,7 +115,7 @@ class Update_Checker {
 
 
 	/**
-	 * Whether the email or Slack instance exists and is switched on.
+	 * Whether the instance exists and is switched on.
 	 *
 	 * @param string $id Instance id.
 	 *

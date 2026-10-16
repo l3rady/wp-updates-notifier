@@ -11,6 +11,22 @@
 class Test_Uninstall extends WPUN_Test_Case {
 
 	/**
+	 * A user who dismissed the Slack notice.
+	 *
+	 * @var int
+	 */
+	private static $user_id;
+
+	/**
+	 * Create the user.
+	 *
+	 * @param WP_UnitTest_Factory $factory Factory.
+	 */
+	public static function wpSetUpBeforeClass( $factory ) {
+		self::$user_id = $factory->user->create( array( 'role' => 'administrator' ) );
+	}
+
+	/**
 	 * Store everything the plugin can leave behind on the current site.
 	 */
 	private function leave_traces() {
@@ -20,6 +36,7 @@ class Test_Uninstall extends WPUN_Test_Case {
 		wp_schedule_event( time(), 'daily', 'sc_wpun_update_check' );
 		set_transient( 'sc_wpun_send_test_email', 1 );
 		set_transient( 'sc_wpun_send_test_slack', 1 );
+		update_user_meta( self::$user_id, 'sc_wpun_dismissed_slack_notice', '1' );
 	}
 
 	/**
@@ -34,6 +51,7 @@ class Test_Uninstall extends WPUN_Test_Case {
 		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ), "$where: cron event" );
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ), "$where: test email transient" );
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_slack' ), "$where: test Slack transient" );
+		$this->assertSame( '', get_user_meta( self::$user_id, 'sc_wpun_dismissed_slack_notice', true ), "$where: dismissed notice" );
 	}
 
 	/**

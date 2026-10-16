@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @internal
  * @phpstan-type Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
- * @phpstan-type StateData array{notified: Notified, last_check_time: int|false}
+ * @phpstan-type StateData array{notified: Notified, last_check_time: int|false, slack_notice_sent: bool}
  */
 class State {
 	const OPT_FIELD = 'sc_wpun_state';
@@ -62,12 +62,13 @@ class State {
 		$notified = isset( $state['notified'] ) && is_array( $state['notified'] ) ? $state['notified'] : array();
 
 		return array(
-			'notified'        => array(
+			'notified'          => array(
 				'core'   => isset( $notified['core'] ) && is_scalar( $notified['core'] ) ? (string) $notified['core'] : '',
 				'plugin' => $this->normalise_versions( $notified['plugin'] ?? array() ),
 				'theme'  => $this->normalise_versions( $notified['theme'] ?? array() ),
 			),
-			'last_check_time' => ! empty( $state['last_check_time'] ) && is_numeric( $state['last_check_time'] ) ? (int) $state['last_check_time'] : false,
+			'last_check_time'   => ! empty( $state['last_check_time'] ) && is_numeric( $state['last_check_time'] ) ? (int) $state['last_check_time'] : false,
+			'slack_notice_sent' => ! empty( $state['slack_notice_sent'] ),
 		);
 	}
 
