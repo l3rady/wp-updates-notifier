@@ -61,6 +61,7 @@ class Scheduler {
 
 		// Kept for code that calls do_action( 'sc_wpun_enable_cron', 'manual' ) to stop the checks.
 		if ( 'manual' === $frequency ) {
+			/** This action is documented in includes/class-plugin.php */
 			do_action( 'sc_wpun_disable_cron' ); // Make sure no cron is setup as we are manual.
 			return;
 		}
@@ -82,6 +83,7 @@ class Scheduler {
 		}
 
 		// Remove any cron's for this plugin first so we don't end up with multiple cron's doing the same thing.
+		/** This action is documented in includes/class-plugin.php */
 		do_action( 'sc_wpun_disable_cron' );
 
 		// Schedule cron for this plugin.

@@ -32,6 +32,7 @@ class State {
 	 * @return StateData
 	 */
 	public function get(): array {
+		/** This filter is documented in includes/class-settings.php */
 		return $this->normalise( apply_filters( 'sc_wpun_get_options_filter', get_option( self::OPT_FIELD ), self::OPT_FIELD ) );
 	}
 
@@ -43,6 +44,7 @@ class State {
 	 * @return void
 	 */
 	public function save( array $state ): void {
+		/** This filter is documented in includes/class-settings.php */
 		$state = apply_filters( 'sc_wpun_put_options_filter', $state, self::OPT_FIELD );
 
 		if ( false === get_option( self::OPT_FIELD ) ) {

@@ -50,7 +50,26 @@ final class Notification_Renderer {
 		// translators: %s: Address of the WordPress updates screen.
 		$lines[] = sprintf( __( 'Please visit %s to update.', 'wp-updates-notifier' ), $notification->get_updates_url() );
 
-		return implode( "\n", $lines );
+		/**
+		 * Filters the plain text of a notification, which channels use as the message.
+		 *
+		 * Example, add a line at the end:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_message_text',
+		 *         function ( $text, $notification ) {
+		 *             return $text . "\n\n-- Sent by my agency";
+		 *         },
+		 *         10,
+		 *         2
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param string       $text         The plain text.
+		 * @param Notification $notification The notification it was made from.
+		 */
+		return (string) apply_filters( 'sc_wpun_message_text', implode( "\n", $lines ), $notification );
 	}
 
 	/**
