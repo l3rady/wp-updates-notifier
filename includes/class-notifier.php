@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Sends the notifications by email.
+ * Handles the automatic update emails and the deprecated email sending.
  *
  * @internal
  */
@@ -58,54 +58,50 @@ class Notifier {
 	}
 
 	/**
-	 * Sends email message.
+	 * Send a message the way versions before 2.0.0 did: plain text to every enabled email instance.
 	 *
-	 * @param string $message Holds message to be sent in body of email.
+	 * Only for the deprecated SC_WP_Updates_Notifier::send_email_message(); updates go out
+	 * through the email channel.
 	 *
-	 * @return bool Whether the email contents were sent successfully.
+	 * @param string $message Body of the email.
+	 *
+	 * @return bool Whether an email was sent to any instance.
 	 */
-	public function send_email_message( $message ) {
-		// translators: %s: Site URL.
-		$subject = sprintf( __( 'WP Updates Notifier: Updates Available @ %s', 'wp-updates-notifier' ), home_url() );
-		add_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // add from filter.
-		add_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // add from name filter.
-		add_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // add content type filter.
-		// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-		$response = wp_mail( $this->instance_setting( 'email', 'to' ), apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', esc_html( $message ) ) ); // send email.
-		// phpcs:enable
-		remove_filter( 'wp_mail_from', array( $this, 'sc_wpun_wp_mail_from' ) ); // remove from filter.
-		remove_filter( 'wp_mail_from_name', array( $this, 'sc_wpun_wp_mail_from_name' ) ); // remove from name filter.
-		remove_filter( 'wp_mail_content_type', array( $this, 'sc_wpun_wp_mail_content_type' ) ); // remove content type filter.
+	public function send_legacy_message( $message ) {
+		// translators: %s: Site name.
+		$subject = sprintf( __( 'WP Updates Notifier: updates available for %s', 'wp-updates-notifier' ), wp_specialchars_decode( get_bloginfo(), ENT_QUOTES ) );
+		$sent    = false;
 
-		return $response;
-	}
+		foreach ( $this->channels->all() as $instance ) {
+			$to = $instance->get_setting( 'to' );
+			if ( 'email' !== $instance->get_type() || ! $instance->is_enabled() || ! is_string( $to ) || '' === trim( $to ) ) {
+				continue;
+			}
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
+			if ( wp_mail( $to, apply_filters( 'sc_wpun_email_subject', $subject ), apply_filters( 'sc_wpun_email_content', $message ) ) ) {
+				$sent = true;
+			}
+		}
 
-
-	/**
-	 * Get the from email address.
-	 *
-	 * @return String email address.
-	 */
-	public function sc_wpun_wp_mail_from() {
-		return $this->instance_setting( 'email', 'from' );
+		return $sent;
 	}
 
 	/**
-	 * Get the name to send email from.
+	 * The name auto update emails are sent from.
 	 *
-	 * @return String From Name.
+	 * @return string
 	 */
-	public function sc_wpun_wp_mail_from_name() {
+	public function mail_from_name() {
 		return __( 'WP Updates Notifier', 'wp-updates-notifier' );
 	}
 
 	/**
-	 * Email type.
+	 * Get the email address configured to send from, for the deprecated facade method.
 	 *
-	 * @return String email type.
+	 * @return string
 	 */
-	public function sc_wpun_wp_mail_content_type() {
-		return 'text/plain';
+	public function mail_from() {
+		return $this->instance_setting( 'email', 'from' );
 	}
 
 	/**
@@ -118,7 +114,7 @@ class Notifier {
 	public function filter_auto_core_update_email( $email ) {
 		$options     = $this->settings->get(); // Get settings.
 		$notify_to   = $this->instance_setting( 'email', 'to' );
-		$notify_from = $this->instance_setting( 'email', 'from' );
+		$notify_from = sanitize_email( $this->instance_setting( 'email', 'from' ) );
 
 		if ( 0 !== $options['notify_automatic'] ) {
 			if ( ! empty( $notify_to ) ) { // If an email address has been set, override the WordPress default.
@@ -129,7 +125,16 @@ class Notifier {
 				$email['headers'] = $this->normalise_mail_headers( $email['headers'] ?? array() );
 
 				if ( ! $this->has_mail_header( $email['headers'], 'From' ) ) {
-					$email['headers'][] = 'From: ' . $this->sc_wpun_wp_mail_from_name() . ' <' . $notify_from . '>';
+					$email['headers'][] = 'From: ' . $this->mail_from_name() . ' <' . $notify_from . '>';
+				}
+			}
+
+			$notify_reply_to = sanitize_email( $this->instance_setting( 'email', 'reply_to' ) );
+			if ( ! empty( $notify_reply_to ) ) {
+				$email['headers'] = $this->normalise_mail_headers( $email['headers'] ?? array() );
+
+				if ( ! $this->has_mail_header( $email['headers'], 'Reply-To' ) ) {
+					$email['headers'][] = 'Reply-To: ' . $notify_reply_to;
 				}
 			}
 		}

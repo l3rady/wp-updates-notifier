@@ -126,4 +126,23 @@ class Test_Auto_Update_Email extends WPUN_Test_Case {
 		$this->assertTrue( wp_mail( $email['to'], $email['subject'], $email['body'], $email['headers'] ) );
 		$this->assertSame( 'notifier@example.org', tests_retrieve_phpmailer_instance()->From );
 	}
+
+	/**
+	 * A Reply-To of the email instance is added to the background update email unless one is already there.
+	 */
+	public function test_reply_to_is_added() {
+		$this->save_settings(
+			array(
+				'notify_automatic' => 1,
+				'notify_from'      => '',
+				'notify_reply_to'  => 'help@example.org',
+			)
+		);
+
+		$email = $this->filter_email( '' );
+		$this->assertSame( array( 'Reply-To: help@example.org' ), $email['headers'] );
+
+		$email = $this->filter_email( array( 'reply-to: other@example.org' ) );
+		$this->assertSame( array( 'reply-to: other@example.org' ), $email['headers'] );
+	}
 }

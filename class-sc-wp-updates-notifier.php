@@ -58,7 +58,6 @@ require_once __DIR__ . '/includes/class-notifier.php';
 require_once __DIR__ . '/includes/class-notification-item.php';
 require_once __DIR__ . '/includes/class-notification.php';
 require_once __DIR__ . '/includes/class-notification-renderer.php';
-require_once __DIR__ . '/includes/class-legacy-message.php';
 require_once __DIR__ . '/includes/class-delivery-result.php';
 require_once __DIR__ . '/includes/class-channel-instance.php';
 require_once __DIR__ . '/includes/abstract-class-channel.php';
@@ -70,6 +69,9 @@ require_once __DIR__ . '/includes/class-slack-notice.php';
 require_once __DIR__ . '/includes/admin/class-settings-page.php';
 require_once __DIR__ . '/includes/admin/class-update-nag.php';
 require_once __DIR__ . '/includes/class-plugin.php';
+
+// Built-in notification modules.
+require_once __DIR__ . '/modules/email/email.php';
 
 // Only load class if it hasn't already been loaded.
 if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
@@ -191,13 +193,18 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: email is sent by the email channel since 2.0.0.
 		 *
-		 * @param mixed $message Passed on unchanged.
-		 * @return mixed
+		 * @deprecated 2.0.0 Use the email channel.
+		 *
+		 * @param mixed $message Body of the email.
+		 *
+		 * @return bool
 		 */
 		public function send_email_message( $message ) {
-			return sc_wpun()->notifier()->send_email_message( $message );
+			_deprecated_function( __METHOD__, '2.0.0', 'the email channel' );
+
+			return sc_wpun()->notifier()->send_legacy_message( (string) $message );
 		}
 
 		/**
@@ -216,30 +223,42 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: email is sent by the email channel since 2.0.0.
 		 *
-		 * @return mixed
+		 * @deprecated 2.0.0 Use the email channel.
+		 *
+		 * @return string
 		 */
 		public function sc_wpun_wp_mail_from() {
-			return sc_wpun()->notifier()->sc_wpun_wp_mail_from();
+			_deprecated_function( __METHOD__, '2.0.0', 'the email channel' );
+
+			return sc_wpun()->notifier()->mail_from();
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: email is sent by the email channel since 2.0.0.
 		 *
-		 * @return mixed
+		 * @deprecated 2.0.0 Use the email channel.
+		 *
+		 * @return string
 		 */
 		public function sc_wpun_wp_mail_from_name() {
-			return sc_wpun()->notifier()->sc_wpun_wp_mail_from_name();
+			_deprecated_function( __METHOD__, '2.0.0', 'the email channel' );
+
+			return sc_wpun()->notifier()->mail_from_name();
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: email is sent by the email channel since 2.0.0.
 		 *
-		 * @return mixed
+		 * @deprecated 2.0.0 Use the email channel.
+		 *
+		 * @return string
 		 */
 		public function sc_wpun_wp_mail_content_type() {
-			return sc_wpun()->notifier()->sc_wpun_wp_mail_content_type();
+			_deprecated_function( __METHOD__, '2.0.0', 'the email channel' );
+
+			return 'text/plain';
 		}
 
 		/**

@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use WPUN\Channel_Instance;
 use WPUN\Channel_Store;
+use WPUN\Delivery_Result;
+use WPUN\Dispatcher;
+use WPUN\Notification;
 use WPUN\Notifier;
 use WPUN\Scheduler;
 use WPUN\Settings;
@@ -25,6 +28,9 @@ use WPUN\State;
  * @internal
  */
 class Settings_Page {
+	const TEST_ACTION      = 'sc_wpun_send_test';
+	const TEST_RESULT_META = 'sc_wpun_test_result';
+
 	/**
 	 * Settings.
 	 *
@@ -68,6 +74,13 @@ class Settings_Page {
 	private $slack_notice;
 
 	/**
+	 * Dispatcher, for the test message.
+	 *
+	 * @var Dispatcher
+	 */
+	private $dispatcher;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings      $settings  Settings.
@@ -76,14 +89,16 @@ class Settings_Page {
 	 * @param Notifier      $notifier  Notifier.
 	 * @param Channel_Store $channels  Channel instance storage.
 	 * @param Slack_Notice  $slack_notice Notice about Slack no longer being supported.
+	 * @param Dispatcher    $dispatcher Dispatcher.
 	 */
-	public function __construct( Settings $settings, State $state, Scheduler $scheduler, Notifier $notifier, Channel_Store $channels, Slack_Notice $slack_notice ) {
+	public function __construct( Settings $settings, State $state, Scheduler $scheduler, Notifier $notifier, Channel_Store $channels, Slack_Notice $slack_notice, Dispatcher $dispatcher ) {
 		$this->settings     = $settings;
 		$this->state        = $state;
 		$this->scheduler    = $scheduler;
 		$this->notifier     = $notifier;
 		$this->channels     = $channels;
 		$this->slack_notice = $slack_notice;
+		$this->dispatcher   = $dispatcher;
 	}
 
 	/**
@@ -164,17 +179,12 @@ class Settings_Page {
 	}
 
 	/**
-	 * Output settings page and trigger sending tests.
+	 * Output the settings page.
 	 *
 	 * @return void
 	 */
 	public function settings_page() {
-		// Trigger tests if they are ready to be sent.
-		$sc_wpun_send_test_email = get_transient( 'sc_wpun_send_test_email' );
-		if ( $sc_wpun_send_test_email ) {
-			delete_transient( 'sc_wpun_send_test_email' );
-			$this->send_test_email();
-		}
+		$test_result = $this->take_test_result();
 
 		$options    = $this->state->get();
 		$next_check = wp_next_scheduled( Scheduler::CRON_NAME );
@@ -183,6 +193,7 @@ class Settings_Page {
 			<h2><?php esc_html_e( 'Updates Notifier', 'wp-updates-notifier' ); ?></h2>
 
 			<?php $this->slack_notice->render(); ?>
+			<?php $this->render_test_result( $test_result ); ?>
 
 			<p>
 				<span class="description sc-wpun-last-check">
@@ -215,7 +226,15 @@ class Settings_Page {
 				?>
 				<p>&nbsp;</p>
 				<input class="button-primary" name="Submit" type="submit" value="<?php esc_html_e( 'Save settings', 'wp-updates-notifier' ); ?>" />
-				<input class="button" name="submitwithemail" type="submit" value="<?php esc_html_e( 'Save settings with test email', 'wp-updates-notifier' ); ?>" />
+			</form>
+
+			<form action="<?php echo esc_attr( admin_url( 'admin-post.php' ) ); ?>" method="post">
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::TEST_ACTION ); ?>" />
+				<input type="hidden" name="instance" value="email" />
+				<?php wp_nonce_field( self::TEST_ACTION ); ?>
+				<p>&nbsp;</p>
+				<input class="button" type="submit" value="<?php esc_attr_e( 'Send test email', 'wp-updates-notifier' ); ?>" />
+				<span class="description"><?php esc_html_e( 'Sends a test message using the saved settings.', 'wp-updates-notifier' ); ?></span>
 			</form>
 		</div>
 		<?php
@@ -257,6 +276,7 @@ class Settings_Page {
 		add_settings_field( 'sc_wpun_settings_email_notifications_email_notifications', __( 'Send email notifications?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_email_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 		add_settings_field( 'sc_wpun_settings_email_notifications_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 		add_settings_field( 'sc_wpun_settings_email_notifications_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
+		add_settings_field( 'sc_wpun_settings_email_notifications_notify_reply_to', __( 'Reply-To email', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_reply_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 	}
 
 	/**
@@ -335,6 +355,20 @@ class Settings_Page {
 			$notify_to = '';
 		}
 
+		$notify_reply_to = $this->instance_setting( 'email', 'reply_to' );
+		if ( array_key_exists( 'notify_reply_to', $input ) ) {
+			$notify_reply_to = '';
+			if ( ! empty( $input['notify_reply_to'] ) && is_string( $input['notify_reply_to'] ) ) {
+				$sanitized_reply_to = sanitize_email( $input['notify_reply_to'] );
+				if ( is_email( $sanitized_reply_to ) ) {
+					$notify_reply_to = $sanitized_reply_to;
+				} else {
+					$notify_reply_to = $this->instance_setting( 'email', 'reply_to' );
+					add_settings_error( 'sc_wpun_settings_email_notifications_notify_reply_to', 'sc_wpun_settings_email_notifications_notify_reply_to_error', __( 'Invalid reply-to email entered', 'wp-updates-notifier' ), 'error' );
+				}
+			}
+		}
+
 		if ( ! empty( $input['notify_from'] ) && is_string( $input['notify_from'] ) ) {
 			$sanitized_email_from = sanitize_email( $input['notify_from'] );
 			if ( is_email( $sanitized_email_from ) ) {
@@ -352,54 +386,139 @@ class Settings_Page {
 		}
 
 		if ( 1 === $email_notifications ) {
-			if ( ! empty( $notify_to ) && ! empty( $notify_from ) ) {
+			if ( ! empty( $notify_to ) ) {
 				$email_notifications = 1;
 			} else {
-				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not enable email notifications, addresses are not valid', 'wp-updates-notifier' ), 'error' );
+				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not enable email notifications, enter a valid address to send to', 'wp-updates-notifier' ), 'error' );
 				$email_notifications = 0;
 			}
 		}
 
-		if ( array_key_exists( 'notify_to', $input ) || array_key_exists( 'notify_from', $input ) || array_key_exists( 'email_notifications', $input ) ) {
+		if ( array_key_exists( 'notify_to', $input ) || array_key_exists( 'notify_from', $input ) || array_key_exists( 'notify_reply_to', $input ) || array_key_exists( 'email_notifications', $input ) ) {
 			$this->save_instance(
 				'email',
 				'Email',
 				1 === $email_notifications,
 				array(
-					'to'   => $notify_to,
-					'from' => $notify_from,
+					'to'       => $notify_to,
+					'from'     => $notify_from,
+					'reply_to' => $notify_reply_to,
 				),
 				true
 			);
-		}
-
-		// Test sends are only queued from the settings form itself (see #67).
-		if ( ! $this->is_settings_form_submission() ) {
-			return $valid;
-		}
-
-		if ( isset( $_POST['submitwithemail'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in is_settings_form_submission().
-			if ( '' !== $notify_to && '' !== $notify_from ) {
-				set_transient( 'sc_wpun_send_test_email', 1 );
-			} else {
-				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not send test email. Email settings are invalid.', 'wp-updates-notifier' ), 'error' );
-			}
 		}
 
 		return $valid;
 	}
 
 	/**
-	 * Whether this request is the plugin's settings form being saved through options.php.
+	 * Check a test send request, send the test and remember the result for the current user.
 	 *
-	 * @return bool
+	 * @return bool False if the user may not manage options or the nonce is not valid.
 	 */
-	private function is_settings_form_submission(): bool {
-		if ( ! isset( $_POST['option_page'], $_POST['_wpnonce'] ) || Settings::OPT_FIELD !== $_POST['option_page'] ) {
+	public function process_test_send(): bool {
+		if ( ! current_user_can( 'manage_options' ) || ! isset( $_POST['_wpnonce'] ) ) {
+			return false;
+		}
+		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), self::TEST_ACTION ) ) {
 			return false;
 		}
 
-		return false !== wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), Settings::OPT_FIELD . '-options' );
+		$id       = isset( $_POST['instance'] ) && is_string( $_POST['instance'] ) ? sanitize_key( wp_unslash( $_POST['instance'] ) ) : '';
+		$instance = $this->channels->get( $id );
+
+		if ( null === $instance ) {
+			$label  = $id;
+			$result = Delivery_Result::failure( __( 'There is no such channel.', 'wp-updates-notifier' ), 'unknown_instance' );
+		} else {
+			$label        = $instance->get_label();
+			$notification = new Notification(
+				get_bloginfo(),
+				home_url(),
+				admin_url( 'update-core.php' ),
+				array(),
+				array(
+					'is_test' => true,
+					'source'  => 'test',
+				)
+			);
+			$result       = $this->dispatcher->send_one( $notification, $instance );
+		}
+
+		// Kept in user meta, so only this user sees it; the site is recorded because user meta is shared by a network.
+		update_user_meta(
+			get_current_user_id(),
+			self::TEST_RESULT_META,
+			array(
+				'success' => $result->is_success(),
+				'message' => $result->get_message(),
+				'label'   => $label,
+				'site'    => get_current_blog_id(),
+				'time'    => time(),
+			)
+		);
+
+		return true;
+	}
+
+	/**
+	 * Handle the "Send test email" form (admin-post.php), then go back to the settings page.
+	 *
+	 * @return void
+	 */
+	public function handle_test_send(): void {
+		if ( ! $this->process_test_send() ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
+		}
+
+		wp_safe_redirect( admin_url( 'options-general.php?page=wp-updates-notifier' ) );
+		exit;
+	}
+
+	/**
+	 * Read and delete the result of the current user's last test send.
+	 *
+	 * @return array{success: bool, message: string, label: string}|null
+	 */
+	private function take_test_result(): ?array {
+		$user_id = get_current_user_id();
+		$stored  = get_user_meta( $user_id, self::TEST_RESULT_META, true );
+		if ( ! is_array( $stored ) || ( $stored['site'] ?? 0 ) !== get_current_blog_id() ) {
+			return null; // None, or it belongs to another site of the network and is shown there.
+		}
+		delete_user_meta( $user_id, self::TEST_RESULT_META );
+		if ( ! isset( $stored['time'] ) || ! is_int( $stored['time'] ) || $stored['time'] < time() - 5 * MINUTE_IN_SECONDS ) {
+			return null; // Too old to still be about the last click.
+		}
+
+		return array(
+			'success' => ! empty( $stored['success'] ),
+			'message' => isset( $stored['message'] ) && is_string( $stored['message'] ) ? $stored['message'] : '',
+			'label'   => isset( $stored['label'] ) && is_string( $stored['label'] ) ? $stored['label'] : '',
+		);
+	}
+
+	/**
+	 * Output the result of a test send as a notice.
+	 *
+	 * @param array{success: bool, message: string, label: string}|null $result The result, if there is one.
+	 *
+	 * @return void
+	 */
+	private function render_test_result( ?array $result ): void {
+		if ( null === $result ) {
+			return;
+		}
+		if ( $result['success'] ) {
+			// translators: %s: Name of the channel.
+			$text = sprintf( __( 'Test message sent through %s.', 'wp-updates-notifier' ), $result['label'] );
+		} else {
+			// translators: 1: Name of the channel. 2: Why it failed.
+			$text = sprintf( __( 'The test message could not be sent through %1$s: %2$s', 'wp-updates-notifier' ), $result['label'], $result['message'] );
+		}
+		?>
+		<div class="notice <?php echo esc_attr( $result['success'] ? 'notice-success' : 'notice-error' ); ?> sc-wpun-test-result"><p><?php echo esc_html( $text ); ?></p></div>
+		<?php
 	}
 
 	/**
@@ -408,7 +527,7 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function send_test_email() {
-		$this->notifier->send_email_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
+		$this->notifier->send_legacy_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
 	}
 
 	/**
@@ -552,6 +671,18 @@ class Settings_Page {
 	public function sc_wpun_settings_email_notifications_field_notify_from() {
 		?>
 		<input id="sc_wpun_settings_email_notifications_notify_from" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_from]" value="<?php echo esc_attr( $this->instance_setting( 'email', 'from' ) ); ?>" />
+		<span class="description"><?php esc_html_e( 'Leave empty to use the WordPress default. Only set an address at a domain this site is allowed to send mail for.', 'wp-updates-notifier' ); ?></span>
+		<?php
+	}
+
+	/**
+	 * Settings field for the reply-to address.
+	 *
+	 * @return void
+	 */
+	public function sc_wpun_settings_email_notifications_field_notify_reply_to() {
+		?>
+		<input id="sc_wpun_settings_email_notifications_notify_reply_to" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_reply_to]" value="<?php echo esc_attr( $this->instance_setting( 'email', 'reply_to' ) ); ?>" />
 		<?php
 	}
 }

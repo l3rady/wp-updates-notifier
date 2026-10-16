@@ -34,11 +34,11 @@ class Update_Checker {
 	private $state;
 
 	/**
-	 * Notifier.
+	 * Dispatcher.
 	 *
-	 * @var Notifier
+	 * @var Dispatcher
 	 */
-	private $notifier;
+	private $dispatcher;
 
 	/**
 	 * Channel instance storage, where the email settings are kept.
@@ -59,19 +59,19 @@ class Update_Checker {
 	 *
 	 * @param Settings      $settings Settings.
 	 * @param State         $state    Run state.
-	 * @param Notifier      $notifier Notifier.
+	 * @param Dispatcher    $dispatcher Dispatcher.
 	 * @param Channel_Store $channels Channel instance storage.
 	 */
-	public function __construct( Settings $settings, State $state, Notifier $notifier, Channel_Store $channels ) {
-		$this->settings = $settings;
-		$this->state    = $state;
-		$this->notifier = $notifier;
-		$this->channels = $channels;
+	public function __construct( Settings $settings, State $state, Dispatcher $dispatcher, Channel_Store $channels ) {
+		$this->settings   = $settings;
+		$this->state      = $state;
+		$this->dispatcher = $dispatcher;
+		$this->channels   = $channels;
 	}
 
 	/**
 	 * This is run by the cron. The update check checks the core always, the
-	 * plugins and themes if asked. If updates found email notification sent.
+	 * plugins and themes if asked. If updates are found they are delivered through the enabled channels.
 	 *
 	 * @return void
 	 */
@@ -96,10 +96,13 @@ class Update_Checker {
 		$this->last_notification = new Notification( get_bloginfo(), home_url(), admin_url( 'update-core.php' ), $items, array( 'source' => 'cron' ) );
 
 		if ( $core_updated || $plugins_updated || $themes_updated ) { // Did anything come back as need updating?
-			$message = Legacy_Message::build( $this->last_notification );
-
-			// Send email notification.
-			$delivered = $this->is_enabled( 'email' ) && $this->notifier->send_email_message( $message );
+			// Deliver through every enabled instance. An instance with no channel counts as not delivered.
+			$delivered = false;
+			foreach ( $this->dispatcher->dispatch( $this->last_notification, array_values( $this->channels->all() ) ) as $result ) {
+				if ( $result->is_success() ) {
+					$delivered = true;
+				}
+			}
 
 			// Only remember what was announced if it reached someone, so a failed send is retried.
 			if ( $delivered ) {
@@ -113,19 +116,6 @@ class Update_Checker {
 		$this->state->save( $state );
 	}
 
-
-	/**
-	 * Whether the instance exists and is switched on.
-	 *
-	 * @param string $id Instance id.
-	 *
-	 * @return bool
-	 */
-	private function is_enabled( string $id ): bool {
-		$instance = $this->channels->get( $id );
-
-		return null !== $instance && $instance->is_enabled();
-	}
 
 	/**
 	 * The notification built by the most recent check, for tests.

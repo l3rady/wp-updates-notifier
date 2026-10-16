@@ -105,6 +105,12 @@ class Settings {
 		// Before settings version 7 there was email only, so the upgrade turned email notifications on.
 		$email_on = $current_ver < 7 || $this->is_on( $options['email_notifications'] ?? 0 );
 
+		// 1.x sent from the admin email unless another address was set; now From is only set when asked for (#76).
+		$from = trim( $this->string_setting( $options, 'notify_from', '' ) );
+		if ( 0 === strcasecmp( $from, trim( $admin_email ) ) ) {
+			$from = '';
+		}
+
 		$this->channels->save(
 			new Channel_Instance(
 				'email',
@@ -112,8 +118,11 @@ class Settings {
 				'Email',
 				$email_on,
 				array(
-					'to'   => $this->string_setting( $options, 'notify_to', $admin_email ),
-					'from' => $this->string_setting( $options, 'notify_from', $admin_email ),
+					'to'             => $this->string_setting( $options, 'notify_to', $admin_email ),
+					'from'           => $from,
+					'reply_to'       => '',
+					'format'         => 'text',
+					'subject_prefix' => '',
 				)
 			)
 		);
