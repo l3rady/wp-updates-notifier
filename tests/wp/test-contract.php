@@ -87,8 +87,10 @@ class Test_Contract extends WPUN_Test_Case {
 		$this->assertNotFalse( has_action( 'admin_init' ) );
 		$this->assertNotFalse( has_filter( 'auto_core_update_email' ) );
 		$this->assertNotFalse( has_filter( 'plugin_action_links' ) );
-		$this->assertNotFalse( has_filter( 'sc_wpun_plugins_need_update' ) );
-		$this->assertNotFalse( has_filter( 'sc_wpun_themes_need_update' ) );
+		// Delivery state is per instance now, so the plugin leaves these public filters to third parties.
+		$this->assertFalse( has_filter( 'sc_wpun_plugins_need_update' ) );
+		$this->assertFalse( has_filter( 'sc_wpun_themes_need_update' ) );
+		$this->assertNotFalse( has_action( 'sc_wpun_channel_deleted' ) );
 	}
 
 	/**

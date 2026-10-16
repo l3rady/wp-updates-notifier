@@ -75,12 +75,12 @@ class Test_Settings_State extends WPUN_Test_Case {
 		add_filter( 'pre_wp_mail', '__return_false' );
 
 		$this->plugin()->do_update_check();
-		$this->assertSame( '', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 
 		remove_filter( 'pre_wp_mail', '__return_false' );
 		$this->plugin()->do_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
-		$this->assertSame( '99.0.0', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
 	}
 
 	/**
@@ -97,7 +97,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 
 		$this->plugin()->do_update_check();
 
-		$this->assertSame( '', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 	}
 
 	/**
@@ -115,7 +115,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 
 		$this->plugin()->do_update_check();
 
-		$this->assertSame( '', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 		$this->assertCount( 0, $this->requests_to( 'hooks.slack.com' ) );
 	}
 
@@ -130,7 +130,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		$this->plugin()->do_update_check();
 
 		$this->assertArrayNotHasKey( 'notified', $this->stored_settings() );
-		$this->assertSame( '99.0.0', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
 		$this->assertArrayNotHasKey( 'sc_wpun_state', wp_load_alloptions() );
 	}
 
@@ -178,7 +178,8 @@ class Test_Settings_State extends WPUN_Test_Case {
 	 */
 	public function test_stale_entries_are_pruned() {
 		$this->save_settings();
-		$this->save_state(
+		$this->save_channel_state(
+			'email',
 			array(
 				'plugin' => array(
 					'hello.php'           => '1.0.0',
@@ -190,7 +191,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 
 		$this->plugin()->do_update_check();
 
-		$this->assertSame( array( 'hello.php' => '2.0.0' ), $this->stored_state()['notified']['plugin'] );
+		$this->assertSame( array( 'hello.php' => '2.0.0' ), $this->channel_notified()['plugin'] );
 	}
 
 	/**
@@ -198,11 +199,11 @@ class Test_Settings_State extends WPUN_Test_Case {
 	 */
 	public function test_stale_entries_are_pruned_when_nothing_is_sent() {
 		$this->save_settings();
-		$this->save_state( array( 'plugin' => array( 'hello.php' => '2.0.0' ) ) );
+		$this->save_channel_state( 'email', array( 'plugin' => array( 'hello.php' => '2.0.0' ) ) );
 		$this->set_updates();
 
 		$this->plugin()->do_update_check();
 
-		$this->assertSame( array(), $this->stored_state()['notified']['plugin'] );
+		$this->assertSame( array(), $this->channel_notified()['plugin'] );
 	}
 }

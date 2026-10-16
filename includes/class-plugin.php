@@ -256,13 +256,12 @@ class Plugin {
 		load_plugin_textdomain( 'wp-updates-notifier', false, dirname( plugin_basename( SC_WPUN_FILE ) ) . '/languages/' );
 		// Add Filters.
 		add_filter( 'plugin_action_links', array( $this->settings_page, 'plugin_action_links' ), 10, 2 ); // Add settings link to plugin in plugin list.
-		add_filter( 'sc_wpun_plugins_need_update', array( $this->update_checker, 'check_plugins_against_notified' ) ); // Filter out plugins that need update if already been notified.
-		add_filter( 'sc_wpun_themes_need_update', array( $this->update_checker, 'check_themes_against_notified' ) ); // Filter out themes that need update if already been notified.
 		add_filter( 'auto_core_update_email', array( $this->notifier, 'filter_auto_core_update_email' ), 1 ); // Filter the background update notification email.
 		// Add Actions.
 		add_action( 'admin_menu', array( $this->settings_page, 'admin_settings_menu' ) ); // Add menu to options.
 		add_action( 'admin_init', array( $this->settings_page, 'admin_settings_init' ) ); // Add admin init functions.
 		add_action( 'admin_init', array( $this->update_nag, 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins.
+		add_action( 'sc_wpun_channel_deleted', array( $this->state, 'forget_channel' ) ); // Deleting an instance deletes its delivery state.
 		add_action( 'sc_wpun_enable_cron', array( $this->scheduler, 'enable_cron' ) ); // action to enable cron.
 		add_action( 'sc_wpun_disable_cron', array( $this->scheduler, 'disable_cron' ) ); // action to disable cron.
 		add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.

@@ -106,7 +106,8 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 
 		$this->assertArrayNotHasKey( 'notified', $stored, $name );
 		$this->assertArrayNotHasKey( 'last_check_time', $stored, $name );
-		$this->assertSame( $options['notified'], $state['notified'], $name );
+		$this->assertSame( $options['notified'], $state['legacy_notified'], $name );
+		$this->assertArrayNotHasKey( 'notified', $state, $name );
 		$this->assertSame( (int) $options['last_check_time'], $state['last_check_time'], $name );
 		$this->assertArrayNotHasKey( 'sc_wpun_state', wp_load_alloptions(), "$name: the run state should not be autoloaded." );
 	}

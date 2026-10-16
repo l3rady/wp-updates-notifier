@@ -114,8 +114,21 @@ class Channel_Store {
 			return false;
 		}
 
+		$instance = $this->get( $id );
 		unset( $stored[ $id ] );
 		$this->write( $stored );
+
+		if ( null !== $instance ) {
+			/**
+			 * Fires after a channel instance was deleted.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string           $id       Identifier of the deleted instance.
+			 * @param Channel_Instance $instance The deleted instance.
+			 */
+			do_action( 'sc_wpun_channel_deleted', $id, $instance );
+		}
 
 		return true;
 	}

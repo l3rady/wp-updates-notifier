@@ -180,22 +180,32 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility. What was notified is tracked per channel instance since 2.0.0,
+		 * so this only removes entries every stored instance has been told about at that version.
 		 *
-		 * @param mixed $plugins_need_update Passed on unchanged.
+		 * @deprecated 2.0.0
+		 *
+		 * @param mixed $plugins_need_update Update list.
 		 * @return mixed
 		 */
 		public function check_plugins_against_notified( $plugins_need_update ) {
+			_deprecated_function( __METHOD__, '2.0.0' );
+
 			return sc_wpun()->update_checker()->check_plugins_against_notified( $plugins_need_update );
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility. What was notified is tracked per channel instance since 2.0.0,
+		 * so this only removes entries every stored instance has been told about at that version.
 		 *
-		 * @param mixed $themes_need_update Passed on unchanged.
+		 * @deprecated 2.0.0
+		 *
+		 * @param mixed $themes_need_update Update list.
 		 * @return mixed
 		 */
 		public function check_themes_against_notified( $themes_need_update ) {
+			_deprecated_function( __METHOD__, '2.0.0' );
+
 			return sc_wpun()->update_checker()->check_themes_against_notified( $themes_need_update );
 		}
 
