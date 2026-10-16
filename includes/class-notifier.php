@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Sends the notifications by email and to Slack.
+ * Sends the notifications by email.
  *
  * @internal
  */
@@ -25,7 +25,7 @@ class Notifier {
 	private $settings;
 
 	/**
-	 * Channel instance storage, where the email and Slack settings are kept.
+	 * Channel instance storage, where the email settings are kept.
 	 *
 	 * @var Channel_Store
 	 */
@@ -43,7 +43,7 @@ class Notifier {
 	}
 
 	/**
-	 * A setting of the email or Slack instance, as a string.
+	 * A setting of the email instance, as a string.
 	 *
 	 * @param string $id  Instance id.
 	 * @param string $key Setting name.
@@ -80,40 +80,6 @@ class Notifier {
 		return $response;
 	}
 
-
-	/**
-	 * Sends slack post.
-	 *
-	 * @param string $message Holds message to be posted to slack.
-	 *
-	 * @return bool Success or failure.
-	 */
-	public function send_slack_message( $message ) {
-		$channel     = $this->instance_setting( 'slack', 'channel' );
-		$webhook_url = $this->instance_setting( 'slack', 'webhook_url' );
-
-		$payload = array(
-			'username'   => __( 'WP Updates Notifier', 'wp-updates-notifier' ),
-			'icon_emoji' => ':robot_face:',
-			'text'       => esc_html( $message ),
-		);
-
-		if ( ! empty( $channel ) ) {
-			$payload['channel'] = $channel;
-		}
-
-		$response = wp_remote_post(
-			$webhook_url,
-			array(
-				'method' => 'POST',
-				'body'   => array(
-					'payload' => wp_json_encode( $payload ),
-				),
-			)
-		);
-
-		return is_wp_error( $response );
-	}
 
 	/**
 	 * Get the from email address.

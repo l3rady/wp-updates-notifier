@@ -6,11 +6,11 @@
 [![Active installs](https://img.shields.io/wordpress/plugin/installs/wp-updates-notifier)](https://wordpress.org/plugins/wp-updates-notifier/)
 [![Licence: GPL-2.0-or-later](https://img.shields.io/badge/licence-GPL--2.0--or--later-blue)](LICENSE)
 
-Tells you by email or Slack when your WordPress site has core, plugin or theme updates waiting, so you know without logging in. Useful for sites you rarely visit and for sites you look after for clients.
+Tells you by email when your WordPress site has core, plugin or theme updates waiting, so you know without logging in. Useful for sites you rarely visit and for sites you look after for clients.
 
 - Checks on a schedule (hourly, twice daily, daily or weekly) and tells you about each new version once.
 - Core, plugin and theme updates, optionally only for active plugins and themes.
-- Email to one or more addresses, and Slack through an incoming webhook.
+- Email to one or more addresses.
 - Can send WordPress's own automatic update emails to the same addresses.
 - Hooks for developers to change what is checked and what is sent.
 

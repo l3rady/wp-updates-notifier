@@ -1,7 +1,7 @@
 === WP Updates Notifier ===
 Contributors: l3rady, alleyinteractive
 Donate link: https://scott.cariss.dev/donate
-Tags: updates, notifications, email, slack, monitor
+Tags: updates, notifications, email, monitor
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
@@ -9,7 +9,7 @@ Stable tag: 1.6.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Get an email or Slack message when your WordPress site has core, plugin or theme updates waiting.
+Get an email when your WordPress site has core, plugin or theme updates waiting.
 
 == Description ==
 
@@ -48,6 +48,12 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 * Visit Settings page under Settings -> WP Updates Monitor in your WordPress Administration Area
 * Configure plugin settings
 * Wait for email notifications of updates
+
+== Frequently Asked Questions ==
+
+= What happened to Slack notifications? =
+
+Version 2.0.0 no longer sends notifications to Slack. Your Slack settings have not been deleted, they are kept in case Slack notifications return, and email notifications carry on as before. We plan to add more notification channels in future releases.
 
 == Screenshots ==
 
@@ -129,6 +135,11 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 = 1.0 =
 * Initial release
+
+== Upgrade Notice ==
+
+= 2.0.0 =
+Slack notifications are no longer supported. Your Slack settings are kept and email notifications continue.
 
 == Filters ==
 

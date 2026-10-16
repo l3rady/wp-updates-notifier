@@ -98,6 +98,13 @@ class Plugin {
 	private $update_nag;
 
 	/**
+	 * Notice about Slack no longer being supported.
+	 *
+	 * @var Slack_Notice
+	 */
+	private $slack_notice;
+
+	/**
 	 * Build the components. Nothing is hooked until register() runs.
 	 */
 	public function __construct() {
@@ -109,7 +116,8 @@ class Plugin {
 		$this->channels       = new Channel_Registry();
 		$this->dispatcher     = new Dispatcher( $this->channels );
 		$this->update_checker = new Update_Checker( $this->settings, $this->state, $this->notifier, $this->channel_store );
-		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->scheduler, $this->notifier, $this->channel_store );
+		$this->slack_notice   = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
+		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->scheduler, $this->notifier, $this->channel_store, $this->slack_notice );
 		$this->update_nag     = new Update_Nag( $this->settings );
 	}
 
@@ -195,6 +203,15 @@ class Plugin {
 	}
 
 	/**
+	 * Notice about Slack no longer being supported.
+	 *
+	 * @return Slack_Notice
+	 */
+	public function slack_notice(): Slack_Notice {
+		return $this->slack_notice;
+	}
+
+	/**
 	 * Update nag.
 	 *
 	 * @return Update_Nag
@@ -249,6 +266,9 @@ class Plugin {
 		add_action( 'sc_wpun_enable_cron', array( $this->scheduler, 'enable_cron' ) ); // action to enable cron.
 		add_action( 'sc_wpun_disable_cron', array( $this->scheduler, 'disable_cron' ) ); // action to disable cron.
 		add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.
+		add_action( Scheduler::CRON_NAME, array( $this->slack_notice, 'maybe_send_email' ), 5 ); // Tell the admin once that Slack is no longer supported, before the check.
+		add_action( 'admin_post_' . Slack_Notice::DISMISS_ACTION, array( $this->slack_notice, 'handle_dismiss' ) ); // Dismiss the notice on the settings page.
+		add_filter( 'site_status_tests', array( $this->slack_notice, 'add_site_health_test' ) ); // Site Health test while Slack settings are stored but unused.
 		add_action( 'init', array( $this->scheduler, 'maybe_schedule' ) ); // Put the check back on the schedule if it is missing.
 		add_action( 'update_option_' . Settings::OPT_FIELD, array( $this->scheduler, 'settings_updated' ), 10, 2 ); // Reschedule when the frequency changes.
 	}

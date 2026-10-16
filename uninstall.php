@@ -50,6 +50,9 @@ $sc_wpun_uninstall_site = static function () {
 	wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 };
 
+// User meta is shared by the whole network, so it is removed once.
+delete_metadata( 'user', 0, 'sc_wpun_dismissed_slack_notice', '', true );
+
 if ( is_multisite() ) {
 	// Settings, state and the event are kept per site, so clean every site.
 	foreach ( get_sites(
