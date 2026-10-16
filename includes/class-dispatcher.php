@@ -68,6 +68,17 @@ class Dispatcher {
 	}
 
 	/**
+	 * Whether the channel of an instance is registered.
+	 *
+	 * @param Channel_Instance $instance The instance.
+	 *
+	 * @return bool
+	 */
+	public function is_available( Channel_Instance $instance ): bool {
+		return $this->registry->has( $instance->get_type() );
+	}
+
+	/**
 	 * Deliver a notification through one instance, for example a test message.
 	 *
 	 * Unlike dispatch(), a switched-off or unavailable instance is reported as a failure.

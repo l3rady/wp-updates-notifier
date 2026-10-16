@@ -129,7 +129,7 @@ class Test_Plugin_Details extends WPUN_Test_Case {
 		$this->plugin()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
-		$this->assertSame( '2.0.0', $this->stored_state()['notified']['plugin']['hello.php'] );
+		$this->assertSame( '2.0.0', $this->notified_version( 'plugin', 'hello.php' ) );
 	}
 
 	/**

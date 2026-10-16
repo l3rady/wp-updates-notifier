@@ -32,7 +32,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 	 */
 	public function test_empty_update_data_does_not_warn() {
 		$this->save_settings();
-		$this->save_state( array( 'core' => '99.0.0' ) );
+		$this->save_channel_state( 'email', array( 'core' => array( 'core' => '99.0.0' ) ) );
 		$this->set_updates();
 		delete_site_transient( 'update_core' );
 		$this->fake_http(
@@ -51,7 +51,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 		$this->plugin()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
-		$this->assertSame( '99.0.0', $this->stored_state()['notified']['core'], 'Without data, what was notified is kept.' );
+		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ), 'Without data, what was notified is kept.' );
 	}
 
 	/**
@@ -130,7 +130,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 	 */
 	public function test_only_upgrade_offers_count() {
 		$this->save_settings();
-		$this->save_state( array( 'core' => '98.0.0' ) );
+		$this->save_channel_state( 'email', array( 'core' => array( 'core' => '98.0.0' ) ) );
 		$this->set_core_offers(
 			array(
 				array(
@@ -147,7 +147,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 		$this->plugin()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
-		$this->assertSame( '', $this->stored_state()['notified']['core'], 'Up to date: the record is cleared for the next release.' );
+		$this->assertSame( '', $this->notified_version( 'core', 'core' ), 'Up to date: the record is cleared for the next release.' );
 	}
 
 	/**
