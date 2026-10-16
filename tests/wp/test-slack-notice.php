@@ -230,14 +230,15 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 				'slack_webhook_url'   => self::SLACK_URL,
 			)
 		);
-		$this->save_state( array( 'core' => '5.0.0' ), 1234 );
+		$this->save_state( 1234 );
+		$this->save_channel_state( 'email', array( 'core' => array( 'core' => '5.0.0' ) ) );
 		$this->assertFalse( sc_wpun()->state()->get()['slack_notice_sent'] );
 
 		sc_wpun()->slack_notice()->maybe_send_email();
 
 		$state = sc_wpun()->state()->get();
 		$this->assertTrue( $state['slack_notice_sent'] );
-		$this->assertSame( '5.0.0', $state['notified']['core'] );
+		$this->assertSame( '5.0.0', $state['channels']['email']['notified']['core']['core'] );
 		$this->assertSame( 1234, $state['last_check_time'] );
 	}
 

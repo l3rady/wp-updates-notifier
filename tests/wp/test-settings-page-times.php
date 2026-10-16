@@ -43,7 +43,7 @@ class Test_Settings_Page_Times extends WPUN_Test_Case {
 		update_option( 'timezone_string', 'Pacific/Auckland' );
 		$timestamp = gmmktime( 12, 0, 0, 1, 15, 2024 ); // 01:00 on the 16th in Auckland.
 		$this->save_settings();
-		$this->save_state( array(), $timestamp );
+		$this->save_state( $timestamp );
 
 		$html = $this->render();
 

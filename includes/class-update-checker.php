@@ -55,6 +55,13 @@ class Update_Checker {
 	private $last_notification = null;
 
 	/**
+	 * The results of the last check by instance id.
+	 *
+	 * @var array<string, Delivery_Result>
+	 */
+	private $last_results = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings      $settings Settings.
@@ -70,55 +77,163 @@ class Update_Checker {
 	}
 
 	/**
-	 * This is run by the cron. The update check checks the core always, the
-	 * plugins and themes if asked. If updates are found they are delivered through the enabled channels.
+	 * This is run by the cron. The update check collects what is waiting for an update, then
+	 * delivers to each enabled channel instance the items it has not been told about yet.
+	 *
+	 * What was delivered is remembered per instance, so an instance that failed is tried again
+	 * on the next run without the others sending twice.
 	 *
 	 * @return void
 	 */
 	public function do_update_check() {
-		$options  = $this->settings->get(); // get settings.
-		$state    = $this->state->get();
-		$notified = $state['notified']; // What this run will record, if a notification goes out.
-		$items    = array(); // What the check finds, in the order of the message.
+		$options = $this->settings->get(); // get settings.
+		$state   = $this->state->get();
+		$items   = array(); // What the check finds, in the order of the message.
+		$checked = array(); // Item type => keys still waiting, for the types this run looked at.
 
-		$core_updated = $this->core_update_check( $items, $notified ); // check the WP core for updates.
+		$this->core_update_check( $items, $checked ); // check the WP core for updates.
 		if ( 0 !== $options['notify_plugins'] ) { // are we to check for plugin updates?
-			$plugins_updated = $this->plugins_update_check( $items, $options['notify_plugins'], $notified ); // check for plugin updates.
-		} else {
-			$plugins_updated = false; // no plugin updates.
+			$this->plugins_update_check( $items, $options['notify_plugins'], $checked ); // check for plugin updates.
 		}
 		if ( 0 !== $options['notify_themes'] ) { // are we to check for theme updates?
-			$themes_updated = $this->themes_update_check( $items, $options['notify_themes'], $notified ); // check for theme updates.
-		} else {
-			$themes_updated = false; // no theme updates.
+			$this->themes_update_check( $items, $options['notify_themes'], $checked ); // check for theme updates.
 		}
 
 		$this->last_notification = new Notification( get_bloginfo(), home_url(), admin_url( 'update-core.php' ), $items, array( 'source' => 'cron' ) );
+		$this->last_results      = array();
 
-		if ( $core_updated || $plugins_updated || $themes_updated ) { // Did anything come back as need updating?
-			// Deliver through every enabled instance. An instance with no channel counts as not delivered.
-			$delivered = false;
-			foreach ( $this->dispatcher->dispatch( $this->last_notification, array_values( $this->channels->all() ) ) as $result ) {
-				if ( $result->is_success() ) {
-					$delivered = true;
+		$instances = $this->channels->all();
+		$channels  = $this->state_for_instances( $state, $instances );
+
+		// Forget what is no longer waiting for an update, for every instance whether it is on or not.
+		foreach ( $channels as $id => $entry ) {
+			foreach ( $checked as $type => $pending_keys ) {
+				if ( isset( $entry['notified'][ $type ] ) ) {
+					$channels[ $id ]['notified'][ $type ] = array_intersect_key( $entry['notified'][ $type ], array_flip( $pending_keys ) );
+				}
+			}
+		}
+
+		foreach ( $instances as $id => $instance ) {
+			if ( ! $instance->is_enabled() ) {
+				continue; // Switched off: nothing is sent or recorded, and a pending skip waits.
+			}
+			$entry = $channels[ $id ] ?? array(
+				'notified'     => array(),
+				'skip_pending' => false,
+			); // No entry: no history, so everything waiting is new to it.
+
+			$for_instance = array();
+			foreach ( $this->items_for_instance( $instance, $items ) as $item ) {
+				if ( ( $entry['notified'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version() ) {
+					$for_instance[] = $item;
 				}
 			}
 
-			// Only remember what was announced if it reached someone, so a failed send is retried.
-			if ( $delivered ) {
-				$state['notified'] = $notified;
+			if ( $entry['skip_pending'] ) {
+				if ( ! $this->dispatcher->is_available( $instance ) ) {
+					continue; // Keep the flag until the channel is there.
+				}
+				$entry['skip_pending'] = false;
+				$entry['notified']     = $this->record( $entry['notified'], $for_instance );
+			} elseif ( array() !== $for_instance ) {
+				$result                    = $this->dispatcher->send_one( $this->last_notification->with_items( $for_instance ), $instance );
+				$this->last_results[ $id ] = $result;
+				if ( $result->is_success() ) {
+					$entry['notified'] = $this->record( $entry['notified'], $for_instance );
+				}
+			} else {
+				continue;
 			}
-		} else {
-			$state['notified'] = $notified; // Nothing new: keep the forgetting of updated items.
+
+			$channels[ $id ] = $entry;
 		}
 
+		$state['channels']        = $channels;
 		$state['last_check_time'] = time();
+		unset( $state['legacy_notified'] ); // Every instance that existed has taken its share; later ones start clean.
 		$this->state->save( $state );
 	}
 
+	/**
+	 * The per-instance state to work on: deleted instances pruned, and instances with no entry given
+	 * the pre-2.0.0 history, if the state still has it.
+	 *
+	 * @param array<string, mixed>            $state     The stored run state.
+	 * @param array<string, Channel_Instance> $instances The stored instances.
+	 *
+	 * @return array<string, array{notified: array<string, array<string, string>>, skip_pending: bool}>
+	 */
+	private function state_for_instances( array $state, array $instances ): array {
+		$channels = is_array( $state['channels'] ?? null ) ? $state['channels'] : array();
+		$channels = array_intersect_key( $channels, $instances );
+		$legacy   = is_array( $state['legacy_notified'] ?? null ) ? $state['legacy_notified'] : null;
+
+		if ( null !== $legacy ) {
+			$generic = array();
+			if ( ! empty( $legacy['core'] ) ) {
+				$generic['core'] = array( 'core' => (string) $legacy['core'] );
+			}
+			foreach ( array( 'plugin', 'theme' ) as $type ) {
+				if ( ! empty( $legacy[ $type ] ) && is_array( $legacy[ $type ] ) ) {
+					$generic[ $type ] = $legacy[ $type ];
+				}
+			}
+			foreach ( array_keys( $instances ) as $id ) {
+				$channels[ $id ] ??= array(
+					'notified'     => $generic,
+					'skip_pending' => false,
+				);
+			}
+		}
+
+		return $channels;
+	}
 
 	/**
-	 * The notification built by the most recent check, for tests.
+	 * Add items to a list of notified versions.
+	 *
+	 * @param array<string, array<string, string>> $notified Notified versions by item type and key.
+	 * @param Notification_Item[]                  $items    Items that were announced.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	private function record( array $notified, array $items ): array {
+		foreach ( $items as $item ) {
+			$notified[ $item->get_type() ][ $item->get_key() ] = $item->get_new_version();
+		}
+
+		return $notified;
+	}
+
+	/**
+	 * The items an instance is to be told about.
+	 *
+	 * Routing rules (item types, active only, core major only, the add-on filter) belong here.
+	 * For now every instance gets everything the global settings let through.
+	 *
+	 * @param Channel_Instance    $instance The instance.
+	 * @param Notification_Item[] $items    Everything waiting for an update.
+	 *
+	 * @return Notification_Item[]
+	 */
+	private function items_for_instance( Channel_Instance $instance, array $items ): array { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable, Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Seam for routing.
+		return $items;
+	}
+
+	/**
+	 * The results of the most recent check by instance id, for the instances that were sent to, for tests.
+	 *
+	 * @internal
+	 *
+	 * @return array<string, Delivery_Result>
+	 */
+	public function last_results(): array {
+		return $this->last_results;
+	}
+
+	/**
+	 * The notification built by the most recent check, with every item that was waiting, for tests.
 	 *
 	 * @internal
 	 *
@@ -131,44 +246,37 @@ class Update_Checker {
 	/**
 	 * Checks to see if any WP core updates
 	 *
-	 * @param Notification_Item[] $items    Collects the items to report.
-	 * @param array               $notified What has been notified about; updated with what this check reports.
-	 * @phpstan-param array{core: string, plugin: array<string, string>, theme: array<string, string>} $notified
+	 * @param Notification_Item[]          $items   Collects the items to report.
+	 * @param array<string, array<string>> $checked Collects the keys still waiting, by item type.
 	 *
-	 * @return bool
+	 * @return void
 	 */
-	private function core_update_check( array &$items, array &$notified ): bool {
+	private function core_update_check( array &$items, array &$checked ): void {
 		do_action( 'wp_version_check' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_core = get_site_transient( 'update_core' ); // get information of updates.
 
 		// No usable data (new site, api.wordpress.org unreachable): we know nothing,
 		// so keep what was notified instead of forgetting it.
 		if ( ! is_object( $update_core ) || empty( $update_core->updates ) || ! is_array( $update_core->updates ) ) {
-			return false;
+			return;
 		}
 
 		$new_core_ver = $this->core_upgrade_offer( $update_core->updates );
 		if ( '' === $new_core_ver ) {
-			$notified['core'] = ''; // no updates lets set this nothing.
-			return false; // no updates return false.
+			$checked['core'] = array(); // No update is waiting, so nothing about core stays notified.
+			return;
 		}
 
-		if ( $new_core_ver === $notified['core'] ) { // have we already notified about this version?
-			return false; // There are updates but we have already notified in the past.
-		}
-
-		$old_core_ver     = wp_get_wp_version(); // Read from version.php, so plugins that change the $wp_version global do not affect it.
-		$items[]          = new Notification_Item(
+		$checked['core'] = array( 'core' );
+		$items[]         = new Notification_Item(
 			array(
 				'type'            => 'core',
 				'key'             => 'core',
 				'name'            => 'WordPress',
-				'current_version' => $old_core_ver,
+				'current_version' => wp_get_wp_version(), // Read from version.php, so plugins that change the $wp_version global do not affect it.
 				'new_version'     => $new_core_ver,
 			)
 		);
-		$notified['core'] = $new_core_ver; // set core version we are notifying about.
-		return true; // we have updates so return true.
 	}
 
 	/**
@@ -196,20 +304,19 @@ class Update_Checker {
 	/**
 	 * Check to see if any plugin updates.
 	 *
-	 * @param Notification_Item[] $items        Collects the items to report.
-	 * @param int                 $all_or_active Should we look for all plugins or just active ones.
-	 * @param array               $notified      What has been notified about; updated with what this check reports.
-	 * @phpstan-param array{core: string, plugin: array<string, string>, theme: array<string, string>} $notified
+	 * @param Notification_Item[]          $items         Collects the items to report.
+	 * @param int                          $all_or_active Should we look for all plugins or just active ones.
+	 * @param array<string, array<string>> $checked       Collects the keys still waiting, by item type.
 	 *
-	 * @return bool
+	 * @return void
 	 */
-	private function plugins_update_check( array &$items, $all_or_active, array &$notified ): bool {
+	private function plugins_update_check( array &$items, $all_or_active, array &$checked ): void {
 		do_action( 'wp_update_plugins' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates.
 		$pending        = $this->normalise_plugin_updates( is_object( $update_plugins ) && isset( $update_plugins->response ) ? $update_plugins->response : array() );
 
-		// Forget plugins that are no longer waiting for an update (updated or deleted).
-		$notified['plugin'] = array_intersect_key( $notified['plugin'], $pending );
+		// Everything still waiting, before any filtering, so the instances can forget plugins that were updated or deleted.
+		$checked['plugin'] = array_map( 'strval', array_keys( $pending ) );
 
 		if ( ! empty( $pending ) ) { // any plugin updates available?
 			$plugins_need_update = $pending; // plugins that need updating.
@@ -231,7 +338,7 @@ class Update_Checker {
 					} elseif ( '' !== $data->url ) {
 						$links['details'] = $data->url;
 					}
-					$items[]                             = new Notification_Item(
+					$items[] = new Notification_Item(
 						array(
 							'type'            => 'plugin',
 							'key'             => (string) $key,
@@ -243,32 +350,28 @@ class Update_Checker {
 							'flags'           => $this->plugin_flags( $data ),
 						)
 					);
-					$notified['plugin'][ (string) $key ] = (string) $data->new_version; // set plugin version we are notifying about.
 				}
-				return true; // we have plugin updates return true.
 			}
 		}
-		return false; // No plugin updates so return false.
 	}
 
 
 	/**
 	 * Check to see if any theme updates.
 	 *
-	 * @param Notification_Item[] $items        Collects the items to report.
-	 * @param int                 $all_or_active Should we look for all themes or just active ones.
-	 * @param array               $notified      What has been notified about; updated with what this check reports.
-	 * @phpstan-param array{core: string, plugin: array<string, string>, theme: array<string, string>} $notified
+	 * @param Notification_Item[]          $items         Collects the items to report.
+	 * @param int                          $all_or_active Should we look for all themes or just active ones.
+	 * @param array<string, array<string>> $checked       Collects the keys still waiting, by item type.
 	 *
-	 * @return bool
+	 * @return void
 	 */
-	private function themes_update_check( array &$items, $all_or_active, array &$notified ): bool {
+	private function themes_update_check( array &$items, $all_or_active, array &$checked ): void {
 		do_action( 'wp_update_themes' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_themes = get_site_transient( 'update_themes' ); // get information of updates.
 		$pending       = $this->normalise_theme_updates( is_object( $update_themes ) && isset( $update_themes->response ) ? $update_themes->response : array() );
 
-		// Forget themes that are no longer waiting for an update (updated or deleted).
-		$notified['theme'] = array_intersect_key( $notified['theme'], $pending );
+		// Everything still waiting, before any filtering, so the instances can forget themes that were updated or deleted.
+		$checked['theme'] = array_map( 'strval', array_keys( $pending ) );
 
 		if ( ! empty( $pending ) ) { // any theme updates available?
 			$themes_need_update = $pending; // themes that need updating.
@@ -279,8 +382,8 @@ class Update_Checker {
 			$themes_need_update = $this->normalise_theme_updates( apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ) ); // additional filtering of themes need update; filters may return anything.
 			if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 				foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating.
-					$theme_info                         = wp_get_theme( $key ); // get theme info.
-					$items[]                            = new Notification_Item(
+					$theme_info = wp_get_theme( $key ); // get theme info.
+					$items[]    = new Notification_Item(
 						array(
 							'type'            => 'theme',
 							'key'             => (string) $key,
@@ -290,12 +393,9 @@ class Update_Checker {
 							'links'           => '' !== $data['url'] ? array( 'details' => $data['url'] ) : array(),
 						)
 					);
-					$notified['theme'][ (string) $key ] = $data['new_version']; // set theme version we are notifying about.
 				}
-				return true; // we have theme updates return true.
 			}
 		}
-		return false; // No theme updates so return false.
 	}
 
 
@@ -480,47 +580,64 @@ class Update_Checker {
 	}
 
 	/**
-	 * Filter for removing plugins from update list if already been notified about
+	 * Remove plugins from an update list if every channel instance has been told about that version.
+	 *
+	 * Kept for the deprecated SC_WP_Updates_Notifier method of the same name: the update check no
+	 * longer uses it, because what was notified is tracked per instance.
 	 *
 	 * @param array<mixed> $plugins_need_update Array of plugins that need an update.
 	 *
 	 * @return array<mixed> $plugins_need_update
 	 */
 	public function check_plugins_against_notified( $plugins_need_update ) {
-		if ( ! is_array( $plugins_need_update ) ) {
-			return $plugins_need_update;
-		}
-		$notified = $this->state->get()['notified'];
-		foreach ( $plugins_need_update as $key => $data ) { // loop through plugins that need update.
-			if ( isset( $notified['plugin'][ $key ], $data->new_version ) ) { // has this plugin been notified before?
-				if ( (string) $data->new_version === $notified['plugin'][ $key ] ) { // does this plugin version match that of the one that's been notified?
-					unset( $plugins_need_update[ $key ] ); // don't notify this plugin as has already been notified.
-				}
-			}
-		}
-		return $plugins_need_update;
+		return $this->without_notified( $plugins_need_update, 'plugin' );
 	}
 
-
 	/**
-	 * Filter for removing themes from update list if already been notified about
+	 * Remove themes from an update list if every channel instance has been told about that version.
+	 *
+	 * Kept for the deprecated SC_WP_Updates_Notifier method of the same name.
 	 *
 	 * @param array<mixed> $themes_need_update Array of themes that need an update.
 	 *
 	 * @return array<mixed> $themes_need_update
 	 */
 	public function check_themes_against_notified( $themes_need_update ) {
-		if ( ! is_array( $themes_need_update ) ) {
-			return $themes_need_update;
+		return $this->without_notified( $themes_need_update, 'theme' );
+	}
+
+	/**
+	 * Remove the entries of an update list that every stored instance has been told about.
+	 *
+	 * @param mixed  $needing_update Update list, keyed by plugin file or stylesheet.
+	 * @param string $type           Item type: plugin or theme.
+	 *
+	 * @return mixed The list, unchanged if it is not an array or no instance has state.
+	 */
+	private function without_notified( $needing_update, string $type ) {
+		$instances = $this->channels->all();
+		if ( ! is_array( $needing_update ) || array() === $instances ) {
+			return $needing_update;
 		}
-		$notified = $this->state->get()['notified'];
-		foreach ( $themes_need_update as $key => $data ) { // loop through themes that need update.
-			if ( isset( $notified['theme'][ $key ], $data['new_version'] ) ) { // has this theme been notified before?
-				if ( (string) $data['new_version'] === $notified['theme'][ $key ] ) { // does this theme version match that of the one that's been notified?
-					unset( $themes_need_update[ $key ] ); // don't notify this theme as has already been notified.
+
+		$channels = $this->state->get()['channels'];
+		foreach ( $needing_update as $key => $data ) {
+			$version = is_object( $data ) ? ( $data->new_version ?? null ) : ( is_array( $data ) ? ( $data['new_version'] ?? null ) : null );
+			if ( ! is_scalar( $version ) ) {
+				continue;
+			}
+			$told_all = true;
+			foreach ( array_keys( $instances ) as $id ) {
+				if ( ( $channels[ $id ]['notified'][ $type ][ (string) $key ] ?? null ) !== (string) $version ) {
+					$told_all = false;
+					break;
 				}
 			}
+			if ( $told_all ) {
+				unset( $needing_update[ $key ] );
+			}
 		}
-		return $themes_need_update;
+
+		return $needing_update;
 	}
 }

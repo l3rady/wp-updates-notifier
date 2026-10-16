@@ -90,7 +90,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->plugin()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
-		$this->assertSame( '99.0.0', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
 	}
 
 	/**
@@ -112,12 +112,12 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 */
 	public function test_the_core_record_is_cleared_once_core_is_current() {
 		$this->save_settings();
-		$this->save_state( array( 'core' => '99.0.0' ) );
+		$this->save_channel_state( 'email', array( 'core' => array( 'core' => '99.0.0' ) ) );
 		$this->set_updates();
 
 		$this->plugin()->do_update_check();
 
-		$this->assertSame( '', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 	}
 
 	/**
@@ -133,7 +133,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$body = $this->sent_mail()->body;
 		$this->assertStringContainsString( 'Hello Dolly', $body );
 		$this->assertStringContainsString( '2.0.0', $body );
-		$this->assertSame( '2.0.0', $this->stored_state()['notified']['plugin']['hello.php'] );
+		$this->assertSame( '2.0.0', $this->notified_version( 'plugin', 'hello.php' ) );
 	}
 
 	/**
@@ -203,7 +203,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertStringContainsString( '99.3', $this->sent_mail()->body );
-		$this->assertSame( '99.3', $this->stored_state()['notified']['theme'][ $theme ] );
+		$this->assertSame( '99.3', $this->notified_version( 'theme', $theme ) );
 	}
 
 	/**
@@ -273,7 +273,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		);
 		sort( $recipients );
 		$this->assertSame( array( 'client@example.org', 'ops@example.org' ), $recipients );
-		$this->assertSame( '99.0.0', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
 	}
 
 	/**
@@ -291,11 +291,11 @@ class Test_Update_Check extends WPUN_Test_Case {
 
 		$this->plugin()->do_update_check();
 
-		$this->assertSame( '', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 
 		remove_filter( 'pre_wp_mail', '__return_false' );
 		$this->plugin()->do_update_check();
-		$this->assertSame( '99.0.0', $this->stored_state()['notified']['core'] );
+		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
 

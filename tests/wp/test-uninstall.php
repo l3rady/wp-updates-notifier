@@ -31,7 +31,7 @@ class Test_Uninstall extends WPUN_Test_Case {
 	 */
 	private function leave_traces() {
 		$this->save_settings();
-		$this->save_state( array( 'core' => '99.0.0' ) );
+		$this->save_channel_state( 'email', array( 'core' => array( 'core' => '99.0.0' ) ) );
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 		wp_schedule_event( time(), 'daily', 'sc_wpun_update_check' );
 		set_transient( 'sc_wpun_send_test_email', 1 );

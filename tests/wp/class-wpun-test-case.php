@@ -206,12 +206,28 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Store the run state (what was notified, when the last check ran).
+	 * Store the run state with no per-instance history.
+	 *
+	 * @param int|false $last_check_time Time of the last check.
+	 */
+	protected function save_state( $last_check_time = false ) {
+		update_option(
+			'sc_wpun_state',
+			array(
+				'channels'        => array(),
+				'last_check_time' => $last_check_time,
+			),
+			false
+		);
+	}
+
+	/**
+	 * Store the run state the way versions before 2.0.0 kept it: one global list of what was notified.
 	 *
 	 * @param array     $notified        Notified versions: [ 'core' => , 'plugin' => [], 'theme' => [] ].
 	 * @param int|false $last_check_time Time of the last check.
 	 */
-	protected function save_state( array $notified = array(), $last_check_time = false ) {
+	protected function save_legacy_state( array $notified = array(), $last_check_time = false ) {
 		update_option(
 			'sc_wpun_state',
 			array(
@@ -227,6 +243,46 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 			),
 			false
 		);
+	}
+
+	/**
+	 * Store what a channel instance has been told about, keeping the rest of the state.
+	 *
+	 * @param string $id       Instance id.
+	 * @param array  $notified Versions by item type and key: [ 'plugin' => [ 'hello.php' => '2.0.0' ] ].
+	 * @param bool   $skip_pending Whether the next run records what is pending without sending it.
+	 */
+	protected function save_channel_state( $id, array $notified, $skip_pending = false ) {
+		$state                    = sc_wpun()->state()->get();
+		$state['channels'][ $id ] = array(
+			'notified'     => $notified,
+			'skip_pending' => $skip_pending,
+		);
+		update_option( 'sc_wpun_state', $state, false );
+	}
+
+	/**
+	 * Everything a channel instance has been told about, by item type and key.
+	 *
+	 * @param string $id Instance id.
+	 * @return array
+	 */
+	protected function channel_notified( $id = 'email' ) {
+		$state = $this->stored_state();
+
+		return $state['channels'][ $id ]['notified'] ?? array();
+	}
+
+	/**
+	 * The version a channel instance has been told about for an item, or an empty string.
+	 *
+	 * @param string $type Item type.
+	 * @param string $key  Item key.
+	 * @param string $id   Instance id.
+	 * @return string
+	 */
+	protected function notified_version( $type, $key, $id = 'email' ) {
+		return $this->channel_notified( $id )[ $type ][ $key ] ?? '';
 	}
 
 	/**
