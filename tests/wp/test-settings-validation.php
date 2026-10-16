@@ -269,26 +269,63 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A programmatic update never queues a test send, even if the request happens to carry the button.
+	 * No save queues a test send any more: the transient of the old flow is never set, even if the request carries the old button.
 	 */
-	public function test_programmatic_updates_do_not_queue_test_sends() {
+	public function test_saving_never_queues_a_test_send() {
+		$_POST['option_page']     = 'sc_wpun_settings';
+		$_POST['_wpnonce']        = wp_create_nonce( 'sc_wpun_settings-options' );
 		$_POST['submitwithemail'] = 'Save settings with test email';
 
+		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
 		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
 
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ) );
 	}
 
 	/**
-	 * The settings form itself still queues the test send (until #67 replaces the mechanism).
+	 * Email can be turned on with a recipient and no From address; Reply-To is stored and invalid ones are refused.
 	 */
-	public function test_the_settings_form_still_queues_test_sends() {
-		$_POST['option_page']     = 'sc_wpun_settings';
-		$_POST['_wpnonce']        = wp_create_nonce( 'sc_wpun_settings-options' );
-		$_POST['submitwithemail'] = 'Save settings with test email';
+	public function test_from_is_optional_and_reply_to_is_stored() {
+		$this->plugin()->sc_wpun_settings_validate(
+			$this->settings(
+				array(
+					'notify_from'     => '',
+					'notify_reply_to' => 'reply@example.org',
+				)
+			)
+		);
+		$email = $this->stored_instance( 'email' );
+		$this->assertTrue( $email->is_enabled() );
+		$this->assertSame( '', $email->get_setting( 'from' ) );
+		$this->assertSame( 'reply@example.org', $email->get_setting( 'reply_to' ) );
 
-		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
+		$this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_reply_to' => 'nope' ) ) );
+		$this->assertSame( 'reply@example.org', $this->instance_setting( 'email', 'reply_to' ), 'The previous value is kept.' );
+		$this->assertArrayHasKey( 'sc_wpun_settings_email_notifications_notify_reply_to', $this->errors() );
+	}
 
-		$this->assertSame( 1, get_transient( 'sc_wpun_send_test_email' ) );
+	/**
+	 * The form does not show the format and subject prefix, so saving keeps them.
+	 */
+	public function test_saving_keeps_the_settings_the_form_does_not_show() {
+		sc_wpun_channels()->save(
+			new WPUN\Channel_Instance(
+				'email',
+				'email',
+				'Email',
+				true,
+				array(
+					'to'             => 'a@example.org',
+					'format'         => 'html',
+					'subject_prefix' => '[Site]',
+				)
+			)
+		);
+
+		$this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_to' => 'b@example.org' ) ) );
+
+		$this->assertSame( 'b@example.org', $this->instance_setting( 'email', 'to' ) );
+		$this->assertSame( 'html', $this->instance_setting( 'email', 'format' ) );
+		$this->assertSame( '[Site]', $this->instance_setting( 'email', 'subject_prefix' ) );
 	}
 }

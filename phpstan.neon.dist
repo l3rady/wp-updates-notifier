@@ -8,6 +8,7 @@ parameters:
     paths:
         - class-sc-wp-updates-notifier.php
         - includes
+        - modules
         - uninstall.php
     scanFiles:
         - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php

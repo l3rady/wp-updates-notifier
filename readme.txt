@@ -139,7 +139,7 @@ Version 2.0.0 no longer sends notifications to Slack. Your Slack settings have n
 == Upgrade Notice ==
 
 = 2.0.0 =
-Slack notifications are no longer supported. Your Slack settings are kept and email notifications continue.
+Slack notifications are no longer supported; their settings are kept. Emails have a new subject, are sent from the WordPress default address unless you set one, and contain no HTML entities.
 
 == Filters ==
 
@@ -147,8 +147,10 @@ Two filters have been provided to allow you to alter the email subject and email
 
 <h4>sc_wpun_email_subject</h4>
 
-@parameters:<br /> 
-$email_subject - the email subject to be filtered.
+@parameters:<br />
+$email_subject - the email subject to be filtered.<br />
+$notification - (since 2.0.0) the WPUN\Notification being sent.<br />
+$instance - (since 2.0.0) the WPUN\Channel_Instance sending it.
 
 <strong>Example:</strong>
 `
@@ -165,7 +167,9 @@ add_filter( 'sc_wpun_email_subject', 'alter_wp_updates_notifier_email_subject' )
 <h4>sc_wpun_email_content</h4>
 
 @parameters:<br />
-$message - the content of the email to be filtered
+$message - the content of the email to be filtered. Since 2.0.0 it is plain text that is not HTML-escaped, or HTML if the email format is set to HTML.<br />
+$notification - (since 2.0.0) the WPUN\Notification being sent.<br />
+$instance - (since 2.0.0) the WPUN\Channel_Instance sending it.
 
 <strong>Example:</strong>
 `

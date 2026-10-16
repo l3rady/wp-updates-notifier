@@ -11,6 +11,7 @@
 
 	<file>class-sc-wp-updates-notifier.php</file>
 	<file>includes</file>
+	<file>modules</file>
 	<file>uninstall.php</file>
 	<file>rector.php</file>
 	<file>tests</file>

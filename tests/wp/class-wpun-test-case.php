@@ -129,6 +129,9 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 			'email_notifications'    => 1,
 			'notify_to'              => 'ops@example.org',
 			'notify_from'            => 'notifier@example.org',
+			'notify_reply_to'        => '',
+			'email_format'           => 'text',
+			'email_subject_prefix'   => '',
 			'slack_notifications'    => 0,
 			'slack_webhook_url'      => '',
 			'slack_channel_override' => '',
@@ -177,8 +180,11 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 				'Email',
 				1 === (int) $all['email_notifications'],
 				array(
-					'to'   => $all['notify_to'],
-					'from' => $all['notify_from'],
+					'to'             => $all['notify_to'],
+					'from'           => $all['notify_from'],
+					'reply_to'       => $all['notify_reply_to'],
+					'format'         => $all['email_format'],
+					'subject_prefix' => $all['email_subject_prefix'],
 				)
 			)
 		);

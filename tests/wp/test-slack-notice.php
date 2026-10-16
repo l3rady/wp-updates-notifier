@@ -405,4 +405,30 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 		$this->assertSame( '', ob_get_clean() );
 		$this->assertCount( 0, $this->requests_to( 'hooks.slack.com' ) );
 	}
+
+	/**
+	 * A channel of type slack (a stand-in for a Slack module) receives the update through the dispatcher,
+	 * the stored instance is not changed, and the notice no longer applies.
+	 */
+	public function test_a_registered_slack_channel_receives_the_update() {
+		$this->save_settings(
+			array(
+				'slack_notifications' => 1,
+				'slack_webhook_url'   => self::SLACK_URL,
+			)
+		);
+		$channel = new Test_Channel( 'slack' );
+		sc_wpun()->channels()->register( $channel );
+		$before = get_option( 'sc_wpun_channels' );
+		$this->set_updates( '99.0.0' );
+
+		do_action( 'sc_wpun_update_check' );
+
+		$this->assertCount( 1, $channel->received['slack'] );
+		$this->assertCount( 0, $this->requests_to( 'hooks.slack.com' ) );
+		$this->assertSame( $before, get_option( 'sc_wpun_channels' ) );
+		$this->assertFalse( sc_wpun()->slack_notice()->applies() );
+		$this->assertFalse( $this->stored_state()['slack_notice_sent'] ?? false );
+		$this->assertSame( 1, $this->sent_mail_count(), 'Only the update email.' );
+	}
 }

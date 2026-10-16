@@ -13,6 +13,27 @@ use WPUN\Channel_Registry;
 class Test_Channel_Registry extends WPUN_Test_Case {
 
 	/**
+	 * Start without the built-in modules, so the tests see only the channels they register.
+	 */
+	public function set_up() {
+		parent::set_up();
+
+		remove_all_actions( 'sc_wpun_register_channels' );
+	}
+
+	/**
+	 * The email module registers itself through the hook, on a fresh registry.
+	 */
+	public function test_the_email_module_is_registered_through_the_hook() {
+		require WP_PLUGIN_DIR . '/wp-updates-notifier/modules/email/email.php';
+
+		$registry = new Channel_Registry();
+
+		$this->assertTrue( $registry->has( 'email' ) );
+		$this->assertInstanceOf( WPUN\Modules\Email\Email_Channel::class, $registry->get( 'email' ) );
+	}
+
+	/**
 	 * Registered channels can be read back.
 	 */
 	public function test_register_get_has_all_and_unregister() {

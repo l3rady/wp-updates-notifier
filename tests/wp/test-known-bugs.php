@@ -11,9 +11,8 @@
  */
 
 /**
- * One section per bug issue.
- *
- * @group known-bug
+ * One section per bug issue. A test is tagged `@group known-bug` while its bug is open; the tests of
+ * fixed bugs stay here without the tag, so they run with the normal suite.
  */
 class Test_Known_Bugs extends WPUN_Test_Case {
 
@@ -95,7 +94,7 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #67: the settings save queues a test send in a global transient that the next page load consumes.
+	 * #67: saving the settings queues no test send; the button of the old flow is gone and the test has its own form.
 	 */
 	public function test_67_saving_settings_does_not_queue_a_test_in_a_global_transient() {
 		$this->save_settings();
@@ -108,24 +107,27 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
 
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ) );
+		$this->assertStringNotContainsString( 'submitwithemail', $this->render_settings_page() );
 	}
 
 	/**
 	 * #72: the page heading is an h2.
+	 *
+	 * @group known-bug
 	 */
 	public function test_72_the_settings_page_has_an_h1() {
 		$this->assertStringContainsString( '<h1', $this->render_settings_page() );
 	}
 
 	/**
-	 * #76: the configured address is forced as the From address.
+	 * #76: the configured address is not forced as the From address.
 	 */
 	public function test_76_the_from_address_is_not_forced() {
-		$this->save_settings( array( 'notify_from' => 'ops@example.org' ) );
+		$this->save_settings( array( 'notify_from' => '' ) );
 		$this->set_updates( '99.0.0' );
 
 		$this->plugin()->do_update_check();
 
-		$this->assertNotSame( 'ops@example.org', tests_retrieve_phpmailer_instance()->From );
+		$this->assertStringStartsWith( 'wordpress@', tests_retrieve_phpmailer_instance()->From );
 	}
 }
