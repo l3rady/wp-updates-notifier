@@ -9,6 +9,7 @@ use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
 use WPUN\Dispatcher;
 use WPUN\Notification;
+use WPUN\Notification_Item;
 
 /**
  * The dispatcher.
@@ -61,7 +62,17 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	 * @return Notification
 	 */
 	private function notification() {
-		return new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array() );
+		$item = new Notification_Item(
+			array(
+				'type'            => 'core',
+				'key'             => 'core',
+				'name'            => 'WordPress',
+				'current_version' => '6.0',
+				'new_version'     => '6.1',
+			)
+		);
+
+		return new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $item ) );
 	}
 
 	/**
@@ -109,7 +120,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 
 		$this->assertSame( array( 'a' ), array_keys( $results ) );
 		$this->assertTrue( $results['a']->is_success() );
-		$this->assertSame( array( $notification ), $this->channel->received['a'] );
+		$this->assertEquals( array( $notification ), $this->channel->received['a'] );
 	}
 
 	/**

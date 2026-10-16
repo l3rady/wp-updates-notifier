@@ -92,7 +92,7 @@ final class Notification_Item {
 	 *     @type string   $new_version     Version available.
 	 *     @type array    $links           Label => URL.
 	 *     @type string[] $notes           Extra lines.
-	 *     @type array    $flags           Name => scalar value.
+	 *     @type array    $flags           Name => scalar value. Plugin and theme items from the update check carry a bool `active` flag, and plugins also `tested`, `requires_php` and `requires_wp`.
 	 * }
 	 *
 	 * @throws InvalidArgumentException If the type is not valid.
