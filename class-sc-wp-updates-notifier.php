@@ -51,6 +51,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 defined( 'SC_WPUN_FILE' ) || define( 'SC_WPUN_FILE', __FILE__ );
 
+/*
+ * Version of the public API (channels, routing, hooks), separate from the plugin version.
+ * Semver: a minor release adds API, a major release removes or changes some. Add-ons check
+ * it with sc_wpun_api_supports().
+ */
+defined( 'SC_WPUN_API_VERSION' ) || define( 'SC_WPUN_API_VERSION', '1.0.0' );
+
 require_once __DIR__ . '/includes/class-settings.php';
 require_once __DIR__ . '/includes/class-state.php';
 require_once __DIR__ . '/includes/class-scheduler.php';
@@ -527,6 +534,55 @@ if ( ! function_exists( 'sc_wpun_channels' ) ) {
 	 */
 	function sc_wpun_channels(): \WPUN\Channel_Store {
 		return sc_wpun()->channel_store();
+	}
+}
+if ( ! function_exists( 'sc_wpun_api_version' ) ) {
+	/**
+	 * The version of the public API, for add-ons to check what they can use.
+	 *
+	 * Semver, separate from the plugin version: a minor version adds API, a major version
+	 * removes or changes some. Most add-ons want sc_wpun_api_supports() instead.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return string For example "1.0.0".
+	 */
+	function sc_wpun_api_version(): string {
+		return SC_WPUN_API_VERSION;
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_api_supports' ) ) {
+	/**
+	 * Whether the installed plugin offers the API version an add-on was written for.
+	 *
+	 * True when the API has the same major version and is at least as new: an add-on written
+	 * for 1.2.0 works with 1.2.0 and 1.5.0, but not with 1.1.0 or 2.0.0.
+	 *
+	 * Check it before using the API, and show an admin notice instead of failing when it is
+	 * false. Declare `Requires Plugins: wp-updates-notifier` in the add-on's header too, so
+	 * WordPress makes sure the plugin is active:
+	 *
+	 *     add_action( 'plugins_loaded', function () {
+	 *         if ( ! function_exists( 'sc_wpun_api_supports' ) || ! sc_wpun_api_supports( '1.0.0' ) ) {
+	 *             add_action( 'admin_notices', 'my_addon_needs_newer_updates_notifier' );
+	 *             return;
+	 *         }
+	 *         add_action( 'sc_wpun_register_channels', 'my_addon_register_channel' );
+	 *     } );
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $required The API version the add-on needs, for example "1.0.0".
+	 *
+	 * @return bool
+	 */
+	function sc_wpun_api_supports( string $required ): bool {
+		$available = sc_wpun_api_version();
+
+		return 1 === preg_match( '/^\d+\.\d+\.\d+$/D', $required )
+			&& strtok( $required, '.' ) === strtok( $available, '.' )
+			&& version_compare( $available, $required, '>=' );
 	}
 }
 // phpcs:enable Universal.Files.SeparateFunctionsFromOO.Mixed
