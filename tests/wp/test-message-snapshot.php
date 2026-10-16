@@ -1,6 +1,6 @@
 <?php
 /**
- * The exact text of the notification (email body and Slack text).
+ * The exact text of the notification (email body).
  *
  * The snapshots in tests/fixtures/snapshots freeze today's message, known
  * flaws included (HTML entities, #65), so that reworking how the message is
@@ -16,18 +16,12 @@
 class Test_Message_Snapshot extends WPUN_Test_Case {
 
 	/**
-	 * Slack answers every post.
+	 * A site with the email channel on and Slack settings kept from before.
 	 */
 	public function set_up() {
 		parent::set_up();
 
-		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) );
-		$this->save_settings(
-			array(
-				'slack_notifications' => 1,
-				'slack_webhook_url'   => 'https://hooks.slack.com/services/T000/B000/XXXX',
-			)
-		);
+		$this->save_settings();
 		update_option( 'blogname', 'Bob & Sons' );
 	}
 
@@ -99,12 +93,7 @@ class Test_Message_Snapshot extends WPUN_Test_Case {
 
 		$this->plugin()->do_update_check();
 
-		$requests = $this->requests_to( 'hooks.slack.com' );
-		$this->assertCount( 1, $requests );
-		$payload = json_decode( $requests[0]['args']['body']['payload'], true );
-
 		// The mailer ends lines with CRLF and the body with a line break; the snapshot uses LF.
 		$this->assertSame( $this->snapshot( 'email-body.txt' ), str_replace( "\r\n", "\n", $this->sent_mail()->body ) );
-		$this->assertSame( $this->snapshot( 'slack-text.txt' ), $payload['text'] );
 	}
 }

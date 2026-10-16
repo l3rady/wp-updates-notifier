@@ -48,7 +48,7 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	 * Clean up request state some tests set.
 	 */
 	public function tear_down() {
-		unset( $_POST['submitwithemail'], $_POST['submitwithslack'], $_POST['option_page'], $_POST['_wpnonce'], $_REQUEST['_wpnonce'] );
+		unset( $_POST['submitwithemail'], $_POST['option_page'], $_POST['_wpnonce'], $_REQUEST['_wpnonce'] );
 		parent::tear_down();
 	}
 
@@ -92,26 +92,6 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$body = $this->sent_mail()->body;
 		$this->assertStringContainsString( 'Bob & Sons', $body );
 		$this->assertStringNotContainsString( '&amp;', $body );
-	}
-
-	/**
-	 * #66: a delivered Slack message returns false, because the result is `is_wp_error()`.
-	 */
-	public function test_66_a_delivered_slack_message_returns_true() {
-		$this->save_settings( array( 'slack_webhook_url' => 'https://hooks.slack.com/services/T/B/X' ) );
-		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) );
-
-		$this->assertTrue( $this->plugin()->send_slack_message( 'Hello' ) );
-	}
-
-	/**
-	 * #66: a failed Slack request returns true.
-	 */
-	public function test_66_a_failed_slack_request_returns_false() {
-		$this->save_settings( array( 'slack_webhook_url' => 'https://hooks.slack.com/services/T/B/X' ) );
-		$this->fake_http( 'hooks.slack.com', new WP_Error( 'http_request_failed', 'Timed out' ) );
-
-		$this->assertFalse( $this->plugin()->send_slack_message( 'Hello' ) );
 	}
 
 	/**

@@ -16,6 +16,7 @@ use WPUN\Channel_Store;
 use WPUN\Notifier;
 use WPUN\Scheduler;
 use WPUN\Settings;
+use WPUN\Slack_Notice;
 use WPUN\State;
 
 /**
@@ -53,11 +54,18 @@ class Settings_Page {
 	private $notifier;
 
 	/**
-	 * Channel instance storage, where the email and Slack settings are kept.
+	 * Channel instance storage, where the email settings are kept.
 	 *
 	 * @var Channel_Store
 	 */
 	private $channels;
+
+	/**
+	 * The notice about Slack no longer being supported.
+	 *
+	 * @var Slack_Notice
+	 */
+	private $slack_notice;
 
 	/**
 	 * Constructor.
@@ -67,17 +75,19 @@ class Settings_Page {
 	 * @param Scheduler     $scheduler Scheduler.
 	 * @param Notifier      $notifier  Notifier.
 	 * @param Channel_Store $channels  Channel instance storage.
+	 * @param Slack_Notice  $slack_notice Notice about Slack no longer being supported.
 	 */
-	public function __construct( Settings $settings, State $state, Scheduler $scheduler, Notifier $notifier, Channel_Store $channels ) {
-		$this->settings  = $settings;
-		$this->state     = $state;
-		$this->scheduler = $scheduler;
-		$this->notifier  = $notifier;
-		$this->channels  = $channels;
+	public function __construct( Settings $settings, State $state, Scheduler $scheduler, Notifier $notifier, Channel_Store $channels, Slack_Notice $slack_notice ) {
+		$this->settings     = $settings;
+		$this->state        = $state;
+		$this->scheduler    = $scheduler;
+		$this->notifier     = $notifier;
+		$this->channels     = $channels;
+		$this->slack_notice = $slack_notice;
 	}
 
 	/**
-	 * A setting of the email or Slack instance, as a string.
+	 * A setting of the email instance, as a string.
 	 *
 	 * @param string $id  Instance id.
 	 * @param string $key Setting name.
@@ -92,7 +102,7 @@ class Settings_Page {
 	}
 
 	/**
-	 * Whether the email or Slack instance exists and is switched on.
+	 * Whether the email instance exists and is switched on.
 	 *
 	 * @param string $id Instance id.
 	 *
@@ -105,7 +115,7 @@ class Settings_Page {
 	}
 
 	/**
-	 * Store the accepted values of the email or Slack form fields in the instance, creating it if needed.
+	 * Store the accepted values of the email form fields in the instance, creating it if needed.
 	 *
 	 * @param string               $id       Instance id (also its type).
 	 * @param string               $label    Label for a new instance.
@@ -160,11 +170,6 @@ class Settings_Page {
 	 */
 	public function settings_page() {
 		// Trigger tests if they are ready to be sent.
-		$sc_wpun_send_test_slack = get_transient( 'sc_wpun_send_test_slack' );
-		if ( $sc_wpun_send_test_slack ) {
-			delete_transient( 'sc_wpun_send_test_slack' );
-			$this->send_test_slack();
-		}
 		$sc_wpun_send_test_email = get_transient( 'sc_wpun_send_test_email' );
 		if ( $sc_wpun_send_test_email ) {
 			delete_transient( 'sc_wpun_send_test_email' );
@@ -176,6 +181,8 @@ class Settings_Page {
 		?>
 		<div class="wrap">
 			<h2><?php esc_html_e( 'Updates Notifier', 'wp-updates-notifier' ); ?></h2>
+
+			<?php $this->slack_notice->render(); ?>
 
 			<p>
 				<span class="description sc-wpun-last-check">
@@ -209,7 +216,6 @@ class Settings_Page {
 				<p>&nbsp;</p>
 				<input class="button-primary" name="Submit" type="submit" value="<?php esc_html_e( 'Save settings', 'wp-updates-notifier' ); ?>" />
 				<input class="button" name="submitwithemail" type="submit" value="<?php esc_html_e( 'Save settings with test email', 'wp-updates-notifier' ); ?>" />
-				<input class="button" name="submitwithslack" type="submit" value="<?php esc_html_e( 'Save settings with test slack post', 'wp-updates-notifier' ); ?>" />
 			</form>
 		</div>
 		<?php
@@ -251,12 +257,6 @@ class Settings_Page {
 		add_settings_field( 'sc_wpun_settings_email_notifications_email_notifications', __( 'Send email notifications?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_email_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 		add_settings_field( 'sc_wpun_settings_email_notifications_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 		add_settings_field( 'sc_wpun_settings_email_notifications_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
-
-		// Slack notification settings.
-		add_settings_section( 'sc_wpun_settings_slack_notifications', __( 'Slack Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_text' ), 'wp-updates-notifier' );
-		add_settings_field( 'sc_wpun_settings_slack_notifications_slack_notifications', __( 'Send slack notifications?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
-		add_settings_field( 'sc_wpun_settings_slack_notifications_slack_webhook_url', __( 'Webhook url', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_webhook_url' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
-		add_settings_field( 'sc_wpun_settings_slack_notifications_slack_channel_override', __( 'Channel to notify', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_slack_notifications_field_slack_channel_override' ), 'wp-updates-notifier', 'sc_wpun_settings_slack_notifications' );
 	}
 
 	/**
@@ -373,63 +373,6 @@ class Settings_Page {
 			);
 		}
 
-		// Validate slack settings. They start from what the Slack instance holds.
-		$webhook_url_saved = $this->instance_setting( 'slack', 'webhook_url' );
-		$slack_channel     = $this->instance_setting( 'slack', 'channel' );
-
-		if ( ! empty( $input['slack_webhook_url'] ) && is_string( $input['slack_webhook_url'] ) ) {
-			$webhook_url = $this->sanitize_webhook_url( $input['slack_webhook_url'] );
-			if ( '' === $webhook_url ) {
-				add_settings_error( 'sc_wpun_settings_slack_notifications_slack_webhook_url', 'sc_wpun_settings_slack_notifications_slack_webhook_url_error', __( 'Invalid webhook url entered', 'wp-updates-notifier' ), 'error' );
-			} else {
-				$webhook_url_saved = $webhook_url;
-			}
-		} else {
-			$webhook_url_saved = '';
-		}
-
-		if ( ! empty( $input['slack_channel_override'] ) && is_string( $input['slack_channel_override'] ) ) {
-			if ( ! preg_match( '/^[#@]/', $input['slack_channel_override'] ) ) {
-				add_settings_error( 'sc_wpun_settings_slack_notifications_slack_channel_override', 'sc_wpun_settings_slack_notifications_slack_channel_override_error', __( 'Channel name must start with a # or @', 'wp-updates-notifier' ), 'error' );
-			} elseif ( preg_match( '/\s/', $input['slack_channel_override'] ) ) {
-				add_settings_error( 'sc_wpun_settings_slack_notifications_slack_channel_override', 'sc_wpun_settings_slack_notifications_slack_channel_override_error', __( 'Channel name must not contain a space', 'wp-updates-notifier' ), 'error' );
-			} else {
-				$slack_channel = $input['slack_channel_override'];
-			}
-		} else {
-			$slack_channel = '';
-		}
-
-		$slack_notifications = absint( $input['slack_notifications'] ?? 0 );
-		if ( $slack_notifications > 1 ) {
-			add_settings_error( 'sc_wpun_settings_slack_notifications_slack_notifications', 'sc_wpun_settings_slack_notifications_slack_notifications_error', __( 'Invalid notification slack value entered', 'wp-updates-notifier' ), 'error' );
-		}
-
-		if ( 1 === $slack_notifications ) {
-			if ( '' === $webhook_url_saved ) {
-				add_settings_error( 'sc_wpun_settings_slack_notifications_slack_webhook_url', 'sc_wpun_settings_slack_notifications_slack_webhook_url_error', __( 'No to slack webhoook url entered', 'wp-updates-notifier' ), 'error' );
-				$slack_notifications = 0;
-			} else {
-				$slack_notifications = 1;
-			}
-		} else {
-			$slack_notifications = 0;
-		}
-
-		if ( array_key_exists( 'slack_webhook_url', $input ) || array_key_exists( 'slack_channel_override', $input ) || array_key_exists( 'slack_notifications', $input ) ) {
-			// Slack only gets an instance once there is something to keep in it.
-			$this->save_instance(
-				'slack',
-				'Slack',
-				1 === $slack_notifications,
-				array(
-					'webhook_url' => $webhook_url_saved,
-					'channel'     => $slack_channel,
-				),
-				1 === $slack_notifications || '' !== $webhook_url_saved || '' !== $slack_channel
-			);
-		}
-
 		// Test sends are only queued from the settings form itself (see #67).
 		if ( ! $this->is_settings_form_submission() ) {
 			return $valid;
@@ -440,14 +383,6 @@ class Settings_Page {
 				set_transient( 'sc_wpun_send_test_email', 1 );
 			} else {
 				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not send test email. Email settings are invalid.', 'wp-updates-notifier' ), 'error' );
-			}
-		}
-
-		if ( isset( $_POST['submitwithslack'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in is_settings_form_submission().
-			if ( '' !== $webhook_url_saved ) {
-				set_transient( 'sc_wpun_send_test_slack', 1 );
-			} else {
-				add_settings_error( 'sc_wpun_settings_slack_notifications_slack_notifications', 'sc_wpun_settings_slack_notifications_slack_notifications_error', __( 'Can not post test slack message. Slack settings are invalid.', 'wp-updates-notifier' ), 'error' );
 			}
 		}
 
@@ -468,34 +403,12 @@ class Settings_Page {
 	}
 
 	/**
-	 * Accept only an absolute https URL with a host.
-	 *
-	 * @param string $url URL as entered.
-	 *
-	 * @return string The sanitized URL, or an empty string if it is not acceptable.
-	 */
-	private function sanitize_webhook_url( string $url ): string {
-		$url = esc_url_raw( trim( $url ), array( 'https' ) );
-
-		return '' !== $url && '' !== (string) wp_parse_url( $url, PHP_URL_HOST ) ? $url : '';
-	}
-
-	/**
 	 * Send a test email.
 	 *
 	 * @return void
 	 */
 	public function send_test_email() {
 		$this->notifier->send_email_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
-	}
-
-	/**
-	 * Send a test slack message.
-	 *
-	 * @return void
-	 */
-	public function send_test_slack() {
-		$this->notifier->send_slack_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
 	}
 
 	/**
@@ -639,49 +552,6 @@ class Settings_Page {
 	public function sc_wpun_settings_email_notifications_field_notify_from() {
 		?>
 		<input id="sc_wpun_settings_email_notifications_notify_from" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_from]" value="<?php echo esc_attr( $this->instance_setting( 'email', 'from' ) ); ?>" />
-		<?php
-	}
-
-	/**
-	 * Output the text at the top of the slack settings section (function is required even if it outputs nothing).
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_slack_notifications_text() {
-	}
-
-	/**
-	 * Settings field for slack notifications.
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_slack_notifications_field_slack_notifications() {
-		?>
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[slack_notifications]" type="checkbox" value="1" <?php checked( $this->instance_enabled( 'slack' ) ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
-		</label>
-		<?php
-	}
-
-	/**
-	 * Settings field for slack webhook url.
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_slack_notifications_field_slack_webhook_url() {
-		?>
-		<input id="sc_wpun_settings_slack_notifications_slack_webhook_url" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[slack_webhook_url]" value="<?php echo esc_attr( $this->instance_setting( 'slack', 'webhook_url' ) ); ?>" />
-		<?php
-	}
-
-	/**
-	 * Settings field for slack channel override.
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_slack_notifications_field_slack_channel_override() {
-		?>
-		<input id="sc_wpun_settings_slack_notifications_slack_channel_override" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[slack_channel_override]" value="<?php echo esc_attr( $this->instance_setting( 'slack', 'channel' ) ); ?>" />
-		<span class="description"><?php esc_html_e( 'Not requred.', 'wp-updates-notifier' ); ?></span>
 		<?php
 	}
 }
