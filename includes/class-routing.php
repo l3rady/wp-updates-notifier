@@ -1,0 +1,140 @@
+<?php
+/**
+ * Deciding which items a channel instance receives.
+ *
+ * @package wp-updates-notifier
+ */
+
+namespace WPUN;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Not loaded by WordPress.
+}
+
+/**
+ * The routing rules of a channel instance, kept in Channel_Instance::get_routing().
+ *
+ * Known keys:
+ *
+ * - `types` (string[]): item types the instance receives, for example `array( 'core', 'plugin' )`.
+ *   Missing or empty means every type, including types added by add-ons.
+ * - `scope` (`all`|`active`): for `plugin` and `theme` items. `active` keeps only items whose
+ *   `active` flag is true. Applies on top of the global "active only" settings. Default `all`.
+ * - `core` (`all`|`major`): for `core` items. `major` keeps only updates that change major.minor.
+ *   Default `all`.
+ *
+ * Other keys are kept and ignored, so add-ons can store their own rules.
+ *
+ * @since 2.0.0
+ */
+final class Routing {
+
+	/**
+	 * The routing with the known keys checked and defaults applied; other keys are kept.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array<mixed> $routing Stored routing.
+	 *
+	 * @return array<mixed> With `types` (string[]), `scope` and `core`.
+	 */
+	public static function normalise( array $routing ): array {
+		$types = array();
+		if ( isset( $routing['types'] ) && is_array( $routing['types'] ) ) {
+			foreach ( $routing['types'] as $type ) {
+				if ( is_string( $type ) && '' !== $type && ! in_array( $type, $types, true ) ) {
+					$types[] = $type;
+				}
+			}
+		}
+
+		$routing['types'] = $types;
+		$routing['scope'] = isset( $routing['scope'] ) && 'active' === $routing['scope'] ? 'active' : 'all';
+		$routing['core']  = isset( $routing['core'] ) && 'major' === $routing['core'] ? 'major' : 'all';
+
+		return $routing;
+	}
+
+	/**
+	 * Whether an instance is to receive an item.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param Notification_Item $item     The item.
+	 * @param Channel_Instance  $instance The instance.
+	 *
+	 * @return bool
+	 */
+	public static function should_receive( Notification_Item $item, Channel_Instance $instance ): bool {
+		$routing = self::normalise( $instance->get_routing() );
+		$type    = $item->get_type();
+		$receive = true;
+
+		if ( array() !== $routing['types'] && ! in_array( $type, $routing['types'], true ) ) {
+			$receive = false;
+		} elseif ( 'active' === $routing['scope'] && in_array( $type, array( 'plugin', 'theme' ), true ) && true !== ( $item->get_flags()['active'] ?? false ) ) {
+			$receive = false;
+		} elseif ( 'major' === $routing['core'] && 'core' === $type && ! self::is_major_core_update( $item->get_current_version(), $item->get_new_version() ) ) {
+			$receive = false;
+		}
+
+		/**
+		 * Filters whether a channel instance receives an item, for rules of your own.
+		 *
+		 * Runs after the instance's own rules, so it can veto an item the rules let through and
+		 * allow one they blocked.
+		 *
+		 * Example, send only plugins named "security" to the instance called "security-team":
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_channel_should_receive_item',
+		 *         function ( $receive, $item, $instance ) {
+		 *             if ( 'security-team' === $instance->get_id() && 'plugin' === $item->get_type() ) {
+		 *                 return false !== stripos( $item->get_name(), 'security' );
+		 *             }
+		 *             return $receive;
+		 *         },
+		 *         10,
+		 *         3
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param bool              $receive  Whether the instance receives the item.
+		 * @param Notification_Item $item     The item.
+		 * @param Channel_Instance  $instance The instance.
+		 */
+		return (bool) apply_filters( 'sc_wpun_channel_should_receive_item', $receive, $item, $instance );
+	}
+
+	/**
+	 * Whether going from one WordPress version to another changes the major.minor version.
+	 *
+	 * Any `-suffix` is ignored: 6.7 to 6.7.1 is not major, 6.8.3 to 6.9 is, and so is 6.8 to 6.9-RC1.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $current Installed version.
+	 * @param string $available Version available.
+	 *
+	 * @return bool
+	 */
+	public static function is_major_core_update( string $current, string $available ): bool {
+		return self::major_minor( $current ) !== self::major_minor( $available );
+	}
+
+	/**
+	 * The major.minor part of a version, for example 6.5 from 6.5.3 or 6.6-RC1.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $version Version.
+	 *
+	 * @return string
+	 */
+	public static function major_minor( string $version ): string {
+		$parts = explode( '.', (string) preg_replace( '/-.*$/', '', $version ) );
+
+		return implode( '.', array_slice( $parts, 0, 2 ) );
+	}
+}

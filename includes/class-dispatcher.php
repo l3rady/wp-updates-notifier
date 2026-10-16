@@ -51,6 +51,12 @@ class Dispatcher {
 				continue;
 			}
 
+			// An instance routed nothing is skipped, but a test message has no items and always goes.
+			$routed = $this->notification_for( $notification, $instance );
+			if ( ! $routed->is_test() && ! $routed->has_items() ) {
+				continue;
+			}
+
 			$channel = $this->registry->get( $instance->get_type() );
 			if ( null === $channel ) {
 				$results[ $instance->get_id() ] = Delivery_Result::failure(
@@ -61,7 +67,7 @@ class Dispatcher {
 				continue;
 			}
 
-			$results[ $instance->get_id() ] = $this->send( $channel, $notification, $instance );
+			$results[ $instance->get_id() ] = $this->send( $channel, $routed, $instance );
 		}
 
 		return $results;
@@ -106,15 +112,27 @@ class Dispatcher {
 	}
 
 	/**
-	 * The notification an instance receives. Routing will narrow it per instance.
+	 * The notification an instance receives: only the items its routing rules let through.
+	 * A test notification is never narrowed.
 	 *
 	 * @param Notification     $notification The notification.
 	 * @param Channel_Instance $instance     The instance.
 	 *
 	 * @return Notification
 	 */
-	protected function notification_for( Notification $notification, Channel_Instance $instance ): Notification { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable, Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Seam for routing.
-		return $notification;
+	protected function notification_for( Notification $notification, Channel_Instance $instance ): Notification {
+		if ( $notification->is_test() ) {
+			return $notification;
+		}
+
+		return $notification->with_items(
+			array_values(
+				array_filter(
+					$notification->get_items(),
+					static fn( Notification_Item $item ): bool => Routing::should_receive( $item, $instance )
+				)
+			)
+		);
 	}
 
 	/**
@@ -132,7 +150,7 @@ class Dispatcher {
 	 */
 	private function send( Channel $channel, Notification $notification, Channel_Instance $instance ): Delivery_Result {
 		try {
-			return $channel->send( $this->notification_for( $notification, $instance ), $instance );
+			return $channel->send( $notification, $instance );
 		} catch ( \Throwable $e ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				wp_trigger_error(
