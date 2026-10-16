@@ -71,6 +71,7 @@ require_once __DIR__ . '/includes/abstract-class-channel.php';
 require_once __DIR__ . '/includes/class-channel-registry.php';
 require_once __DIR__ . '/includes/class-channel-store.php';
 require_once __DIR__ . '/includes/class-routing.php';
+require_once __DIR__ . '/includes/class-item-types.php';
 require_once __DIR__ . '/includes/class-dispatcher.php';
 require_once __DIR__ . '/includes/class-update-checker.php';
 require_once __DIR__ . '/includes/class-slack-notice.php';

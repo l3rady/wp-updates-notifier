@@ -164,12 +164,53 @@ class Settings {
 	 * @return SettingsData
 	 */
 	public function default_settings(): array {
-		return array(
+		$defaults = array(
 			'frequency'        => 'hourly',
 			'notify_plugins'   => 1,
 			'notify_themes'    => 1,
 			'notify_automatic' => 1,
 			'hide_updates'     => 1,
+		);
+
+		/**
+		 * Filters the settings a new install starts with, and the values used for settings that are missing.
+		 *
+		 * Only the keys below are used, and values are cast to the type shown. Anything else
+		 * is ignored, as is a return value that is not an array.
+		 *
+		 * Example, check daily by default:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_default_settings',
+		 *         function ( $defaults ) {
+		 *             $defaults['frequency'] = 'daily';
+		 *             return $defaults;
+		 *         }
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param array<string, mixed> $defaults {
+		 *     The default settings.
+		 *
+		 *     @type string $frequency        Name of a cron schedule.
+		 *     @type int    $notify_plugins   0 none, 1 all plugins, 2 active plugins only.
+		 *     @type int    $notify_themes    0 none, 1 all themes, 2 active themes only.
+		 *     @type int    $notify_automatic 1 to send WordPress's automatic core update emails to the notification address.
+		 *     @type int    $hide_updates     1 to hide the WordPress update notice from users who cannot update.
+		 * }
+		 */
+		$filtered = apply_filters( 'sc_wpun_default_settings', $defaults );
+		if ( ! is_array( $filtered ) ) {
+			return $defaults;
+		}
+
+		return array(
+			'frequency'        => $this->string_setting( $filtered, 'frequency', $defaults['frequency'] ),
+			'notify_plugins'   => $this->int_setting( $filtered, 'notify_plugins', $defaults['notify_plugins'] ),
+			'notify_themes'    => $this->int_setting( $filtered, 'notify_themes', $defaults['notify_themes'] ),
+			'notify_automatic' => $this->int_setting( $filtered, 'notify_automatic', $defaults['notify_automatic'] ),
+			'hide_updates'     => $this->int_setting( $filtered, 'hide_updates', $defaults['hide_updates'] ),
 		);
 	}
 
@@ -229,6 +270,14 @@ class Settings {
 	 * @return mixed The stored value after the get filter.
 	 */
 	public function read_option( $field ) {
+		/**
+		 * Filters a setting option of the plugin after it is read.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param mixed  $value The stored value.
+		 * @param string $field The name of the option.
+		 */
 		return apply_filters( 'sc_wpun_get_options_filter', get_option( $field ), $field );
 	}
 
@@ -241,6 +290,16 @@ class Settings {
 	 * @return bool True if the option was updated.
 	 */
 	public function write_option( $field, $value ) {
-		return update_option( $field, apply_filters( 'sc_wpun_put_options_filter', $value, $field ) );
+		/**
+		 * Filters a setting option of the plugin before it is stored.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param mixed  $value The value about to be stored.
+		 * @param string $field The name of the option.
+		 */
+		$value = apply_filters( 'sc_wpun_put_options_filter', $value, $field );
+
+		return update_option( $field, $value );
 	}
 }

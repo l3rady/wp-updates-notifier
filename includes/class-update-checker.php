@@ -86,6 +86,13 @@ class Update_Checker {
 	 * @return void
 	 */
 	public function do_update_check() {
+		/**
+		 * Fires when an update check starts, before anything is looked up.
+		 *
+		 * @since 2.0.0
+		 */
+		do_action( 'sc_wpun_before_update_check' );
+
 		$options = $this->settings->get(); // get settings.
 		$state   = $this->state->get();
 		$items   = array(); // What the check finds, in the order of the message.
@@ -99,7 +106,95 @@ class Update_Checker {
 			$this->themes_update_check( $items, $options['notify_themes'], $checked ); // check for theme updates.
 		}
 
-		$this->last_notification = new Notification( get_bloginfo(), home_url(), admin_url( 'update-core.php' ), $items, array( 'source' => 'cron' ) );
+		/**
+		 * Filters the items found by the check, to add, remove or change items.
+		 *
+		 * Runs after core, plugins and themes were collected and before the global settings'
+		 * routing. Only Notification_Item objects are kept. An item type other than core,
+		 * plugin and theme must be registered with the `sc_wpun_item_types` filter for its
+		 * history to be kept up to date: once no item of a registered type is returned,
+		 * what was notified about it is forgotten.
+		 *
+		 * Example, report an item of your own:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_update_items',
+		 *         function ( $items ) {
+		 *             $items[] = new \WPUN\Notification_Item(
+		 *                 array(
+		 *                     'type'            => 'php',
+		 *                     'key'             => 'php',
+		 *                     'name'            => 'PHP',
+		 *                     'current_version' => PHP_VERSION,
+		 *                     'new_version'     => '8.4',
+		 *                 )
+		 *             );
+		 *             return $items;
+		 *         }
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param Notification_Item[] $items The items found, in the order of the message.
+		 */
+		$filtered = apply_filters( 'sc_wpun_update_items', $items );
+		$items    = array();
+		foreach ( is_array( $filtered ) ? $filtered : array() as $item ) {
+			if ( $item instanceof Notification_Item ) {
+				$items[] = $item;
+			}
+		}
+
+		// An item a filter added is waiting too, even if WordPress's own update data does not list it,
+		// or its history would be forgotten and it would be sent again on every run.
+		$checked = $this->add_pending_keys( $checked, $items );
+
+		// Registered add-on types are checked too: what they report now is what is waiting.
+		foreach ( array_keys( Item_Types::all() ) as $type ) {
+			if ( ! isset( $checked[ $type ] ) && ! in_array( $type, array( 'core', 'plugin', 'theme' ), true ) ) {
+				$checked[ $type ] = array();
+				foreach ( $items as $item ) {
+					if ( $item->get_type() === $type ) {
+						$checked[ $type ][] = $item->get_key();
+					}
+				}
+			}
+		}
+
+		// The global veto comes after, so a vetoed item still counts as waiting.
+		$items = array_values( array_filter( $items, array( $this, 'should_notify' ) ) );
+
+		$notification = new Notification( get_bloginfo(), home_url(), admin_url( 'update-core.php' ), $items, array( 'source' => 'cron' ) );
+
+		/**
+		 * Filters the notification built by the update check, before any channel instance gets its share.
+		 *
+		 * Must return a Notification; anything else is ignored. Each instance then receives the
+		 * items of the returned notification that its routing allows.
+		 *
+		 * Example, drop the notes of every item:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_notification',
+		 *         function ( $notification ) {
+		 *             return $notification->with_items( my_strip_notes( $notification->get_items() ) );
+		 *         }
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param Notification $notification The notification, with every item that is waiting.
+		 */
+		$filtered_notification = apply_filters( 'sc_wpun_notification', $notification );
+		if ( $filtered_notification instanceof Notification ) {
+			$notification = $filtered_notification;
+		} else {
+			_doing_it_wrong( 'sc_wpun_notification', esc_html__( 'The filter must return a WPUN\\Notification.', 'wp-updates-notifier' ), '2.0.0' );
+		}
+
+		$checked = $this->add_pending_keys( $checked, $notification->get_items() );
+
+		$this->last_notification = $notification;
 		$this->last_results      = array();
 
 		$instances = $this->channels->all();
@@ -124,7 +219,7 @@ class Update_Checker {
 			); // No entry: no history, so everything waiting is new to it.
 
 			$for_instance = array();
-			foreach ( $this->items_for_instance( $instance, $items ) as $item ) {
+			foreach ( $this->items_for_instance( $instance, $notification->get_items() ) as $item ) {
 				if ( ( $entry['notified'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version() ) {
 					$for_instance[] = $item;
 				}
@@ -153,6 +248,57 @@ class Update_Checker {
 		$state['last_check_time'] = time();
 		unset( $state['legacy_notified'] ); // Every instance that existed has taken its share; later ones start clean.
 		$this->state->save( $state );
+
+		if ( array() !== $this->last_results ) {
+			/** This action is documented in includes/class-dispatcher.php */
+			do_action( 'sc_wpun_after_dispatch', $this->last_results, $notification );
+		}
+
+		/**
+		 * Fires when an update check has finished, after the state was saved.
+		 *
+		 * It fires even if nothing was sent, with an empty `$results`.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param Notification                $notification The notification of the check, with every item that was waiting.
+		 * @param array<string, Delivery_Result> $results      Result by channel instance id, for the instances something was sent to.
+		 */
+		do_action( 'sc_wpun_after_update_check', $notification, $this->last_results );
+	}
+
+	/**
+	 * Whether an item is to be reported at all, by the global veto. Public only to serve as a callback.
+	 *
+	 * @internal
+	 *
+	 * @param Notification_Item $item The item.
+	 *
+	 * @return bool
+	 */
+	public function should_notify( Notification_Item $item ): bool {
+		/**
+		 * Filters whether an item is reported at all, to every channel instance.
+		 *
+		 * An item that is vetoed is not sent and not recorded, but still counts as waiting for an update.
+		 *
+		 * Example, never report one plugin:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_should_notify_item',
+		 *         function ( $notify, $item ) {
+		 *             return 'noisy/noisy.php' === $item->get_key() ? false : $notify;
+		 *         },
+		 *         10,
+		 *         2
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param bool              $notify Whether to report the item. Default true.
+		 * @param Notification_Item $item   The item.
+		 */
+		return (bool) apply_filters( 'sc_wpun_should_notify_item', true, $item );
 	}
 
 	/**
@@ -188,6 +334,24 @@ class Update_Checker {
 		}
 
 		return $channels;
+	}
+
+	/**
+	 * Add the keys of items to the waiting keys of the types this run checked.
+	 *
+	 * @param array<string, string[]> $checked Item type => keys still waiting.
+	 * @param Notification_Item[]     $items   Items reported this run.
+	 *
+	 * @return array<string, string[]>
+	 */
+	private function add_pending_keys( array $checked, array $items ): array {
+		foreach ( $items as $item ) {
+			if ( isset( $checked[ $item->get_type() ] ) && ! in_array( $item->get_key(), $checked[ $item->get_type() ], true ) ) {
+				$checked[ $item->get_type() ][] = $item->get_key();
+			}
+		}
+
+		return $checked;
 	}
 
 	/**
@@ -273,12 +437,41 @@ class Update_Checker {
 		}
 
 		$checked['core'] = array( 'core' );
-		$items[]         = new Notification_Item(
+		$current_version = wp_get_wp_version(); // Read from version.php, so plugins that change the $wp_version global do not affect it.
+
+		/**
+		 * Filters whether a WordPress core update is reported, like the plugin and theme filters do for theirs.
+		 *
+		 * Returning false reports no core item. What was already notified about core is kept
+		 * while the update is waiting.
+		 *
+		 * Example, ignore minor releases:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_core_needs_update',
+		 *         function ( $needs, $new_version, $current_version ) {
+		 *             return \WPUN\Routing::is_major_core_update( $current_version, $new_version );
+		 *         },
+		 *         10,
+		 *         3
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param bool   $needs           Whether to report the update. Default true.
+		 * @param string $new_version     The version WordPress offers.
+		 * @param string $current_version The installed version.
+		 */
+		if ( ! apply_filters( 'sc_wpun_core_needs_update', true, $new_core_ver, $current_version ) ) {
+			return;
+		}
+
+		$items[] = new Notification_Item(
 			array(
 				'type'            => 'core',
 				'key'             => 'core',
 				'name'            => 'WordPress',
-				'current_version' => wp_get_wp_version(), // Read from version.php, so plugins that change the $wp_version global do not affect it.
+				'current_version' => $current_version,
 				'new_version'     => $new_core_ver,
 			)
 		);
@@ -328,6 +521,13 @@ class Update_Checker {
 			if ( 2 === $all_or_active ) { // are we to check just active plugins?
 				$plugins_need_update = array_intersect_key( $plugins_need_update, array_flip( $this->active_plugins() ) ); // only keep plugins that are active.
 			}
+			/**
+			 * Filters the plugins that are waiting for an update and will be reported.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array<string, object> $plugins_need_update Update data from WordPress by plugin file (for example `hello.php`).
+			 */
 			$plugins_need_update = $this->normalise_plugin_updates( apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ) ); // additional filtering of plugins need update; filters may return anything.
 			if ( count( $plugins_need_update ) >= 1 ) { // any plugins need updating after all the filtering gone on above?
 				if ( ! function_exists( 'get_plugin_data' ) ) {
@@ -385,6 +585,13 @@ class Update_Checker {
 			if ( 2 === $all_or_active ) { // are we to check just active themes?
 				$themes_need_update = array_intersect_key( $themes_need_update, array_flip( $active_themes ) ); // only keep theme that is active.
 			}
+			/**
+			 * Filters the themes that are waiting for an update and will be reported.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array<string, array<string, mixed>> $themes_need_update Update data from WordPress by theme stylesheet.
+			 */
 			$themes_need_update = $this->normalise_theme_updates( apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ) ); // additional filtering of themes need update; filters may return anything.
 			if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 				foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating.

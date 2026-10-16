@@ -154,6 +154,31 @@ class Settings_Page {
 	}
 
 	/**
+	 * The capability needed to change the settings, send a test and dismiss notices.
+	 *
+	 * @return string
+	 */
+	public static function capability(): string {
+		/**
+		 * Filters the capability needed to use the plugin's settings page.
+		 *
+		 * It decides who sees the settings page, saves the settings, sends a test message
+		 * and dismisses the plugin's notice. An empty or non-string value is ignored.
+		 *
+		 * Example, let editors manage the plugin:
+		 *
+		 *     add_filter( 'sc_wpun_capability', fn() => 'edit_pages' );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param string $capability Capability. Default `manage_options`.
+		 */
+		$capability = apply_filters( 'sc_wpun_capability', 'manage_options' );
+
+		return is_string( $capability ) && '' !== $capability ? $capability : 'manage_options';
+	}
+
+	/**
 	 * Adds the settings link under the plugin on the plugin screen.
 	 *
 	 * @param array<mixed> $links Links to list on the plugin screen.
@@ -175,7 +200,7 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function admin_settings_menu() {
-		add_options_page( __( 'Updates Notifier', 'wp-updates-notifier' ), __( 'Updates Notifier', 'wp-updates-notifier' ), 'manage_options', 'wp-updates-notifier', array( $this, 'settings_page' ) );
+		add_options_page( __( 'Updates Notifier', 'wp-updates-notifier' ), __( 'Updates Notifier', 'wp-updates-notifier' ), self::capability(), 'wp-updates-notifier', array( $this, 'settings_page' ) );
 	}
 
 	/**
@@ -417,7 +442,7 @@ class Settings_Page {
 	 * @return bool False if the user may not manage options or the nonce is not valid.
 	 */
 	public function process_test_send(): bool {
-		if ( ! current_user_can( 'manage_options' ) || ! isset( $_POST['_wpnonce'] ) ) {
+		if ( ! current_user_can( self::capability() ) || ! isset( $_POST['_wpnonce'] ) ) {
 			return false;
 		}
 		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), self::TEST_ACTION ) ) {
