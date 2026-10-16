@@ -2,9 +2,9 @@
 /**
  * The exact text of the notification (email body).
  *
- * The snapshots in tests/fixtures/snapshots freeze today's message, known
- * flaws included (HTML entities, #65), so that reworking how the message is
- * built cannot change what users receive. When a fix is meant to change the
+ * The snapshots in tests/fixtures/snapshots freeze the message the email channel
+ * sends (the plain text of Notification_Renderer), so that reworking how it is
+ * built cannot change what users receive. When a change is meant to change the
  * text, change the snapshots in the same commit.
  *
  * @package wp-updates-notifier
@@ -45,7 +45,7 @@ class Test_Message_Snapshot extends WPUN_Test_Case {
 				'{{php_version}}'      => PHP_VERSION,
 				'{{home_url}}'         => home_url(),
 				'{{admin_update_url}}' => admin_url( 'update-core.php' ),
-				'{{site_name}}'        => esc_html( get_bloginfo() ),
+				'{{site_name}}'        => wp_specialchars_decode( get_bloginfo(), ENT_QUOTES ),
 				'{{own_version}}'      => $own_plugin['Version'],
 				'{{theme_name}}'       => $theme->get( 'Name' ),
 				'{{theme_version}}'    => $theme->get( 'Version' ),
@@ -94,6 +94,7 @@ class Test_Message_Snapshot extends WPUN_Test_Case {
 		$this->plugin()->do_update_check();
 
 		// The mailer ends lines with CRLF and the body with a line break; the snapshot uses LF.
+		$this->assertSame( 'WP Updates Notifier: updates available for Bob & Sons', $this->sent_mail()->subject );
 		$this->assertSame( $this->snapshot( 'email-body.txt' ), str_replace( "\r\n", "\n", $this->sent_mail()->body ) );
 	}
 }

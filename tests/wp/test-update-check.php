@@ -256,6 +256,50 @@ class Test_Update_Check extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Every enabled email instance gets the mail, a disabled one does not.
+	 */
+	public function test_every_enabled_email_instance_is_sent_to() {
+		$this->save_settings( array( 'notify_to' => 'ops@example.org' ) );
+		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'client', 'email', 'Client', true, array( 'to' => 'client@example.org' ) ) );
+		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'off', 'email', 'Off', false, array( 'to' => 'off@example.org' ) ) );
+		$this->set_updates( '99.0.0' );
+
+		$this->plugin()->do_update_check();
+
+		$this->assertSame( 2, $this->sent_mail_count() );
+		$recipients = array(
+			tests_retrieve_phpmailer_instance()->get_recipient( 'to', 0 )->address,
+			tests_retrieve_phpmailer_instance()->get_recipient( 'to', 1 )->address,
+		);
+		sort( $recipients );
+		$this->assertSame( array( 'client@example.org', 'ops@example.org' ), $recipients );
+		$this->assertSame( '99.0.0', $this->stored_state()['notified']['core'] );
+	}
+
+	/**
+	 * An unavailable Slack instance is not a delivery: with the email failing too, nothing is recorded and the next run retries.
+	 */
+	public function test_an_unavailable_instance_does_not_count_as_delivered() {
+		$this->save_settings(
+			array(
+				'slack_notifications' => 1,
+				'slack_webhook_url'   => self::SLACK_URL,
+			)
+		);
+		$this->set_updates( '99.0.0' );
+		add_filter( 'pre_wp_mail', '__return_false' );
+
+		$this->plugin()->do_update_check();
+
+		$this->assertSame( '', $this->stored_state()['notified']['core'] );
+
+		remove_filter( 'pre_wp_mail', '__return_false' );
+		$this->plugin()->do_update_check();
+		$this->assertSame( '99.0.0', $this->stored_state()['notified']['core'] );
+		$this->assertSame( 1, $this->sent_mail_count() );
+	}
+
+	/**
 	 * The email carries every kind of update in one message.
 	 */
 	public function test_one_message_lists_core_plugins_and_themes() {

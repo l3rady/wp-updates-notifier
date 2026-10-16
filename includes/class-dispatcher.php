@@ -68,6 +68,33 @@ class Dispatcher {
 	}
 
 	/**
+	 * Deliver a notification through one instance, for example a test message.
+	 *
+	 * Unlike dispatch(), a switched-off or unavailable instance is reported as a failure.
+	 *
+	 * @param Notification     $notification What to deliver.
+	 * @param Channel_Instance $instance     The instance to deliver through.
+	 *
+	 * @return Delivery_Result
+	 */
+	public function send_one( Notification $notification, Channel_Instance $instance ): Delivery_Result {
+		if ( ! $instance->is_enabled() ) {
+			return Delivery_Result::failure( __( 'This channel is switched off.', 'wp-updates-notifier' ), 'disabled' );
+		}
+
+		$channel = $this->registry->get( $instance->get_type() );
+		if ( null === $channel ) {
+			return Delivery_Result::failure(
+				// translators: %s: Channel type.
+				sprintf( __( 'The "%s" channel is not available.', 'wp-updates-notifier' ), $instance->get_type() ),
+				'unavailable'
+			);
+		}
+
+		return $this->send( $channel, $notification, $instance );
+	}
+
+	/**
 	 * The notification an instance receives. Routing will narrow it per instance.
 	 *
 	 * @param Notification     $notification The notification.

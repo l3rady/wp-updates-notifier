@@ -143,8 +143,11 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->assertSame( array(), $email->get_routing(), $name );
 		$this->assertSame(
 			array(
-				'to'   => $options['notify_to'],
-				'from' => $options['notify_from'],
+				'to'             => $options['notify_to'],
+				'from'           => get_option( 'admin_email' ) === $options['notify_from'] ? '' : $options['notify_from'],
+				'reply_to'       => '',
+				'format'         => 'text',
+				'subject_prefix' => '',
 			),
 			$email->get_settings(),
 			$name
@@ -268,7 +271,40 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$email = $this->stored_instance( 'email' );
 		$this->assertTrue( $email->is_enabled() );
 		$this->assertSame( 'admin@example.org', $email->get_setting( 'to' ) );
-		$this->assertSame( 'admin@example.org', $email->get_setting( 'from' ) );
+		$this->assertSame(
+			array(
+				'to'             => 'admin@example.org',
+				'from'           => '',
+				'reply_to'       => '',
+				'format'         => 'text',
+				'subject_prefix' => '',
+			),
+			$email->get_settings()
+		);
 		$this->assertFalse( sc_wpun_channels()->has( 'slack' ) );
+	}
+
+	/**
+	 * A 1.x From equal to the admin email was the default, so it becomes empty (any case); a custom one is kept (#76).
+	 */
+	public function test_the_from_address_is_migrated_for_76() {
+		update_option( 'admin_email', 'Admin@Example.org' );
+		$fixtures = require dirname( __DIR__ ) . '/fixtures/settings.php';
+
+		foreach ( array(
+			'admin@example.ORG '   => '',
+			'ADMIN@example.org'    => '',
+			'notifier@example.org' => 'notifier@example.org',
+		) as $stored => $expected ) {
+			$options                = $fixtures['1.6.0']['options'];
+			$options['notify_from'] = $stored;
+			$this->upgrade_from( '7.0', $options );
+			$this->assertSame( $expected, $this->instance_setting( 'email', 'from' ), $stored );
+		}
+
+		$options = $fixtures['1.6.0']['options'];
+		unset( $options['notify_from'] );
+		$this->upgrade_from( '7.0', $options );
+		$this->assertSame( '', $this->instance_setting( 'email', 'from' ), 'Missing From.' );
 	}
 }
