@@ -9,6 +9,7 @@ parameters:
         - wp-updates-notifier.php
         - includes
         - modules
+        - examples
         - uninstall.php
         - tests/fixtures/plugins
     scanFiles:
