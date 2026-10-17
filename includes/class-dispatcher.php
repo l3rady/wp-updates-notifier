@@ -286,9 +286,10 @@ class Dispatcher {
 	 */
 	private function log_exception( Channel_Instance $instance, \Throwable $e ): void {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// Not the message: it can contain a resolved secret such as a webhook URL.
 			wp_trigger_error(
 				self::class,
-				sprintf( 'Channel instance "%1$s" failed: %2$s', $instance->get_id(), $e->getMessage() )
+				sprintf( 'Channel instance "%1$s" (type "%2$s") failed with %3$s.', $instance->get_id(), $instance->get_type(), get_class( $e ) )
 			);
 		}
 	}

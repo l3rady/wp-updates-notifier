@@ -58,6 +58,14 @@ defined( 'SC_WPUN_FILE' ) || define( 'SC_WPUN_FILE', __FILE__ );
  */
 defined( 'SC_WPUN_API_VERSION' ) || define( 'SC_WPUN_API_VERSION', '1.0.0' );
 
+require_once __DIR__ . '/includes/interface-config-source.php';
+require_once __DIR__ . '/includes/class-config-context.php';
+require_once __DIR__ . '/includes/class-constant-source.php';
+require_once __DIR__ . '/includes/class-env-source.php';
+require_once __DIR__ . '/includes/class-config-value.php';
+require_once __DIR__ . '/includes/class-config.php';
+require_once __DIR__ . '/includes/class-frequencies.php';
+require_once __DIR__ . '/includes/class-config-report.php';
 require_once __DIR__ . '/includes/class-settings.php';
 require_once __DIR__ . '/includes/class-state.php';
 require_once __DIR__ . '/includes/class-scheduler.php';

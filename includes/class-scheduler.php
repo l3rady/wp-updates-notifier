@@ -92,7 +92,7 @@ class Scheduler {
 
 
 	/**
-	 * Puts the update check back on the schedule when it is missing.
+	 * Puts the update check back on the schedule when it is missing, or when it runs at another frequency than the effective one.
 	 *
 	 * Repairs sites where activation never scheduled it, and events lost for any
 	 * other reason. Cheap: WordPress keeps the cron array in an autoloaded option.
@@ -100,7 +100,14 @@ class Scheduler {
 	 * @return void
 	 */
 	public function maybe_schedule() {
-		if ( false === wp_next_scheduled( self::CRON_NAME ) ) {
+		$event = wp_get_scheduled_event( self::CRON_NAME );
+		if ( false === $event ) {
+			$this->enable_cron();
+			return;
+		}
+
+		// The frequency can change without a save: a constant, an environment variable or a source supplies it.
+		if ( $event->schedule !== $this->settings->get()['frequency'] ) {
 			$this->enable_cron();
 		}
 	}
@@ -118,45 +125,10 @@ class Scheduler {
 	/**
 	 * The frequencies the plugin offers, shortest first.
 	 *
-	 * A curated list rather than every schedule other plugins register, so the
-	 * choice does not change from site to site and cannot disappear with another
-	 * plugin. Schedules shorter than an hour are never offered: each check also
-	 * asks api.wordpress.org for update data.
-	 *
 	 * @return array<string, array{interval: int, display: string}> Schedules keyed by name.
 	 */
 	public function get_frequencies(): array {
-		/**
-		 * Filters the names of the cron schedules offered as check frequencies.
-		 *
-		 * Each must be a registered schedule (see the `cron_schedules` filter) of at
-		 * least an hour.
-		 *
-		 * @since 2.0.0
-		 *
-		 * @param string[] $names Schedule names. Default hourly, twicedaily, daily and weekly.
-		 */
-		$names     = apply_filters( 'sc_wpun_frequencies', array( 'hourly', 'twicedaily', 'daily', 'weekly' ) );
-		$schedules = wp_get_schedules();
-		$offered   = array();
-
-		foreach ( (array) $names as $name ) {
-			if ( ! is_string( $name ) || ! isset( $schedules[ $name ]['interval'], $schedules[ $name ]['display'] ) ) {
-				continue;
-			}
-
-			$interval = (int) $schedules[ $name ]['interval'];
-			if ( $interval >= HOUR_IN_SECONDS ) {
-				$offered[ $name ] = array(
-					'interval' => $interval,
-					'display'  => (string) $schedules[ $name ]['display'],
-				);
-			}
-		}
-
-		uasort( $offered, array( $this, 'sort_by_interval' ) );
-
-		return $offered;
+		return Frequencies::all();
 	}
 
 	/**
@@ -187,7 +159,8 @@ class Scheduler {
 		$new_frequency = is_array( $value ) ? ( $value['frequency'] ?? null ) : null;
 
 		if ( is_string( $new_frequency ) && $old_frequency !== $new_frequency ) {
-			$this->enable_cron( $new_frequency );
+			// A frequency supplied from outside the database wins over the saved one.
+			$this->enable_cron( null === $this->settings->external_source( 'frequency' ) ? $new_frequency : false );
 		}
 	}
 }
