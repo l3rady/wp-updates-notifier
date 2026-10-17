@@ -404,42 +404,6 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: the section has no intro text, so this does nothing.
-		 *
-		 * @return void
-		 */
-		public function sc_wpun_settings_email_notifications_text() {
-			// The section has no intro text since 2.0.0.
-		}
-
-		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
-		 *
-		 * @return void
-		 */
-		public function sc_wpun_settings_email_notifications_field_email_notifications() {
-			sc_wpun()->settings_page()->sc_wpun_settings_email_notifications_field_email_notifications();
-		}
-
-		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
-		 *
-		 * @return void
-		 */
-		public function sc_wpun_settings_email_notifications_field_notify_to() {
-			sc_wpun()->settings_page()->sc_wpun_settings_email_notifications_field_notify_to();
-		}
-
-		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
-		 *
-		 * @return void
-		 */
-		public function sc_wpun_settings_email_notifications_field_notify_from() {
-			sc_wpun()->settings_page()->sc_wpun_settings_email_notifications_field_notify_from();
-		}
-
-		/**
 		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
 		 *
 		 * @deprecated 2.0.0
