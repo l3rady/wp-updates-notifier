@@ -89,7 +89,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$html = ob_get_clean();
 
 		$doc = new DOMDocument();
-		libxml_use_internal_errors( true ); // The page repeats an id (_wpnonce) that the parser objects to.
+		libxml_use_internal_errors( true );
 		$doc->loadHTML( $html );
 		libxml_clear_errors();
 		$xpath  = new DOMXPath( $doc );

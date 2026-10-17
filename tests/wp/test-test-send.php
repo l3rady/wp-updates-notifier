@@ -50,15 +50,15 @@ class Test_Test_Send extends WPUN_Test_Case {
 
 		$this->save_settings();
 		wp_set_current_user( self::$admin_id );
-		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test' );
-		$_POST['instance'] = 'email';
+		$_POST['sc_wpun_test_nonce'] = wp_create_nonce( 'sc_wpun_send_test' );
+		$_POST['instance']           = 'email';
 	}
 
 	/**
 	 * Forget the request.
 	 */
 	public function tear_down() {
-		unset( $_POST['_wpnonce'], $_POST['instance'] );
+		unset( $_POST['sc_wpun_test_nonce'], $_POST['instance'] );
 
 		parent::tear_down();
 	}
@@ -182,14 +182,14 @@ class Test_Test_Send extends WPUN_Test_Case {
 	public function test_nonce_and_capability_are_enforced() {
 		$page = sc_wpun()->settings_page();
 
-		$_POST['_wpnonce'] = 'bad';
+		$_POST['sc_wpun_test_nonce'] = 'bad';
 		$this->assertFalse( $page->process_test_send() );
 
-		unset( $_POST['_wpnonce'] );
+		unset( $_POST['sc_wpun_test_nonce'] );
 		$this->assertFalse( $page->process_test_send() );
 
 		wp_set_current_user( self::$editor_id );
-		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test' );
+		$_POST['sc_wpun_test_nonce'] = wp_create_nonce( 'sc_wpun_send_test' );
 		$this->assertFalse( $page->process_test_send() );
 
 		$this->assertSame( 0, $this->sent_mail_count() );
