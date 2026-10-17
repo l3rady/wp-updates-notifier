@@ -34,6 +34,10 @@ Checks run on WP-Cron, which only runs when the site gets visits. On a quiet sit
 
 Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
+## Extending the plugin
+
+Add-ons can add notification channels, item types, routing rules and configuration sources through a public, versioned API. Start with the [developer guide](docs/developers/README.md) and the [example add-on](examples/wpun-example-channel/).
+
 ## Development
 
 Docker is the only requirement: no PHP, Composer or Node on the host.
