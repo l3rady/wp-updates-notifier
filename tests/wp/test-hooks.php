@@ -159,7 +159,8 @@ class Test_Hooks extends WPUN_Test_Case {
 			'sc_wpun_default_settings',
 			static function ( $defaults ) {
 				$defaults['frequency']      = 'daily';
-				$defaults['notify_plugins'] = '2';
+				$defaults['notify_plugins'] = 'active';
+				$defaults['notify_themes']  = '2'; // Numbers are not keys.
 				$defaults['unknown']        = 'ignored';
 				return $defaults;
 			}
@@ -171,7 +172,8 @@ class Test_Hooks extends WPUN_Test_Case {
 		sc_wpun()->settings()->maybe_upgrade();
 
 		$this->assertSame( 'daily', $this->stored_settings()['frequency'] );
-		$this->assertSame( 2, $this->stored_settings()['notify_plugins'] );
+		$this->assertSame( 'active', $this->stored_settings()['notify_plugins'] );
+		$this->assertSame( 'all', $this->stored_settings()['notify_themes'], 'An invalid default falls back to the built-in one.' );
 		$this->assertArrayNotHasKey( 'unknown', $this->stored_settings() );
 		$this->assertSame( 'daily', sc_wpun()->settings()->get()['frequency'] );
 

@@ -60,7 +60,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	public function test_the_upgrade_produces_the_current_shape( $name, $version, array $options ) {
 		$this->upgrade_from( $version, $options );
 
-		$this->assertSame( '9.0', get_option( 'sc_wpun_settings_ver' ), $name );
+		$this->assertSame( '10.0', get_option( 'sc_wpun_settings_ver' ), $name );
 		$this->assertEqualsCanonicalizing( array_keys( $this->global_settings() ), array_keys( $this->stored_settings() ), $name );
 	}
 
@@ -77,8 +77,18 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->upgrade_from( $version, $options );
 		$stored = $this->stored_settings();
 
-		foreach ( array( 'frequency', 'notify_plugins', 'notify_themes', 'hide_updates' ) as $key ) {
+		foreach ( array( 'frequency', 'hide_updates' ) as $key ) {
 			$this->assertSame( $options[ $key ], $stored[ $key ], "$name: $key" );
+		}
+
+		// Stored as 0, 1 or 2 (a number or a numeric string) in 1.x.
+		$keys = array(
+			'0' => 'none',
+			'1' => 'all',
+			'2' => 'active',
+		);
+		foreach ( array( 'notify_plugins', 'notify_themes' ) as $key ) {
+			$this->assertSame( $keys[ (string) $options[ $key ] ], $stored[ $key ], "$name: $key" );
 		}
 		foreach ( $this->moved_keys() as $key ) {
 			$this->assertArrayNotHasKey( $key, $stored, "$name: $key" );
@@ -261,8 +271,8 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 
 		$stored = $this->stored_settings();
 		$this->assertSame( 'hourly', $stored['frequency'] );
-		$this->assertSame( 1, $stored['notify_plugins'] );
-		$this->assertSame( 1, $stored['notify_themes'] );
+		$this->assertSame( 'all', $stored['notify_plugins'] );
+		$this->assertSame( 'all', $stored['notify_themes'] );
 		$this->assertSame( 1, $stored['hide_updates'] );
 		foreach ( $this->moved_keys() as $key ) {
 			$this->assertArrayNotHasKey( $key, $stored, $key );
@@ -283,6 +293,98 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 			$email->get_settings()
 		);
 		$this->assertFalse( sc_wpun_channels()->has( 'slack' ) );
+	}
+
+	/**
+	 * Settings version 10 turns 0, 1 and 2 (numbers or numeric strings) into none, all and active.
+	 */
+	public function test_notify_numbers_become_keys() {
+		foreach ( array(
+			array( 0, 'none' ),
+			array( 1, 'all' ),
+			array( 2, 'active' ),
+			array( '0', 'none' ),
+			array( '1', 'all' ),
+			array( '2', 'active' ),
+		) as $case ) {
+			$this->upgrade_from(
+				'9.0',
+				$this->global_settings(
+					array(
+						'notify_plugins' => $case[0],
+						'notify_themes'  => $case[0],
+					)
+				)
+			);
+
+			$stored = get_option( 'sc_wpun_settings' );
+			$this->assertSame( $case[1], $stored['notify_plugins'], 'plugins ' . var_export( $case[0], true ) );
+			$this->assertSame( $case[1], $stored['notify_themes'], 'themes ' . var_export( $case[0], true ) );
+		}
+	}
+
+	/**
+	 * Keys are left alone and a value that is not one falls back to the default.
+	 */
+	public function test_notify_keys_survive_and_junk_falls_back() {
+		$this->upgrade_from(
+			'9.0',
+			$this->global_settings(
+				array(
+					'notify_plugins' => 'active',
+					'notify_themes'  => 'bogus',
+				)
+			)
+		);
+
+		$stored = get_option( 'sc_wpun_settings' );
+		$this->assertSame( 'active', $stored['notify_plugins'] );
+		$this->assertSame( 'all', $stored['notify_themes'] );
+
+		$this->upgrade_from( '9.0', $this->global_settings( array( 'notify_plugins' => 7 ) ) );
+		$this->assertSame( 'all', get_option( 'sc_wpun_settings' )['notify_plugins'] );
+	}
+
+	/**
+	 * After the upgrade a legacy "active only" plugin setting still limits the check to active plugins.
+	 */
+	public function test_the_update_check_behaves_the_same_after_the_upgrade() {
+		$this->save_settings();
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
+		update_option( 'sc_wpun_settings_ver', '9.0' );
+		sc_wpun()->settings()->maybe_upgrade();
+		update_option( 'active_plugins', array() );
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
+
+		$this->plugin()->do_update_check();
+		$this->assertSame( 0, $this->sent_mail_count() );
+
+		update_option( 'active_plugins', array( 'hello.php' ) );
+		$this->plugin()->do_update_check();
+		$this->assertSame( 1, $this->sent_mail_count() );
+	}
+
+	/**
+	 * Numbers written to the option after the upgrade (`wp option update`, a filter) are still understood when read.
+	 */
+	public function test_legacy_numbers_are_understood_when_read() {
+		add_filter(
+			'sc_wpun_get_options_filter',
+			static function ( $value, $field ) {
+				if ( 'sc_wpun_settings' === $field && is_array( $value ) ) {
+					$value['notify_plugins'] = 2;
+					$value['notify_themes']  = '0';
+				}
+				return $value;
+			},
+			10,
+			2
+		);
+
+		$stored = sc_wpun()->settings()->stored();
+
+		$this->assertSame( 'active', $stored['notify_plugins'] );
+		$this->assertSame( 'none', $stored['notify_themes'] );
 	}
 
 	/**

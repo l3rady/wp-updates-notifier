@@ -102,7 +102,7 @@ class Email_Channel extends Channel {
 				'sanitize_callback' => 'sanitize_text_field',
 			),
 			'format'         => array(
-				'type'    => 'select',
+				'type'    => 'enum',
 				'label'   => __( 'Format', 'wp-updates-notifier' ),
 				'default' => 'text',
 				'options' => array(

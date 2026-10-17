@@ -30,6 +30,56 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Routing {
 
 	/**
+	 * The known keys as enum field schemas, for drawing a form and for checking values.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return array<string, array<string, mixed>> Keyed `scope`, `core` and `types`.
+	 */
+	public static function fields(): array {
+		return self::choice_fields() + array(
+			'types' => array(
+				'type'     => 'enum',
+				'label'    => __( 'Item types', 'wp-updates-notifier' ),
+				'options'  => Item_Types::all(),
+				'multiple' => true,
+				'display'  => 'checkboxes',
+				'default'  => array(),
+			),
+		);
+	}
+
+	/**
+	 * The `scope` and `core` fields, which need no look at the registered item types.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function choice_fields(): array {
+		return array(
+			'scope' => array(
+				'type'    => 'enum',
+				'label'   => __( 'Plugins and themes', 'wp-updates-notifier' ),
+				'options' => array(
+					'all'    => __( 'All', 'wp-updates-notifier' ),
+					'active' => __( 'Only active ones', 'wp-updates-notifier' ),
+				),
+				'default' => 'all',
+				'display' => 'radio',
+			),
+			'core'  => array(
+				'type'    => 'enum',
+				'label'   => __( 'WordPress updates', 'wp-updates-notifier' ),
+				'options' => array(
+					'all'   => __( 'All', 'wp-updates-notifier' ),
+					'major' => __( 'Only major releases', 'wp-updates-notifier' ),
+				),
+				'default' => 'all',
+				'display' => 'radio',
+			),
+		);
+	}
+
+	/**
 	 * The routing with the known keys checked and defaults applied; other keys are kept.
 	 *
 	 * @since 2.0.0
@@ -39,6 +89,8 @@ final class Routing {
 	 * @return array<mixed> With `types` (string[]), `scope` and `core`.
 	 */
 	public static function normalise( array $routing ): array {
+		// Types stay as stored, even ones nobody registers any more: dropping the type of a deactivated add-on
+		// would turn `array( 'php' )` into an empty list, which means every type.
 		$types = array();
 		if ( isset( $routing['types'] ) && is_array( $routing['types'] ) ) {
 			foreach ( $routing['types'] as $type ) {
@@ -48,9 +100,10 @@ final class Routing {
 			}
 		}
 
+		$fields           = self::choice_fields();
 		$routing['types'] = $types;
-		$routing['scope'] = isset( $routing['scope'] ) && 'active' === $routing['scope'] ? 'active' : 'all';
-		$routing['core']  = isset( $routing['core'] ) && 'major' === $routing['core'] ? 'major' : 'all';
+		$routing['scope'] = Enum_Field::sanitize( $routing['scope'] ?? null, $fields['scope'] )['value'];
+		$routing['core']  = Enum_Field::sanitize( $routing['core'] ?? null, $fields['core'] )['value'];
 
 		return $routing;
 	}

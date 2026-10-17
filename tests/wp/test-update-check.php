@@ -124,7 +124,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 * A plugin update is reported with its name and both versions.
 	 */
 	public function test_a_plugin_update_is_emailed() {
-		$this->save_settings( array( 'notify_plugins' => 1 ) );
+		$this->save_settings( array( 'notify_plugins' => 'all' ) );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
 		$this->plugin()->do_update_check();
@@ -153,7 +153,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 * Switching plugin notifications off silences plugin updates but not core.
 	 */
 	public function test_plugin_updates_are_skipped_when_switched_off() {
-		$this->save_settings( array( 'notify_plugins' => 0 ) );
+		$this->save_settings( array( 'notify_plugins' => 'none' ) );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
 		$this->plugin()->do_update_check();
@@ -165,7 +165,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 * "Only active plugins" ignores updates for plugins that are not active.
 	 */
 	public function test_only_active_plugins_when_asked() {
-		$this->save_settings( array( 'notify_plugins' => 2 ) );
+		$this->save_settings( array( 'notify_plugins' => 'active' ) );
 		update_option( 'active_plugins', array() );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
@@ -211,7 +211,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 */
 	public function test_only_the_active_theme_when_asked() {
 		list( $active, $other ) = $this->installed_themes();
-		$this->save_settings( array( 'notify_themes' => 2 ) );
+		$this->save_settings( array( 'notify_themes' => 'active' ) );
 		update_option( 'template', $active );
 		$this->set_updates( null, array(), array( $other => array( 'new_version' => '99.3' ) ) );
 

@@ -52,8 +52,8 @@ class Test_Active_Only extends WPUN_Test_Case {
 		list( , $child ) = $this->parent_and_child();
 		$this->save_settings(
 			array(
-				'notify_themes'  => 2,
-				'notify_plugins' => 0,
+				'notify_themes'  => 'active',
+				'notify_plugins' => 'none',
 			)
 		);
 		$this->set_updates( null, array(), array( $child => array( 'new_version' => '99.3' ) ) );
@@ -70,8 +70,8 @@ class Test_Active_Only extends WPUN_Test_Case {
 		list( $parent ) = $this->parent_and_child();
 		$this->save_settings(
 			array(
-				'notify_themes'  => 2,
-				'notify_plugins' => 0,
+				'notify_themes'  => 'active',
+				'notify_plugins' => 'none',
 			)
 		);
 		$this->set_updates( null, array(), array( $parent => array( 'new_version' => '99.3' ) ) );
@@ -91,8 +91,8 @@ class Test_Active_Only extends WPUN_Test_Case {
 		update_option( 'stylesheet', $slugs[1] );
 		$this->save_settings(
 			array(
-				'notify_themes'  => 2,
-				'notify_plugins' => 0,
+				'notify_themes'  => 'active',
+				'notify_plugins' => 'none',
 			)
 		);
 		$this->set_updates( null, array(), array( $slugs[2] => array( 'new_version' => '99.3' ) ) );
@@ -112,7 +112,7 @@ class Test_Active_Only extends WPUN_Test_Case {
 
 		update_option( 'active_plugins', array() );
 		update_site_option( 'active_sitewide_plugins', array( 'hello.php' => time() ) );
-		$this->save_settings( array( 'notify_plugins' => 2 ) );
+		$this->save_settings( array( 'notify_plugins' => 'active' ) );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
 		$this->plugin()->do_update_check();
@@ -128,7 +128,7 @@ class Test_Active_Only extends WPUN_Test_Case {
 		if ( is_multisite() ) {
 			update_site_option( 'active_sitewide_plugins', array() );
 		}
-		$this->save_settings( array( 'notify_plugins' => 2 ) );
+		$this->save_settings( array( 'notify_plugins' => 'active' ) );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
 		$this->plugin()->do_update_check();

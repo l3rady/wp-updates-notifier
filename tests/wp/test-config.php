@@ -30,7 +30,7 @@ class Test_Config extends WPUN_Test_Case {
 		parent::set_up();
 
 		sc_wpun()->config()->flush();
-		$this->save_settings( array( 'notify_plugins' => 1 ) );
+		$this->save_settings( array( 'notify_plugins' => 'all' ) );
 	}
 
 	/**
@@ -238,7 +238,7 @@ class Test_Config extends WPUN_Test_Case {
 	 * The filter gets the source's value and label, and returning null falls back to the database.
 	 */
 	public function test_the_value_filter() {
-		$this->add_source( array( 'SC_WPUN_SETTING_NOTIFY_THEMES' => '2' ) );
+		$this->add_source( array( 'SC_WPUN_SETTING_NOTIFY_THEMES' => 'active' ) );
 		$seen = array();
 		add_filter(
 			'sc_wpun_config_value',
@@ -250,9 +250,35 @@ class Test_Config extends WPUN_Test_Case {
 			3
 		);
 
-		$this->assertSame( 1, sc_wpun()->settings()->get()['notify_themes'], 'Null removes the external value.' );
-		$this->assertSame( array( '2', 'Test vault' ), $seen['notify_themes'] );
+		$this->assertSame( 'all', sc_wpun()->settings()->get()['notify_themes'], 'Null removes the external value.' );
+		$this->assertSame( array( 'active', 'Test vault' ), $seen['notify_themes'] );
 		$this->assertSame( array( null, null ), $seen['frequency'] );
+	}
+
+	/**
+	 * The notify settings take the keys; a number from the old scheme is reported and not used.
+	 */
+	public function test_notify_settings_take_keys_only() {
+		$this->save_settings( array( 'notify_themes' => 'none' ) );
+		$this->add_source( array( 'SC_WPUN_SETTING_NOTIFY_PLUGINS' => 'active' ) );
+		$this->assertSame( 'active', sc_wpun()->settings()->get()['notify_plugins'] );
+		$this->assertSame( array(), sc_wpun()->config()->problems() );
+
+		foreach ( array( '2', 'bogus' ) as $bad ) {
+			remove_all_filters( 'sc_wpun_config_sources' );
+			$this->add_source(
+				array(
+					'SC_WPUN_SETTING_NOTIFY_PLUGINS' => $bad,
+					'SC_WPUN_SETTING_NOTIFY_THEMES'  => 'all',
+				)
+			);
+
+			$settings = sc_wpun()->settings()->get();
+
+			$this->assertSame( 'all', $settings['notify_plugins'], $bad );
+			$this->assertSame( 'all', $settings['notify_themes'] );
+			$this->assertSame( array( 'SC_WPUN_SETTING_NOTIFY_PLUGINS' ), wp_list_pluck( sc_wpun()->config()->problems(), 'key' ), $bad );
+		}
 	}
 
 	/**
@@ -271,7 +297,7 @@ class Test_Config extends WPUN_Test_Case {
 		$settings = sc_wpun()->settings()->get();
 
 		$this->assertSame( 'daily', $settings['frequency'] );
-		$this->assertSame( 1, $settings['notify_plugins'] );
+		$this->assertSame( 'all', $settings['notify_plugins'] );
 		$problems = sc_wpun()->config()->problems();
 		$this->assertSame( array( 'SC_WPUN_SETTING_FREQUENCY', 'SC_WPUN_SETTING_NOTIFY_PLUGINS', 'SC_WPUN_SETTING_HIDE_UPDATES' ), wp_list_pluck( $problems, 'key' ) );
 		$this->assertSame( 'Test vault', $problems[0]['source'] );
@@ -369,7 +395,7 @@ class Test_Config extends WPUN_Test_Case {
 		$this->add_source(
 			array(
 				'SC_WPUN_SETTING_FREQUENCY'      => 'weekly',
-				'SC_WPUN_SETTING_NOTIFY_PLUGINS' => '2',
+				'SC_WPUN_SETTING_NOTIFY_PLUGINS' => 'active',
 			)
 		);
 
@@ -377,7 +403,7 @@ class Test_Config extends WPUN_Test_Case {
 
 		$this->assertMatchesRegularExpression( '/<select[^>]*name="sc_wpun_settings\[frequency\]"[^>]*disabled/', $page );
 		$this->assertMatchesRegularExpression( '/<option value="weekly"\s+selected/', $page );
-		$this->assertMatchesRegularExpression( '/name="sc_wpun_settings\[notify_plugins\]" type="radio" value="2" disabled="disabled"\s+checked|name="sc_wpun_settings\[notify_plugins\]" type="radio" value="2"[^>]*disabled/', $page );
+		$this->assertMatchesRegularExpression( '/name="sc_wpun_settings\[notify_plugins\]" value="active" checked="checked" disabled="disabled"/', $page );
 		$this->assertStringContainsString( 'Set by Test vault', $page );
 		$this->assertDoesNotMatchRegularExpression( '/name="sc_wpun_settings\[notify_themes\]"[^>]*disabled/', $page );
 	}
@@ -390,21 +416,21 @@ class Test_Config extends WPUN_Test_Case {
 		$this->add_source(
 			array(
 				'SC_WPUN_SETTING_FREQUENCY'      => 'weekly',
-				'SC_WPUN_SETTING_NOTIFY_PLUGINS' => '2',
+				'SC_WPUN_SETTING_NOTIFY_PLUGINS' => 'active',
 			)
 		);
 
 		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate(
 			array(
 				'frequency'      => 'hourly',
-				'notify_plugins' => 0,
-				'notify_themes'  => 2,
+				'notify_plugins' => 'none',
+				'notify_themes'  => 'active',
 			)
 		);
 
 		$this->assertSame( 'daily', $valid['frequency'] );
-		$this->assertSame( 1, $valid['notify_plugins'] );
-		$this->assertSame( 2, $valid['notify_themes'], 'Settings that are not external still save.' );
+		$this->assertSame( 'all', $valid['notify_plugins'] );
+		$this->assertSame( 'active', $valid['notify_themes'], 'Settings that are not external still save.' );
 
 		update_option( 'sc_wpun_settings', $valid );
 		$this->assertSame( 'daily', $this->stored_settings()['frequency'] );
