@@ -82,7 +82,7 @@ class Test_Test_Send extends WPUN_Test_Case {
 		$html = $this->page();
 		$this->assertStringNotContainsString( 'value="sc_wpun_send_test"', $html );
 		$this->assertStringNotContainsString( 'Send test email', $html );
-		$this->assertStringContainsString( 'notify_reply_to', $html );
+		$this->assertStringNotContainsString( 'notify_reply_to', $html );
 
 		$_GET['tab'] = 'channels';
 		$html        = $this->page();

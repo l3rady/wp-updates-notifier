@@ -101,9 +101,8 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 	public function test_on_off_values_are_single_checkboxes() {
 		$this->save_settings(
 			array(
-				'notify_automatic'    => false,
-				'hide_updates'        => true,
-				'email_notifications' => 1,
+				'notify_automatic' => false,
+				'hide_updates'     => true,
 			)
 		);
 		$xpath = $this->page();
@@ -111,7 +110,6 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 		$expected = array(
 			'sc_wpun_settings_main_notify_automatic' => array( 'notify_automatic', false, "Send WordPress's automatic core update emails to the notification address" ),
 			'sc_wpun_settings_main_hide_updates'     => array( 'hide_updates', true, 'Hide the WordPress update notice from users who cannot update WordPress' ),
-			'sc_wpun_settings_email_notifications_email_notifications' => array( 'email_notifications', true, 'Send email notifications' ),
 		);
 		foreach ( $expected as $id => list( $name, $on, $text ) ) {
 			$box = $xpath->query( '//input[@type="checkbox"][@id="' . $id . '"][@name="sc_wpun_settings[' . $name . ']"]' );
