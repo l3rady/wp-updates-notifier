@@ -7,6 +7,7 @@
 
 namespace WPUN;
 
+use WPUN\Admin\Channel_Form;
 use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Notices;
 use WPUN\Admin\Settings_Page;
@@ -100,6 +101,13 @@ class Plugin {
 	private $channels_tab = null;
 
 	/**
+	 * The add and edit forms of a channel.
+	 *
+	 * @var Channel_Form|null
+	 */
+	private $channel_form = null;
+
+	/**
 	 * Notices about what an admin action did.
 	 *
 	 * @var Notices|null
@@ -119,9 +127,20 @@ class Plugin {
 	 * @return Channels_Tab
 	 */
 	public function channels_tab(): Channels_Tab {
-		$this->channels_tab ??= new Channels_Tab( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices() );
+		$this->channels_tab ??= new Channels_Tab( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->channel_form() );
 
 		return $this->channels_tab;
+	}
+
+	/**
+	 * The add and edit forms of a channel, built on first use: front-end requests never need them.
+	 *
+	 * @return Channel_Form
+	 */
+	public function channel_form(): Channel_Form {
+		$this->channel_form ??= new Channel_Form( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices() );
+
+		return $this->channel_form;
 	}
 
 	/**
@@ -369,6 +388,7 @@ class Plugin {
 		add_action( 'admin_post_' . Channels_Tab::TOGGLE_ACTION, array( $this->channels_tab(), 'handle_toggle' ) ); // Switch a channel on or off.
 		add_action( 'admin_post_' . Channels_Tab::DUPLICATE_ACTION, array( $this->channels_tab(), 'handle_duplicate' ) ); // Duplicate a channel.
 		add_action( 'admin_post_' . Channels_Tab::DELETE_ACTION, array( $this->channels_tab(), 'handle_delete' ) ); // Delete a channel.
+		add_action( 'admin_post_' . Channel_Form::SAVE_ACTION, array( $this->channel_form(), 'handle_save' ) ); // Add or edit a channel.
 	}
 
 	/**
