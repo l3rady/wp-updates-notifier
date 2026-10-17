@@ -7,6 +7,7 @@
 
 namespace WPUN\Admin;
 
+use WPUN\Boolean_Field;
 use WPUN\Enum_Field;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Draws form controls from field schemas. Only the enum type is drawn so far.
+ * Draws form controls from field schemas. The enum and boolean types are drawn so far.
  *
  * @internal
  */
@@ -76,6 +77,81 @@ final class Field_Renderer {
 				. '<label for="' . esc_attr( $input_id ) . '"><input type="' . $type . '" id="' . esc_attr( $input_id ) . '" name="' . esc_attr( $input_name ) . '" value="' . esc_attr( $key ) . '"'
 				. ( in_array( $key, $chosen, true ) ? ' checked="checked"' : '' ) . $disable . ' /> ' . esc_html( $label ) . '</label>';
 			++$index;
+		}
+
+		return $html . '</fieldset>';
+	}
+
+	/**
+	 * The markup of a field of type `enum`, `select`, `boolean` or `checkbox`, by its type.
+	 *
+	 * @param array<string, mixed> $field        Field schema.
+	 * @param string               $name         The `name` attribute of the input, without `[]`.
+	 * @param string               $id           Base of the `id` attributes.
+	 * @param mixed                $value        The current value.
+	 * @param bool                 $disabled     Whether the inputs are disabled.
+	 * @param string               $described_by Id of the element that describes the field, if any.
+	 *
+	 * @return string Empty for a type that is not drawn here.
+	 */
+	public static function field( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '' ): string {
+		if ( Enum_Field::is_enum( $field ) ) {
+			return self::enum( $field, $name, $id, is_array( $value ) ? array_values( $value ) : ( is_scalar( $value ) ? (string) $value : '' ), $disabled, $described_by );
+		}
+
+		if ( Boolean_Field::is_boolean( $field ) ) {
+			return self::boolean( $field, $name, $id, $value, $disabled, $described_by );
+		}
+
+		return '';
+	}
+
+	/**
+	 * The markup of a boolean field.
+	 *
+	 * A checkbox is preceded by a hidden input of the same name with the value 0, so that an unticked box
+	 * submits "off" instead of nothing. Radio buttons sit in a fieldset whose legend is the field's label
+	 * (visible to screen readers only), each with its own label. Everything is escaped.
+	 *
+	 * @param array<string, mixed> $field        Field schema of type `boolean` or `checkbox`.
+	 * @param string               $name         The `name` attribute of the input.
+	 * @param string               $id           Base of the `id` attributes: the fieldset or select gets it as it is.
+	 * @param mixed                $value        The current value: on for true, 1 and '1'.
+	 * @param bool                 $disabled     Whether the inputs are disabled.
+	 * @param string               $described_by Id of the element that describes the field, if any.
+	 *
+	 * @return string
+	 */
+	public static function boolean( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '' ): string {
+		$field    = Boolean_Field::normalise( $field );
+		$on       = true === Boolean_Field::sanitize( $value, $field )['value'];
+		$disable  = $disabled ? ' disabled="disabled"' : '';
+		$describe = '' !== $described_by ? ' aria-describedby="' . esc_attr( $described_by ) . '"' : '';
+		$labels   = $field['labels'];
+
+		if ( 'checkbox' === $field['display'] ) {
+			return '<input type="hidden" name="' . esc_attr( $name ) . '" value="0"' . $disable . ' />'
+				. '<label for="' . esc_attr( $id ) . '"><input type="checkbox" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="1"'
+				. ( $on ? ' checked="checked"' : '' ) . $disable . $describe . ' /> ' . esc_html( $labels['on'] ) . '</label>';
+		}
+
+		if ( 'select' === $field['display'] ) {
+			return '<select id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '"' . $disable . $describe . '>'
+				. '<option value="1"' . ( $on ? ' selected="selected"' : '' ) . '>' . esc_html( $labels['on'] ) . '</option>'
+				. '<option value="0"' . ( $on ? '' : ' selected="selected"' ) . '>' . esc_html( $labels['off'] ) . '</option>'
+				. '</select>';
+		}
+
+		$legend = isset( $field['label'] ) && is_string( $field['label'] ) ? $field['label'] : '';
+		$html   = '<fieldset id="' . esc_attr( $id ) . '"' . $describe . '><legend class="screen-reader-text"><span>' . esc_html( $legend ) . '</span></legend>';
+		foreach ( array(
+			array( '1', $labels['on'], $on ),
+			array( '0', $labels['off'], ! $on ),
+		) as $index => $choice ) {
+			$input_id = $id . '_' . $index;
+			$html    .= ( $index > 0 ? '<br />' : '' )
+				. '<label for="' . esc_attr( $input_id ) . '"><input type="radio" id="' . esc_attr( $input_id ) . '" name="' . esc_attr( $name ) . '" value="' . $choice[0] . '"'
+				. ( $choice[2] ? ' checked="checked"' : '' ) . $disable . ' /> ' . esc_html( $choice[1] ) . '</label>';
 		}
 
 		return $html . '</fieldset>';
