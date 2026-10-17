@@ -21,7 +21,7 @@ COMMITS_FROM ?= origin/main
 COMMITS_TO   ?= HEAD
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean
+.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -93,6 +93,9 @@ check-headers: ## Check the plugin header and readme.txt agree and follow WordPr
 
 check-hooks: ## Check every hook the plugin fires is documented with @since
 	$(COMPOSE) run --build --rm php sh bin/check-hooks.sh
+
+check-public-api: ## Check modules and the test add-on use only the public API, and test the checker
+	$(COMPOSE) run --build --rm php sh bin/check-public-api.sh
 
 smoke: ## Verify PHP, mysqli and that every PHP file lints
 	$(COMPOSE) run --build --rm php sh docker/smoke.sh

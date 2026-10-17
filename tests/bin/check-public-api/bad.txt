@@ -1,0 +1,37 @@
+<?php
+// Known-bad code for tests/bin/test-check-public-api.sh. Not PHP the plugin loads: the .txt keeps it out of every scan.
+// The test expects each line marked "expect:" below to be reported with the message after it.
+
+namespace Bad_Addon;
+
+use WPUN\Plugin; // expect: internal class WPUN\\Plugin
+use WPUN\Admin\Channels_Tab as Tab; // expect: internal class WPUN\\Admin\\Channels_Tab
+use WPUN\{ Channel, Settings }; // expect: internal class WPUN\\Settings
+use function WPUN\sc_wpun; // expect: imports the internal function
+use ReflectionClass; // expect: reflection
+use WPUN as W;
+
+class Bad extends \WPUN\State { // expect: internal class WPUN\\State
+
+	public function run( \WPUN\Scheduler $scheduler, Dispatcher $d ): void { // expect: internal class WPUN\\Scheduler
+		sc_wpun(); // expect: calls the internal function sc_wpun()
+		\sc_wpun()->state(); // expect: calls the internal function sc_wpun()
+		$x = new Plugin(); // expect: written Plugin
+		$y = Tab::class; // expect: written Tab
+		if ( $x instanceof \WPUN\Notifier ) { // expect: internal class WPUN\\Notifier
+			$z = \SC_WP_Updates_Notifier::class; // expect: internal class SC_WP_Updates_Notifier
+		}
+		$store = sc_wpun_channels();
+		$store->stored_all(); // expect: calls ->stored_all()
+		$store->problems( 'x' ); // expect: calls ->problems()
+		$store->save_raw( $store->get( 'x' ) ); // expect: calls ->save_raw()
+		$store->external_source( 'x', 'y' ); // expect: calls ->external_source()
+		$class = 'WPUN\\Config'; // expect: internal class WPUN\\Config in a string
+		$name  = 'sc_wpun'; // expect: internal function sc_wpun() in a string
+		$r = new \ReflectionObject( $store ); // expect: reflection
+		\Closure::bind( function () {}, null, Channel::class ); // expect: Closure::bind()
+		( function () {} )->bindTo( $store ); // expect: ->bindTo()
+		( function () {} )->call( $store ); // expect: ->call()
+		W\Frequencies::all(); // expect: written W.Frequencies
+	}
+}

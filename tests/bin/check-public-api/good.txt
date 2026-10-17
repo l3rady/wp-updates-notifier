@@ -1,0 +1,42 @@
+<?php
+// Known-good code for tests/bin/test-check-public-api.sh: the public API, and names that only look internal.
+
+namespace Good_Addon;
+
+use WPUN\Channel;
+use WPUN\Channel_Instance as Instance;
+use WPUN\{ Delivery_Result, Notification };
+
+// Same short names as internal classes, in this add-on's own namespace.
+class Plugin extends Channel {
+	public function get_type(): string {
+		return 'good';
+	}
+
+	public function get_label(): string {
+		return 'Good';
+	}
+
+	public function send( Notification $notification, Instance $instance ): Delivery_Result {
+		$settings = new Settings();
+		$state    = State::class;
+
+		return Delivery_Result::success( $settings->state() . $state . \WPUN\Routing::major_minor( '1.2.3' ) );
+	}
+}
+
+class Settings {
+	public function state(): string {
+		return 'ok';
+	}
+}
+
+// The public functions are fine, and so are words in comments: sc_wpun() WPUN\Plugin ->stored_all().
+add_action(
+	'sc_wpun_register_channels',
+	static function ( \WPUN\Channel_Registry $registry ) {
+		$registry->register( new Plugin() );
+		sc_wpun_register_channel( new Plugin() );
+		sc_wpun_channels()->all();
+	}
+);
