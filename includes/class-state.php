@@ -17,7 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @internal
  * @phpstan-type Generic_Notified array<string, array<string, string>>
  * @phpstan-type Legacy_Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
- * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool}
+ * @phpstan-type Last_Result array{success: bool, message: string, time: int}
+ * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, last_result?: Last_Result}
  * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified}
  */
 class State {
@@ -71,11 +72,16 @@ class State {
 		$channels = array();
 
 		foreach ( isset( $state['channels'] ) && is_array( $state['channels'] ) ? $state['channels'] : array() as $id => $entry ) {
-			$entry                    = is_array( $entry ) ? $entry : array();
-			$channels[ (string) $id ] = array(
+			$entry       = is_array( $entry ) ? $entry : array();
+			$clean       = array(
 				'notified'     => $this->normalise_generic( $entry['notified'] ?? array() ),
 				'skip_pending' => ! empty( $entry['skip_pending'] ),
 			);
+			$last_result = $this->normalise_last_result( $entry['last_result'] ?? null );
+			if ( null !== $last_result ) {
+				$clean['last_result'] = $last_result;
+			}
+			$channels[ (string) $id ] = $clean;
 		}
 
 		$normalised = array(
@@ -123,11 +129,62 @@ class State {
 	 */
 	public function skip_pending( string $id ): void {
 		$state                    = $this->get();
-		$state['channels'][ $id ] = array(
-			'notified'     => array(),
-			'skip_pending' => true,
-		);
+		$entry                    = $state['channels'][ $id ] ?? array();
+		$entry['notified']        = array();
+		$entry['skip_pending']    = true;
+		$state['channels'][ $id ] = $entry;
 		$this->save( $state );
+	}
+
+	/**
+	 * Remember the outcome of the latest delivery through a channel instance.
+	 *
+	 * Hooked on `sc_wpun_notification_sent` and `sc_wpun_notification_failed`. A test send never counts.
+	 *
+	 * @param mixed $result       The delivery result.
+	 * @param mixed $notification The notification.
+	 * @param mixed $instance     The channel instance.
+	 *
+	 * @return void
+	 */
+	public function record_delivery( $result, $notification, $instance ): void {
+		if ( ! $result instanceof Delivery_Result || ! $notification instanceof Notification || ! $instance instanceof Channel_Instance || $notification->is_test() ) {
+			return;
+		}
+
+		$state = $this->get();
+		$id    = $instance->get_id();
+		$entry = $state['channels'][ $id ] ?? array(
+			'notified'     => array(),
+			'skip_pending' => false,
+		);
+
+		$entry['last_result']     = array(
+			'success' => $result->is_success(),
+			'message' => $result->get_message(),
+			'time'    => time(),
+		);
+		$state['channels'][ $id ] = $entry;
+		$this->save( $state );
+	}
+
+	/**
+	 * A stored last delivery result with its expected types, or null if it is not usable.
+	 *
+	 * @param mixed $last_result Stored value.
+	 *
+	 * @return Last_Result|null
+	 */
+	private function normalise_last_result( $last_result ): ?array {
+		if ( ! is_array( $last_result ) || ! isset( $last_result['time'] ) || ! is_numeric( $last_result['time'] ) || (int) $last_result['time'] <= 0 ) {
+			return null;
+		}
+
+		return array(
+			'success' => ! empty( $last_result['success'] ),
+			'message' => isset( $last_result['message'] ) && is_string( $last_result['message'] ) ? $last_result['message'] : '',
+			'time'    => (int) $last_result['time'],
+		);
 	}
 
 	/**

@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Looks for core, plugin and theme updates and sends a notification about new ones.
  *
  * @internal
+ * @phpstan-import-type Channel_State from State
  */
 class Update_Checker {
 	/**
@@ -244,6 +245,15 @@ class Update_Checker {
 			$channels[ $id ] = $entry;
 		}
 
+		// Sending saved each instance's last result in the stored state, which the copy read at the start lacks.
+		$fresh = $this->state->get()['channels'];
+		foreach ( $channels as $id => $entry ) {
+			unset( $channels[ $id ]['last_result'] );
+			if ( isset( $fresh[ $id ]['last_result'] ) ) {
+				$channels[ $id ]['last_result'] = $fresh[ $id ]['last_result'];
+			}
+		}
+
 		$state['channels']        = $channels;
 		$state['last_check_time'] = time();
 		unset( $state['legacy_notified'] ); // Every instance that existed has taken its share; later ones start clean.
@@ -308,7 +318,7 @@ class Update_Checker {
 	 * @param array<string, mixed>            $state     The stored run state.
 	 * @param array<string, Channel_Instance> $instances The stored instances.
 	 *
-	 * @return array<string, array{notified: array<string, array<string, string>>, skip_pending: bool}>
+	 * @return array<string, Channel_State>
 	 */
 	private function state_for_instances( array $state, array $instances ): array {
 		$channels = is_array( $state['channels'] ?? null ) ? $state['channels'] : array();
