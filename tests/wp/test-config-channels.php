@@ -339,49 +339,6 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The email section shows external fields read-only, and a code-defined email as not editable.
-	 */
-	public function test_the_email_section_is_read_only() {
-		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__TO' => 'vault@example.org' ) );
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
-		sc_wpun()->settings_page()->admin_settings_init();
-
-		ob_start();
-		sc_wpun()->settings_page()->settings_page();
-		$page = ob_get_clean();
-
-		$this->assertMatchesRegularExpression( '/name="sc_wpun_settings\[notify_to\]"[^>]*disabled/', $page );
-		$this->assertDoesNotMatchRegularExpression( '/name="sc_wpun_settings\[notify_from\]"[^>]*disabled/', $page );
-		$this->assertStringContainsString( 'Set by Test vault', $page );
-
-		// Saving the form leaves the external value out of the database.
-		sc_wpun()->settings_page()->sc_wpun_settings_validate(
-			$this->settings(
-				array(
-					'notify_to'   => 'typed@example.org',
-					'notify_from' => 'new@example.org',
-				)
-			)
-		);
-		$raw = get_option( 'sc_wpun_channels' )['email']['settings'];
-		$this->assertSame( 'ops@example.org', $raw['to'] );
-		$this->assertSame( 'new@example.org', $raw['from'] );
-
-		add_filter(
-			'sc_wpun_channels',
-			static fn( $channels ) => array_merge( $channels, array( new Channel_Instance( 'email', 'email', 'Code', true, array( 'to' => 'code@example.org' ) ) ) )
-		);
-		sc_wpun()->config()->flush();
-		ob_start();
-		sc_wpun()->settings_page()->settings_page();
-		$page = ob_get_clean();
-		$this->assertStringContainsString( 'defined in code and can&#039;t be changed here', $page );
-		$this->assertMatchesRegularExpression( '/name="sc_wpun_settings\[notify_from\]"[^>]*disabled/', $page );
-		sc_wpun()->settings_page()->sc_wpun_settings_validate( $this->settings( array( 'notify_from' => 'other@example.org' ) ) );
-		$this->assertSame( 'new@example.org', get_option( 'sc_wpun_channels' )['email']['settings']['from'], 'Nothing is saved for a code-defined email.' );
-	}
-
-	/**
 	 * A secret supplied from outside never reaches the database, the page, problems, Site Health or the log.
 	 */
 	public function test_a_secret_never_leaks() {
@@ -398,11 +355,16 @@ class Test_Config_Channels extends WPUN_Test_Case {
 		$this->assertStringNotContainsString( self::SECRET, $this->raw_option() );
 		$this->assertSame( 'changed', get_option( 'sc_wpun_channels' )['vault']['settings']['label'] );
 
-		// The read-only helper shows no value for a secret field, and does for a plain one.
-		$page = sc_wpun()->settings_page();
-		$this->assertSame( '', $page->value_attribute( array( 'type' => 'secret' ), self::SECRET ) );
-		$this->assertSame( '', $page->value_attribute( array( 'secret' => true ), self::SECRET ) );
-		$this->assertStringContainsString( 'value="plain"', $page->value_attribute( array( 'type' => 'text' ), 'plain' ) );
+		// The edit form shows no value for a secret field.
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$_GET['action'] = 'edit';
+		$_GET['id']     = 'vault';
+		ob_start();
+		sc_wpun()->channels_tab()->render();
+		$form = ob_get_clean();
+		unset( $_GET['action'], $_GET['id'] );
+		$this->assertStringContainsString( 'name="settings[token]"', $form );
+		$this->assertStringNotContainsString( self::SECRET, $form );
 
 		// Problems, the settings page notice and Site Health.
 		$this->assertStringNotContainsString( self::SECRET, wp_json_encode( sc_wpun()->config()->problems() ) );
@@ -549,19 +511,6 @@ class Test_Config_Channels extends WPUN_Test_Case {
 			null
 		);
 		$this->assertSame( 'ops@example.org', $email['to'], 'The stored recipient, never the rejected one.' );
-	}
-
-	/**
-	 * With an invalid external recipient, a normal form save shows no error for the field it does not control.
-	 */
-	public function test_no_form_error_for_an_external_field() {
-		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__TO' => 'not an address' ) );
-		global $wp_settings_errors;
-		$wp_settings_errors = array();
-
-		sc_wpun()->settings_page()->sc_wpun_settings_validate( $this->settings( array( 'notify_to' => 'typed@example.org' ) ) );
-
-		$this->assertSame( array(), wp_list_filter( get_settings_errors(), array( 'setting' => 'sc_wpun_settings_email_notifications_notify_to' ) ) );
 	}
 
 	/**

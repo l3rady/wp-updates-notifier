@@ -120,29 +120,6 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Saving the form stores the email fields in the email instance, not in the settings.
-	 */
-	public function test_saving_the_form_updates_the_instances() {
-		$this->plugin()->sc_wpun_settings_validate(
-			$this->settings(
-				array(
-					'email_notifications' => 1,
-					'notify_to'           => 'a@example.org, b@example.org',
-					'notify_from'         => 'from@example.org',
-				)
-			)
-		);
-
-		$email = $this->stored_instance( 'email' );
-		$this->assertTrue( $email->is_enabled() );
-		$this->assertSame( 'a@example.org,b@example.org', $email->get_setting( 'to' ) );
-		$this->assertSame( 'from@example.org', $email->get_setting( 'from' ) );
-
-		$this->assertSame( array(), $this->errors() );
-		$this->assertSame( array_keys( $this->global_settings() ), array_keys( $this->stored_settings() ) );
-	}
-
-	/**
 	 * A stored Slack instance is kept as it is by every save, whether or not the form still posts Slack fields.
 	 */
 	public function test_validation_leaves_the_slack_instance_untouched() {
@@ -178,7 +155,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Saving the form creates no Slack instance.
+	 * Saving the form creates no Slack instance, nor any other.
 	 */
 	public function test_validation_creates_no_slack_instance() {
 		delete_option( 'sc_wpun_channels' );
@@ -193,36 +170,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		);
 
 		$this->assertFalse( sc_wpun_channels()->has( 'slack' ) );
-		$this->assertTrue( sc_wpun_channels()->has( 'email' ) );
-	}
-
-	/**
-	 * The settings page shows the instance values, not what an old settings option might still hold.
-	 */
-	public function test_the_settings_page_reads_the_instances() {
-		$this->save_settings(
-			array(
-				'notify_to'              => 'instance@example.org',
-				'slack_notifications'    => 1,
-				'slack_webhook_url'      => 'https://hooks.slack.com/services/T/B/X',
-				'slack_channel_override' => '#instance',
-			)
-		);
-		// Written behind the sanitizer's back, like an option left by an older release.
-		remove_all_filters( 'sanitize_option_sc_wpun_settings' );
-		update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_to' => 'old-option@example.org' ) ) );
-
-		ob_start();
-		$this->plugin()->settings_page();
-		$html = ob_get_clean();
-
-		$this->assertStringContainsString( 'instance@example.org', $html );
-		$this->assertStringNotContainsString( 'old-option@example.org', $html );
-		$this->assertStringNotContainsString( 'https://hooks.slack.com/services/T/B/X', $html );
-		$this->assertStringNotContainsString( 'slack_notifications', $html );
-		$this->assertStringNotContainsString( 'slack_webhook_url', $html );
-		$this->assertStringNotContainsString( 'slack_channel_override', $html );
-		$this->assertStringNotContainsString( 'submitwithslack', $html );
+		$this->assertFalse( sc_wpun_channels()->has( 'email' ), 'Saving the form creates no instance at all any more.' );
 	}
 
 	/**
@@ -297,23 +245,6 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Turning email on without addresses is refused, with the error on the email notifications field.
-	 */
-	public function test_email_without_addresses_is_refused_on_the_right_field() {
-		$this->plugin()->sc_wpun_settings_validate(
-			$this->settings(
-				array(
-					'email_notifications' => 1,
-					'notify_to'           => '',
-				)
-			)
-		);
-
-		$this->assertFalse( $this->stored_instance( 'email' )->is_enabled() );
-		$this->assertArrayHasKey( 'sc_wpun_settings_email_notifications_email_notifications', $this->errors() );
-	}
-
-	/**
 	 * No save queues a test send any more: the transient of the old flow is never set, even if the request carries the old button.
 	 */
 	public function test_saving_never_queues_a_test_send() {
@@ -328,80 +259,28 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Email can be turned on with a recipient and no From address; Reply-To is stored and invalid ones are refused.
-	 */
-	public function test_from_is_optional_and_reply_to_is_stored() {
-		$this->plugin()->sc_wpun_settings_validate(
-			$this->settings(
-				array(
-					'notify_from'     => '',
-					'notify_reply_to' => 'reply@example.org',
-				)
-			)
-		);
-		$email = $this->stored_instance( 'email' );
-		$this->assertTrue( $email->is_enabled() );
-		$this->assertSame( '', $email->get_setting( 'from' ) );
-		$this->assertSame( 'reply@example.org', $email->get_setting( 'reply_to' ) );
-
-		$this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_reply_to' => 'nope' ) ) );
-		$this->assertSame( 'reply@example.org', $this->instance_setting( 'email', 'reply_to' ), 'The previous value is kept.' );
-		$this->assertArrayHasKey( 'sc_wpun_settings_email_notifications_notify_reply_to', $this->errors() );
-	}
-
-	/**
-	 * The form does not show the format and subject prefix, so saving keeps them.
-	 */
-	public function test_saving_keeps_the_settings_the_form_does_not_show() {
-		sc_wpun_channels()->save(
-			new WPUN\Channel_Instance(
-				'email',
-				'email',
-				'Email',
-				true,
-				array(
-					'to'             => 'a@example.org',
-					'format'         => 'html',
-					'subject_prefix' => '[Site]',
-				)
-			)
-		);
-
-		$this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_to' => 'b@example.org' ) ) );
-
-		$this->assertSame( 'b@example.org', $this->instance_setting( 'email', 'to' ) );
-		$this->assertSame( 'html', $this->instance_setting( 'email', 'format' ) );
-		$this->assertSame( '[Site]', $this->instance_setting( 'email', 'subject_prefix' ) );
-	}
-
-	/**
 	 * Unticking a box submits 0, which stores false (before, a missing value meant off).
 	 */
 	public function test_a_submitted_zero_stores_false() {
 		$valid = $this->plugin()->sc_wpun_settings_validate(
 			array(
-				'notify_automatic'    => '0',
-				'hide_updates'        => '0',
-				'email_notifications' => '0',
+				'notify_automatic' => '0',
+				'hide_updates'     => '0',
 			)
 		);
 
 		$this->assertFalse( $valid['notify_automatic'] );
 		$this->assertFalse( $valid['hide_updates'] );
-		$this->assertFalse( $this->stored_instance( 'email' )->is_enabled() );
 		$this->assertSame( array(), $this->errors() );
 
 		$valid = $this->plugin()->sc_wpun_settings_validate(
 			array(
-				'notify_automatic'    => '1',
-				'hide_updates'        => '1',
-				'email_notifications' => '1',
-				'notify_to'           => 'ops@example.org',
+				'notify_automatic' => '1',
+				'hide_updates'     => '1',
 			)
 		);
 		$this->assertTrue( $valid['notify_automatic'] );
 		$this->assertTrue( $valid['hide_updates'] );
-		$this->assertTrue( $this->stored_instance( 'email' )->is_enabled() );
 	}
 
 	/**
@@ -418,7 +297,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 			)
 		);
 
-		$valid = $this->plugin()->sc_wpun_settings_validate( array( 'notify_to' => 'ops@example.org' ) );
+		$valid = $this->plugin()->sc_wpun_settings_validate( array() );
 
 		$this->assertSame(
 			$this->global_settings(
@@ -432,7 +311,6 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 			),
 			$valid
 		);
-		$this->assertTrue( $this->stored_instance( 'email' )->is_enabled(), 'A missing email_notifications keeps the instance as it is.' );
 		$this->assertSame( array(), $this->errors() );
 	}
 
@@ -442,19 +320,16 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	public function test_an_invalid_boolean_is_refused() {
 		$valid = $this->plugin()->sc_wpun_settings_validate(
 			array(
-				'notify_automatic'    => '2',
-				'hide_updates'        => 'yes',
-				'email_notifications' => 2,
+				'notify_automatic' => '2',
+				'hide_updates'     => 'yes',
 			)
 		);
 
 		$errors = $this->errors();
 		$this->assertSame( 'sc_wpun_settings_main_notify_automatic_error', $errors['sc_wpun_settings_main_notify_automatic'] );
 		$this->assertSame( 'sc_wpun_settings_main_hide_updates_error', $errors['sc_wpun_settings_main_hide_updates'] );
-		$this->assertSame( 'sc_wpun_settings_email_notifications_email_notifications_error', $errors['sc_wpun_settings_email_notifications_email_notifications'] );
 		$this->assertTrue( $valid['notify_automatic'] );
 		$this->assertTrue( $valid['hide_updates'] );
-		$this->assertTrue( $this->stored_instance( 'email' )->is_enabled(), 'The email state is kept.' );
 	}
 
 	/**
@@ -468,19 +343,78 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Email cannot be turned on without an address, and the state is kept.
+	 * The email keys of the 1.x form are ignored: not saved to the instance, not forwarded, not kept in the option.
 	 */
-	public function test_email_cannot_be_enabled_without_an_address() {
-		$this->save_settings( array( 'email_notifications' => 0 ) );
+	public function test_the_old_email_keys_are_ignored() {
+		$email = $this->stored_instance( 'email' );
+		$state = $this->snapshot_channels();
 
-		$this->plugin()->sc_wpun_settings_validate(
+		$valid = $this->plugin()->sc_wpun_settings_validate(
 			array(
-				'email_notifications' => '1',
-				'notify_to'           => '',
+				'frequency'           => 'daily',
+				'email_notifications' => '0',
+				'notify_to'           => 'typed@example.org',
+				'notify_from'         => 'typed-from@example.org',
+				'notify_reply_to'     => 'typed-reply@example.org',
 			)
 		);
 
-		$this->assertArrayHasKey( 'sc_wpun_settings_email_notifications_email_notifications', $this->errors() );
-		$this->assertFalse( $this->stored_instance( 'email' )->is_enabled() );
+		$this->assertSame( 'daily', $valid['frequency'], 'The real settings are still saved.' );
+		foreach ( array( 'email_notifications', 'notify_to', 'notify_from', 'notify_reply_to' ) as $key ) {
+			$this->assertArrayNotHasKey( $key, $valid, $key );
+		}
+		$this->assertSame( array_keys( $this->global_settings() ), array_keys( $valid ) );
+		$this->assertEquals( $email, $this->stored_instance( 'email' ) );
+		$this->assertSame( $state, $this->snapshot_channels(), 'The channels option is not touched.' );
+		$this->assertSame( array(), $this->errors(), 'Bad values raise no errors either.' );
+
+		$this->plugin()->sc_wpun_settings_validate( array( 'notify_to' => 'not an address', 'email_notifications' => 'maybe' ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		$this->assertSame( array(), $this->errors() );
+
+		update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_to' => 'x@example.org' ) ) );
+		$this->assertArrayNotHasKey( 'notify_to', $this->stored_settings() );
+	}
+
+	/**
+	 * The General tab has no email section, and the methods that drew and saved it are gone.
+	 */
+	public function test_the_general_tab_has_no_email_section() {
+		ob_start();
+		$this->plugin()->settings_page();
+		$html = (string) ob_get_clean();
+
+		$this->assertStringNotContainsString( 'Email Notifications', $html );
+		$this->assertStringNotContainsString( 'notify_to', $html );
+		$this->assertStringNotContainsString( 'notify_from', $html );
+		$this->assertStringNotContainsString( 'sc_wpun_settings_email_notifications', $html );
+		$this->assertStringNotContainsString( 'ops@example.org', $html );
+
+		$removed = array(
+			'sc_wpun_settings_email_notifications_field_email_notifications',
+			'sc_wpun_settings_email_notifications_field_notify_to',
+			'sc_wpun_settings_email_notifications_field_notify_from',
+			'sc_wpun_settings_email_notifications_field_notify_reply_to',
+			'sc_wpun_settings_email_notifications_text',
+			'email_enabled_schema',
+			'email_read_only',
+			'email_note',
+			'instance_setting',
+			'instance_enabled',
+			'save_instance',
+			'value_attribute',
+		);
+		foreach ( $removed as $method ) {
+			$this->assertFalse( method_exists( sc_wpun()->settings_page(), $method ), $method );
+			$this->assertFalse( method_exists( $this->plugin(), $method ), 'The facade: ' . $method );
+		}
+	}
+
+	/**
+	 * The channels option as stored.
+	 *
+	 * @return mixed
+	 */
+	private function snapshot_channels() {
+		return get_option( 'sc_wpun_channels' );
 	}
 }

@@ -1188,6 +1188,114 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertSame( self::SECRET, $this->raw( 'fixture' )['settings']['token'], 'The database value stays.' );
 	}
 
+	// Email saving, moved from the settings sanitizer (#166).
+
+	/**
+	 * Saving the form stores the email fields in the email instance.
+	 */
+	public function test_saving_the_email_form_updates_the_instance() {
+		$this->save_settings( array( 'email_notifications' => 0 ) );
+		$this->post_email( array( 'settings' => array( 'to' => 'a@example.org, b@example.org', 'from' => 'from@example.org' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		sc_wpun()->channel_form()->process_save();
+
+		$email = $this->stored_instance( 'email' );
+		$this->assertTrue( $email->is_enabled() );
+		$this->assertSame( 'a@example.org,b@example.org', $email->get_setting( 'to' ) );
+		$this->assertSame( 'from@example.org', $email->get_setting( 'from' ) );
+		$this->assertSame( array_keys( $this->global_settings() ), array_keys( $this->stored_settings() ), 'The global settings are not touched.' );
+	}
+
+	/**
+	 * Turning email on without an address is refused, with the error on the address field, and the state is kept.
+	 */
+	public function test_email_cannot_be_enabled_without_an_address() {
+		$this->save_settings( array( 'email_notifications' => 0 ) );
+		$this->post_email( array( 'settings' => array( 'to' => '' ) ) );
+		$url = sc_wpun()->channel_form()->process_save();
+
+		$this->assertStringContainsString( 'action=edit&id=email', $url );
+		$this->assertFalse( $this->stored_instance( 'email' )->is_enabled() );
+		$this->assertSame( 'ops@example.org', $this->instance_setting( 'email', 'to' ) );
+		$this->assertSame( array( 'settings.to' ), array_keys( get_user_meta( self::$admin_id, 'sc_wpun_channel_form', true )['errors'] ) );
+	}
+
+	/**
+	 * From is optional, Reply-To is stored, and an invalid From or Reply-To is refused with the stored value kept.
+	 */
+	public function test_from_is_optional_and_reply_to_is_checked() {
+		$this->post_email( array( 'settings' => array( 'from' => '', 'reply_to' => 'reply@example.org' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		sc_wpun()->channel_form()->process_save();
+		$email = $this->stored_instance( 'email' );
+		$this->assertTrue( $email->is_enabled() );
+		$this->assertSame( '', $email->get_setting( 'from' ) );
+		$this->assertSame( 'reply@example.org', $email->get_setting( 'reply_to' ) );
+
+		foreach ( array( 'reply_to', 'from' ) as $field ) {
+			$this->post_email( array( 'settings' => array( $field => 'nope' ) ) );
+			sc_wpun()->channel_form()->process_save();
+			$this->assertSame( 'reply@example.org', $this->instance_setting( 'email', 'reply_to' ), 'The stored value is kept.' );
+			$this->assertSame( '', $this->instance_setting( 'email', 'from' ) );
+			$this->assertSame( 'The email address is invalid.', get_user_meta( self::$admin_id, 'sc_wpun_channel_form', true )['errors'][ 'settings.' . $field ] );
+			delete_user_meta( self::$admin_id, 'sc_wpun_channel_form' );
+		}
+	}
+
+	/**
+	 * A code-defined email, and the fields supplied from outside, are read-only on the form and never written.
+	 */
+	public function test_the_email_form_is_read_only_where_it_should_be() {
+		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__TO' => 'vault@example.org' ) );
+		$xpath = $this->edit_page();
+		$this->assertSame( 'disabled', $xpath->query( '//input[@name="settings[to]"]' )->item( 0 )->getAttribute( 'disabled' ) );
+		$this->assertSame( '', $xpath->query( '//input[@name="settings[from]"]' )->item( 0 )->getAttribute( 'disabled' ) );
+		$this->assertStringContainsString( 'Set by Test vault', $this->text( $xpath, '//body' ) );
+
+		$this->post_email( array( 'settings' => array( 'to' => 'typed@example.org', 'from' => 'new@example.org' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		sc_wpun()->channel_form()->process_save();
+		$raw = get_option( 'sc_wpun_channels' )['email']['settings'];
+		$this->assertSame( 'ops@example.org', $raw['to'] );
+		$this->assertSame( 'new@example.org', $raw['from'] );
+
+		add_filter(
+			'sc_wpun_channels',
+			static fn( $channels ) => array_merge( $channels, array( new Channel_Instance( 'email', 'email', 'Code', true, array( 'to' => 'code@example.org' ) ) ) )
+		);
+		sc_wpun()->config()->flush();
+		$xpath = $this->edit_page();
+		$this->assertSame( 0, $xpath->query( '//form[@class="sc-wpun-channel-form"]' )->length );
+		$this->assertStringContainsString( 'defined in code and can not be changed here', $this->text( $xpath, '//div[contains(@class,"sc-wpun-inline-notice")]' ) );
+		$this->post_email( array( 'settings' => array( 'from' => 'other@example.org' ) ) );
+		sc_wpun()->channel_form()->process_save();
+		$this->assertSame( 'new@example.org', get_option( 'sc_wpun_channels' )['email']['settings']['from'], 'Nothing is saved for a code-defined email.' );
+	}
+
+	/**
+	 * With an invalid external recipient, saving other fields shows no error for the field it does not control.
+	 */
+	public function test_no_form_error_for_an_invalid_external_field() {
+		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__TO' => 'not an address' ) );
+		$this->post_email( array( 'label' => 'Renamed' ) );
+		unset( $_POST['settings']['to'] );
+		$url = sc_wpun()->channel_form()->process_save();
+
+		$this->assertStringNotContainsString( 'action=edit', $url );
+		$this->assertSame( 'Renamed', $this->raw( 'email' )['label'] );
+	}
+
+	/**
+	 * Values with quotes and angle brackets come out as the same string once parsed.
+	 */
+	public function test_values_are_escaped() {
+		$raw = '"><b>x</b> a&b';
+		sc_wpun_channels()->save( ( new Channel_Instance( 'email', 'email', $raw, false ) )->with_settings( array( 'to' => $raw, 'from' => $raw ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		$xpath = $this->edit_page();
+
+		foreach ( array( 'settings[to]', 'settings[from]', 'label' ) as $name ) {
+			$this->assertSame( $raw, $xpath->query( '//input[@name="' . $name . '"]' )->item( 0 )->getAttribute( 'value' ), $name );
+		}
+		$this->assertSame( 0, $xpath->query( '//b' )->length );
+	}
+
 	// Hooks.
 
 	/**

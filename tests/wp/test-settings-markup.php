@@ -105,35 +105,6 @@ class Test_Settings_Markup extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The email text inputs are text inputs labelled by their row.
-	 */
-	public function test_email_inputs_are_labelled() {
-		$xpath = $this->page();
-
-		foreach ( array( 'notify_to', 'notify_from', 'notify_reply_to' ) as $name ) {
-			$id = 'sc_wpun_settings_email_notifications_' . $name;
-			$this->assertSame( 1, $xpath->query( '//input[@type="text"][@id="' . $id . '"]' )->length, $name );
-			$this->assertSame( 1, $xpath->query( '//label[@for="' . $id . '"]' )->length, $name );
-		}
-	}
-
-	/**
-	 * Values with quotes and angle brackets come out as the same string once parsed.
-	 */
-	public function test_values_are_escaped() {
-		$raw = '"><b>x</b> a&b';
-		sc_wpun()->channel_store()->save( ( new Channel_Instance( 'email', 'email', 'Email', false ) )->with_settings( array( 'to' => $raw, 'from' => $raw ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
-		$xpath = $this->page();
-
-		foreach ( array( 'notify_to', 'notify_from' ) as $name ) {
-			$input = $xpath->query( '//input[@id="sc_wpun_settings_email_notifications_' . $name . '"]' );
-			$this->assertSame( 1, $input->length, $name );
-			$this->assertSame( $raw, $input->item( 0 )->getAttribute( 'value' ), $name );
-		}
-		$this->assertSame( 0, $xpath->query( '//b' )->length );
-	}
-
-	/**
 	 * Buttons are real buttons, with unique ids, and there are no spacer paragraphs.
 	 */
 	public function test_buttons_and_no_spacers() {
