@@ -373,4 +373,114 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$this->assertSame( 'html', $this->instance_setting( 'email', 'format' ) );
 		$this->assertSame( '[Site]', $this->instance_setting( 'email', 'subject_prefix' ) );
 	}
+
+	/**
+	 * Unticking a box submits 0, which stores false (before, a missing value meant off).
+	 */
+	public function test_a_submitted_zero_stores_false() {
+		$valid = $this->plugin()->sc_wpun_settings_validate(
+			array(
+				'notify_automatic'    => '0',
+				'hide_updates'        => '0',
+				'email_notifications' => '0',
+			)
+		);
+
+		$this->assertFalse( $valid['notify_automatic'] );
+		$this->assertFalse( $valid['hide_updates'] );
+		$this->assertFalse( $this->stored_instance( 'email' )->is_enabled() );
+		$this->assertSame( array(), $this->errors() );
+
+		$valid = $this->plugin()->sc_wpun_settings_validate(
+			array(
+				'notify_automatic'    => '1',
+				'hide_updates'        => '1',
+				'email_notifications' => '1',
+				'notify_to'           => 'ops@example.org',
+			)
+		);
+		$this->assertTrue( $valid['notify_automatic'] );
+		$this->assertTrue( $valid['hide_updates'] );
+		$this->assertTrue( $this->stored_instance( 'email' )->is_enabled() );
+	}
+
+	/**
+	 * A key that is missing keeps the stored value, for every setting.
+	 */
+	public function test_a_missing_key_keeps_the_stored_value() {
+		$this->save_settings(
+			array(
+				'frequency'        => 'daily',
+				'notify_plugins'   => 'active',
+				'notify_themes'    => 'none',
+				'notify_automatic' => false,
+				'hide_updates'     => false,
+			)
+		);
+
+		$valid = $this->plugin()->sc_wpun_settings_validate( array( 'notify_to' => 'ops@example.org' ) );
+
+		$this->assertSame(
+			$this->global_settings(
+				array(
+					'frequency'        => 'daily',
+					'notify_plugins'   => 'active',
+					'notify_themes'    => 'none',
+					'notify_automatic' => false,
+					'hide_updates'     => false,
+				)
+			),
+			$valid
+		);
+		$this->assertTrue( $this->stored_instance( 'email' )->is_enabled(), 'A missing email_notifications keeps the instance as it is.' );
+		$this->assertSame( array(), $this->errors() );
+	}
+
+	/**
+	 * An invalid on or off value is refused with the existing error and keeps the stored value.
+	 */
+	public function test_an_invalid_boolean_is_refused() {
+		$valid = $this->plugin()->sc_wpun_settings_validate(
+			array(
+				'notify_automatic'    => '2',
+				'hide_updates'        => 'yes',
+				'email_notifications' => 2,
+			)
+		);
+
+		$errors = $this->errors();
+		$this->assertSame( 'sc_wpun_settings_main_notify_automatic_error', $errors['sc_wpun_settings_main_notify_automatic'] );
+		$this->assertSame( 'sc_wpun_settings_main_hide_updates_error', $errors['sc_wpun_settings_main_hide_updates'] );
+		$this->assertSame( 'sc_wpun_settings_email_notifications_email_notifications_error', $errors['sc_wpun_settings_email_notifications_email_notifications'] );
+		$this->assertTrue( $valid['notify_automatic'] );
+		$this->assertTrue( $valid['hide_updates'] );
+		$this->assertTrue( $this->stored_instance( 'email' )->is_enabled(), 'The email state is kept.' );
+	}
+
+	/**
+	 * A frequency that is not offered is refused with the existing error and keeps the stored one.
+	 */
+	public function test_an_invalid_frequency_is_refused() {
+		$valid = $this->plugin()->sc_wpun_settings_validate( array( 'frequency' => 'every_second' ) );
+
+		$this->assertSame( 'sc_wpun_settings_main_frequency_error', $this->errors()['sc_wpun_settings_main_frequency'] );
+		$this->assertSame( 'hourly', $valid['frequency'] );
+	}
+
+	/**
+	 * Email cannot be turned on without an address, and the state is kept.
+	 */
+	public function test_email_cannot_be_enabled_without_an_address() {
+		$this->save_settings( array( 'email_notifications' => 0 ) );
+
+		$this->plugin()->sc_wpun_settings_validate(
+			array(
+				'email_notifications' => '1',
+				'notify_to'           => '',
+			)
+		);
+
+		$this->assertArrayHasKey( 'sc_wpun_settings_email_notifications_email_notifications', $this->errors() );
+		$this->assertFalse( $this->stored_instance( 'email' )->is_enabled() );
+	}
 }

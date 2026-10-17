@@ -45,7 +45,7 @@ class Update_Nag {
 	 */
 	public function remove_update_nag_for_nonadmins() {
 		$settings = $this->settings->get(); // get settings.
-		if ( 1 === $settings['hide_updates'] && ! current_user_can( 'update_core' ) ) {
+		if ( true === $settings['hide_updates'] && ! current_user_can( 'update_core' ) ) {
 			remove_action( 'admin_notices', 'update_nag', 3 );
 			remove_action( 'network_admin_notices', 'update_nag', 3 );
 		}

@@ -427,7 +427,7 @@ class Channel_Store {
 		$bad      = array();
 		$external = array();
 
-		$switch = $this->config->resolve_field( Config_Context::channel_field( $id, 'enabled' ), array( 'type' => 'checkbox' ) );
+		$switch = $this->config->resolve_field( Config_Context::channel_field( $id, 'enabled' ), Channel::enabled_field() );
 		if ( ! $switch['ok'] ) {
 			$bad[] = Config_Context::channel_field( $id, 'enabled' )->get_key();
 		} elseif ( null !== $switch['value'] ) {
@@ -668,7 +668,7 @@ class Channel_Store {
 			'value' => true,
 		);
 		if ( array_key_exists( 'enabled', $entry ) ) {
-			$enabled = $this->config->cast( $entry['enabled'], array( 'type' => 'checkbox' ) );
+			$enabled = $this->config->cast( $entry['enabled'], Channel::enabled_field() );
 		}
 		if ( ! $enabled['ok'] ) {
 			$this->config->report_problem( $key, $source, $where );

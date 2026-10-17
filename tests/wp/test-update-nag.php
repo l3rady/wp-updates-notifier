@@ -37,7 +37,7 @@ class Test_Update_Nag extends WPUN_Test_Case {
 	 * Users who can update core keep the notice, even without other admin capabilities.
 	 */
 	public function test_users_who_can_update_core_keep_the_notice() {
-		$this->save_settings( array( 'hide_updates' => 1 ) );
+		$this->save_settings( array( 'hide_updates' => true ) );
 		$this->log_in( 'editor', 'update_core' );
 		if ( is_multisite() ) {
 			grant_super_admin( get_current_user_id() ); // On multisite only super admins can update core.
@@ -52,7 +52,7 @@ class Test_Update_Nag extends WPUN_Test_Case {
 	 * Users who cannot update core lose it, in the site and the network admin.
 	 */
 	public function test_users_who_cannot_update_core_lose_the_notice() {
-		$this->save_settings( array( 'hide_updates' => 1 ) );
+		$this->save_settings( array( 'hide_updates' => true ) );
 		$this->log_in( 'editor', 'update_plugins' );
 
 		$this->plugin()->remove_update_nag_for_nonadmins();
@@ -65,7 +65,7 @@ class Test_Update_Nag extends WPUN_Test_Case {
 	 * Administrators keep it.
 	 */
 	public function test_administrators_keep_the_notice() {
-		$this->save_settings( array( 'hide_updates' => 1 ) );
+		$this->save_settings( array( 'hide_updates' => true ) );
 		$this->log_in( 'administrator' );
 		if ( is_multisite() ) {
 			grant_super_admin( get_current_user_id() );
@@ -80,7 +80,7 @@ class Test_Update_Nag extends WPUN_Test_Case {
 	 * With the setting off, nobody loses it.
 	 */
 	public function test_nothing_is_hidden_when_the_setting_is_off() {
-		$this->save_settings( array( 'hide_updates' => 0 ) );
+		$this->save_settings( array( 'hide_updates' => false ) );
 		$this->log_in( 'subscriber' );
 
 		$this->plugin()->remove_update_nag_for_nonadmins();

@@ -120,7 +120,7 @@ class Notifier {
 		$notify_to   = $this->instance_setting( 'email', 'to' );
 		$notify_from = sanitize_email( $this->instance_setting( 'email', 'from' ) );
 
-		if ( 0 !== $options['notify_automatic'] ) {
+		if ( true === $options['notify_automatic'] ) {
 			if ( ! empty( $notify_to ) ) { // If an email address has been set, override the WordPress default.
 				$email['to'] = $notify_to;
 			}

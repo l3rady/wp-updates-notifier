@@ -60,7 +60,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	public function test_the_upgrade_produces_the_current_shape( $name, $version, array $options ) {
 		$this->upgrade_from( $version, $options );
 
-		$this->assertSame( '10.0', get_option( 'sc_wpun_settings_ver' ), $name );
+		$this->assertSame( '11.0', get_option( 'sc_wpun_settings_ver' ), $name );
 		$this->assertEqualsCanonicalizing( array_keys( $this->global_settings() ), array_keys( $this->stored_settings() ), $name );
 	}
 
@@ -77,9 +77,9 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->upgrade_from( $version, $options );
 		$stored = $this->stored_settings();
 
-		foreach ( array( 'frequency', 'hide_updates' ) as $key ) {
-			$this->assertSame( $options[ $key ], $stored[ $key ], "$name: $key" );
-		}
+		$this->assertSame( $options['frequency'], $stored['frequency'], "$name: frequency" );
+		// Stored as 1 or 0 (a number or a numeric string) in 1.x, and as true or false since settings version 11.
+		$this->assertSame( 1 === (int) $options['hide_updates'], $stored['hide_updates'], "$name: hide_updates" );
 
 		// Stored as 0, 1 or 2 (a number or a numeric string) in 1.x.
 		$keys = array(
@@ -132,7 +132,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 
 		$this->assertTrue( $this->stored_instance( 'email' )->is_enabled() );
 		$this->assertFalse( sc_wpun_channels()->has( 'slack' ) );
-		$this->assertSame( 1, $this->stored_settings()['notify_automatic'], 'Added in version 5, defaults on.' );
+		$this->assertTrue( $this->stored_settings()['notify_automatic'], 'Added in version 5, defaults on.' );
 	}
 
 	/**
@@ -273,7 +273,8 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->assertSame( 'hourly', $stored['frequency'] );
 		$this->assertSame( 'all', $stored['notify_plugins'] );
 		$this->assertSame( 'all', $stored['notify_themes'] );
-		$this->assertSame( 1, $stored['hide_updates'] );
+		$this->assertTrue( $stored['hide_updates'] );
+		$this->assertTrue( $stored['notify_automatic'] );
 		foreach ( $this->moved_keys() as $key ) {
 			$this->assertArrayNotHasKey( $key, $stored, $key );
 		}
@@ -409,5 +410,95 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		unset( $options['notify_from'] );
 		$this->upgrade_from( '7.0', $options );
 		$this->assertSame( '', $this->instance_setting( 'email', 'from' ), 'Missing From.' );
+	}
+
+	/**
+	 * Stored 1 and 0, as numbers or strings, become true and false.
+	 *
+	 * @return array
+	 */
+	public function on_off_values() {
+		return array(
+			'ints on'     => array( 1, 1, true, true ),
+			'ints off'    => array( 0, 0, false, false ),
+			'strings on'  => array( '1', '1', true, true ),
+			'strings off' => array( '0', '0', false, false ),
+			'mixed'       => array( 1, 0, true, false ),
+			'bools'       => array( false, true, false, true ),
+			'unusable'    => array( 'maybe', array(), true, true ),
+		);
+	}
+
+	/**
+	 * The upgrade to settings version 11 stores the on/off settings as booleans.
+	 *
+	 * @dataProvider on_off_values
+	 *
+	 * @param mixed $automatic Stored notify_automatic.
+	 * @param mixed $hide      Stored hide_updates.
+	 * @param bool  $expect_automatic Expected notify_automatic.
+	 * @param bool  $expect_hide      Expected hide_updates.
+	 */
+	public function test_on_off_settings_become_booleans( $automatic, $hide, $expect_automatic, $expect_hide ) {
+		$this->upgrade_from(
+			'10.0',
+			array(
+				'frequency'        => 'daily',
+				'notify_plugins'   => 'all',
+				'notify_themes'    => 'all',
+				'notify_automatic' => $automatic,
+				'hide_updates'     => $hide,
+			)
+		);
+
+		$stored = $this->stored_settings();
+		$this->assertSame( $expect_automatic, $stored['notify_automatic'] );
+		$this->assertSame( $expect_hide, $stored['hide_updates'] );
+		$this->assertSame( 'daily', $stored['frequency'] );
+		$this->assertSame( '11.0', get_option( 'sc_wpun_settings_ver' ) );
+	}
+
+	/**
+	 * After the upgrade the update notice is still hidden or shown, and the automatic update email redirected or not.
+	 *
+	 * @dataProvider on_off_values
+	 *
+	 * @param mixed $automatic Stored notify_automatic.
+	 * @param mixed $hide      Stored hide_updates.
+	 * @param bool  $expect_automatic Expected notify_automatic.
+	 * @param bool  $expect_hide      Expected hide_updates.
+	 */
+	public function test_behaviour_is_unchanged_by_the_upgrade( $automatic, $hide, $expect_automatic, $expect_hide ) {
+		$this->upgrade_from(
+			'10.0',
+			array(
+				'frequency'        => 'daily',
+				'notify_plugins'   => 'all',
+				'notify_themes'    => 'all',
+				'notify_automatic' => $automatic,
+				'hide_updates'     => $hide,
+			)
+		);
+		sc_wpun_channels()->save_raw( new WPUN\Channel_Instance( 'email', 'email', 'Email', true, array( 'to' => 'ops@example.org' ) ) );
+
+		$email = apply_filters(
+			'auto_core_update_email',
+			array(
+				'to'      => 'admin@example.org',
+				'subject' => 'Subject',
+				'body'    => 'Body',
+				'headers' => '',
+			),
+			'success',
+			new stdClass(),
+			null
+		);
+		$this->assertSame( $expect_automatic ? 'ops@example.org' : 'admin@example.org', $email['to'] );
+
+		add_action( 'admin_notices', 'update_nag', 3 );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+		$this->plugin()->remove_update_nag_for_nonadmins();
+		$this->assertSame( $expect_hide ? false : 3, has_action( 'admin_notices', 'update_nag' ) );
+		remove_action( 'admin_notices', 'update_nag', 3 );
 	}
 }
