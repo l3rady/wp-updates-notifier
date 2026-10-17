@@ -39,7 +39,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 	 * An instance can be added and read back whole.
 	 */
 	public function test_save_get_and_has() {
-		$store = new Channel_Store();
+		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 
 		$this->assertFalse( $store->has( 'one' ) );
 		$this->assertNull( $store->get( 'one' ) );
@@ -68,7 +68,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 	 * New instances go to the end; saving an existing one replaces it in place.
 	 */
 	public function test_order_is_kept() {
-		$store = new Channel_Store();
+		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 		$store->save( $this->instance( 'one' ) );
 		$store->save( $this->instance( 'two' ) );
 		$store->save( $this->instance( 'three' ) );
@@ -87,7 +87,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 	 * Deleting removes the instance and says whether there was one.
 	 */
 	public function test_delete() {
-		$store = new Channel_Store();
+		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 		$store->save( $this->instance( 'one' ) );
 		$store->save( $this->instance( 'two' ) );
 
@@ -112,7 +112,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 			),
 		);
 		add_option( 'sc_wpun_channels', $bad, '', false );
-		$store = new Channel_Store();
+		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 
 		$this->assertSame( array( 'string_off' ), array_keys( $store->all() ) );
 		$this->assertFalse( $store->get( 'string_off' )->is_enabled() );
@@ -129,7 +129,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 	 */
 	public function test_a_non_array_option_is_empty() {
 		add_option( 'sc_wpun_channels', 'nonsense', '', false );
-		$store = new Channel_Store();
+		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 
 		$this->assertSame( array(), $store->all() );
 		$store->save( $this->instance( 'one' ) );
@@ -140,7 +140,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 	 * Instances of a type nobody has registered are stored and left untouched by other saves.
 	 */
 	public function test_an_instance_of_an_unregistered_type_survives_other_saves() {
-		$store = new Channel_Store();
+		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 		$this->assertFalse( sc_wpun()->channels()->has( 'addon_type' ) );
 		$addon = new Channel_Instance( 'addon_1', 'addon_type', 'Add-on', true, array( 'secret' => 'abc' ), array( 'x' => 1 ) );
 
@@ -155,7 +155,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 	 * The option is created without autoload, and stays that way when it is updated.
 	 */
 	public function test_the_option_is_not_autoloaded() {
-		$store = new Channel_Store();
+		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 		$store->save( $this->instance( 'one' ) );
 		$store->save( $this->instance( 'two' ) );
 
@@ -166,7 +166,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 	 * Reads and writes go through the documented options filters.
 	 */
 	public function test_the_options_filters_are_applied() {
-		$store = new Channel_Store();
+		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 		$store->save( $this->instance( 'one' ) );
 
 		add_filter(

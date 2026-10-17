@@ -120,7 +120,8 @@ class Settings {
 			$from = '';
 		}
 
-		$this->channels->save(
+		// Raw writes: these values come from the database, whatever is supplied from outside.
+		$this->channels->save_raw(
 			new Channel_Instance(
 				'email',
 				'email',
@@ -141,7 +142,7 @@ class Settings {
 
 		// Slack is only carried over if it was set up.
 		if ( $slack_on || '' !== $webhook_url ) {
-			$this->channels->save(
+			$this->channels->save_raw(
 				new Channel_Instance(
 					'slack',
 					'slack',

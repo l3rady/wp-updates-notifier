@@ -151,6 +151,10 @@ class Settings_Page {
 	 * @return void
 	 */
 	private function save_instance( string $id, string $label, bool $enabled, array $settings, bool $create ): void {
+		if ( $this->channels->is_code_defined( $id ) ) {
+			return; // Read-only: defined in code.
+		}
+
 		$instance = $this->channels->get( $id );
 
 		if ( null === $instance ) {
@@ -334,7 +338,7 @@ class Settings_Page {
 
 		// Validate main settings.
 		$frequency = $input['frequency'] ?? ( $valid['frequency'] ?? '' );
-		if ( array_key_exists( $frequency, $this->scheduler->get_frequencies() ) ) {
+		if ( ( is_string( $frequency ) || is_int( $frequency ) ) && array_key_exists( $frequency, $this->scheduler->get_frequencies() ) ) {
 			$valid['frequency'] = $frequency;
 		} else {
 			add_settings_error( 'sc_wpun_settings_main_frequency', 'sc_wpun_settings_main_frequency_error', __( 'Invalid frequency entered', 'wp-updates-notifier' ), 'error' );
@@ -376,11 +380,23 @@ class Settings_Page {
 			}
 		}
 
-		// Validate email notification settings. They start from what the email instance holds.
-		$notify_to   = $this->instance_setting( 'email', 'to' );
-		$notify_from = $this->instance_setting( 'email', 'from' );
+		// Whether the email section was submitted, from what was actually submitted.
+		$email_submitted = array_key_exists( 'notify_to', $input ) || array_key_exists( 'notify_from', $input ) || array_key_exists( 'notify_reply_to', $input ) || array_key_exists( 'email_notifications', $input );
 
-		if ( ! empty( $input['notify_to'] ) && is_string( $input['notify_to'] ) ) {
+		// Email fields supplied from outside the database ignore what was submitted: they are not checked, and Channel_Store::save() never writes them.
+		$external_to       = null !== $this->channels->external_source( 'email', 'to' );
+		$external_from     = null !== $this->channels->external_source( 'email', 'from' );
+		$external_reply_to = null !== $this->channels->external_source( 'email', 'reply_to' );
+		$external_enabled  = null !== $this->channels->external_source( 'email', 'enabled' );
+
+		// Validate email notification settings. They start from what the email instance holds.
+		$notify_to       = $this->instance_setting( 'email', 'to' );
+		$notify_from     = $this->instance_setting( 'email', 'from' );
+		$notify_reply_to = $this->instance_setting( 'email', 'reply_to' );
+
+		if ( $external_to ) {
+			$notify_to = $this->instance_setting( 'email', 'to' );
+		} elseif ( ! empty( $input['notify_to'] ) && is_string( $input['notify_to'] ) ) {
 			$sanitized_emails = array();
 			$was_error        = false;
 			foreach ( explode( ',', $input['notify_to'] ) as $email_to ) {
@@ -399,8 +415,7 @@ class Settings_Page {
 			$notify_to = '';
 		}
 
-		$notify_reply_to = $this->instance_setting( 'email', 'reply_to' );
-		if ( array_key_exists( 'notify_reply_to', $input ) ) {
+		if ( ! $external_reply_to && array_key_exists( 'notify_reply_to', $input ) ) {
 			$notify_reply_to = '';
 			if ( ! empty( $input['notify_reply_to'] ) && is_string( $input['notify_reply_to'] ) ) {
 				$sanitized_reply_to = sanitize_email( $input['notify_reply_to'] );
@@ -413,7 +428,9 @@ class Settings_Page {
 			}
 		}
 
-		if ( ! empty( $input['notify_from'] ) && is_string( $input['notify_from'] ) ) {
+		if ( $external_from ) {
+			$notify_from = $this->instance_setting( 'email', 'from' );
+		} elseif ( ! empty( $input['notify_from'] ) && is_string( $input['notify_from'] ) ) {
 			$sanitized_email_from = sanitize_email( $input['notify_from'] );
 			if ( is_email( $sanitized_email_from ) ) {
 				$notify_from = $sanitized_email_from;
@@ -424,21 +441,25 @@ class Settings_Page {
 			$notify_from = '';
 		}
 
-		$email_notifications = absint( $input['email_notifications'] ?? 0 );
-		if ( 1 < $email_notifications ) {
-			add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Invalid notification email value entered', 'wp-updates-notifier' ), 'error' );
-		}
+		if ( $external_enabled ) {
+			$email_notifications = $this->instance_enabled( 'email' ) ? 1 : 0;
+		} else {
+			$email_notifications = absint( $input['email_notifications'] ?? 0 );
+			if ( 1 < $email_notifications ) {
+				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Invalid notification email value entered', 'wp-updates-notifier' ), 'error' );
+			}
 
-		if ( 1 === $email_notifications ) {
-			if ( ! empty( $notify_to ) ) {
-				$email_notifications = 1;
-			} else {
-				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not enable email notifications, enter a valid address to send to', 'wp-updates-notifier' ), 'error' );
-				$email_notifications = 0;
+			if ( 1 === $email_notifications ) {
+				if ( ! empty( $notify_to ) ) {
+					$email_notifications = 1;
+				} else {
+					add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not enable email notifications, enter a valid address to send to', 'wp-updates-notifier' ), 'error' );
+					$email_notifications = 0;
+				}
 			}
 		}
 
-		if ( array_key_exists( 'notify_to', $input ) || array_key_exists( 'notify_from', $input ) || array_key_exists( 'notify_reply_to', $input ) || array_key_exists( 'email_notifications', $input ) ) {
+		if ( $email_submitted ) {
 			$this->save_instance(
 				'email',
 				'Email',
@@ -572,6 +593,54 @@ class Settings_Page {
 	 */
 	public function send_test_email() {
 		$this->notifier->send_legacy_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
+	}
+
+	/**
+	 * Whether an email field cannot be changed here: it is supplied from outside the database, or the whole instance is defined in code.
+	 *
+	 * @param string $field Field name, or `enabled`.
+	 *
+	 * @return bool
+	 */
+	private function email_read_only( string $field ): bool {
+		return $this->channels->is_code_defined( 'email' ) || null !== $this->channels->external_source( 'email', $field );
+	}
+
+	/**
+	 * Say why an email field is read-only.
+	 *
+	 * @param string $field Field name, or `enabled`.
+	 *
+	 * @return void
+	 */
+	private function email_note( string $field ): void {
+		if ( $this->channels->is_code_defined( 'email' ) ) {
+			echo ' <span class="description sc-wpun-external">' . esc_html__( "This channel is defined in code and can't be changed here.", 'wp-updates-notifier' ) . '</span>';
+			return;
+		}
+		$source = $this->channels->external_source( 'email', $field );
+		if ( null !== $source ) {
+			// translators: %s: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__TO".
+			echo ' <span class="description sc-wpun-external">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $source ) ) . '</span>';
+		}
+	}
+
+	/**
+	 * The `value` attribute of a field shown read-only, which never holds the value of a secret.
+	 *
+	 * @internal
+	 *
+	 * @param array<string, mixed> $schema Field schema: a field of type `secret`, or with `secret` set, shows no value.
+	 * @param string               $value  The effective value.
+	 *
+	 * @return string The attribute, ready to output, or an empty string.
+	 */
+	public function value_attribute( array $schema, string $value ): string {
+		if ( ( isset( $schema['type'] ) && 'secret' === $schema['type'] ) || ! empty( $schema['secret'] ) ) {
+			return '';
+		}
+
+		return 'value="' . esc_attr( $value ) . '"';
 	}
 
 	/**
@@ -721,8 +790,9 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_email_notifications_field_email_notifications() {
 		?>
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[email_notifications]" type="checkbox" value="1" <?php checked( $this->instance_enabled( 'email' ) ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[email_notifications]" type="checkbox" value="1" <?php checked( $this->instance_enabled( 'email' ) ); ?> <?php disabled( $this->email_read_only( 'enabled' ) ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
 		</label>
+		<?php $this->email_note( 'enabled' ); ?>
 		<?php
 	}
 
@@ -733,8 +803,9 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_email_notifications_field_notify_to() {
 		?>
-		<input id="sc_wpun_settings_email_notifications_notify_to" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_to]" value="<?php echo esc_attr( $this->instance_setting( 'email', 'to' ) ); ?>" />
+		<input id="sc_wpun_settings_email_notifications_notify_to" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_to]" <?php echo $this->value_attribute( array( 'type' => 'text' ), $this->instance_setting( 'email', 'to' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in value_attribute(). ?> <?php disabled( $this->email_read_only( 'to' ) ); ?> />
 		<span class="description"><?php esc_html_e( 'Separate multiple email address with a comma (,)', 'wp-updates-notifier' ); ?></span>
+		<?php $this->email_note( 'to' ); ?>
 		<?php
 	}
 
@@ -745,8 +816,9 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_email_notifications_field_notify_from() {
 		?>
-		<input id="sc_wpun_settings_email_notifications_notify_from" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_from]" value="<?php echo esc_attr( $this->instance_setting( 'email', 'from' ) ); ?>" />
+		<input id="sc_wpun_settings_email_notifications_notify_from" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_from]" <?php echo $this->value_attribute( array( 'type' => 'text' ), $this->instance_setting( 'email', 'from' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in value_attribute(). ?> <?php disabled( $this->email_read_only( 'from' ) ); ?> />
 		<span class="description"><?php esc_html_e( 'Leave empty to use the WordPress default. Only set an address at a domain this site is allowed to send mail for.', 'wp-updates-notifier' ); ?></span>
+		<?php $this->email_note( 'from' ); ?>
 		<?php
 	}
 
@@ -757,7 +829,8 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_email_notifications_field_notify_reply_to() {
 		?>
-		<input id="sc_wpun_settings_email_notifications_notify_reply_to" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_reply_to]" value="<?php echo esc_attr( $this->instance_setting( 'email', 'reply_to' ) ); ?>" />
+		<input id="sc_wpun_settings_email_notifications_notify_reply_to" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_reply_to]" <?php echo $this->value_attribute( array( 'type' => 'text' ), $this->instance_setting( 'email', 'reply_to' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in value_attribute(). ?> <?php disabled( $this->email_read_only( 'reply_to' ) ); ?> />
+		<?php $this->email_note( 'reply_to' ); ?>
 		<?php
 	}
 }
