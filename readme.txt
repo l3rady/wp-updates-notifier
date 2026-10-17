@@ -33,7 +33,7 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 - Allows you to set the 'from address'.
 - Allows you to set multiple 'to addresses'.
 - Makes use of the Settings API.
-- A number of available hooks and filters for advanced users.
+- A number of available hooks and filters for advanced users, and an API for add-ons to add notification channels. See the [developer guide](https://github.com/l3rady/wp-updates-notifier/tree/main/docs/developers).
 - Active support and development.
 
 *Languages*
