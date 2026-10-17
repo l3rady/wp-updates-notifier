@@ -68,7 +68,7 @@ final class Channel_Instance {
 	 *
 	 * @since 2.0.0
 	 *
-	 * @param string               $id       Identifier; must match /^[a-z0-9_]+$/.
+	 * @param string               $id       Identifier; must match /^[a-z0-9]+(?:_[a-z0-9]+)*$/, so it can be part of a constant name.
 	 * @param string               $type     Channel type; must match /^[a-z0-9_]+$/.
 	 * @param string               $label    Label.
 	 * @param bool                 $enabled  Whether the instance is switched on.
@@ -78,8 +78,8 @@ final class Channel_Instance {
 	 * @throws InvalidArgumentException If the id or the type is not valid.
 	 */
 	public function __construct( string $id, string $type, string $label, bool $enabled, array $settings = array(), array $routing = array() ) {
-		if ( 1 !== preg_match( '/^[a-z0-9_]+$/D', $id ) ) {
-			throw new InvalidArgumentException( 'A channel instance id may only contain a-z, 0-9 and underscores.' );
+		if ( 1 !== preg_match( '/^[a-z0-9]+(?:_[a-z0-9]+)*$/D', $id ) ) {
+			throw new InvalidArgumentException( 'A channel instance id may only contain a-z, 0-9 and single underscores between them.' );
 		}
 		if ( 1 !== preg_match( '/^[a-z0-9_]+$/D', $type ) ) {
 			throw new InvalidArgumentException( 'A channel type may only contain a-z, 0-9 and underscores.' );

@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use WPUN\Channel_Instance;
 use WPUN\Channel_Store;
+use WPUN\Config_Report;
 use WPUN\Delivery_Result;
 use WPUN\Dispatcher;
 use WPUN\Notification;
@@ -81,6 +82,13 @@ class Settings_Page {
 	private $dispatcher;
 
 	/**
+	 * Report of configuration problems.
+	 *
+	 * @var Config_Report
+	 */
+	private $config_report;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings      $settings  Settings.
@@ -90,15 +98,17 @@ class Settings_Page {
 	 * @param Channel_Store $channels  Channel instance storage.
 	 * @param Slack_Notice  $slack_notice Notice about Slack no longer being supported.
 	 * @param Dispatcher    $dispatcher Dispatcher.
+	 * @param Config_Report $config_report Report of configuration problems.
 	 */
-	public function __construct( Settings $settings, State $state, Scheduler $scheduler, Notifier $notifier, Channel_Store $channels, Slack_Notice $slack_notice, Dispatcher $dispatcher ) {
-		$this->settings     = $settings;
-		$this->state        = $state;
-		$this->scheduler    = $scheduler;
-		$this->notifier     = $notifier;
-		$this->channels     = $channels;
-		$this->slack_notice = $slack_notice;
-		$this->dispatcher   = $dispatcher;
+	public function __construct( Settings $settings, State $state, Scheduler $scheduler, Notifier $notifier, Channel_Store $channels, Slack_Notice $slack_notice, Dispatcher $dispatcher, Config_Report $config_report ) {
+		$this->settings      = $settings;
+		$this->state         = $state;
+		$this->scheduler     = $scheduler;
+		$this->notifier      = $notifier;
+		$this->channels      = $channels;
+		$this->slack_notice  = $slack_notice;
+		$this->dispatcher    = $dispatcher;
+		$this->config_report = $config_report;
 	}
 
 	/**
@@ -218,6 +228,7 @@ class Settings_Page {
 			<h2><?php esc_html_e( 'Updates Notifier', 'wp-updates-notifier' ); ?></h2>
 
 			<?php $this->slack_notice->render(); ?>
+			<?php $this->config_report->render(); ?>
 			<?php $this->render_test_result( $test_result ); ?>
 
 			<p>
@@ -315,7 +326,7 @@ class Settings_Page {
 		// Runs for every update_option() of the settings once admin_init has
 		// registered them, not only for the settings form (options.php checks
 		// the form's nonce itself). Start from the stored settings.
-		$valid = $this->settings->get();
+		$valid = $this->settings->stored(); // Never the effective settings: a value supplied from outside the database is not written to it.
 
 		if ( ! is_array( $input ) ) {
 			return $valid;
@@ -355,6 +366,14 @@ class Settings_Page {
 			$valid['hide_updates'] = $sanitized_hide_updates;
 		} else {
 			add_settings_error( 'sc_wpun_settings_main_hide_updates', 'sc_wpun_settings_main_hide_updates_error', __( 'Invalid hide updates value entered', 'wp-updates-notifier' ), 'error' );
+		}
+
+		// A setting supplied from outside the database keeps its stored value, whatever was submitted.
+		$stored = $this->settings->stored();
+		foreach ( array_keys( $stored ) as $name ) {
+			if ( null !== $this->settings->external_source( $name ) ) {
+				$valid[ $name ] = $stored[ $name ];
+			}
 		}
 
 		// Validate email notification settings. They start from what the email instance holds.
@@ -556,6 +575,32 @@ class Settings_Page {
 	}
 
 	/**
+	 * Whether a setting is supplied from outside the database, so its field is read-only.
+	 *
+	 * @param string $name Setting name.
+	 *
+	 * @return bool
+	 */
+	private function is_external( string $name ): bool {
+		return null !== $this->settings->external_source( $name );
+	}
+
+	/**
+	 * Say where an externally supplied setting comes from. Settings are not secrets, so the field shows the value.
+	 *
+	 * @param string $name Setting name.
+	 *
+	 * @return void
+	 */
+	private function external_note( string $name ): void {
+		$source = $this->settings->external_source( $name );
+		if ( null !== $source ) {
+			// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
+			echo ' <span class="description sc-wpun-external">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $source ) ) . '</span>';
+		}
+	}
+
+	/**
 	 * Output the text at the top of the main settings section (function is required even if it outputs nothing).
 	 *
 	 * @return void
@@ -573,7 +618,7 @@ class Settings_Page {
 		$frequencies = $this->scheduler->get_frequencies();
 		$unavailable = ! array_key_exists( $options['frequency'], $frequencies );
 		?>
-		<select id="sc_wpun_settings_main_frequency" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[frequency]">
+		<select id="sc_wpun_settings_main_frequency" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[frequency]" <?php disabled( $this->is_external( 'frequency' ) ); ?>>
 		<?php if ( $unavailable ) : ?>
 			<option value="<?php echo esc_attr( $options['frequency'] ); ?>" selected="selected">
 				<?php
@@ -591,6 +636,7 @@ class Settings_Page {
 				<?php esc_html_e( 'The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it.', 'wp-updates-notifier' ); ?>
 			</p>
 		<?php endif; ?>
+		<?php $this->external_note( 'frequency' ); ?>
 		<?php
 	}
 
@@ -602,12 +648,13 @@ class Settings_Page {
 	public function sc_wpun_settings_main_field_notify_plugins() {
 		$options = $this->settings->get();
 		?>
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="0" <?php checked( $options['notify_plugins'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
+		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="0" <?php disabled( $this->is_external( 'notify_plugins' ) ); ?> <?php checked( $options['notify_plugins'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
 		</label><br />
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="1" <?php checked( $options['notify_plugins'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="1" <?php disabled( $this->is_external( 'notify_plugins' ) ); ?> <?php checked( $options['notify_plugins'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
 		</label><br />
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="2" <?php checked( $options['notify_plugins'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active plugins', 'wp-updates-notifier' ); ?>
+		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="2" <?php disabled( $this->is_external( 'notify_plugins' ) ); ?> <?php checked( $options['notify_plugins'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active plugins', 'wp-updates-notifier' ); ?>
 		</label>
+		<?php $this->external_note( 'notify_plugins' ); ?>
 		<?php
 	}
 
@@ -619,12 +666,13 @@ class Settings_Page {
 	public function sc_wpun_settings_main_field_notify_themes() {
 		$options = $this->settings->get();
 		?>
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_themes]" type="radio" value="0" <?php checked( $options['notify_themes'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
+		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_themes]" type="radio" value="0" <?php disabled( $this->is_external( 'notify_themes' ) ); ?> <?php checked( $options['notify_themes'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
 		</label><br />
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_themes]" type="radio" value="1" <?php checked( $options['notify_themes'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_themes]" type="radio" value="1" <?php disabled( $this->is_external( 'notify_themes' ) ); ?> <?php checked( $options['notify_themes'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
 		</label><br />
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_themes]" type="radio" value="2" <?php checked( $options['notify_themes'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active themes', 'wp-updates-notifier' ); ?>
+		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_themes]" type="radio" value="2" <?php disabled( $this->is_external( 'notify_themes' ) ); ?> <?php checked( $options['notify_themes'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active themes', 'wp-updates-notifier' ); ?>
 		</label>
+		<?php $this->external_note( 'notify_themes' ); ?>
 		<?php
 	}
 
@@ -636,8 +684,9 @@ class Settings_Page {
 	public function sc_wpun_settings_main_field_notify_automatic() {
 		$options = $this->settings->get();
 		?>
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_automatic]" type="checkbox" value="1" <?php checked( $options['notify_automatic'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
+		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_automatic]" type="checkbox" value="1" <?php disabled( $this->is_external( 'notify_automatic' ) ); ?> <?php checked( $options['notify_automatic'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
 		</label>
+		<?php $this->external_note( 'notify_automatic' ); ?>
 		<?php
 	}
 
@@ -649,10 +698,11 @@ class Settings_Page {
 	public function sc_wpun_settings_main_field_hide_updates() {
 		$options = $this->settings->get();
 		?>
-		<select id="sc_wpun_settings_main_hide_updates" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[hide_updates]">
+		<select id="sc_wpun_settings_main_hide_updates" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[hide_updates]" <?php disabled( $this->is_external( 'hide_updates' ) ); ?>>
 			<option value="1" <?php selected( $options['hide_updates'], 1 ); ?>><?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?></option>
 			<option value="0" <?php selected( $options['hide_updates'], 0 ); ?>><?php esc_html_e( 'No', 'wp-updates-notifier' ); ?></option>
 		</select>
+		<?php $this->external_note( 'hide_updates' ); ?>
 		<?php
 	}
 

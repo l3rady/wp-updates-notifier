@@ -189,6 +189,8 @@ class Test_Dispatcher extends WPUN_Test_Case {
 		$this->dispatch_capturing_notices( array( $this->instance( 'throws', 'throw' ) ) );
 
 		$this->assertCount( 1, $this->notices );
-		$this->assertStringContainsString( 'It threw.', $this->notices[0] );
+		$this->assertStringContainsString( 'RuntimeException', $this->notices[0] );
+		$this->assertStringNotContainsString( 'It threw.', $this->notices[0], 'The exception message can hold a secret.' );
+		$this->assertStringContainsString( 'throws', $this->notices[0] );
 	}
 }
