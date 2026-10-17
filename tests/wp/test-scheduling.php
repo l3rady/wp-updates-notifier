@@ -10,7 +10,7 @@
  */
 class Test_Scheduling extends WPUN_Test_Case {
 
-	const BASENAME = 'wp-updates-notifier/class-sc-wp-updates-notifier.php';
+	const BASENAME = 'wp-updates-notifier/wp-updates-notifier.php';
 
 	/**
 	 * Start every test with no event.

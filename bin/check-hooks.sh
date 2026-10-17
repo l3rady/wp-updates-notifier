@@ -6,4 +6,4 @@ set -eu
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
-php bin/check-hooks.php class-sc-wp-updates-notifier.php includes modules
+php bin/check-hooks.php wp-updates-notifier.php includes modules

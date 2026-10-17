@@ -12,7 +12,7 @@ use WPUN\Channel_Instance;
  */
 class Test_Delivery_State extends WPUN_Test_Case {
 
-	const OWN_PLUGIN = 'wp-updates-notifier/class-sc-wp-updates-notifier.php';
+	const OWN_PLUGIN = 'wp-updates-notifier/wp-updates-notifier.php';
 
 	/**
 	 * Fake what core asks api.wordpress.org about plugins.

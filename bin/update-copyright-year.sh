@@ -8,7 +8,7 @@ set -eu
 year="${1:?usage: update-copyright-year.sh <year>}"
 root="$(dirname "$0")/.."
 
-for file in "$root/class-sc-wp-updates-notifier.php" "$root/uninstall.php"; do
+for file in "$root/wp-updates-notifier.php" "$root/uninstall.php"; do
 	# "Copyright 2015" or "Copyright 2015-2024" becomes "Copyright 2015-<year>".
 	sed -E -i "s/(Copyright )([0-9]{4})(-[0-9]{4})?/\1\2-${year}/" "$file"
 	# A range that starts and ends in the same year is just that year.
