@@ -38,7 +38,7 @@ echo "ok: version markers"
 # Hook documentation check: a documented hook passes; a missing @since, a wrong prefix and a missing doc block fail.
 hooks="$work/hooks"
 mkdir -p "$hooks/good" "$hooks/bad"
-cp "$here/bin/check-hooks.php" "$work/bin/"
+cp "$here/bin/check-hooks.php" "$here/bin/hooks-scan.php" "$work/bin/"
 cat > "$hooks/good/ok.php" <<'PHP'
 <?php
 /**
@@ -58,6 +58,11 @@ printf '<?php\n$x = 1;\n\n\n\n\napply_filters( %s, $x );\n' "'sc_wpun_undocument
 for f in a b c; do
 	if php "$work/bin/check-hooks.php" "$hooks/bad/$f.php" >/dev/null 2>&1; then fail "bad hook fixture $f was accepted"; fi
 done
+# The generated reference: a current file passes, a stale one fails.
+php -r 'require $argv[1]; echo wpun_render_hook_docs( array( $argv[2] ) );' "$work/bin/hooks-scan.php" "$hooks/good" > "$hooks/hooks.md"
+php "$work/bin/check-hooks.php" --reference="$hooks/hooks.md" "$hooks/good" >/dev/null || fail "a current hook reference was rejected"
+echo "stale" >> "$hooks/hooks.md"
+if php "$work/bin/check-hooks.php" --reference="$hooks/hooks.md" "$hooks/good" >/dev/null 2>&1; then fail "a stale hook reference was accepted"; fi
 echo "ok: hook documentation check"
 
 echo "OK"
