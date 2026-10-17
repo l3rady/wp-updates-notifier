@@ -137,12 +137,12 @@ final class Routing {
 		 * Runs after the instance's own rules, so it can veto an item the rules let through and
 		 * allow one they blocked.
 		 *
-		 * Example, send only plugins named "security" to the instance called "security-team":
+		 * Example, send only plugins named "security" to the instance called "security_team":
 		 *
 		 *     add_filter(
 		 *         'sc_wpun_channel_should_receive_item',
 		 *         function ( $receive, $item, $instance ) {
-		 *             if ( 'security-team' === $instance->get_id() && 'plugin' === $item->get_type() ) {
+		 *             if ( 'security_team' === $instance->get_id() && 'plugin' === $item->get_type() ) {
 		 *                 return false !== stripos( $item->get_name(), 'security' );
 		 *             }
 		 *             return $receive;
