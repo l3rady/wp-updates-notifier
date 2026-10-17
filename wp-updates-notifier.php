@@ -15,7 +15,7 @@
  * Plugin URI: https://github.com/l3rady/wp-updates-notifier
  * Description: Sends an email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
  * x-release-please-start-version
- * Version: 1.6.0
+ * Version: 2.0.0
  * x-release-please-end
  * Requires at least: 6.7
  * Requires PHP: 7.4
@@ -28,7 +28,7 @@
 */
 
 /*
-	Copyright 2015  Scott Cariss  (email : scott@cariss.dev)
+	Copyright 2015-2026  Scott Cariss  (email : scott@cariss.dev)
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
