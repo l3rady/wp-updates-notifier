@@ -58,34 +58,8 @@ defined( 'SC_WPUN_FILE' ) || define( 'SC_WPUN_FILE', __FILE__ );
  */
 defined( 'SC_WPUN_API_VERSION' ) || define( 'SC_WPUN_API_VERSION', '1.0.0' );
 
-require_once __DIR__ . '/includes/interface-config-source.php';
-require_once __DIR__ . '/includes/class-config-context.php';
-require_once __DIR__ . '/includes/class-constant-source.php';
-require_once __DIR__ . '/includes/class-env-source.php';
-require_once __DIR__ . '/includes/class-config-value.php';
-require_once __DIR__ . '/includes/class-config.php';
-require_once __DIR__ . '/includes/class-frequencies.php';
-require_once __DIR__ . '/includes/class-config-report.php';
-require_once __DIR__ . '/includes/class-settings.php';
-require_once __DIR__ . '/includes/class-state.php';
-require_once __DIR__ . '/includes/class-scheduler.php';
-require_once __DIR__ . '/includes/class-notifier.php';
-require_once __DIR__ . '/includes/class-notification-item.php';
-require_once __DIR__ . '/includes/class-notification.php';
-require_once __DIR__ . '/includes/class-notification-renderer.php';
-require_once __DIR__ . '/includes/class-delivery-result.php';
-require_once __DIR__ . '/includes/class-channel-instance.php';
-require_once __DIR__ . '/includes/abstract-class-channel.php';
-require_once __DIR__ . '/includes/class-channel-registry.php';
-require_once __DIR__ . '/includes/class-channel-store.php';
-require_once __DIR__ . '/includes/class-routing.php';
-require_once __DIR__ . '/includes/class-item-types.php';
-require_once __DIR__ . '/includes/class-dispatcher.php';
-require_once __DIR__ . '/includes/class-update-checker.php';
-require_once __DIR__ . '/includes/class-slack-notice.php';
-require_once __DIR__ . '/includes/admin/class-settings-page.php';
-require_once __DIR__ . '/includes/admin/class-update-nag.php';
-require_once __DIR__ . '/includes/class-plugin.php';
+require_once __DIR__ . '/includes/class-autoloader.php';
+\WPUN\Autoloader::register();
 
 // Built-in notification modules.
 require_once __DIR__ . '/modules/email/email.php';
