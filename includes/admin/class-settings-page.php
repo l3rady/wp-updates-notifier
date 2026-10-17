@@ -365,23 +365,23 @@ class Settings_Page {
 			</span>
 		</p>
 
-		<form action="<?php echo esc_attr( admin_url( 'options.php' ) ); ?>" method="post">
+		<form action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" method="post">
 			<?php
 			// Saving goes back to the page it was sent from, which is this tab: the tab links carry `tab=general`.
 			settings_fields( 'sc_wpun_settings' );
 			do_settings_sections( 'wp-updates-notifier' );
 			?>
-			<p>&nbsp;</p>
-			<input class="button-primary" name="Submit" type="submit" value="<?php esc_html_e( 'Save settings', 'wp-updates-notifier' ); ?>" />
+			<?php submit_button( __( 'Save settings', 'wp-updates-notifier' ) ); ?>
 		</form>
 
-		<form action="<?php echo esc_attr( admin_url( 'admin-post.php' ) ); ?>" method="post">
+		<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::TEST_ACTION ); ?>" />
 			<input type="hidden" name="instance" value="email" />
-			<?php wp_nonce_field( self::TEST_ACTION ); ?>
-			<p>&nbsp;</p>
-			<input class="button" type="submit" value="<?php esc_attr_e( 'Send test email', 'wp-updates-notifier' ); ?>" />
-			<span class="description"><?php esc_html_e( 'Sends a test message using the saved settings.', 'wp-updates-notifier' ); ?></span>
+			<?php wp_nonce_field( self::TEST_ACTION, 'sc_wpun_test_nonce', false ); // Its own field name: settings_fields() already outputs `_wpnonce`, and ids must be unique. ?>
+			<p class="submit">
+				<?php submit_button( __( 'Send test email', 'wp-updates-notifier' ), 'secondary', 'sc_wpun_send_test_submit', false ); ?>
+				<span class="description"><?php esc_html_e( 'Sends a test message using the saved settings.', 'wp-updates-notifier' ); ?></span>
+			</p>
 		</form>
 		<?php
 	}
@@ -410,7 +410,8 @@ class Settings_Page {
 	public function admin_settings_init() {
 		register_setting( Settings::OPT_FIELD, Settings::OPT_FIELD, array( $this, 'sc_wpun_settings_validate' ) ); // Register Settings.
 
-		add_settings_section( 'sc_wpun_settings_main', __( 'Settings', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_text' ), 'wp-updates-notifier' ); // Make settings main section.
+		// Make settings main section.
+		add_settings_section( 'sc_wpun_settings_main', __( 'Settings', 'wp-updates-notifier' ), null, 'wp-updates-notifier' );  // @phpstan-ignore argument.type (Core accepts no callback: the sections have no intro text.)
 		foreach ( $this->settings->schemas() as $name => $schema ) {
 			$id   = 'sc_wpun_settings_main_' . $name;
 			$args = array( 'name' => $name );
@@ -422,11 +423,11 @@ class Settings_Page {
 		}
 
 		// Email notification settings.
-		add_settings_section( 'sc_wpun_settings_email_notifications', __( 'Email Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_text' ), 'wp-updates-notifier' );
+		add_settings_section( 'sc_wpun_settings_email_notifications', __( 'Email Notifications', 'wp-updates-notifier' ), null, 'wp-updates-notifier' );    // @phpstan-ignore argument.type (Core accepts no callback: the sections have no intro text.)
 		add_settings_field( 'sc_wpun_settings_email_notifications_email_notifications', $this->email_enabled_schema()['label'], array( $this, 'sc_wpun_settings_email_notifications_field_email_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
-		add_settings_field( 'sc_wpun_settings_email_notifications_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
-		add_settings_field( 'sc_wpun_settings_email_notifications_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
-		add_settings_field( 'sc_wpun_settings_email_notifications_notify_reply_to', __( 'Reply-To email', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_reply_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
+		add_settings_field( 'sc_wpun_settings_email_notifications_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications', array( 'label_for' => 'sc_wpun_settings_email_notifications_notify_to' ) );
+		add_settings_field( 'sc_wpun_settings_email_notifications_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications', array( 'label_for' => 'sc_wpun_settings_email_notifications_notify_from' ) );
+		add_settings_field( 'sc_wpun_settings_email_notifications_notify_reply_to', __( 'Reply-To email', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_reply_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications', array( 'label_for' => 'sc_wpun_settings_email_notifications_notify_reply_to' ) );
 	}
 
 	/**
@@ -572,10 +573,10 @@ class Settings_Page {
 	 * @return bool False if the user may not manage options or the nonce is not valid.
 	 */
 	public function process_test_send(): bool {
-		if ( ! current_user_can( self::capability() ) || ! isset( $_POST['_wpnonce'] ) ) {
+		if ( ! current_user_can( self::capability() ) || ! isset( $_POST['sc_wpun_test_nonce'] ) ) {
 			return false;
 		}
-		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), self::TEST_ACTION ) ) {
+		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_POST['sc_wpun_test_nonce'] ) ), self::TEST_ACTION ) ) {
 			return false;
 		}
 
@@ -760,14 +761,6 @@ class Settings_Page {
 	}
 
 	/**
-	 * Output the text at the top of the main settings section (function is required even if it outputs nothing).
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_main_text() {
-	}
-
-	/**
 	 * Whether a schema is drawn as a select.
 	 *
 	 * @param array<string, mixed> $schema Field schema.
@@ -863,14 +856,6 @@ class Settings_Page {
 	}
 
 	/**
-	 * Output the text at the top of the email settings section (function is required even if it outputs nothing).
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_email_notifications_text() {
-	}
-
-	/**
 	 * The schema of the email section's on/off field: the shared `enabled` field with the section's own texts.
 	 *
 	 * @return array<string, mixed>
@@ -904,7 +889,7 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_email_notifications_field_notify_to() {
 		?>
-		<input id="sc_wpun_settings_email_notifications_notify_to" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_to]" <?php echo $this->value_attribute( array( 'type' => 'text' ), $this->instance_setting( 'email', 'to' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in value_attribute(). ?> <?php disabled( $this->email_read_only( 'to' ) ); ?> />
+		<input type="text" id="sc_wpun_settings_email_notifications_notify_to" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_to]" <?php echo $this->value_attribute( array( 'type' => 'text' ), $this->instance_setting( 'email', 'to' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in value_attribute(). ?> <?php disabled( $this->email_read_only( 'to' ) ); ?> />
 		<span class="description"><?php esc_html_e( 'Separate multiple email address with a comma (,)', 'wp-updates-notifier' ); ?></span>
 		<?php $this->email_note( 'to' ); ?>
 		<?php
@@ -917,7 +902,7 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_email_notifications_field_notify_from() {
 		?>
-		<input id="sc_wpun_settings_email_notifications_notify_from" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_from]" <?php echo $this->value_attribute( array( 'type' => 'text' ), $this->instance_setting( 'email', 'from' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in value_attribute(). ?> <?php disabled( $this->email_read_only( 'from' ) ); ?> />
+		<input type="text" id="sc_wpun_settings_email_notifications_notify_from" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_from]" <?php echo $this->value_attribute( array( 'type' => 'text' ), $this->instance_setting( 'email', 'from' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in value_attribute(). ?> <?php disabled( $this->email_read_only( 'from' ) ); ?> />
 		<span class="description"><?php esc_html_e( 'Leave empty to use the WordPress default. Only set an address at a domain this site is allowed to send mail for.', 'wp-updates-notifier' ); ?></span>
 		<?php $this->email_note( 'from' ); ?>
 		<?php
@@ -930,7 +915,7 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_email_notifications_field_notify_reply_to() {
 		?>
-		<input id="sc_wpun_settings_email_notifications_notify_reply_to" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_reply_to]" <?php echo $this->value_attribute( array( 'type' => 'text' ), $this->instance_setting( 'email', 'reply_to' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in value_attribute(). ?> <?php disabled( $this->email_read_only( 'reply_to' ) ); ?> />
+		<input type="text" id="sc_wpun_settings_email_notifications_notify_reply_to" class="regular-text" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_reply_to]" <?php echo $this->value_attribute( array( 'type' => 'text' ), $this->instance_setting( 'email', 'reply_to' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in value_attribute(). ?> <?php disabled( $this->email_read_only( 'reply_to' ) ); ?> />
 		<?php $this->email_note( 'reply_to' ); ?>
 		<?php
 	}

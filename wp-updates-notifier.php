@@ -350,12 +350,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: the section has no intro text, so this does nothing.
 		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_text() {
-			sc_wpun()->settings_page()->sc_wpun_settings_main_text();
+			// The section has no intro text since 2.0.0.
 		}
 
 		/**
@@ -404,12 +404,12 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: the section has no intro text, so this does nothing.
 		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_email_notifications_text() {
-			sc_wpun()->settings_page()->sc_wpun_settings_email_notifications_text();
+			// The section has no intro text since 2.0.0.
 		}
 
 		/**
