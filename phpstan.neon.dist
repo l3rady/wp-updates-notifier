@@ -10,6 +10,7 @@ parameters:
         - includes
         - modules
         - uninstall.php
+        - tests/fixtures/plugins
     scanFiles:
         - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
     treatPhpDocTypesAsCertain: false
