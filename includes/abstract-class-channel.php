@@ -42,6 +42,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * is invalid. `checkbox` is an alias of `boolean` with the checkbox display. Supplied from outside the database, `1`, `true`,
  * `yes` and `on` are on, and `0`, `false`, `no`, `off` and an empty value are off, in any case.
  *
+ * Every channel has an `enabled` setting, which is not part of get_fields(). Channel::enabled_field() is its shared boolean
+ * schema, used by the settings screen and for values supplied from outside the database.
+ *
  * An `enum` stores the key of the option, never its position, so options can be added, removed or reordered.
  * Supplied from outside the database (constants, environment variables), a single choice is the key and a list is
  * comma-separated, for example `core,plugin`; one unknown key makes the whole value unusable. `select` is an alias
@@ -102,6 +105,23 @@ abstract class Channel {
 	 */
 	public function get_fields(): array {
 		return array();
+	}
+
+	/**
+	 * The field schema of the `enabled` setting every instance has, shared by all channels.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function enabled_field(): array {
+		return array(
+			'type'   => 'boolean',
+			'label'  => __( 'Enabled', 'wp-updates-notifier' ),
+			'labels' => array(
+				'on' => __( 'Send notifications through this channel', 'wp-updates-notifier' ),
+			),
+		);
 	}
 
 	/**

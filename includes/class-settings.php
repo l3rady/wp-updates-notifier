@@ -15,12 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The plugin settings: their defaults, how they are read and written and how older ones are upgraded.
  *
  * @internal
- * @phpstan-type SettingsData array{frequency: string, notify_plugins: 'none'|'all'|'active', notify_themes: 'none'|'all'|'active', notify_automatic: int, hide_updates: int}
+ * @phpstan-type SettingsData array{frequency: string, notify_plugins: 'none'|'all'|'active', notify_themes: 'none'|'all'|'active', notify_automatic: bool, hide_updates: bool}
  */
 class Settings {
 	const OPT_FIELD         = 'sc_wpun_settings';
 	const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-	const OPT_VERSION       = '10.0';
+	const OPT_VERSION       = '11.0';
 
 	/**
 	 * What the notify settings were stored as before settings version 10: 0 none, 1 all, 2 active only.
@@ -87,6 +87,13 @@ class Settings {
 			foreach ( array( 'notify_plugins', 'notify_themes' ) as $name ) {
 				if ( array_key_exists( $name, $options ) ) {
 					$options[ $name ] = $this->notify_key( $name, $options[ $name ], $defaults[ $name ] );
+				}
+			}
+
+			// Settings version 11 stores the on/off settings as true and false instead of 1 and 0.
+			foreach ( array( 'notify_automatic', 'hide_updates' ) as $name ) {
+				if ( array_key_exists( $name, $options ) ) {
+					$options[ $name ] = $this->bool_setting( $options, $name, $defaults[ $name ] );
 				}
 			}
 
@@ -194,8 +201,8 @@ class Settings {
 			'frequency'        => 'hourly',
 			'notify_plugins'   => 'all',
 			'notify_themes'    => 'all',
-			'notify_automatic' => 1,
-			'hide_updates'     => 1,
+			'notify_automatic' => true,
+			'hide_updates'     => true,
 		);
 
 		/**
@@ -223,8 +230,8 @@ class Settings {
 		 *     @type string $frequency        Name of a cron schedule.
 		 *     @type string $notify_plugins   `none`, `all` or `active` (active plugins only).
 		 *     @type string $notify_themes    `none`, `all` or `active` (active themes only).
-		 *     @type int    $notify_automatic 1 to send WordPress's automatic core update emails to the notification address.
-		 *     @type int    $hide_updates     1 to hide the WordPress update notice from users who cannot update.
+		 *     @type bool   $notify_automatic True to send WordPress's automatic core update emails to the notification address.
+		 *     @type bool   $hide_updates     True to hide the WordPress update notice from users who cannot update.
 		 * }
 		 */
 		$filtered = apply_filters( 'sc_wpun_default_settings', $defaults );
@@ -236,8 +243,8 @@ class Settings {
 			'frequency'        => $this->string_setting( $filtered, 'frequency', $defaults['frequency'] ),
 			'notify_plugins'   => $this->notify_key( 'notify_plugins', $filtered['notify_plugins'] ?? null, $defaults['notify_plugins'], false ),
 			'notify_themes'    => $this->notify_key( 'notify_themes', $filtered['notify_themes'] ?? null, $defaults['notify_themes'], false ),
-			'notify_automatic' => $this->int_setting( $filtered, 'notify_automatic', $defaults['notify_automatic'] ),
-			'hide_updates'     => $this->int_setting( $filtered, 'hide_updates', $defaults['hide_updates'] ),
+			'notify_automatic' => $this->bool_setting( $filtered, 'notify_automatic', $defaults['notify_automatic'] ),
+			'hide_updates'     => $this->bool_setting( $filtered, 'hide_updates', $defaults['hide_updates'] ),
 		);
 	}
 
@@ -269,12 +276,12 @@ class Settings {
 
 		$automatic = $this->config->resolve_typed( Config_Context::setting( 'notify_automatic' ), $schemas['notify_automatic'] );
 		if ( null !== $automatic ) {
-			$settings['notify_automatic'] = (int) $automatic->get_value();
+			$settings['notify_automatic'] = (bool) $automatic->get_value();
 		}
 
 		$hide = $this->config->resolve_typed( Config_Context::setting( 'hide_updates' ), $schemas['hide_updates'] );
 		if ( null !== $hide ) {
-			$settings['hide_updates'] = (int) $hide->get_value();
+			$settings['hide_updates'] = (bool) $hide->get_value();
 		}
 
 		return $settings;
@@ -317,17 +324,24 @@ class Settings {
 				'type'    => 'enum',
 				'label'   => __( 'Frequency to check', 'wp-updates-notifier' ),
 				'options' => $frequencies,
-				'display' => 'select',
 			),
 			'notify_plugins'   => $this->notify_schema( 'notify_plugins' ),
 			'notify_themes'    => $this->notify_schema( 'notify_themes' ),
 			'notify_automatic' => array(
-				'type'  => 'checkbox',
-				'label' => __( 'Notify automatic core updates to this address?', 'wp-updates-notifier' ),
+				'type'    => 'boolean',
+				'label'   => __( 'Automatic updates', 'wp-updates-notifier' ),
+				'labels'  => array(
+					'on' => __( "Send WordPress's automatic core update emails to the notification address", 'wp-updates-notifier' ),
+				),
+				'default' => true,
 			),
 			'hide_updates'     => array(
-				'type'  => 'checkbox',
-				'label' => __( 'Hide the WordPress update notice from users who cannot update WordPress?', 'wp-updates-notifier' ),
+				'type'    => 'boolean',
+				'label'   => __( 'Update notice', 'wp-updates-notifier' ),
+				'labels'  => array(
+					'on' => __( 'Hide the WordPress update notice from users who cannot update WordPress', 'wp-updates-notifier' ),
+				),
+				'default' => true,
 			),
 		);
 	}
@@ -351,7 +365,6 @@ class Settings {
 				'active' => $plugins ? __( 'Yes, but only active plugins', 'wp-updates-notifier' ) : __( 'Yes, but only active themes', 'wp-updates-notifier' ),
 			),
 			'default' => 'all',
-			'display' => 'radio',
 		);
 	}
 
@@ -400,22 +413,28 @@ class Settings {
 			'frequency'        => $this->string_setting( $stored, 'frequency', $defaults['frequency'] ),
 			'notify_plugins'   => $this->notify_key( 'notify_plugins', $stored['notify_plugins'] ?? null, $defaults['notify_plugins'] ),
 			'notify_themes'    => $this->notify_key( 'notify_themes', $stored['notify_themes'] ?? null, $defaults['notify_themes'] ),
-			'notify_automatic' => $this->int_setting( $stored, 'notify_automatic', $defaults['notify_automatic'] ),
-			'hide_updates'     => $this->int_setting( $stored, 'hide_updates', $defaults['hide_updates'] ),
+			'notify_automatic' => $this->bool_setting( $stored, 'notify_automatic', $defaults['notify_automatic'] ),
+			'hide_updates'     => $this->bool_setting( $stored, 'hide_updates', $defaults['hide_updates'] ),
 		);
 	}
 
 	/**
-	 * A stored setting as a non-negative integer, or its default.
+	 * A stored setting as a boolean, or its default.
+	 *
+	 * Accepts true and false and the 1 and 0 older versions stored, as numbers or strings.
 	 *
 	 * @param array<mixed> $stored   Stored settings.
 	 * @param string       $key      Setting name.
-	 * @param int          $fallback Value when the setting is missing or unusable.
+	 * @param bool         $fallback Value when the setting is missing or unusable.
 	 *
-	 * @return int
+	 * @return bool
 	 */
-	private function int_setting( array $stored, string $key, int $fallback ): int {
-		return isset( $stored[ $key ] ) && is_scalar( $stored[ $key ] ) ? absint( $stored[ $key ] ) : $fallback;
+	private function bool_setting( array $stored, string $key, bool $fallback ): bool {
+		if ( ! isset( $stored[ $key ] ) ) {
+			return $fallback;
+		}
+
+		return Boolean_Field::sanitize( $stored[ $key ], array( 'default' => $fallback ) )['value'];
 	}
 
 	/**

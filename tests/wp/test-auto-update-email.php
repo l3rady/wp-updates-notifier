@@ -37,7 +37,7 @@ class Test_Auto_Update_Email extends WPUN_Test_Case {
 	public function test_string_headers_from_core_do_not_fatal() {
 		$this->save_settings(
 			array(
-				'notify_automatic' => 1,
+				'notify_automatic' => true,
 				'notify_from'      => 'notifier@example.org',
 			)
 		);
@@ -54,7 +54,7 @@ class Test_Auto_Update_Email extends WPUN_Test_Case {
 	public function test_existing_string_headers_are_kept() {
 		$this->save_settings(
 			array(
-				'notify_automatic' => 1,
+				'notify_automatic' => true,
 				'notify_from'      => 'notifier@example.org',
 			)
 		);
@@ -70,7 +70,7 @@ class Test_Auto_Update_Email extends WPUN_Test_Case {
 	public function test_array_headers_are_appended_to() {
 		$this->save_settings(
 			array(
-				'notify_automatic' => 1,
+				'notify_automatic' => true,
 				'notify_from'      => 'notifier@example.org',
 			)
 		);
@@ -86,7 +86,7 @@ class Test_Auto_Update_Email extends WPUN_Test_Case {
 	public function test_an_existing_from_header_is_not_duplicated() {
 		$this->save_settings(
 			array(
-				'notify_automatic' => 1,
+				'notify_automatic' => true,
 				'notify_from'      => 'notifier@example.org',
 			)
 		);
@@ -102,7 +102,7 @@ class Test_Auto_Update_Email extends WPUN_Test_Case {
 	public function test_headers_are_untouched_without_a_from_address() {
 		$this->save_settings(
 			array(
-				'notify_automatic' => 1,
+				'notify_automatic' => true,
 				'notify_from'      => '',
 			)
 		);
@@ -116,7 +116,7 @@ class Test_Auto_Update_Email extends WPUN_Test_Case {
 	public function test_the_filtered_email_can_be_sent() {
 		$this->save_settings(
 			array(
-				'notify_automatic' => 1,
+				'notify_automatic' => true,
 				'notify_from'      => 'notifier@example.org',
 			)
 		);
@@ -133,7 +133,7 @@ class Test_Auto_Update_Email extends WPUN_Test_Case {
 	public function test_reply_to_is_added() {
 		$this->save_settings(
 			array(
-				'notify_automatic' => 1,
+				'notify_automatic' => true,
 				'notify_from'      => '',
 				'notify_reply_to'  => 'help@example.org',
 			)

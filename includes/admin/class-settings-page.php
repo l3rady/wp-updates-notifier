@@ -11,6 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Not loaded by WordPress.
 }
 
+use WPUN\Boolean_Field;
+use WPUN\Channel;
 use WPUN\Channel_Instance;
 use WPUN\Channel_Store;
 use WPUN\Config_Report;
@@ -46,13 +48,6 @@ class Settings_Page {
 	 * @var State
 	 */
 	private $state;
-
-	/**
-	 * Scheduler.
-	 *
-	 * @var Scheduler
-	 */
-	private $scheduler;
 
 	/**
 	 * Notifier.
@@ -94,17 +89,15 @@ class Settings_Page {
 	 *
 	 * @param Settings      $settings  Settings.
 	 * @param State         $state     Run state.
-	 * @param Scheduler     $scheduler Scheduler.
 	 * @param Notifier      $notifier  Notifier.
 	 * @param Channel_Store $channels  Channel instance storage.
 	 * @param Slack_Notice  $slack_notice Notice about Slack no longer being supported.
 	 * @param Dispatcher    $dispatcher Dispatcher.
 	 * @param Config_Report $config_report Report of configuration problems.
 	 */
-	public function __construct( Settings $settings, State $state, Scheduler $scheduler, Notifier $notifier, Channel_Store $channels, Slack_Notice $slack_notice, Dispatcher $dispatcher, Config_Report $config_report ) {
+	public function __construct( Settings $settings, State $state, Notifier $notifier, Channel_Store $channels, Slack_Notice $slack_notice, Dispatcher $dispatcher, Config_Report $config_report ) {
 		$this->settings      = $settings;
 		$this->state         = $state;
-		$this->scheduler     = $scheduler;
 		$this->notifier      = $notifier;
 		$this->channels      = $channels;
 		$this->slack_notice  = $slack_notice;
@@ -306,15 +299,19 @@ class Settings_Page {
 		register_setting( Settings::OPT_FIELD, Settings::OPT_FIELD, array( $this, 'sc_wpun_settings_validate' ) ); // Register Settings.
 
 		add_settings_section( 'sc_wpun_settings_main', __( 'Settings', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_text' ), 'wp-updates-notifier' ); // Make settings main section.
-		add_settings_field( 'sc_wpun_settings_main_frequency', __( 'Frequency to check', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_frequency' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
-		add_settings_field( 'sc_wpun_settings_main_notify_plugins', __( 'Notify about plugin updates?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_plugins' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
-		add_settings_field( 'sc_wpun_settings_main_notify_themes', __( 'Notify about theme updates?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_themes' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
-		add_settings_field( 'sc_wpun_settings_main_notify_automatic', __( 'Notify automatic core updates to this address?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_notify_automatic' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
-		add_settings_field( 'sc_wpun_settings_main_hide_updates', __( 'Hide the WordPress update notice from users who cannot update WordPress?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_main_field_hide_updates' ), 'wp-updates-notifier', 'sc_wpun_settings_main' );
+		foreach ( $this->settings->schemas() as $name => $schema ) {
+			$id   = 'sc_wpun_settings_main_' . $name;
+			$args = array( 'name' => $name );
+			// A checkbox has its own label and radios have a legend, so only a select is labelled by the row title.
+			if ( $this->is_select( $schema ) ) {
+				$args['label_for'] = $id;
+			}
+			add_settings_field( $id, isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name, array( $this, 'render_setting' ), 'wp-updates-notifier', 'sc_wpun_settings_main', $args );
+		}
 
 		// Email notification settings.
 		add_settings_section( 'sc_wpun_settings_email_notifications', __( 'Email Notifications', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_text' ), 'wp-updates-notifier' );
-		add_settings_field( 'sc_wpun_settings_email_notifications_email_notifications', __( 'Send email notifications?', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_email_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
+		add_settings_field( 'sc_wpun_settings_email_notifications_email_notifications', $this->email_enabled_schema()['label'], array( $this, 'sc_wpun_settings_email_notifications_field_email_notifications' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 		add_settings_field( 'sc_wpun_settings_email_notifications_notify_to', __( 'Notify email to', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 		add_settings_field( 'sc_wpun_settings_email_notifications_notify_from', __( 'Notify email from', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_from' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
 		add_settings_field( 'sc_wpun_settings_email_notifications_notify_reply_to', __( 'Reply-To email', 'wp-updates-notifier' ), array( $this, 'sc_wpun_settings_email_notifications_field_notify_reply_to' ), 'wp-updates-notifier', 'sc_wpun_settings_email_notifications' );
@@ -337,42 +334,24 @@ class Settings_Page {
 			return $valid;
 		}
 
-		// Validate main settings.
-		$frequency = $input['frequency'] ?? ( $valid['frequency'] ?? '' );
-		if ( ( is_string( $frequency ) || is_int( $frequency ) ) && array_key_exists( $frequency, $this->scheduler->get_frequencies() ) ) {
-			$valid['frequency'] = $frequency;
-		} else {
-			add_settings_error( 'sc_wpun_settings_main_frequency', 'sc_wpun_settings_main_frequency_error', __( 'Invalid frequency entered', 'wp-updates-notifier' ), 'error' );
-		}
-
-		// A missing value keeps the stored one: the form always submits a choice, unless the setting is read-only.
-		$schemas = $this->settings->schemas();
-		foreach ( array( 'notify_plugins', 'notify_themes' ) as $name ) {
+		// Validate main settings with their field types. A missing value keeps the stored one: a read-only setting is not submitted.
+		$messages = array(
+			'frequency'        => __( 'Invalid frequency entered', 'wp-updates-notifier' ),
+			'notify_plugins'   => __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ),
+			'notify_themes'    => __( 'Invalid theme updates value entered', 'wp-updates-notifier' ),
+			'notify_automatic' => __( 'Invalid automatic updates value entered', 'wp-updates-notifier' ),
+			'hide_updates'     => __( 'Invalid hide updates value entered', 'wp-updates-notifier' ),
+		);
+		foreach ( $this->settings->schemas() as $name => $schema ) {
 			if ( ! array_key_exists( $name, $input ) ) {
 				continue;
 			}
-			$checked = Enum_Field::sanitize( $input[ $name ], $schemas[ $name ] );
+			$checked = Boolean_Field::is_boolean( $schema ) ? Boolean_Field::sanitize( $input[ $name ], $schema ) : Enum_Field::sanitize( $input[ $name ], $schema );
 			if ( $checked['ok'] ) {
 				$valid[ $name ] = $checked['value'];
-			} elseif ( 'notify_plugins' === $name ) {
-				add_settings_error( 'sc_wpun_settings_main_notify_plugins', 'sc_wpun_settings_main_notify_plugins_error', __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ), 'error' );
 			} else {
-				add_settings_error( 'sc_wpun_settings_main_notify_themes', 'sc_wpun_settings_main_notify_themes_error', __( 'Invalid theme updates value entered', 'wp-updates-notifier' ), 'error' );
+				add_settings_error( 'sc_wpun_settings_main_' . $name, 'sc_wpun_settings_main_' . $name . '_error', $messages[ $name ] ?? $name, 'error' );
 			}
-		}
-
-		$sanitized_notify_automatic = absint( $input['notify_automatic'] ?? 0 );
-		if ( $sanitized_notify_automatic <= 1 ) {
-			$valid['notify_automatic'] = $sanitized_notify_automatic;
-		} else {
-			add_settings_error( 'sc_wpun_settings_main_notify_automatic', 'sc_wpun_settings_main_notify_automatic_error', __( 'Invalid automatic updates value entered', 'wp-updates-notifier' ), 'error' );
-		}
-
-		$sanitized_hide_updates = absint( $input['hide_updates'] ?? 0 );
-		if ( $sanitized_hide_updates <= 1 ) {
-			$valid['hide_updates'] = $sanitized_hide_updates;
-		} else {
-			add_settings_error( 'sc_wpun_settings_main_hide_updates', 'sc_wpun_settings_main_hide_updates_error', __( 'Invalid hide updates value entered', 'wp-updates-notifier' ), 'error' );
 		}
 
 		// A setting supplied from outside the database keeps its stored value, whatever was submitted.
@@ -444,21 +423,17 @@ class Settings_Page {
 			$notify_from = '';
 		}
 
-		if ( $external_enabled ) {
-			$email_notifications = $this->instance_enabled( 'email' ) ? 1 : 0;
-		} else {
-			$email_notifications = absint( $input['email_notifications'] ?? 0 );
-			if ( 1 < $email_notifications ) {
+		// Missing keeps the current state: the form submits a hidden 0 for an unticked box.
+		$email_notifications = $this->instance_enabled( 'email' );
+		if ( ! $external_enabled && array_key_exists( 'email_notifications', $input ) ) {
+			$checked = Boolean_Field::sanitize( $input['email_notifications'], $this->email_enabled_schema() );
+			if ( ! $checked['ok'] ) {
 				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Invalid notification email value entered', 'wp-updates-notifier' ), 'error' );
-			}
-
-			if ( 1 === $email_notifications ) {
-				if ( ! empty( $notify_to ) ) {
-					$email_notifications = 1;
-				} else {
-					add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not enable email notifications, enter a valid address to send to', 'wp-updates-notifier' ), 'error' );
-					$email_notifications = 0;
-				}
+			} elseif ( $checked['value'] && empty( $notify_to ) ) {
+				add_settings_error( 'sc_wpun_settings_email_notifications_email_notifications', 'sc_wpun_settings_email_notifications_email_notifications_error', __( 'Can not enable email notifications, enter a valid address to send to', 'wp-updates-notifier' ), 'error' );
+				$email_notifications = false;
+			} else {
+				$email_notifications = $checked['value'];
 			}
 		}
 
@@ -466,7 +441,7 @@ class Settings_Page {
 			$this->save_instance(
 				'email',
 				'Email',
-				1 === $email_notifications,
+				$email_notifications,
 				array(
 					'to'       => $notify_to,
 					'from'     => $notify_from,
@@ -681,35 +656,62 @@ class Settings_Page {
 	}
 
 	/**
+	 * Whether a schema is drawn as a select.
+	 *
+	 * @param array<string, mixed> $schema Field schema.
+	 *
+	 * @return bool
+	 */
+	private function is_select( array $schema ): bool {
+		$normalised = Boolean_Field::is_boolean( $schema ) ? Boolean_Field::normalise( $schema ) : Enum_Field::normalise( $schema );
+
+		return 'select' === ( $normalised['display'] ?? '' ) && empty( $normalised['multiple'] );
+	}
+
+	/**
+	 * Draw a global setting from its schema.
+	 *
+	 * The field is disabled, with a note, when the setting is supplied from outside the database. A saved
+	 * frequency that is no longer offered is shown as an extra, current choice.
+	 *
+	 * @param array<string, mixed> $args Arguments of the field: `name`, the name of the setting.
+	 *
+	 * @return void
+	 */
+	public function render_setting( $args ) {
+		$name    = isset( $args['name'] ) && is_string( $args['name'] ) ? $args['name'] : '';
+		$schemas = $this->settings->schemas();
+		if ( ! isset( $schemas[ $name ] ) ) {
+			return;
+		}
+		$options     = $this->settings->get();
+		$value       = $options[ $name ];
+		$extra       = array();
+		$unavailable = false;
+		if ( 'frequency' === $name && is_string( $value ) && ! array_key_exists( $value, $schemas['frequency']['options'] ) ) {
+			$unavailable = true;
+			// translators: %s: Name of the saved schedule.
+			$extra[ $value ] = sprintf( __( '%s (no longer available)', 'wp-updates-notifier' ), $value );
+		}
+
+		echo Field_Renderer::field( $schemas[ $name ], Settings::OPT_FIELD . '[' . $name . ']', 'sc_wpun_settings_main_' . $name, $value, $this->is_external( $name ), '', $extra ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
+		if ( $unavailable ) {
+			?>
+			<p class="description sc-wpun-frequency-unavailable">
+				<?php esc_html_e( 'The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it.', 'wp-updates-notifier' ); ?>
+			</p>
+			<?php
+		}
+		$this->external_note( $name );
+	}
+
+	/**
 	 * Settings field for frequency.
 	 *
 	 * @return void
 	 */
 	public function sc_wpun_settings_main_field_frequency() {
-		$options     = $this->settings->get();
-		$frequencies = $this->scheduler->get_frequencies();
-		$unavailable = ! array_key_exists( $options['frequency'], $frequencies );
-		?>
-		<select id="sc_wpun_settings_main_frequency" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[frequency]" <?php disabled( $this->is_external( 'frequency' ) ); ?>>
-		<?php if ( $unavailable ) : ?>
-			<option value="<?php echo esc_attr( $options['frequency'] ); ?>" selected="selected">
-				<?php
-				// translators: %s: Name of the saved schedule.
-				echo esc_html( sprintf( __( '%s (no longer available)', 'wp-updates-notifier' ), $options['frequency'] ) );
-				?>
-			</option>
-		<?php endif; ?>
-		<?php foreach ( $frequencies as $k => $v ) : ?>
-			<option value="<?php echo esc_attr( $k ); ?>" <?php selected( $options['frequency'], $k ); ?>><?php echo esc_html( $v['display'] ); ?></option>
-		<?php endforeach; ?>
-		</select>
-		<?php if ( $unavailable ) : ?>
-			<p class="description sc-wpun-frequency-unavailable">
-				<?php esc_html_e( 'The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it.', 'wp-updates-notifier' ); ?>
-			</p>
-		<?php endif; ?>
-		<?php $this->external_note( 'frequency' ); ?>
-		<?php
+		$this->render_setting( array( 'name' => 'frequency' ) );
 	}
 
 	/**
@@ -718,10 +720,7 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function sc_wpun_settings_main_field_notify_plugins() {
-		$options = $this->settings->get();
-		$schemas = $this->settings->schemas();
-		echo Field_Renderer::enum( $schemas['notify_plugins'], Settings::OPT_FIELD . '[notify_plugins]', 'sc_wpun_settings_main_notify_plugins', $options['notify_plugins'], $this->is_external( 'notify_plugins' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
-		$this->external_note( 'notify_plugins' );
+		$this->render_setting( array( 'name' => 'notify_plugins' ) );
 	}
 
 	/**
@@ -730,10 +729,7 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function sc_wpun_settings_main_field_notify_themes() {
-		$options = $this->settings->get();
-		$schemas = $this->settings->schemas();
-		echo Field_Renderer::enum( $schemas['notify_themes'], Settings::OPT_FIELD . '[notify_themes]', 'sc_wpun_settings_main_notify_themes', $options['notify_themes'], $this->is_external( 'notify_themes' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
-		$this->external_note( 'notify_themes' );
+		$this->render_setting( array( 'name' => 'notify_themes' ) );
 	}
 
 	/**
@@ -742,12 +738,7 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function sc_wpun_settings_main_field_notify_automatic() {
-		$options = $this->settings->get();
-		?>
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_automatic]" type="checkbox" value="1" <?php disabled( $this->is_external( 'notify_automatic' ) ); ?> <?php checked( $options['notify_automatic'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
-		</label>
-		<?php $this->external_note( 'notify_automatic' ); ?>
-		<?php
+		$this->render_setting( array( 'name' => 'notify_automatic' ) );
 	}
 
 	/**
@@ -756,14 +747,7 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function sc_wpun_settings_main_field_hide_updates() {
-		$options = $this->settings->get();
-		?>
-		<select id="sc_wpun_settings_main_hide_updates" name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[hide_updates]" <?php disabled( $this->is_external( 'hide_updates' ) ); ?>>
-			<option value="1" <?php selected( $options['hide_updates'], 1 ); ?>><?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?></option>
-			<option value="0" <?php selected( $options['hide_updates'], 0 ); ?>><?php esc_html_e( 'No', 'wp-updates-notifier' ); ?></option>
-		</select>
-		<?php $this->external_note( 'hide_updates' ); ?>
-		<?php
+		$this->render_setting( array( 'name' => 'hide_updates' ) );
 	}
 
 	/**
@@ -775,16 +759,30 @@ class Settings_Page {
 	}
 
 	/**
+	 * The schema of the email section's on/off field: the shared `enabled` field with the section's own texts.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function email_enabled_schema(): array {
+		return array_merge(
+			Channel::enabled_field(),
+			array(
+				'label'  => __( 'Email notifications', 'wp-updates-notifier' ),
+				'labels' => array(
+					'on' => __( 'Send email notifications', 'wp-updates-notifier' ),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Settings field for email notifications.
 	 *
 	 * @return void
 	 */
 	public function sc_wpun_settings_email_notifications_field_email_notifications() {
-		?>
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[email_notifications]" type="checkbox" value="1" <?php checked( $this->instance_enabled( 'email' ) ); ?> <?php disabled( $this->email_read_only( 'enabled' ) ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
-		</label>
-		<?php $this->email_note( 'enabled' ); ?>
-		<?php
+		echo Field_Renderer::boolean( $this->email_enabled_schema(), Settings::OPT_FIELD . '[email_notifications]', 'sc_wpun_settings_email_notifications_email_notifications', $this->instance_enabled( 'email' ), $this->email_read_only( 'enabled' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
+		$this->email_note( 'enabled' );
 	}
 
 	/**

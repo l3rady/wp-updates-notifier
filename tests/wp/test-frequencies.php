@@ -30,13 +30,13 @@ class Test_Frequencies extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Option values of the frequency field, in order.
+	 * Choices of the frequency field, in order: the radio buttons (four schedules) or the options of a select.
 	 *
 	 * @param string $html Field HTML.
 	 * @return array
 	 */
 	private function option_values( $html ) {
-		preg_match_all( '/<option value="([^"]*)"/', $html, $matches );
+		preg_match_all( '/<(?:option|input type="radio"[^>]*) value="([^"]*)"/', $html, $matches );
 		return $matches[1];
 	}
 
@@ -90,13 +90,13 @@ class Test_Frequencies extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Every select the field renders is closed.
+	 * Every fieldset the field renders is closed.
 	 */
 	public function test_the_field_markup_is_closed() {
 		$this->save_settings( array( 'frequency' => 'gone' ) );
 		$html = $this->render_frequency_field();
 
-		$this->assertSame( substr_count( $html, '<select' ), substr_count( $html, '</select>' ) );
+		$this->assertSame( substr_count( $html, '<fieldset' ), substr_count( $html, '</fieldset>' ) );
 	}
 
 	/**
@@ -108,7 +108,7 @@ class Test_Frequencies extends WPUN_Test_Case {
 		$html = $this->render_frequency_field();
 
 		$this->assertSame( 'schedule_from_a_removed_plugin', $this->option_values( $html )[0] );
-		$this->assertMatchesRegularExpression( '/<option value="schedule_from_a_removed_plugin" selected="selected">/', $html );
+		$this->assertMatchesRegularExpression( '/value="schedule_from_a_removed_plugin" checked="checked"/', $html );
 		$this->assertStringContainsString( 'no longer available', $html );
 	}
 

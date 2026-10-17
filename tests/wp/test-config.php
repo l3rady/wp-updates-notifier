@@ -401,8 +401,8 @@ class Test_Config extends WPUN_Test_Case {
 
 		$page = $this->page();
 
-		$this->assertMatchesRegularExpression( '/<select[^>]*name="sc_wpun_settings\[frequency\]"[^>]*disabled/', $page );
-		$this->assertMatchesRegularExpression( '/<option value="weekly"\s+selected/', $page );
+		$this->assertMatchesRegularExpression( '/name="sc_wpun_settings\[frequency\]" value="weekly" checked="checked" disabled="disabled"/', $page );
+		$this->assertDoesNotMatchRegularExpression( '/<input(?![^>]*disabled)[^>]*name="sc_wpun_settings\[frequency\]"/', $page );
 		$this->assertMatchesRegularExpression( '/name="sc_wpun_settings\[notify_plugins\]" value="active" checked="checked" disabled="disabled"/', $page );
 		$this->assertStringContainsString( 'Set by Test vault', $page );
 		$this->assertDoesNotMatchRegularExpression( '/name="sc_wpun_settings\[notify_themes\]"[^>]*disabled/', $page );

@@ -133,7 +133,7 @@ class Plugin {
 		$this->dispatcher     = new Dispatcher( $this->channels, $this->channel_store );
 		$this->update_checker = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store );
 		$this->slack_notice   = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
-		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->scheduler, $this->notifier, $this->channel_store, $this->slack_notice, $this->dispatcher, $this->config_report );
+		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->notifier, $this->channel_store, $this->slack_notice, $this->dispatcher, $this->config_report );
 		$this->update_nag     = new Update_Nag( $this->settings );
 	}
 
