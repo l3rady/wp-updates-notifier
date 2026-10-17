@@ -45,7 +45,7 @@ class Test_Form_Channel extends Channel {
 	/**
 	 * Fields.
 	 *
-	 * @return array
+	 * @return array<string, array<string, mixed>>
 	 */
 	public function get_fields(): array {
 		return array(
@@ -93,6 +93,8 @@ class Test_Form_Channel extends Channel {
 
 	/**
 	 * Register the `test_colour` field type: a colour input that accepts #rrggbb.
+	 *
+	 * @return void
 	 */
 	public static function register_colour_type() {
 		add_filter(
