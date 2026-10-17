@@ -105,19 +105,35 @@ class Plugin {
 	private $slack_notice;
 
 	/**
+	 * Resolver of configuration supplied from outside the database.
+	 *
+	 * @var Config
+	 */
+	private $config;
+
+	/**
+	 * Report of configuration problems.
+	 *
+	 * @var Config_Report
+	 */
+	private $config_report;
+
+	/**
 	 * Build the components. Nothing is hooked until register() runs.
 	 */
 	public function __construct() {
 		$this->state          = new State();
 		$this->channel_store  = new Channel_Store();
-		$this->settings       = new Settings( $this->state, $this->channel_store );
+		$this->config         = new Config();
+		$this->settings       = new Settings( $this->state, $this->channel_store, $this->config );
+		$this->config_report  = new Config_Report( $this->config, $this->settings );
 		$this->scheduler      = new Scheduler( $this->settings );
 		$this->notifier       = new Notifier( $this->settings, $this->channel_store );
 		$this->channels       = new Channel_Registry();
 		$this->dispatcher     = new Dispatcher( $this->channels );
 		$this->update_checker = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store );
 		$this->slack_notice   = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
-		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->scheduler, $this->notifier, $this->channel_store, $this->slack_notice, $this->dispatcher );
+		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->scheduler, $this->notifier, $this->channel_store, $this->slack_notice, $this->dispatcher, $this->config_report );
 		$this->update_nag     = new Update_Nag( $this->settings );
 	}
 
@@ -137,6 +153,15 @@ class Plugin {
 	 */
 	public function channel_store(): Channel_Store {
 		return $this->channel_store;
+	}
+
+	/**
+	 * Resolver of configuration supplied from outside the database.
+	 *
+	 * @return Config
+	 */
+	public function config(): Config {
+		return $this->config;
 	}
 
 	/**
@@ -262,6 +287,8 @@ class Plugin {
 		add_action( 'admin_init', array( $this->settings_page, 'admin_settings_init' ) ); // Add admin init functions.
 		add_action( 'admin_init', array( $this->update_nag, 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins.
 		add_filter( 'option_page_capability_' . Settings::OPT_FIELD, array( Settings_Page::class, 'capability' ) ); // options.php accepts saves with the same capability.
+		add_action( 'switch_blog', array( $this->config, 'flush' ) ); // Values are resolved per site.
+		add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
 		add_action( 'sc_wpun_channel_deleted', array( $this->state, 'forget_channel' ) ); // Deleting an instance deletes its delivery state.
 		add_action( 'sc_wpun_enable_cron', array( $this->scheduler, 'enable_cron' ) ); // action to enable cron.
 		add_action( 'sc_wpun_disable_cron', array( $this->scheduler, 'disable_cron' ) ); // action to disable cron.

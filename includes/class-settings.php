@@ -37,14 +37,23 @@ class Settings {
 	private $channels;
 
 	/**
+	 * Resolver of values supplied from outside the database.
+	 *
+	 * @var Config
+	 */
+	private $config;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param State         $state    Run state storage.
 	 * @param Channel_Store $channels Channel instance storage.
+	 * @param Config        $config   Resolver of values supplied from outside the database.
 	 */
-	public function __construct( State $state, Channel_Store $channels ) {
+	public function __construct( State $state, Channel_Store $channels, Config $config ) {
 		$this->state    = $state;
 		$this->channels = $channels;
+		$this->config   = $config;
 	}
 
 	/**
@@ -215,14 +224,96 @@ class Settings {
 	}
 
 	/**
-	 * The plugin's settings, filtered and with every value of the type the code expects.
+	 * The effective settings: the stored ones, with the values constants, environment variables
+	 * or other configuration sources supply laid over them.
+	 *
+	 * A supplied value that is not valid for its setting is reported and not used.
+	 *
+	 * @return SettingsData
+	 */
+	public function get(): array {
+		$settings  = $this->stored();
+		$schemas   = $this->schemas();
+		$frequency = $this->config->resolve_typed( Config_Context::setting( 'frequency' ), $schemas['frequency'] );
+		if ( null !== $frequency ) {
+			$settings['frequency'] = (string) $frequency->get_value();
+		}
+
+		$plugins = $this->config->resolve_typed( Config_Context::setting( 'notify_plugins' ), $schemas['notify_plugins'] );
+		if ( null !== $plugins ) {
+			$settings['notify_plugins'] = (int) $plugins->get_value();
+		}
+
+		$themes = $this->config->resolve_typed( Config_Context::setting( 'notify_themes' ), $schemas['notify_themes'] );
+		if ( null !== $themes ) {
+			$settings['notify_themes'] = (int) $themes->get_value();
+		}
+
+		$automatic = $this->config->resolve_typed( Config_Context::setting( 'notify_automatic' ), $schemas['notify_automatic'] );
+		if ( null !== $automatic ) {
+			$settings['notify_automatic'] = (int) $automatic->get_value();
+		}
+
+		$hide = $this->config->resolve_typed( Config_Context::setting( 'hide_updates' ), $schemas['hide_updates'] );
+		if ( null !== $hide ) {
+			$settings['hide_updates'] = (int) $hide->get_value();
+		}
+
+		return $settings;
+	}
+
+	/**
+	 * The source of a setting that is supplied from outside the database.
+	 *
+	 * @param string $name Setting name, for example `frequency`.
+	 *
+	 * @return string|null Where it comes from, for example "constant SC_WPUN_SETTING_FREQUENCY"; null if the database is used.
+	 */
+	public function external_source( string $name ): ?string {
+		$schemas = $this->schemas();
+		if ( ! isset( $schemas[ $name ] ) ) {
+			return null;
+		}
+		$external = $this->config->resolve_typed( Config_Context::setting( $name ), $schemas[ $name ] );
+
+		return null === $external ? null : $external->get_source();
+	}
+
+	/**
+	 * What each global setting accepts when it is supplied from outside the database.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function schemas(): array {
+		return array(
+			'frequency'        => array(
+				'type'    => 'select',
+				'options' => Frequencies::all(),
+			),
+			'notify_plugins'   => array(
+				'type' => 'number',
+				'min'  => 0,
+				'max'  => 2,
+			),
+			'notify_themes'    => array(
+				'type' => 'number',
+				'min'  => 0,
+				'max'  => 2,
+			),
+			'notify_automatic' => array( 'type' => 'checkbox' ),
+			'hide_updates'     => array( 'type' => 'checkbox' ),
+		);
+	}
+
+	/**
+	 * The plugin's saved settings, with every value of the type the code expects and nothing from outside the database.
 	 *
 	 * Values can arrive as strings (imports, `wp option update`, filters), and missing
 	 * keys get their defaults.
 	 *
 	 * @return SettingsData
 	 */
-	public function get(): array {
+	public function stored(): array {
 		$stored   = $this->read_option( self::OPT_FIELD );
 		$stored   = is_array( $stored ) ? $stored : array();
 		$defaults = $this->default_settings();

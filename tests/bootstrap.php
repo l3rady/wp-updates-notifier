@@ -31,3 +31,4 @@ require $wpun_tests_dir . '/includes/bootstrap.php';
 // Needs WP_UnitTestCase, so it loads after core's bootstrap.
 require_once __DIR__ . '/wp/class-wpun-test-case.php';
 require_once __DIR__ . '/wp/fixtures/class-test-channel.php';
+require_once __DIR__ . '/wp/fixtures/class-test-config-source.php';
