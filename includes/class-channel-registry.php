@@ -145,13 +145,6 @@ class Channel_Registry {
 		$this->loaded = true;
 
 		/**
-		 * Fires when the channels are first needed: register yours here.
-		 *
-		 * @since 2.0.0
-		 *
-		 * @param Channel_Registry $registry The registry; call its register() method.
-		 */
-		/**
 		 * Fires when the notification channels are first needed, for modules and add-ons to register theirs.
 		 *
 		 * Example:
