@@ -36,7 +36,7 @@ class Test_Uninstall extends WPUN_Test_Case {
 		wp_schedule_event( time(), 'daily', 'sc_wpun_update_check' );
 		set_transient( 'sc_wpun_send_test_email', 1 );
 		set_transient( 'sc_wpun_send_test_slack', 1 );
-		update_user_meta( self::$user_id, 'sc_wpun_test_result', array( 'success' => true ) );
+		update_user_meta( self::$user_id, 'sc_wpun_notice', array( 'success' => true ) );
 		update_user_meta( self::$user_id, 'sc_wpun_dismissed_slack_notice', '1' );
 	}
 
@@ -52,7 +52,7 @@ class Test_Uninstall extends WPUN_Test_Case {
 		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ), "$where: cron event" );
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ), "$where: test email transient" );
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_slack' ), "$where: test Slack transient" );
-		$this->assertSame( '', get_user_meta( self::$user_id, 'sc_wpun_test_result', true ), "$where: test result" );
+		$this->assertSame( '', get_user_meta( self::$user_id, 'sc_wpun_notice', true ), "$where: notice" );
 		$this->assertSame( '', get_user_meta( self::$user_id, 'sc_wpun_dismissed_slack_notice', true ), "$where: dismissed notice" );
 	}
 
