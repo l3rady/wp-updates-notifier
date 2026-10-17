@@ -287,6 +287,8 @@ class Plugin {
 		add_action( 'switch_blog', array( $this->config, 'flush' ) ); // Values are resolved per site.
 		add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
 		add_action( 'sc_wpun_channel_deleted', array( $this->state, 'forget_channel' ) ); // Deleting an instance deletes its delivery state.
+		add_action( 'sc_wpun_notification_sent', array( $this->state, 'record_delivery' ), 10, 3 ); // Remember each instance's latest delivery result.
+		add_action( 'sc_wpun_notification_failed', array( $this->state, 'record_delivery' ), 10, 3 );
 		add_action( 'sc_wpun_enable_cron', array( $this->scheduler, 'enable_cron' ) ); // action to enable cron.
 		add_action( 'sc_wpun_disable_cron', array( $this->scheduler, 'disable_cron' ) ); // action to disable cron.
 		add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.
