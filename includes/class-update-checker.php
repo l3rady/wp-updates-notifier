@@ -99,10 +99,10 @@ class Update_Checker {
 		$checked = array(); // Item type => keys still waiting, for the types this run looked at.
 
 		$this->core_update_check( $items, $checked ); // check the WP core for updates.
-		if ( 0 !== $options['notify_plugins'] ) { // are we to check for plugin updates?
+		if ( 'none' !== $options['notify_plugins'] ) { // are we to check for plugin updates?
 			$this->plugins_update_check( $items, $options['notify_plugins'], $checked ); // check for plugin updates.
 		}
-		if ( 0 !== $options['notify_themes'] ) { // are we to check for theme updates?
+		if ( 'none' !== $options['notify_themes'] ) { // are we to check for theme updates?
 			$this->themes_update_check( $items, $options['notify_themes'], $checked ); // check for theme updates.
 		}
 
@@ -503,12 +503,12 @@ class Update_Checker {
 	 * Check to see if any plugin updates.
 	 *
 	 * @param Notification_Item[]          $items         Collects the items to report.
-	 * @param int                          $all_or_active Should we look for all plugins or just active ones.
+	 * @param string                       $all_or_active `all` to look at all plugins or `active` for just the active ones.
 	 * @param array<string, array<string>> $checked       Collects the keys still waiting, by item type.
 	 *
 	 * @return void
 	 */
-	private function plugins_update_check( array &$items, $all_or_active, array &$checked ): void {
+	private function plugins_update_check( array &$items, string $all_or_active, array &$checked ): void {
 		do_action( 'wp_update_plugins' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates.
 		$pending        = $this->normalise_plugin_updates( is_object( $update_plugins ) && isset( $update_plugins->response ) ? $update_plugins->response : array() );
@@ -518,7 +518,7 @@ class Update_Checker {
 
 		if ( ! empty( $pending ) ) { // any plugin updates available?
 			$plugins_need_update = $pending; // plugins that need updating.
-			if ( 2 === $all_or_active ) { // are we to check just active plugins?
+			if ( 'active' === $all_or_active ) { // are we to check just active plugins?
 				$plugins_need_update = array_intersect_key( $plugins_need_update, array_flip( $this->active_plugins() ) ); // only keep plugins that are active.
 			}
 			/**
@@ -566,12 +566,12 @@ class Update_Checker {
 	 * Check to see if any theme updates.
 	 *
 	 * @param Notification_Item[]          $items         Collects the items to report.
-	 * @param int                          $all_or_active Should we look for all themes or just active ones.
+	 * @param string                       $all_or_active `all` to look at all themes or `active` for just the active ones.
 	 * @param array<string, array<string>> $checked       Collects the keys still waiting, by item type.
 	 *
 	 * @return void
 	 */
-	private function themes_update_check( array &$items, $all_or_active, array &$checked ): void {
+	private function themes_update_check( array &$items, string $all_or_active, array &$checked ): void {
 		do_action( 'wp_update_themes' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_themes = get_site_transient( 'update_themes' ); // get information of updates.
 		$pending       = $this->normalise_theme_updates( is_object( $update_themes ) && isset( $update_themes->response ) ? $update_themes->response : array() );
@@ -582,7 +582,7 @@ class Update_Checker {
 		if ( ! empty( $pending ) ) { // any theme updates available?
 			$themes_need_update = $pending; // themes that need updating.
 			$active_themes      = array_unique( array( get_stylesheet(), get_template() ) ); // The active theme and, for a child theme, its parent.
-			if ( 2 === $all_or_active ) { // are we to check just active themes?
+			if ( 'active' === $all_or_active ) { // are we to check just active themes?
 				$themes_need_update = array_intersect_key( $themes_need_update, array_flip( $active_themes ) ); // only keep theme that is active.
 			}
 			/**

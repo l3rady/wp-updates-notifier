@@ -16,6 +16,7 @@ use WPUN\Channel_Store;
 use WPUN\Config_Report;
 use WPUN\Delivery_Result;
 use WPUN\Dispatcher;
+use WPUN\Enum_Field;
 use WPUN\Notification;
 use WPUN\Notifier;
 use WPUN\Scheduler;
@@ -344,18 +345,20 @@ class Settings_Page {
 			add_settings_error( 'sc_wpun_settings_main_frequency', 'sc_wpun_settings_main_frequency_error', __( 'Invalid frequency entered', 'wp-updates-notifier' ), 'error' );
 		}
 
-		$sanitized_notify_plugins = absint( $input['notify_plugins'] ?? 0 );
-		if ( $sanitized_notify_plugins <= 2 ) {
-			$valid['notify_plugins'] = $sanitized_notify_plugins;
-		} else {
-			add_settings_error( 'sc_wpun_settings_main_notify_plugins', 'sc_wpun_settings_main_notify_plugins_error', __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ), 'error' );
-		}
-
-		$sanitized_notify_themes = absint( $input['notify_themes'] ?? 0 );
-		if ( $sanitized_notify_themes <= 2 ) {
-			$valid['notify_themes'] = $sanitized_notify_themes;
-		} else {
-			add_settings_error( 'sc_wpun_settings_main_notify_themes', 'sc_wpun_settings_main_notify_themes_error', __( 'Invalid theme updates value entered', 'wp-updates-notifier' ), 'error' );
+		// A missing value keeps the stored one: the form always submits a choice, unless the setting is read-only.
+		$schemas = $this->settings->schemas();
+		foreach ( array( 'notify_plugins', 'notify_themes' ) as $name ) {
+			if ( ! array_key_exists( $name, $input ) ) {
+				continue;
+			}
+			$checked = Enum_Field::sanitize( $input[ $name ], $schemas[ $name ] );
+			if ( $checked['ok'] ) {
+				$valid[ $name ] = $checked['value'];
+			} elseif ( 'notify_plugins' === $name ) {
+				add_settings_error( 'sc_wpun_settings_main_notify_plugins', 'sc_wpun_settings_main_notify_plugins_error', __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ), 'error' );
+			} else {
+				add_settings_error( 'sc_wpun_settings_main_notify_themes', 'sc_wpun_settings_main_notify_themes_error', __( 'Invalid theme updates value entered', 'wp-updates-notifier' ), 'error' );
+			}
 		}
 
 		$sanitized_notify_automatic = absint( $input['notify_automatic'] ?? 0 );
@@ -716,15 +719,9 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_main_field_notify_plugins() {
 		$options = $this->settings->get();
-		?>
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="0" <?php disabled( $this->is_external( 'notify_plugins' ) ); ?> <?php checked( $options['notify_plugins'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
-		</label><br />
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="1" <?php disabled( $this->is_external( 'notify_plugins' ) ); ?> <?php checked( $options['notify_plugins'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
-		</label><br />
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_plugins]" type="radio" value="2" <?php disabled( $this->is_external( 'notify_plugins' ) ); ?> <?php checked( $options['notify_plugins'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active plugins', 'wp-updates-notifier' ); ?>
-		</label>
-		<?php $this->external_note( 'notify_plugins' ); ?>
-		<?php
+		$schemas = $this->settings->schemas();
+		echo Field_Renderer::enum( $schemas['notify_plugins'], Settings::OPT_FIELD . '[notify_plugins]', 'sc_wpun_settings_main_notify_plugins', $options['notify_plugins'], $this->is_external( 'notify_plugins' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
+		$this->external_note( 'notify_plugins' );
 	}
 
 	/**
@@ -734,15 +731,9 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_main_field_notify_themes() {
 		$options = $this->settings->get();
-		?>
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_themes]" type="radio" value="0" <?php disabled( $this->is_external( 'notify_themes' ) ); ?> <?php checked( $options['notify_themes'], 0 ); ?> /> <?php esc_html_e( 'No', 'wp-updates-notifier' ); ?>
-		</label><br />
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_themes]" type="radio" value="1" <?php disabled( $this->is_external( 'notify_themes' ) ); ?> <?php checked( $options['notify_themes'], 1 ); ?> /> <?php esc_html_e( 'Yes', 'wp-updates-notifier' ); ?>
-		</label><br />
-		<label><input name="<?php echo esc_attr( Settings::OPT_FIELD ); ?>[notify_themes]" type="radio" value="2" <?php disabled( $this->is_external( 'notify_themes' ) ); ?> <?php checked( $options['notify_themes'], 2 ); ?> /> <?php esc_html_e( 'Yes but only active themes', 'wp-updates-notifier' ); ?>
-		</label>
-		<?php $this->external_note( 'notify_themes' ); ?>
-		<?php
+		$schemas = $this->settings->schemas();
+		echo Field_Renderer::enum( $schemas['notify_themes'], Settings::OPT_FIELD . '[notify_themes]', 'sc_wpun_settings_main_notify_themes', $options['notify_themes'], $this->is_external( 'notify_themes' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
+		$this->external_note( 'notify_themes' );
 	}
 
 	/**

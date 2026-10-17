@@ -96,7 +96,7 @@ class Test_Email_Channel extends WPUN_Test_Case {
 		$this->assertSame( array( 'to', 'from', 'reply_to', 'format', 'subject_prefix' ), array_keys( $fields ) );
 		$this->assertSame( 'email_list', $fields['to']['type'] );
 		$this->assertTrue( $fields['to']['required'] );
-		$this->assertSame( 'select', $fields['format']['type'] );
+		$this->assertSame( 'enum', $fields['format']['type'] );
 		$this->assertSame( 'text', $fields['format']['default'] );
 		$this->assertSame( array( 'text', 'html' ), array_keys( $fields['format']['options'] ) );
 	}
