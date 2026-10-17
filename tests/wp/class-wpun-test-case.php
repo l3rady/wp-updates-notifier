@@ -58,6 +58,14 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Forget the fakes and the requests made so far, to fake a different answer for the next request.
+	 */
+	protected function reset_http() {
+		$this->http_fakes    = array();
+		$this->http_requests = array();
+	}
+
+	/**
 	 * Build an HTTP API response array.
 	 *
 	 * @param int    $code Status code.
