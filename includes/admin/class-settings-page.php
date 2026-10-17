@@ -16,10 +16,7 @@ use WPUN\Channel;
 use WPUN\Channel_Instance;
 use WPUN\Channel_Store;
 use WPUN\Config_Report;
-use WPUN\Delivery_Result;
-use WPUN\Dispatcher;
 use WPUN\Enum_Field;
-use WPUN\Notification;
 use WPUN\Notifier;
 use WPUN\Scheduler;
 use WPUN\Settings;
@@ -32,9 +29,6 @@ use WPUN\State;
  * @internal
  */
 class Settings_Page {
-	const TEST_ACTION      = 'sc_wpun_send_test';
-	const TEST_RESULT_META = 'sc_wpun_test_result';
-
 	/**
 	 * Settings.
 	 *
@@ -71,18 +65,25 @@ class Settings_Page {
 	private $slack_notice;
 
 	/**
-	 * Dispatcher, for the test message.
-	 *
-	 * @var Dispatcher
-	 */
-	private $dispatcher;
-
-	/**
 	 * Report of configuration problems.
 	 *
 	 * @var Config_Report
 	 */
 	private $config_report;
+
+	/**
+	 * The Channels tab.
+	 *
+	 * @var Channels_Tab
+	 */
+	private $channels_tab;
+
+	/**
+	 * Notices about what an admin action did.
+	 *
+	 * @var Notices
+	 */
+	private $notices;
 
 	/**
 	 * Constructor.
@@ -92,17 +93,19 @@ class Settings_Page {
 	 * @param Notifier      $notifier  Notifier.
 	 * @param Channel_Store $channels  Channel instance storage.
 	 * @param Slack_Notice  $slack_notice Notice about Slack no longer being supported.
-	 * @param Dispatcher    $dispatcher Dispatcher.
 	 * @param Config_Report $config_report Report of configuration problems.
+	 * @param Channels_Tab  $channels_tab The Channels tab.
+	 * @param Notices       $notices Notices about what an admin action did.
 	 */
-	public function __construct( Settings $settings, State $state, Notifier $notifier, Channel_Store $channels, Slack_Notice $slack_notice, Dispatcher $dispatcher, Config_Report $config_report ) {
+	public function __construct( Settings $settings, State $state, Notifier $notifier, Channel_Store $channels, Slack_Notice $slack_notice, Config_Report $config_report, Channels_Tab $channels_tab, Notices $notices ) {
 		$this->settings      = $settings;
 		$this->state         = $state;
 		$this->notifier      = $notifier;
 		$this->channels      = $channels;
 		$this->slack_notice  = $slack_notice;
-		$this->dispatcher    = $dispatcher;
 		$this->config_report = $config_report;
+		$this->channels_tab  = $channels_tab;
+		$this->notices       = $notices;
 	}
 
 	/**
@@ -300,16 +303,17 @@ class Settings_Page {
 		// Drawn like any other tab. Added here, not only at boot, so the page works however it is reached.
 		add_action( 'sc_wpun_settings_tab_general', array( $this, 'render_general_tab' ) );
 
-		$test_result = $this->take_test_result();
-		$tabs        = $this->tabs();
-		$current     = $this->current_tab( $tabs );
+		add_action( 'sc_wpun_settings_tab_channels', array( $this->channels_tab, 'render' ) );
+
+		$tabs    = $this->tabs();
+		$current = $this->current_tab( $tabs );
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Updates Notifier', 'wp-updates-notifier' ); ?></h1>
 
 			<?php $this->slack_notice->render(); ?>
 			<?php $this->config_report->render(); ?>
-			<?php $this->render_test_result( $test_result ); ?>
+			<?php $this->notices->render(); ?>
 
 			<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Settings sections', 'wp-updates-notifier' ); ?>">
 				<?php foreach ( $tabs as $slug => $label ) : ?>
@@ -333,7 +337,7 @@ class Settings_Page {
 	}
 
 	/**
-	 * Output the General tab: when the check runs, the settings and the test message.
+	 * Output the General tab: when the check runs and the settings.
 	 *
 	 * @return void
 	 */
@@ -348,7 +352,7 @@ class Settings_Page {
 				esc_html_e( 'Last checked: never', 'wp-updates-notifier' );
 			} else {
 				// translators: %s: Date and time of the last check.
-				echo esc_html( sprintf( __( 'Last checked: %s', 'wp-updates-notifier' ), $this->format_site_time( $options['last_check_time'] ) ) );
+				echo esc_html( sprintf( __( 'Last checked: %s', 'wp-updates-notifier' ), self::format_site_time( $options['last_check_time'] ) ) );
 			}
 			?>
 			</span>
@@ -359,7 +363,7 @@ class Settings_Page {
 				esc_html_e( 'Next check: not scheduled. Save the settings to schedule it.', 'wp-updates-notifier' );
 			} else {
 				// translators: %s: Date and time of the next check.
-				echo esc_html( sprintf( __( 'Next check: %s', 'wp-updates-notifier' ), $this->format_site_time( $next_check ) ) );
+				echo esc_html( sprintf( __( 'Next check: %s', 'wp-updates-notifier' ), self::format_site_time( $next_check ) ) );
 			}
 			?>
 			</span>
@@ -373,27 +377,19 @@ class Settings_Page {
 			?>
 			<?php submit_button( __( 'Save settings', 'wp-updates-notifier' ) ); ?>
 		</form>
-
-		<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
-			<input type="hidden" name="action" value="<?php echo esc_attr( self::TEST_ACTION ); ?>" />
-			<input type="hidden" name="instance" value="email" />
-			<?php wp_nonce_field( self::TEST_ACTION, 'sc_wpun_test_nonce', false ); // Its own field name: settings_fields() already outputs `_wpnonce`, and ids must be unique. ?>
-			<p class="submit">
-				<?php submit_button( __( 'Send test email', 'wp-updates-notifier' ), 'secondary', 'sc_wpun_send_test_submit', false ); ?>
-				<span class="description"><?php esc_html_e( 'Sends a test message using the saved settings.', 'wp-updates-notifier' ); ?></span>
-			</p>
-		</form>
 		<?php
 	}
 
 	/**
 	 * A timestamp as a date and time in the site's timezone and formats.
 	 *
+	 * @internal
+	 *
 	 * @param int $timestamp Unix timestamp.
 	 *
 	 * @return string
 	 */
-	private function format_site_time( int $timestamp ): string {
+	public static function format_site_time( int $timestamp ): string {
 		return sprintf(
 			// translators: 1: Date. 2: Time.
 			__( '%1$s at %2$s', 'wp-updates-notifier' ),
@@ -565,116 +561,6 @@ class Settings_Page {
 		}
 
 		return $valid;
-	}
-
-	/**
-	 * Check a test send request, send the test and remember the result for the current user.
-	 *
-	 * @return bool False if the user may not manage options or the nonce is not valid.
-	 */
-	public function process_test_send(): bool {
-		if ( ! current_user_can( self::capability() ) || ! isset( $_POST['sc_wpun_test_nonce'] ) ) {
-			return false;
-		}
-		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_POST['sc_wpun_test_nonce'] ) ), self::TEST_ACTION ) ) {
-			return false;
-		}
-
-		$id       = isset( $_POST['instance'] ) && is_string( $_POST['instance'] ) ? sanitize_key( wp_unslash( $_POST['instance'] ) ) : '';
-		$instance = $this->channels->get( $id );
-
-		if ( null === $instance ) {
-			$label  = $id;
-			$result = Delivery_Result::failure( __( 'There is no such channel.', 'wp-updates-notifier' ), 'unknown_instance' );
-		} else {
-			$label        = $instance->get_label();
-			$notification = new Notification(
-				get_bloginfo(),
-				home_url(),
-				admin_url( 'update-core.php' ),
-				array(),
-				array(
-					'is_test' => true,
-					'source'  => 'test',
-				)
-			);
-			$result       = $this->dispatcher->send_one( $notification, $instance );
-		}
-
-		// Kept in user meta, so only this user sees it; the site is recorded because user meta is shared by a network.
-		update_user_meta(
-			get_current_user_id(),
-			self::TEST_RESULT_META,
-			array(
-				'success' => $result->is_success(),
-				'message' => $result->get_message(),
-				'label'   => $label,
-				'site'    => get_current_blog_id(),
-				'time'    => time(),
-			)
-		);
-
-		return true;
-	}
-
-	/**
-	 * Handle the "Send test email" form (admin-post.php), then go back to the settings page.
-	 *
-	 * @return void
-	 */
-	public function handle_test_send(): void {
-		if ( ! $this->process_test_send() ) {
-			wp_die( esc_html__( 'You are not allowed to do that.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
-		}
-
-		wp_safe_redirect( admin_url( 'options-general.php?page=wp-updates-notifier' ) );
-		exit;
-	}
-
-	/**
-	 * Read and delete the result of the current user's last test send.
-	 *
-	 * @return array{success: bool, message: string, label: string}|null
-	 */
-	private function take_test_result(): ?array {
-		$user_id = get_current_user_id();
-		$stored  = get_user_meta( $user_id, self::TEST_RESULT_META, true );
-		if ( ! is_array( $stored ) || ( $stored['site'] ?? 0 ) !== get_current_blog_id() ) {
-			return null; // None, or it belongs to another site of the network and is shown there.
-		}
-		delete_user_meta( $user_id, self::TEST_RESULT_META );
-		if ( ! isset( $stored['time'] ) || ! is_int( $stored['time'] ) || $stored['time'] < time() - 5 * MINUTE_IN_SECONDS ) {
-			return null; // Too old to still be about the last click.
-		}
-
-		return array(
-			'success' => ! empty( $stored['success'] ),
-			'message' => isset( $stored['message'] ) && is_string( $stored['message'] ) ? $stored['message'] : '',
-			'label'   => isset( $stored['label'] ) && is_string( $stored['label'] ) ? $stored['label'] : '',
-		);
-	}
-
-	/**
-	 * Output the result of a test send as a notice.
-	 *
-	 * @param array{success: bool, message: string, label: string}|null $result The result, if there is one.
-	 *
-	 * @return void
-	 */
-	private function render_test_result( ?array $result ): void {
-		if ( null === $result ) {
-			return;
-		}
-		if ( $result['success'] ) {
-			// translators: %s: Name of the channel.
-			$text = sprintf( __( 'Test message sent through %s.', 'wp-updates-notifier' ), $result['label'] );
-		} else {
-			// translators: 1: Name of the channel. 2: Why it failed.
-			$text = sprintf( __( 'The test message could not be sent through %1$s: %2$s', 'wp-updates-notifier' ), $result['label'], $result['message'] );
-		}
-		?>
-		<div class="notice <?php echo esc_attr( $result['success'] ? 'notice-success' : 'notice-error' ); ?> sc-wpun-test-result"><p><?php echo esc_html( $text ); ?></p></div>
-		<?php
 	}
 
 	/**
