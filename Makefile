@@ -21,7 +21,7 @@ COMMITS_FROM ?= origin/main
 COMMITS_TO   ?= HEAD
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean
+.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -91,8 +91,11 @@ plugin-check: ## Run WordPress.org's Plugin Check on the zip (fails on errors)
 check-headers: ## Check the plugin header and readme.txt agree and follow WordPress.org's rules
 	$(COMPOSE) run --build --rm php sh bin/check-headers.sh
 
-check-hooks: ## Check every hook the plugin fires is documented with @since
+check-hooks: ## Check every hook the plugin fires is documented with @since, and docs/developers/hooks.md is current
 	$(COMPOSE) run --build --rm php sh bin/check-hooks.sh
+
+hook-docs: ## Write docs/developers/hooks.md from the hook doc blocks
+	$(COMPOSE) run --build --rm php sh bin/hook-docs.sh
 
 check-public-api: ## Check modules and the test add-on use only the public API, and test the checker
 	$(COMPOSE) run --build --rm php sh bin/check-public-api.sh
