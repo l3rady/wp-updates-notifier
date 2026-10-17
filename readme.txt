@@ -139,7 +139,7 @@ Version 2.0.0 no longer sends notifications to Slack. Your Slack settings have n
 == Upgrade Notice ==
 
 = 2.0.0 =
-Slack notifications are no longer supported; their settings are kept. Emails have a new subject, are sent from the WordPress default address unless you set one, and contain no HTML entities.
+The main file is renamed: after updating from 1.5 or 1.6, activate the plugin again (settings are kept). Slack is no longer supported; its settings are kept. Emails have a new subject, use the WordPress default From address unless you set one, and contain no HTML entities.
 
 == Filters ==
 

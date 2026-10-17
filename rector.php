@@ -16,7 +16,7 @@ use Rector\Set\ValueObject\LevelSetList;
 return RectorConfig::configure()
 	->withPaths(
 		array(
-			__DIR__ . '/class-sc-wp-updates-notifier.php',
+			__DIR__ . '/wp-updates-notifier.php',
 			__DIR__ . '/includes',
 			__DIR__ . '/modules',
 			__DIR__ . '/uninstall.php',

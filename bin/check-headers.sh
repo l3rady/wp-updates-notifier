@@ -6,7 +6,7 @@ set -eu
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-main="$root/class-sc-wp-updates-notifier.php"
+main="$root/wp-updates-notifier.php"
 readme="$root/readme.txt"
 
 header() { sed -n "s/^ \* $1: *//p" "$main" | head -n 1; }

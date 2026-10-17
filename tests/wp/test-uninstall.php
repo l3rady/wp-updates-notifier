@@ -61,7 +61,7 @@ class Test_Uninstall extends WPUN_Test_Case {
 	 */
 	private function uninstall() {
 		if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-			define( 'WP_UNINSTALL_PLUGIN', 'wp-updates-notifier/class-sc-wp-updates-notifier.php' );
+			define( 'WP_UNINSTALL_PLUGIN', 'wp-updates-notifier/wp-updates-notifier.php' );
 		}
 
 		include WP_PLUGIN_DIR . '/wp-updates-notifier/uninstall.php';

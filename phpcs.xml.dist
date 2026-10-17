@@ -9,7 +9,7 @@
 	<arg name="parallel" value="8"/>
 	<arg name="cache" value=".phpcs-cache"/>
 
-	<file>class-sc-wp-updates-notifier.php</file>
+	<file>wp-updates-notifier.php</file>
 	<file>includes</file>
 	<file>modules</file>
 	<file>uninstall.php</file>
@@ -59,6 +59,8 @@
 	<!-- The WordPress handbook names the file of an abstract class abstract-class-*.php; WPCS only knows class-*.php. -->
 	<rule ref="WordPress.Files.FileName.InvalidClassFileName">
 		<exclude-pattern>*/includes/abstract-class-*.php</exclude-pattern>
+		<!-- The main file is named after the plugin slug and holds the compatibility class. -->
+		<exclude-pattern>*/wp-updates-notifier.php</exclude-pattern>
 	</rule>
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<exclude-pattern>*/tests/*</exclude-pattern>

@@ -20,7 +20,7 @@ use WPUN\Notification_Renderer;
  */
 class Test_Hooks extends WPUN_Test_Case {
 
-	const OWN_PLUGIN = 'wp-updates-notifier/class-sc-wp-updates-notifier.php';
+	const OWN_PLUGIN = 'wp-updates-notifier/wp-updates-notifier.php';
 
 	/**
 	 * Notices captured by capture_notices().

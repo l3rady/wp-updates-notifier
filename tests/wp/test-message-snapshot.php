@@ -35,7 +35,7 @@ class Test_Message_Snapshot extends WPUN_Test_Case {
 		$wp_version = wp_get_wp_version();
 		$parts      = explode( '.', (string) preg_replace( '/-.*$/', '', $wp_version ) );
 		$theme      = wp_get_theme();
-		$own_plugin = get_plugin_data( WP_PLUGIN_DIR . '/wp-updates-notifier/class-sc-wp-updates-notifier.php', false, false );
+		$own_plugin = get_plugin_data( WP_PLUGIN_DIR . '/wp-updates-notifier/wp-updates-notifier.php', false, false );
 
 		return strtr(
 			(string) file_get_contents( dirname( __DIR__ ) . '/fixtures/snapshots/' . $name ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
@@ -81,8 +81,8 @@ class Test_Message_Snapshot extends WPUN_Test_Case {
 		$updates->response = array_merge(
 			$updates->response,
 			array(
-				'wp-updates-notifier/class-sc-wp-updates-notifier.php' => (object) array(
-					'plugin'      => 'wp-updates-notifier/class-sc-wp-updates-notifier.php',
+				'wp-updates-notifier/wp-updates-notifier.php' => (object) array(
+					'plugin'      => 'wp-updates-notifier/wp-updates-notifier.php',
 					'new_version' => '4.5.6',
 					'url'         => 'https://example.com/premium-plugin/',
 					'package'     => '',
