@@ -25,12 +25,21 @@ class Dispatcher {
 	private $registry;
 
 	/**
+	 * Channel instances, to know which are misconfigured.
+	 *
+	 * @var Channel_Store|null
+	 */
+	private $store;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Channel_Registry $registry Channel registry.
+	 * @param Channel_Registry   $registry Channel registry.
+	 * @param Channel_Store|null $store    Channel instances, to refuse a misconfigured one.
 	 */
-	public function __construct( Channel_Registry $registry ) {
+	public function __construct( Channel_Registry $registry, ?Channel_Store $store = null ) {
 		$this->registry = $registry;
+		$this->store    = $store;
 	}
 
 	/**
@@ -48,6 +57,12 @@ class Dispatcher {
 
 		foreach ( $instances as $instance ) {
 			if ( ! $instance instanceof Channel_Instance || ! $instance->is_enabled() ) {
+				continue;
+			}
+
+			$misconfigured = $this->misconfigured( $instance );
+			if ( null !== $misconfigured ) {
+				$results[ $instance->get_id() ] = $this->finish( $misconfigured, $notification, $instance );
 				continue;
 			}
 
@@ -103,6 +118,11 @@ class Dispatcher {
 	public function send_one( Notification $notification, Channel_Instance $instance ): Delivery_Result {
 		if ( ! $instance->is_enabled() ) {
 			return $this->finish( Delivery_Result::failure( __( 'This channel is switched off.', 'wp-updates-notifier' ), 'disabled' ), $notification, $instance );
+		}
+
+		$misconfigured = $this->misconfigured( $instance );
+		if ( null !== $misconfigured ) {
+			return $this->finish( $misconfigured, $notification, $instance );
 		}
 
 		$channel = $this->registry->get( $instance->get_type() );
@@ -199,7 +219,7 @@ class Dispatcher {
 			}
 			// The exception's own message can contain request URLs with secrets in them
 			// (some services put tokens in the URL), and results are shown in the admin,
-			// so only the exception class is kept; the message goes to the debug log above.
+			// so only the exception class is kept, and only the class is logged too.
 			return $this->finish(
 				Delivery_Result::failure(
 					// translators: %s: Channel type.
@@ -213,6 +233,28 @@ class Dispatcher {
 				$instance
 			);
 		}
+	}
+
+	/**
+	 * The failure for an instance with a supplied value that cannot be used, or null if it is fine.
+	 *
+	 * Names the keys, never the values.
+	 *
+	 * @param Channel_Instance $instance The instance.
+	 *
+	 * @return Delivery_Result|null
+	 */
+	private function misconfigured( Channel_Instance $instance ): ?Delivery_Result {
+		$keys = null === $this->store ? array() : $this->store->problems( $instance->get_id() );
+		if ( array() === $keys ) {
+			return null;
+		}
+
+		return Delivery_Result::failure(
+			// translators: %s: Names of the constants or environment variables that are not valid.
+			sprintf( __( 'The channel is misconfigured: %s is not valid.', 'wp-updates-notifier' ), implode( ', ', $keys ) ),
+			'misconfigured'
+		);
 	}
 
 	/**

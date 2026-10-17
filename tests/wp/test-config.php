@@ -139,6 +139,7 @@ class Test_Config extends WPUN_Test_Case {
 				return $sources;
 			}
 		);
+		sc_wpun()->config()->flush();
 		sc_wpun()->config()->resolve( Config_Context::setting( 'frequency' ) );
 		$this->assertSame( array( array( Constant_Source::class ) ), $seen );
 

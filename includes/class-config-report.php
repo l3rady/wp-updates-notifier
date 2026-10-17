@@ -33,14 +33,23 @@ final class Config_Report {
 	private $settings;
 
 	/**
+	 * Channel instances.
+	 *
+	 * @var Channel_Store
+	 */
+	private $store;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Config   $config   Resolver.
-	 * @param Settings $settings Settings.
+	 * @param Config        $config   Resolver.
+	 * @param Settings      $settings Settings.
+	 * @param Channel_Store $store    Channel instances.
 	 */
-	public function __construct( Config $config, Settings $settings ) {
+	public function __construct( Config $config, Settings $settings, Channel_Store $store ) {
 		$this->config   = $config;
 		$this->settings = $settings;
+		$this->store    = $store;
 	}
 
 	/**
@@ -49,7 +58,9 @@ final class Config_Report {
 	 * @return array<int, array{key: string, source: string, message: string}>
 	 */
 	private function problems(): array {
-		$this->settings->get(); // Resolving is lazy and problems are found while doing it.
+		// Resolving is lazy and problems are found while doing it.
+		$this->settings->get();
+		$this->store->all();
 
 		return $this->config->problems();
 	}
@@ -66,7 +77,7 @@ final class Config_Report {
 		}
 		?>
 		<div class="notice notice-error sc-wpun-config-problems">
-			<p><strong><?php esc_html_e( 'Some configuration values supplied from outside the database cannot be used.', 'wp-updates-notifier' ); ?></strong></p>
+			<p><strong><?php esc_html_e( 'Some configuration values supplied from outside the database are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ); ?></strong></p>
 			<ul>
 			<?php foreach ( $problems as $problem ) : ?>
 				<li><code><?php echo esc_html( $problem['key'] ); ?></code> (<?php echo esc_html( $problem['source'] ); ?>): <?php echo esc_html( $problem['message'] ); ?></li>
@@ -112,7 +123,7 @@ final class Config_Report {
 				'label' => __( 'Updates Notifier', 'wp-updates-notifier' ),
 				'color' => 'orange',
 			),
-			'description' => '<p>' . esc_html__( 'Some values supplied by constants, environment variables or other sources are not valid and were ignored.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
+			'description' => '<p>' . esc_html__( 'Some values supplied by constants, environment variables or other sources are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
 			'actions'     => sprintf(
 				'<p><a href="%s">%s</a></p>',
 				esc_url( admin_url( 'options-general.php?page=' . Slack_Notice::SETTINGS_SLUG ) ),
