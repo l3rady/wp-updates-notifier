@@ -322,7 +322,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 	public function test_the_automatic_core_update_email_is_redirected() {
 		$this->save_settings(
 			array(
-				'notify_automatic' => 1,
+				'notify_automatic' => true,
 				'notify_to'        => 'ops@example.org',
 			)
 		);
@@ -347,7 +347,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 * Leaving that setting off leaves WordPress's own email alone.
 	 */
 	public function test_the_automatic_core_update_email_is_left_alone_when_off() {
-		$this->save_settings( array( 'notify_automatic' => 0 ) );
+		$this->save_settings( array( 'notify_automatic' => false ) );
 		$original = array(
 			'to'      => 'admin@example.org',
 			'subject' => 'Subject',

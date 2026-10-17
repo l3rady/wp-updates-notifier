@@ -35,15 +35,17 @@ final class Field_Renderer {
 	 * @param string|array<int,mixed> $value       The current choice, or the list of current choices.
 	 * @param bool                    $disabled    Whether the inputs are disabled.
 	 * @param string                  $described_by Id of the element that describes the field, if any.
+	 * @param array<int|string,mixed> $extra_options Choices shown before the field's own options, key => label, for example a saved
+	 *                                              value that is no longer offered. They do not change the default display.
 	 *
 	 * @return string
 	 */
-	public static function enum( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '' ): string {
+	public static function enum( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', array $extra_options = array() ): string {
 		$field    = Enum_Field::normalise( $field );
 		$multiple = true === $field['multiple'];
 		$chosen   = array_map( 'strval', array_filter( is_array( $value ) ? $value : array( $value ), 'is_scalar' ) );
 		$options  = array();
-		foreach ( $field['options'] as $key => $label ) {
+		foreach ( $extra_options + $field['options'] as $key => $label ) {
 			$options[ (string) $key ] = is_scalar( $label ) ? (string) $label : (string) $key;
 		}
 
@@ -85,18 +87,19 @@ final class Field_Renderer {
 	/**
 	 * The markup of a field of type `enum`, `select`, `boolean` or `checkbox`, by its type.
 	 *
-	 * @param array<string, mixed> $field        Field schema.
-	 * @param string               $name         The `name` attribute of the input, without `[]`.
-	 * @param string               $id           Base of the `id` attributes.
-	 * @param mixed                $value        The current value.
-	 * @param bool                 $disabled     Whether the inputs are disabled.
-	 * @param string               $described_by Id of the element that describes the field, if any.
+	 * @param array<string, mixed>    $field        Field schema.
+	 * @param string                  $name         The `name` attribute of the input, without `[]`.
+	 * @param string                  $id           Base of the `id` attributes.
+	 * @param mixed                   $value        The current value.
+	 * @param bool                    $disabled     Whether the inputs are disabled.
+	 * @param string                  $described_by Id of the element that describes the field, if any.
+	 * @param array<int|string,mixed> $extra_options Extra choices for an enum, see enum().
 	 *
 	 * @return string Empty for a type that is not drawn here.
 	 */
-	public static function field( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '' ): string {
+	public static function field( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', array $extra_options = array() ): string {
 		if ( Enum_Field::is_enum( $field ) ) {
-			return self::enum( $field, $name, $id, is_array( $value ) ? array_values( $value ) : ( is_scalar( $value ) ? (string) $value : '' ), $disabled, $described_by );
+			return self::enum( $field, $name, $id, is_array( $value ) ? array_values( $value ) : ( is_scalar( $value ) ? (string) $value : '' ), $disabled, $described_by, $extra_options );
 		}
 
 		if ( Boolean_Field::is_boolean( $field ) ) {
