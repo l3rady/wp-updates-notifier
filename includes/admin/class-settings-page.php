@@ -213,65 +213,176 @@ class Settings_Page {
 	}
 
 	/**
+	 * The tabs of the settings screen, as slug => label.
+	 *
+	 * A tab is listed only if something draws it, so a built-in tab nothing hooks stays hidden.
+	 * The General tab is always first.
+	 *
+	 * @return array<string, string>
+	 */
+	public function tabs(): array {
+		$defaults = array(
+			'general'  => __( 'General', 'wp-updates-notifier' ),
+			'channels' => __( 'Channels', 'wp-updates-notifier' ),
+		);
+
+		/**
+		 * Filters the tabs of the settings screen.
+		 *
+		 * A tab is shown only if something is hooked on `sc_wpun_settings_tab_{$tab}` to draw it. Entries
+		 * whose slug is not a string equal to its `sanitize_key()` form, or whose label is not a string,
+		 * are ignored. The General tab can not be removed.
+		 *
+		 * Example, add a tab:
+		 *
+		 *     add_filter( 'sc_wpun_settings_tabs', fn( $tabs ) => $tabs + array( 'mine' => 'Mine' ) );
+		 *     add_action( 'sc_wpun_settings_tab_mine', fn() => print '<p>Hello</p>' );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param array<string, string> $tabs Tab labels keyed by slug. Default `general` and `channels`.
+		 */
+		$filtered = apply_filters( 'sc_wpun_settings_tabs', $defaults );
+
+		$tabs = array();
+		if ( is_array( $filtered ) ) {
+			foreach ( $filtered as $slug => $label ) {
+				if ( is_string( $slug ) && '' !== $slug && sanitize_key( $slug ) === $slug && is_string( $label ) ) {
+					$tabs[ $slug ] = $label;
+				}
+			}
+		}
+		if ( ! isset( $tabs['general'] ) ) {
+			$tabs = array( 'general' => $defaults['general'] ) + $tabs;
+		}
+
+		// General comes first and is always there; the others need something to draw them.
+		$visible = array( 'general' => $tabs['general'] );
+		foreach ( $tabs as $slug => $label ) {
+			if ( 'general' !== $slug && has_action( "sc_wpun_settings_tab_{$slug}" ) ) {
+				$visible[ $slug ] = $label;
+			}
+		}
+
+		return $visible;
+	}
+
+	/**
+	 * The tab being shown: the requested one if it is listed, else General.
+	 *
+	 * @param array<string, string> $tabs Visible tabs.
+	 *
+	 * @return string
+	 */
+	private function current_tab( array $tabs ): string {
+		$tab = isset( $_GET['tab'] ) && is_string( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Choosing what to display, nothing is changed.
+
+		return isset( $tabs[ $tab ] ) ? $tab : 'general';
+	}
+
+	/**
+	 * The address of a tab.
+	 *
+	 * @param string $tab Tab slug.
+	 *
+	 * @return string
+	 */
+	private function tab_url( string $tab ): string {
+		return admin_url( 'options-general.php?page=wp-updates-notifier&tab=' . rawurlencode( $tab ) );
+	}
+
+	/**
 	 * Output the settings page.
 	 *
 	 * @return void
 	 */
 	public function settings_page() {
-		$test_result = $this->take_test_result();
+		// Drawn like any other tab. Added here, not only at boot, so the page works however it is reached.
+		add_action( 'sc_wpun_settings_tab_general', array( $this, 'render_general_tab' ) );
 
-		$options    = $this->state->get();
-		$next_check = wp_next_scheduled( Scheduler::CRON_NAME );
+		$test_result = $this->take_test_result();
+		$tabs        = $this->tabs();
+		$current     = $this->current_tab( $tabs );
 		?>
 		<div class="wrap">
-			<h2><?php esc_html_e( 'Updates Notifier', 'wp-updates-notifier' ); ?></h2>
+			<h1><?php esc_html_e( 'Updates Notifier', 'wp-updates-notifier' ); ?></h1>
 
 			<?php $this->slack_notice->render(); ?>
 			<?php $this->config_report->render(); ?>
 			<?php $this->render_test_result( $test_result ); ?>
 
-			<p>
-				<span class="description sc-wpun-last-check">
-				<?php
-				if ( empty( $options['last_check_time'] ) ) {
-					esc_html_e( 'Last checked: never', 'wp-updates-notifier' );
-				} else {
-					// translators: %s: Date and time of the last check.
-					echo esc_html( sprintf( __( 'Last checked: %s', 'wp-updates-notifier' ), $this->format_site_time( $options['last_check_time'] ) ) );
-				}
-				?>
-				</span>
-				<br />
-				<span class="description sc-wpun-next-check">
-				<?php
-				if ( false === $next_check ) {
-					esc_html_e( 'Next check: not scheduled. Save the settings to schedule it.', 'wp-updates-notifier' );
-				} else {
-					// translators: %s: Date and time of the next check.
-					echo esc_html( sprintf( __( 'Next check: %s', 'wp-updates-notifier' ), $this->format_site_time( $next_check ) ) );
-				}
-				?>
-				</span>
-			</p>
+			<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Settings sections', 'wp-updates-notifier' ); ?>">
+				<?php foreach ( $tabs as $slug => $label ) : ?>
+					<a class="nav-tab<?php echo $slug === $current ? ' nav-tab-active' : ''; ?>" href="<?php echo esc_url( $this->tab_url( $slug ) ); ?>"<?php echo $slug === $current ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
+				<?php endforeach; ?>
+			</nav>
 
-			<form action="<?php echo esc_attr( admin_url( 'options.php' ) ); ?>" method="post">
-				<?php
-				settings_fields( 'sc_wpun_settings' );
-				do_settings_sections( 'wp-updates-notifier' );
-				?>
-				<p>&nbsp;</p>
-				<input class="button-primary" name="Submit" type="submit" value="<?php esc_html_e( 'Save settings', 'wp-updates-notifier' ); ?>" />
-			</form>
-
-			<form action="<?php echo esc_attr( admin_url( 'admin-post.php' ) ); ?>" method="post">
-				<input type="hidden" name="action" value="<?php echo esc_attr( self::TEST_ACTION ); ?>" />
-				<input type="hidden" name="instance" value="email" />
-				<?php wp_nonce_field( self::TEST_ACTION ); ?>
-				<p>&nbsp;</p>
-				<input class="button" type="submit" value="<?php esc_attr_e( 'Send test email', 'wp-updates-notifier' ); ?>" />
-				<span class="description"><?php esc_html_e( 'Sends a test message using the saved settings.', 'wp-updates-notifier' ); ?></span>
-			</form>
+			<?php
+			/**
+			 * Draws a tab of the settings screen.
+			 *
+			 * The dynamic part is the tab's slug. Add the tab with the `sc_wpun_settings_tabs` filter;
+			 * it is listed only while something is hooked here. Output inside the screen's wrapper.
+			 *
+			 * @since 2.0.0
+			 */
+			do_action( "sc_wpun_settings_tab_{$current}" );
+			?>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Output the General tab: when the check runs, the settings and the test message.
+	 *
+	 * @return void
+	 */
+	public function render_general_tab(): void {
+		$options    = $this->state->get();
+		$next_check = wp_next_scheduled( Scheduler::CRON_NAME );
+		?>
+		<p>
+			<span class="description sc-wpun-last-check">
+			<?php
+			if ( empty( $options['last_check_time'] ) ) {
+				esc_html_e( 'Last checked: never', 'wp-updates-notifier' );
+			} else {
+				// translators: %s: Date and time of the last check.
+				echo esc_html( sprintf( __( 'Last checked: %s', 'wp-updates-notifier' ), $this->format_site_time( $options['last_check_time'] ) ) );
+			}
+			?>
+			</span>
+			<br />
+			<span class="description sc-wpun-next-check">
+			<?php
+			if ( false === $next_check ) {
+				esc_html_e( 'Next check: not scheduled. Save the settings to schedule it.', 'wp-updates-notifier' );
+			} else {
+				// translators: %s: Date and time of the next check.
+				echo esc_html( sprintf( __( 'Next check: %s', 'wp-updates-notifier' ), $this->format_site_time( $next_check ) ) );
+			}
+			?>
+			</span>
+		</p>
+
+		<form action="<?php echo esc_attr( admin_url( 'options.php' ) ); ?>" method="post">
+			<?php
+			// Saving goes back to the page it was sent from, which is this tab: the tab links carry `tab=general`.
+			settings_fields( 'sc_wpun_settings' );
+			do_settings_sections( 'wp-updates-notifier' );
+			?>
+			<p>&nbsp;</p>
+			<input class="button-primary" name="Submit" type="submit" value="<?php esc_html_e( 'Save settings', 'wp-updates-notifier' ); ?>" />
+		</form>
+
+		<form action="<?php echo esc_attr( admin_url( 'admin-post.php' ) ); ?>" method="post">
+			<input type="hidden" name="action" value="<?php echo esc_attr( self::TEST_ACTION ); ?>" />
+			<input type="hidden" name="instance" value="email" />
+			<?php wp_nonce_field( self::TEST_ACTION ); ?>
+			<p>&nbsp;</p>
+			<input class="button" type="submit" value="<?php esc_attr_e( 'Send test email', 'wp-updates-notifier' ); ?>" />
+			<span class="description"><?php esc_html_e( 'Sends a test message using the saved settings.', 'wp-updates-notifier' ); ?></span>
+		</form>
 		<?php
 	}
 
