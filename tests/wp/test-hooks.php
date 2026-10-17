@@ -195,6 +195,7 @@ class Test_Hooks extends WPUN_Test_Case {
 		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
 		$author = self::factory()->user->create( array( 'role' => 'author' ) );
 		$this->save_settings();
+		sc_wpun()->register_admin_hooks(); // Front-end requests, like this test's boot, do not register them.
 
 		$this->assertSame( 'edit_pages', Settings_Page::capability() );
 		$this->assertSame( 'edit_pages', apply_filters( 'option_page_capability_sc_wpun_settings', 'manage_options' ) );
