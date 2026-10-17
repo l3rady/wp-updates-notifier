@@ -8,7 +8,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 slug="wp-updates-notifier"
-version="$(sed -n 's/^ \* Version: //p' "$root/class-sc-wp-updates-notifier.php" | head -n 1)"
+version="$(sed -n 's/^ \* Version: //p' "$root/wp-updates-notifier.php" | head -n 1)"
 zip="$root/build/$slug-$version.zip"
 plugin_check_version="${PLUGIN_CHECK_VERSION:-2.1.0}"
 

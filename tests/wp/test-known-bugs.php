@@ -16,7 +16,7 @@
  */
 class Test_Known_Bugs extends WPUN_Test_Case {
 
-	const BASENAME = 'wp-updates-notifier/class-sc-wp-updates-notifier.php';
+	const BASENAME = 'wp-updates-notifier/wp-updates-notifier.php';
 
 	/**
 	 * Plugin info for the one plugin update these tests use.

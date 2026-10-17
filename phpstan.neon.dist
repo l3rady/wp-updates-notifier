@@ -6,7 +6,7 @@ parameters:
     level: 8
     phpVersion: 70400
     paths:
-        - class-sc-wp-updates-notifier.php
+        - wp-updates-notifier.php
         - includes
         - modules
         - uninstall.php

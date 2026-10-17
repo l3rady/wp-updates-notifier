@@ -15,11 +15,12 @@
 class Test_Contract extends WPUN_Test_Case {
 
 	/**
-	 * Active plugins are stored by path. Renaming the main file deactivated the plugin on every
-	 * site that updated to 1.6; the planned rename (#90) must keep sites active through a stub.
+	 * Active plugins are stored by path, so renaming the main file deactivates the plugin on every
+	 * site that updates. 2.0.0 moved it back to wp-updates-notifier.php (#90) on purpose; don't
+	 * move it again.
 	 */
 	public function test_the_main_file_is_a_valid_plugin_at_the_expected_path() {
-		$file = WP_PLUGIN_DIR . '/wp-updates-notifier/class-sc-wp-updates-notifier.php';
+		$file = WP_PLUGIN_DIR . '/wp-updates-notifier/wp-updates-notifier.php';
 
 		$this->assertFileExists( $file );
 
@@ -33,7 +34,7 @@ class Test_Contract extends WPUN_Test_Case {
 	 * The requirements in the plugin header and in readme.txt agree (WordPress.org reads both).
 	 */
 	public function test_the_plugin_header_and_readme_agree_on_requirements() {
-		$data   = get_plugin_data( WP_PLUGIN_DIR . '/wp-updates-notifier/class-sc-wp-updates-notifier.php', false, false );
+		$data   = get_plugin_data( WP_PLUGIN_DIR . '/wp-updates-notifier/wp-updates-notifier.php', false, false );
 		$readme = file_get_contents( WP_PLUGIN_DIR . '/wp-updates-notifier/readme.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
 
 		$this->assertSame( '7.4', $data['RequiresPHP'] );
@@ -48,7 +49,7 @@ class Test_Contract extends WPUN_Test_Case {
 	public function test_the_licence_is_stated_consistently() {
 		$dir      = WP_PLUGIN_DIR . '/wp-updates-notifier';
 		$header   = get_file_data(
-			$dir . '/class-sc-wp-updates-notifier.php',
+			$dir . '/wp-updates-notifier.php',
 			array(
 				'License'    => 'License',
 				'LicenseURI' => 'License URI',

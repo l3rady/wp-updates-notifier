@@ -140,7 +140,7 @@ class Test_Plugin_Details extends WPUN_Test_Case {
 		$this->set_raw_plugin_updates(
 			array(
 				'hello.php' => (object) array( 'plugin' => 'hello.php' ),
-				'wp-updates-notifier/class-sc-wp-updates-notifier.php' => 'not an entry',
+				'wp-updates-notifier/wp-updates-notifier.php' => 'not an entry',
 			)
 		);
 		$entries = sc_wpun()->update_checker()->normalise_plugin_updates(

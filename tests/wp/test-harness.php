@@ -17,7 +17,7 @@ class Test_Harness extends WPUN_Test_Case {
 		$this->assertTrue( class_exists( 'SC_WP_Updates_Notifier' ) );
 
 		$file = ( new ReflectionClass( 'SC_WP_Updates_Notifier' ) )->getFileName();
-		$this->assertSame( WP_PLUGIN_DIR . '/wp-updates-notifier/class-sc-wp-updates-notifier.php', $file );
+		$this->assertSame( WP_PLUGIN_DIR . '/wp-updates-notifier/wp-updates-notifier.php', $file );
 	}
 
 	/**
