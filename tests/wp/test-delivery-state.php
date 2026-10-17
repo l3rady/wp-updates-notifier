@@ -134,7 +134,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		sc_wpun()->settings()->maybe_upgrade();
 		$this->assertArrayHasKey( 'legacy_notified', $this->stored_state() );
 
-		update_option( 'sc_wpun_settings', array_merge( $this->stored_settings(), array( 'notify_plugins' => 1 ) ) ); // The fixture checks active plugins only.
+		update_option( 'sc_wpun_settings', array_merge( $this->stored_settings(), array( 'notify_plugins' => 'all' ) ) ); // The fixture checks active plugins only.
 
 		// Core 6.4 and hello.php 1.8 were announced; the own plugin was never announced.
 		$this->set_updates(
@@ -217,7 +217,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 	 */
 	public function test_forgetting_leaves_unchecked_types_alone() {
 		$this->save_settings();
-		update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_plugins' => 0 ) ) );
+		update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_plugins' => 'none' ) ) );
 		$this->save_channel_state(
 			'email',
 			array(

@@ -30,7 +30,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	/**
 	 * Settings version and key set of the current release, used as the base for fixtures.
 	 */
-	const SETTINGS_VERSION = '9.0';
+	const SETTINGS_VERSION = '10.0';
 
 	/**
 	 * Set up: block the network and reset the mailer.
@@ -135,8 +135,8 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 			'slack_notifications'    => 0,
 			'slack_webhook_url'      => '',
 			'slack_channel_override' => '',
-			'notify_plugins'         => 1,
-			'notify_themes'          => 1,
+			'notify_plugins'         => 'all',
+			'notify_themes'          => 'all',
 			'notify_automatic'       => 1,
 			'hide_updates'           => 1,
 		);

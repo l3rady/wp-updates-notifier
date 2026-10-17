@@ -50,9 +50,54 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * Updating the option outside the settings form (another plugin, a migration, our own code) must not die.
 	 */
 	public function test_updating_the_option_outside_the_settings_form_does_not_die() {
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
 
-		$this->assertSame( 2, $this->stored_settings()['notify_plugins'] );
+		$this->assertSame( 'active', $this->stored_settings()['notify_plugins'] );
+	}
+
+	/**
+	 * A key that is not one of the choices is refused with a settings error; valid keys are saved.
+	 */
+	public function test_an_unknown_notify_key_is_refused() {
+		$valid = $this->plugin()->sc_wpun_settings_validate(
+			$this->settings(
+				array(
+					'notify_plugins' => 'everything',
+					'notify_themes'  => 'active',
+				)
+			)
+		);
+
+		$errors = $this->errors();
+		$this->assertSame( 'sc_wpun_settings_main_notify_plugins_error', $errors['sc_wpun_settings_main_notify_plugins'] );
+		$this->assertArrayNotHasKey( 'sc_wpun_settings_main_notify_themes', $errors );
+		$this->assertSame( 'all', $valid['notify_plugins'], 'The stored value is kept.' );
+		$this->assertSame( 'active', $valid['notify_themes'] );
+
+		$this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_themes' => 2 ) ) );
+		$this->assertArrayHasKey( 'sc_wpun_settings_main_notify_themes', $this->errors(), 'Numbers are not keys.' );
+	}
+
+	/**
+	 * The settings page draws the notify settings from the schema, with the saved choice checked.
+	 */
+	public function test_the_page_draws_the_notify_radios() {
+		$this->save_settings( array( 'notify_plugins' => 'active' ) );
+
+		ob_start();
+		$this->plugin()->settings_page();
+		$html = ob_get_clean();
+
+		$doc = new DOMDocument();
+		libxml_use_internal_errors( true ); // The page repeats an id (_wpnonce) that the parser objects to.
+		$doc->loadHTML( $html );
+		libxml_clear_errors();
+		$xpath  = new DOMXPath( $doc );
+		$radios = $xpath->query( '//fieldset[@id="sc_wpun_settings_main_notify_plugins"]//input[@type="radio"][@name="sc_wpun_settings[notify_plugins]"]' );
+		$this->assertSame( 3, $radios->length );
+		$this->assertSame( array( 'none', 'all', 'active' ), array_map( static fn( $radio ) => $radio->getAttribute( 'value' ), iterator_to_array( $radios ) ) );
+		$this->assertSame( 1, $xpath->query( '//fieldset[@id="sc_wpun_settings_main_notify_plugins"]//input[@value="active"][@checked]' )->length );
+		$this->assertSame( 1, $xpath->query( '//fieldset[@id="sc_wpun_settings_main_notify_themes"]//input[@value="all"][@checked]' )->length );
 	}
 
 	/**
@@ -236,7 +281,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$next = time() + 5000;
 		wp_schedule_event( $next, 'hourly', 'sc_wpun_update_check' );
 
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
 
 		$this->assertSame( $next, wp_next_scheduled( 'sc_wpun_update_check' ) );
 	}
@@ -277,7 +322,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$_POST['submitwithemail'] = 'Save settings with test email';
 
 		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
 
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ) );
 	}

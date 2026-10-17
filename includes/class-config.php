@@ -133,8 +133,9 @@ final class Config {
 	 * A value that cannot be used is recorded as a problem and not used.
 	 *
 	 * @param Config_Context       $context What to resolve.
-	 * @param array<string, mixed> $field   Field schema: `type` (checkbox, number, select, or text-like) and, for
-	 *                                      `select`, `options`; for `number`, optional `min` and `max`.
+	 * @param array<string, mixed> $field   Field schema: `type` (checkbox, number, enum, select, or text-like) and, for
+	 *                                      `enum` and `select`, `options` (and for `enum` `multiple`, `min` and `max`, see
+	 *                                      Enum_Field); for `number`, optional `min` and `max`.
 	 *
 	 * @return Config_Value|null
 	 */
@@ -267,20 +268,9 @@ final class Config {
 					'value' => $number,
 				);
 
+			case 'enum':
 			case 'select':
-				if ( ! is_string( $raw ) && ! is_int( $raw ) ) {
-					return $bad;
-				}
-				$options = isset( $field['options'] ) && is_array( $field['options'] ) ? $field['options'] : array();
-				foreach ( array_keys( $options ) as $option ) {
-					if ( (string) $option === (string) $raw ) {
-						return array(
-							'ok'    => true,
-							'value' => (string) $option,
-						);
-					}
-				}
-				return $bad;
+				return Enum_Field::cast_external( $raw, $field );
 
 			default:
 				if ( is_bool( $raw ) ) {

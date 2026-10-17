@@ -15,12 +15,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The plugin settings: their defaults, how they are read and written and how older ones are upgraded.
  *
  * @internal
- * @phpstan-type SettingsData array{frequency: string, notify_plugins: int, notify_themes: int, notify_automatic: int, hide_updates: int}
+ * @phpstan-type SettingsData array{frequency: string, notify_plugins: 'none'|'all'|'active', notify_themes: 'none'|'all'|'active', notify_automatic: int, hide_updates: int}
  */
 class Settings {
 	const OPT_FIELD         = 'sc_wpun_settings';
 	const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-	const OPT_VERSION       = '9.0';
+	const OPT_VERSION       = '10.0';
+
+	/**
+	 * What the notify settings were stored as before settings version 10: 0 none, 1 all, 2 active only.
+	 */
+	const LEGACY_NOTIFY = array(
+		'0' => 'none',
+		'1' => 'all',
+		'2' => 'active',
+	);
 
 	/**
 	 * Run state storage, written when settings from before version 8 are upgraded.
@@ -72,6 +81,13 @@ class Settings {
 			// "manual" has meant "never check" since the external cron was removed in 1.5.1. Check daily instead.
 			if ( isset( $options['frequency'] ) && 'manual' === $options['frequency'] ) {
 				$options['frequency'] = 'daily';
+			}
+
+			// Settings version 10 stores the notify settings as none, all or active instead of 0, 1 and 2.
+			foreach ( array( 'notify_plugins', 'notify_themes' ) as $name ) {
+				if ( array_key_exists( $name, $options ) ) {
+					$options[ $name ] = $this->notify_key( $name, $options[ $name ], $defaults[ $name ] );
+				}
 			}
 
 			// Settings version 8 moved the run state (what was notified, when the last check ran) to its own option.
@@ -176,8 +192,8 @@ class Settings {
 	public function default_settings(): array {
 		$defaults = array(
 			'frequency'        => 'hourly',
-			'notify_plugins'   => 1,
-			'notify_themes'    => 1,
+			'notify_plugins'   => 'all',
+			'notify_themes'    => 'all',
 			'notify_automatic' => 1,
 			'hide_updates'     => 1,
 		);
@@ -186,7 +202,8 @@ class Settings {
 		 * Filters the settings a new install starts with, and the values used for settings that are missing.
 		 *
 		 * Only the keys below are used, and values are cast to the type shown. Anything else
-		 * is ignored, as is a return value that is not an array.
+		 * is ignored, as is a return value that is not an array. A notify setting that is not
+		 * one of its keys falls back to the built-in default.
 		 *
 		 * Example, check daily by default:
 		 *
@@ -204,8 +221,8 @@ class Settings {
 		 *     The default settings.
 		 *
 		 *     @type string $frequency        Name of a cron schedule.
-		 *     @type int    $notify_plugins   0 none, 1 all plugins, 2 active plugins only.
-		 *     @type int    $notify_themes    0 none, 1 all themes, 2 active themes only.
+		 *     @type string $notify_plugins   `none`, `all` or `active` (active plugins only).
+		 *     @type string $notify_themes    `none`, `all` or `active` (active themes only).
 		 *     @type int    $notify_automatic 1 to send WordPress's automatic core update emails to the notification address.
 		 *     @type int    $hide_updates     1 to hide the WordPress update notice from users who cannot update.
 		 * }
@@ -217,8 +234,8 @@ class Settings {
 
 		return array(
 			'frequency'        => $this->string_setting( $filtered, 'frequency', $defaults['frequency'] ),
-			'notify_plugins'   => $this->int_setting( $filtered, 'notify_plugins', $defaults['notify_plugins'] ),
-			'notify_themes'    => $this->int_setting( $filtered, 'notify_themes', $defaults['notify_themes'] ),
+			'notify_plugins'   => $this->notify_key( 'notify_plugins', $filtered['notify_plugins'] ?? null, $defaults['notify_plugins'], false ),
+			'notify_themes'    => $this->notify_key( 'notify_themes', $filtered['notify_themes'] ?? null, $defaults['notify_themes'], false ),
 			'notify_automatic' => $this->int_setting( $filtered, 'notify_automatic', $defaults['notify_automatic'] ),
 			'hide_updates'     => $this->int_setting( $filtered, 'hide_updates', $defaults['hide_updates'] ),
 		);
@@ -242,12 +259,12 @@ class Settings {
 
 		$plugins = $this->config->resolve_typed( Config_Context::setting( 'notify_plugins' ), $schemas['notify_plugins'] );
 		if ( null !== $plugins ) {
-			$settings['notify_plugins'] = (int) $plugins->get_value();
+			$settings['notify_plugins'] = $this->notify_key( 'notify_plugins', $plugins->get_value(), $settings['notify_plugins'], false );
 		}
 
 		$themes = $this->config->resolve_typed( Config_Context::setting( 'notify_themes' ), $schemas['notify_themes'] );
 		if ( null !== $themes ) {
-			$settings['notify_themes'] = (int) $themes->get_value();
+			$settings['notify_themes'] = $this->notify_key( 'notify_themes', $themes->get_value(), $settings['notify_themes'], false );
 		}
 
 		$automatic = $this->config->resolve_typed( Config_Context::setting( 'notify_automatic' ), $schemas['notify_automatic'] );
@@ -281,36 +298,96 @@ class Settings {
 	}
 
 	/**
-	 * What each global setting accepts when it is supplied from outside the database.
+	 * The field schema of each global setting, which is also what it accepts when supplied from outside the database.
+	 *
+	 * The settings screen is drawn from these. Schemas use the field types of channel fields (see Channel).
+	 *
+	 * @since 2.0.0
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
-	private function schemas(): array {
+	public function schemas(): array {
+		$frequencies = array();
+		foreach ( Frequencies::all() as $name => $frequency ) {
+			$frequencies[ $name ] = $frequency['display'];
+		}
+
 		return array(
 			'frequency'        => array(
-				'type'    => 'select',
-				'options' => Frequencies::all(),
+				'type'    => 'enum',
+				'label'   => __( 'Frequency to check', 'wp-updates-notifier' ),
+				'options' => $frequencies,
+				'display' => 'select',
 			),
-			'notify_plugins'   => array(
-				'type' => 'number',
-				'min'  => 0,
-				'max'  => 2,
+			'notify_plugins'   => $this->notify_schema( 'notify_plugins' ),
+			'notify_themes'    => $this->notify_schema( 'notify_themes' ),
+			'notify_automatic' => array(
+				'type'  => 'checkbox',
+				'label' => __( 'Notify automatic core updates to this address?', 'wp-updates-notifier' ),
 			),
-			'notify_themes'    => array(
-				'type' => 'number',
-				'min'  => 0,
-				'max'  => 2,
+			'hide_updates'     => array(
+				'type'  => 'checkbox',
+				'label' => __( 'Hide the WordPress update notice from users who cannot update WordPress?', 'wp-updates-notifier' ),
 			),
-			'notify_automatic' => array( 'type' => 'checkbox' ),
-			'hide_updates'     => array( 'type' => 'checkbox' ),
 		);
+	}
+
+	/**
+	 * The schema of the plugin or theme notify setting.
+	 *
+	 * @param string $name `notify_plugins` or `notify_themes`.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function notify_schema( string $name ): array {
+		$plugins = 'notify_plugins' === $name;
+
+		return array(
+			'type'    => 'enum',
+			'label'   => $plugins ? __( 'Notify about plugin updates?', 'wp-updates-notifier' ) : __( 'Notify about theme updates?', 'wp-updates-notifier' ),
+			'options' => array(
+				'none'   => __( 'No', 'wp-updates-notifier' ),
+				'all'    => __( 'Yes', 'wp-updates-notifier' ),
+				'active' => $plugins ? __( 'Yes, but only active plugins', 'wp-updates-notifier' ) : __( 'Yes, but only active themes', 'wp-updates-notifier' ),
+			),
+			'default' => 'all',
+			'display' => 'radio',
+		);
+	}
+
+	/**
+	 * A notify setting as one of its keys.
+	 *
+	 * @param string $name     `notify_plugins` or `notify_themes`.
+	 * @param mixed  $value    The value.
+	 * @param string $fallback Key to use when the value is not one.
+	 * @param bool   $legacy   Whether 0, 1 and 2 (as stored before settings version 10) stand for none, all and active.
+	 *
+	 * @return 'none'|'all'|'active'
+	 */
+	private function notify_key( string $name, $value, string $fallback, bool $legacy = true ): string {
+		if ( $legacy && ( is_int( $value ) || is_string( $value ) ) && isset( self::LEGACY_NOTIFY[ (string) $value ] ) ) {
+			$value = self::LEGACY_NOTIFY[ (string) $value ];
+		}
+
+		$schema            = $this->notify_schema( $name );
+		$schema['default'] = $fallback;
+		$key               = Enum_Field::sanitize( $value, $schema )['value'];
+
+		if ( 'none' === $key || 'active' === $key ) {
+			return $key;
+		}
+
+		return 'all';
 	}
 
 	/**
 	 * The plugin's saved settings, with every value of the type the code expects and nothing from outside the database.
 	 *
 	 * Values can arrive as strings (imports, `wp option update`, filters), and missing
-	 * keys get their defaults.
+	 * keys get their defaults. The notify settings also accept 0, 1 and 2 as stored before settings
+	 * version 10. The frequency is not checked against the schedules on offer: a saved schedule that is
+	 * no longer offered is kept, so the settings screen can say so.
 	 *
 	 * @return SettingsData
 	 */
@@ -321,8 +398,8 @@ class Settings {
 
 		return array(
 			'frequency'        => $this->string_setting( $stored, 'frequency', $defaults['frequency'] ),
-			'notify_plugins'   => $this->int_setting( $stored, 'notify_plugins', $defaults['notify_plugins'] ),
-			'notify_themes'    => $this->int_setting( $stored, 'notify_themes', $defaults['notify_themes'] ),
+			'notify_plugins'   => $this->notify_key( 'notify_plugins', $stored['notify_plugins'] ?? null, $defaults['notify_plugins'] ),
+			'notify_themes'    => $this->notify_key( 'notify_themes', $stored['notify_themes'] ?? null, $defaults['notify_themes'] ),
 			'notify_automatic' => $this->int_setting( $stored, 'notify_automatic', $defaults['notify_automatic'] ),
 			'hide_updates'     => $this->int_setting( $stored, 'hide_updates', $defaults['hide_updates'] ),
 		);
