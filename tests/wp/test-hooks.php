@@ -49,14 +49,14 @@ class Test_Hooks extends WPUN_Test_Case {
 				)
 			)
 		);
-		unset( $_POST['_wpnonce'], $_POST['instance'] );
+		unset( $_POST['sc_wpun_test_nonce'], $_POST['instance'] );
 	}
 
 	/**
 	 * Forget the request.
 	 */
 	public function tear_down() {
-		unset( $_POST['_wpnonce'], $_POST['instance'] );
+		unset( $_POST['sc_wpun_test_nonce'], $_POST['instance'] );
 		parent::tear_down();
 	}
 
@@ -206,15 +206,15 @@ class Test_Hooks extends WPUN_Test_Case {
 		$entries = wp_list_filter( $GLOBALS['submenu']['options-general.php'], array( 2 => 'wp-updates-notifier' ) );
 		$this->assertSame( 'edit_pages', reset( $entries )[1] );
 
-		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test' );
-		$_POST['instance'] = 'email';
+		$_POST['sc_wpun_test_nonce'] = wp_create_nonce( 'sc_wpun_send_test' );
+		$_POST['instance']           = 'email';
 		$this->assertTrue( sc_wpun()->settings_page()->process_test_send() );
 		$_REQUEST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 		$this->assertTrue( sc_wpun()->slack_notice()->dismiss_request() );
 
 		wp_set_current_user( $author );
-		$_POST['_wpnonce']    = wp_create_nonce( 'sc_wpun_send_test' );
-		$_REQUEST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
+		$_POST['sc_wpun_test_nonce'] = wp_create_nonce( 'sc_wpun_send_test' );
+		$_REQUEST['_wpnonce']        = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 		$this->assertFalse( sc_wpun()->settings_page()->process_test_send() );
 		$this->assertFalse( sc_wpun()->slack_notice()->dismiss_request() );
 		unset( $_REQUEST['_wpnonce'] );

@@ -5,6 +5,8 @@
  * @package wp-updates-notifier
  */
 
+// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM properties are camelCase.
+
 /**
  * Tab bar, the current tab, and the hooks that add tabs.
  */

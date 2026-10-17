@@ -111,9 +111,7 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * #72: the page heading is an h2.
-	 *
-	 * @group known-bug
+	 * #72: the page heading is an h1.
 	 */
 	public function test_72_the_settings_page_has_an_h1() {
 		$this->assertStringContainsString( '<h1', $this->render_settings_page() );
