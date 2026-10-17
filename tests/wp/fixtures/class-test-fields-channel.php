@@ -79,10 +79,11 @@ class Test_Fields_Channel extends Channel {
 	 * A token must start with "ok-".
 	 *
 	 * @param array $settings Settings.
+	 * @param array $stored   Stored settings.
 	 * @return array|WP_Error
 	 * @throws RuntimeException For a token that starts with "throw-".
 	 */
-	public function validate_settings( array $settings ) {
+	public function validate_settings( array $settings, array $stored = array() ) {
 		if ( isset( $settings['token'] ) && 0 === strpos( (string) $settings['token'], 'throw-' ) ) {
 			throw new RuntimeException( 'validation blew up on ' . $settings['token'] ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test fixture.
 		}
@@ -90,7 +91,7 @@ class Test_Fields_Channel extends Channel {
 			return new WP_Error( 'bad_token', 'The token is not valid.', array( 'field' => 'token' ) );
 		}
 
-		return parent::validate_settings( $settings );
+		return parent::validate_settings( $settings, $stored );
 	}
 
 	/**

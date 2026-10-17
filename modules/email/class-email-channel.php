@@ -133,10 +133,11 @@ class Email_Channel extends Channel {
 	 * Clean and check the settings submitted for an instance.
 	 *
 	 * @param array<string, mixed> $settings Submitted settings.
+	 * @param array<string, mixed> $stored   The settings stored for the instance (not used).
 	 *
 	 * @return array<string, mixed>|\WP_Error The settings to store, or an error naming the field at fault.
 	 */
-	public function validate_settings( array $settings ) {
+	public function validate_settings( array $settings, array $stored = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Same signature as the base class.
 		$to = array();
 		foreach ( explode( ',', $this->text( $settings, 'to' ) ) as $entry ) {
 			$entry = trim( $entry );

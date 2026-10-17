@@ -21,12 +21,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Field schema returned by get_fields(): an array keyed by the setting's name,
  * each entry an array with these keys, all optional except `type`:
  *
- * - `type` (string): text, textarea, url, email_list, secret, boolean, checkbox, enum, select or number.
+ * - `type` (string): a value type, see below: `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `boolean` or `enum`.
+ *   `checkbox` and `select` are aliases of `boolean` and `enum`. `radio`, `select` and `multiselect` are displays, not types.
  * - `label` (string): label of the field.
  * - `description` (string): help text.
  * - `default` (mixed): value used when nothing is stored.
- * - `required` (bool): the field must have a value.
- * - `secret` (bool): the value is never shown again once saved.
+ * - `required` (bool): the field must have a value. A `false` boolean and a `0` number count as values.
+ * - `secret` (bool): for `text`, `textarea`, `url` and `email_list`, the value is never shown again once saved, like a `secret`.
  * - `options` (array): key => label, for `enum` and `select`.
  * - `multiple` (bool): for `enum`, true when any number of the options can be chosen. The value is then a list of keys.
  * - `display` (string): for `boolean`, `checkbox` (default), `radio` or `select`. For `enum`, `select`, `radio` or
@@ -34,9 +35,29 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   (single) or checkboxes (several) for up to five options, a select above that.
  * - `labels` (array): for `boolean`, the `on` and `off` texts. `on` is the checkbox text and the "on" choice, and defaults to the
  *   label for a checkbox and to Yes otherwise; `off` defaults to No.
- * - `min`, `max` (int): for an `enum` with several choices, how many may be chosen.
+ * - `min`, `max` (int): for a `number`, the smallest and largest value; for an `enum` with several choices, how many may be chosen.
  * - `sanitize_callback` (callable): receives the submitted value, returns the clean value.
- * - `validate_callback` (callable): receives the clean value, returns true or a WP_Error.
+ * - `validate_callback` (callable): receives the clean value, returns true or a WP_Error (false is an error too).
+ *
+ * The value types, with their displays:
+ *
+ * - `text`: a string, shown as a text input. Tags and line breaks are removed.
+ * - `textarea`: a string, shown as a textarea.
+ * - `url`: a string, shown as a URL input. Empty, or an http or https address with a host (no `javascript:`, `ftp:` or relative URLs).
+ * - `email_list`: addresses separated by commas, shown as a text input. One bad address makes the field invalid. Stored joined with `,`.
+ * - `secret`: a string, shown as a password input, trimmed and with control characters removed. The saved value is never output. Submitting nothing keeps the saved value, and a
+ *   `<name>__clear` setting that is true (the "Clear" checkbox of the form) empties it. `'secret' => true` does the same for the other
+ *   text types.
+ * - `number`: a whole number, shown as a number input, within `min` and `max`. An empty value is left out, so the stored value or the
+ *   default applies.
+ * - `boolean`: `true` or `false`, shown as a checkbox, radio buttons or a select.
+ * - `enum`: a choice, or several, from `options`, shown as radio buttons, checkboxes or a select.
+ *
+ * Add-ons can add types, or replace these, with the `sc_wpun_field_types` filter.
+ *
+ * The default validate_settings() applies to every type: `sanitize_callback`, the sanitiser of the type, then `required` and
+ * `validate_callback`. Every error is a WP_Error with the code `invalid_field` (or the code of the callback) and the data
+ * `array( 'field' => $name )`.
  *
  * A `boolean` is always `true` or `false`; a submitted or stored `1`, `0`, `'1'`, `'0'` or `''` (off) is accepted and anything else
  * is invalid. `checkbox` is an alias of `boolean` with the checkbox display. Supplied from outside the database, `1`, `true`,
@@ -131,60 +152,23 @@ abstract class Channel {
 	 * `sanitize_callback` and then checks a `boolean` field is an on or off value (anything else returns a
 	 * WP_Error naming the field) and an `enum` field against its options: a single
 	 * choice that is not an option, or a list with too few or too many choices, returns a
-	 * WP_Error naming the field; unknown keys in a list are dropped. A channel can
-	 * override it to check more, and return a WP_Error whose error data names the field
+	 * WP_Error naming the field; unknown keys in a list are dropped. The other types are checked
+	 * as described in the class description, and `required` and `validate_callback` are enforced.
+	 * A field missing from the submission stays missing, unless it is required and nothing is stored.
+	 * A secret keeps its stored value when nothing is submitted for it, and is emptied by a true
+	 * `<name>__clear` setting, which is never part of the result. A field of a type nothing handles is dropped.
+	 * A channel can override it to check more, and return a WP_Error whose error data names the field
 	 * at fault.
 	 *
 	 * @since 2.0.0
 	 *
 	 * @param array<string, mixed> $settings Submitted settings.
+	 * @param array<string, mixed> $stored   The settings currently stored for the instance, to keep a secret.
 	 *
 	 * @return array<string, mixed>|\WP_Error The settings to store.
 	 */
-	public function validate_settings( array $settings ) {
-		$clean = array();
-
-		foreach ( $this->get_fields() as $name => $field ) {
-			if ( ! array_key_exists( $name, $settings ) ) {
-				continue;
-			}
-			$value = $settings[ $name ];
-			if ( isset( $field['sanitize_callback'] ) && is_callable( $field['sanitize_callback'] ) ) {
-				$value = call_user_func( $field['sanitize_callback'], $value );
-			}
-			if ( Boolean_Field::is_boolean( $field ) ) {
-				$checked = Boolean_Field::sanitize( $value, $field );
-				if ( ! $checked['ok'] ) {
-					return new \WP_Error(
-						'invalid_field',
-						sprintf(
-							// translators: %s: Name of the field.
-							__( 'The value for "%s" is not valid.', 'wp-updates-notifier' ),
-							isset( $field['label'] ) && is_string( $field['label'] ) && '' !== $field['label'] ? $field['label'] : $name
-						),
-						array( 'field' => $name )
-					);
-				}
-				$value = $checked['value'];
-			} elseif ( Enum_Field::is_enum( $field ) ) {
-				$checked = Enum_Field::sanitize( $value, $field );
-				if ( ! $checked['ok'] ) {
-					return new \WP_Error(
-						'invalid_field',
-						sprintf(
-							// translators: %s: Name of the field.
-							__( 'The choice for "%s" is not valid.', 'wp-updates-notifier' ),
-							isset( $field['label'] ) && is_string( $field['label'] ) && '' !== $field['label'] ? $field['label'] : $name
-						),
-						array( 'field' => $name )
-					);
-				}
-				$value = $checked['value'];
-			}
-			$clean[ $name ] = $value;
-		}
-
-		return $clean;
+	public function validate_settings( array $settings, array $stored = array() ) {
+		return Field_Types::validate( $this->get_fields(), $settings, $stored );
 	}
 
 	/**

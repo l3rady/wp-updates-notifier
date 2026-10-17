@@ -380,7 +380,7 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 		$this->assertSame( Field_Renderer::boolean( array( 'type' => 'checkbox' ), 'n', 'i', true ), Field_Renderer::field( array( 'type' => 'checkbox' ), 'n', 'i', true ) );
 		$this->assertSame( Field_Renderer::enum( $enum, 'n', 'i', 'b' ), Field_Renderer::field( $enum, 'n', 'i', 'b' ) );
 		$this->assertSame( Field_Renderer::enum( array_merge( $enum, array( 'type' => 'enum' ) ), 'n', 'i', 'a' ), Field_Renderer::field( array_merge( $enum, array( 'type' => 'enum' ) ), 'n', 'i', 'a' ) );
-		$this->assertSame( '', Field_Renderer::field( array( 'type' => 'text' ), 'n', 'i', 'x' ) );
+		$this->assertStringContainsString( 'type="text"', Field_Renderer::field( array( 'type' => 'text' ), 'n', 'i', 'x' ) );
 	}
 
 	/**
