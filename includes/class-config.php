@@ -40,6 +40,13 @@ final class Config {
 	private $cache = array();
 
 	/**
+	 * Counts the flushes.
+	 *
+	 * @var int
+	 */
+	private $generation = 0;
+
+	/**
 	 * Values that could not be used.
 	 *
 	 * @var array<string, array{key: string, source: string, message: string}>
@@ -154,6 +161,62 @@ final class Config {
 	}
 
 	/**
+	 * Resolve a field that must not silently fall back to the database.
+	 *
+	 * @param Config_Context       $context What to resolve.
+	 * @param array<string, mixed> $field   Field schema, see resolve_typed().
+	 *
+	 * @return array{ok: bool, value: Config_Value|null} `ok` is false when a value is supplied but cannot be used
+	 *                                                   (a problem is recorded); `value` is null when nothing is supplied.
+	 */
+	public function resolve_field( Config_Context $context, array $field ): array {
+		$raw = $this->resolve( $context );
+		if ( null === $raw ) {
+			return array(
+				'ok'    => true,
+				'value' => null,
+			);
+		}
+
+		$cast = $this->cast( $raw->get_value(), $field );
+		if ( ! $cast['ok'] ) {
+			$this->add_problem( $raw->get_key(), $raw->get_source(), __( 'The value is not valid for this field.', 'wp-updates-notifier' ) );
+
+			return array(
+				'ok'    => false,
+				'value' => null,
+			);
+		}
+
+		return array(
+			'ok'    => true,
+			'value' => new Config_Value( $cast['value'], $raw->get_source(), $raw->get_key() ),
+		);
+	}
+
+	/**
+	 * Record a value that cannot be used. The message must not contain the value.
+	 *
+	 * @param string $key     The key.
+	 * @param string $source  Where it came from.
+	 * @param string $message Why it was not used.
+	 *
+	 * @return void
+	 */
+	public function report_problem( string $key, string $source, string $message ): void {
+		$this->add_problem( $key, $source, $message );
+	}
+
+	/**
+	 * Changes every time the cache is flushed, so holders of derived data know to drop it.
+	 *
+	 * @return int
+	 */
+	public function generation(): int {
+		return $this->generation;
+	}
+
+	/**
 	 * Cast a raw value to the type of a field.
 	 *
 	 * @param mixed                $raw   The value a source supplied.
@@ -248,6 +311,7 @@ final class Config {
 		$this->sources  = null;
 		$this->cache    = array();
 		$this->problems = array();
+		++$this->generation;
 	}
 
 	/**
