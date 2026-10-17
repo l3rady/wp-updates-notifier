@@ -451,6 +451,24 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	}
 
 	/**
+	 * An empty secret supplied from outside wins over the stored one: keeping a saved secret is for form submissions only.
+	 */
+	public function test_an_empty_external_secret_beats_the_stored_one() {
+		sc_wpun()->channels()->register(
+			new Test_Fields_Channel(
+				'test_secret',
+				array( 'key' => array( 'type' => 'secret' ) )
+			)
+		);
+		sc_wpun_channels()->save( new Channel_Instance( 'vault', 'test_secret', 'Vault', true, array( 'key' => 'stored-key' ) ) );
+		$this->assertSame( 'stored-key', sc_wpun_channels()->get( 'vault' )->get_setting( 'key' ) );
+
+		$this->add_source( array( 'SC_WPUN_CHANNEL_VAULT__KEY' => '' ) );
+		$this->assertSame( '', sc_wpun_channels()->get( 'vault' )->get_setting( 'key' ) );
+		$this->assertSame( array(), sc_wpun_channels()->problems( 'vault' ) );
+	}
+
+	/**
 	 * The context carries the site, so a filter can answer differently per site.
 	 */
 	public function test_values_can_differ_per_site() {

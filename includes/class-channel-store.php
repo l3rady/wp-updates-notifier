@@ -459,6 +459,7 @@ class Channel_Store {
 		if ( null !== $channel && array() !== $external ) {
 			$blame = array();
 			try {
+				// No stored settings: keeping a saved secret on an empty value is for forms, and an empty supplied secret must win.
 				$checked = $channel->validate_settings( $settings );
 				if ( $checked instanceof \WP_Error ) {
 					$data  = $checked->get_error_data();
