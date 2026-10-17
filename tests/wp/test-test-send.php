@@ -1,12 +1,12 @@
 <?php
 /**
- * Sending a test message from the settings page (#67).
+ * Sending a test message from the Channels tab (#67, #165).
  *
  * @package wp-updates-notifier
  */
 
 /**
- * The "Send test email" form and its handler.
+ * The per-instance send test form and its handler.
  */
 class Test_Test_Send extends WPUN_Test_Case {
 
@@ -50,15 +50,15 @@ class Test_Test_Send extends WPUN_Test_Case {
 
 		$this->save_settings();
 		wp_set_current_user( self::$admin_id );
-		$_POST['sc_wpun_test_nonce'] = wp_create_nonce( 'sc_wpun_send_test' );
-		$_POST['instance']           = 'email';
+		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_email' );
+		$_POST['id']       = 'email';
 	}
 
 	/**
 	 * Forget the request.
 	 */
 	public function tear_down() {
-		unset( $_POST['sc_wpun_test_nonce'], $_POST['instance'] );
+		unset( $_POST['_wpnonce'], $_POST['id'], $_GET['tab'] );
 
 		parent::tear_down();
 	}
@@ -76,23 +76,26 @@ class Test_Test_Send extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The page has the separate form and no longer the old button.
+	 * The Channels tab has a test form for the instance, and the General tab has none.
 	 */
-	public function test_the_page_has_a_separate_test_form() {
+	public function test_the_channels_tab_has_the_test_form() {
 		$html = $this->page();
+		$this->assertStringNotContainsString( 'value="sc_wpun_send_test"', $html );
+		$this->assertStringNotContainsString( 'Send test email', $html );
+		$this->assertStringContainsString( 'notify_reply_to', $html );
 
+		$_GET['tab'] = 'channels';
+		$html        = $this->page();
 		$this->assertStringContainsString( 'admin-post.php', $html );
 		$this->assertStringContainsString( 'value="sc_wpun_send_test"', $html );
-		$this->assertStringContainsString( 'Send test email', $html );
-		$this->assertStringNotContainsString( 'submitwithemail', $html );
-		$this->assertStringContainsString( 'notify_reply_to', $html );
+		$this->assertStringContainsString( 'aria-label="Send test to Email"', $html );
 	}
 
 	/**
 	 * The test goes to the saved recipients as a test message and no global transient is used.
 	 */
 	public function test_a_test_is_sent_and_reported_once() {
-		$this->assertTrue( sc_wpun()->settings_page()->process_test_send() );
+		$this->assertTrue( sc_wpun()->channels_tab()->process_test_send() );
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertStringContainsString( 'test message', $this->sent_mail()->subject );
@@ -101,7 +104,7 @@ class Test_Test_Send extends WPUN_Test_Case {
 		$html = $this->page();
 		$this->assertStringContainsString( 'notice-success', $html );
 		$this->assertStringContainsString( 'Test message sent through Email.', $html );
-		$this->assertStringNotContainsString( 'sc-wpun-test-result', $this->page(), 'Shown once.' );
+		$this->assertStringNotContainsString( 'sc-wpun-notice', $this->page(), 'Shown once.' );
 	}
 
 	/**
@@ -110,7 +113,7 @@ class Test_Test_Send extends WPUN_Test_Case {
 	public function test_a_failure_is_reported() {
 		add_filter( 'pre_wp_mail', '__return_false' );
 
-		$this->assertTrue( sc_wpun()->settings_page()->process_test_send() );
+		$this->assertTrue( sc_wpun()->channels_tab()->process_test_send() );
 
 		$html = $this->page();
 		$this->assertStringContainsString( 'notice-error', $html );
@@ -118,16 +121,17 @@ class Test_Test_Send extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A switched-off instance and an unknown one are failures, not sends.
+	 * A switched-off instance is a failure, and an unknown one a notice.
 	 */
 	public function test_a_disabled_or_unknown_instance_fails() {
 		$this->save_settings( array( 'email_notifications' => 0 ) );
-		sc_wpun()->settings_page()->process_test_send();
+		sc_wpun()->channels_tab()->process_test_send();
 		$this->assertSame( 0, $this->sent_mail_count() );
 		$this->assertStringContainsString( 'notice-error', $this->page() );
 
-		$_POST['instance'] = 'nothing';
-		sc_wpun()->settings_page()->process_test_send();
+		$_POST['id']       = 'nothing';
+		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_nothing' );
+		sc_wpun()->channels_tab()->process_test_send();
 		$this->assertStringContainsString( 'notice-error', $this->page() );
 	}
 
@@ -135,28 +139,28 @@ class Test_Test_Send extends WPUN_Test_Case {
 	 * The result is kept per user.
 	 */
 	public function test_the_result_is_for_the_current_user_only() {
-		sc_wpun()->settings_page()->process_test_send();
+		sc_wpun()->channels_tab()->process_test_send();
 
 		wp_set_current_user( self::$other_admin_id );
-		$this->assertStringNotContainsString( 'sc-wpun-test-result', $this->page() );
+		$this->assertStringNotContainsString( 'sc-wpun-notice', $this->page() );
 
 		wp_set_current_user( self::$admin_id );
-		$this->assertStringContainsString( 'sc-wpun-test-result', $this->page() );
+		$this->assertStringContainsString( 'sc-wpun-notice', $this->page() );
 	}
 
 	/**
 	 * The result is kept in user meta, not a transient, and a stale one is not shown.
 	 */
 	public function test_a_stale_result_is_not_shown() {
-		sc_wpun()->settings_page()->process_test_send();
+		sc_wpun()->channels_tab()->process_test_send();
 
-		$stored = get_user_meta( self::$admin_id, 'sc_wpun_test_result', true );
+		$stored = get_user_meta( self::$admin_id, 'sc_wpun_notice', true );
 		$this->assertIsArray( $stored );
 		$stored['time'] = time() - HOUR_IN_SECONDS;
-		update_user_meta( self::$admin_id, 'sc_wpun_test_result', $stored );
+		update_user_meta( self::$admin_id, 'sc_wpun_notice', $stored );
 
-		$this->assertStringNotContainsString( 'sc-wpun-test-result', $this->page() );
-		$this->assertSame( '', get_user_meta( self::$admin_id, 'sc_wpun_test_result', true ), 'Removed once read.' );
+		$this->assertStringNotContainsString( 'sc-wpun-notice', $this->page() );
+		$this->assertSame( '', get_user_meta( self::$admin_id, 'sc_wpun_notice', true ), 'Removed once read.' );
 	}
 
 	/**
@@ -167,29 +171,29 @@ class Test_Test_Send extends WPUN_Test_Case {
 			$this->markTestSkipped( 'Needs multisite (make test-wp-ms).' );
 		}
 
-		sc_wpun()->settings_page()->process_test_send();
+		sc_wpun()->channels_tab()->process_test_send();
 
 		switch_to_blog( self::factory()->blog->create() );
-		$this->assertStringNotContainsString( 'sc-wpun-test-result', $this->page() );
+		$this->assertStringNotContainsString( 'sc-wpun-notice', $this->page() );
 		restore_current_blog();
 
-		$this->assertStringContainsString( 'sc-wpun-test-result', $this->page() );
+		$this->assertStringContainsString( 'sc-wpun-notice', $this->page() );
 	}
 
 	/**
 	 * A bad nonce or a user without manage_options sends nothing.
 	 */
 	public function test_nonce_and_capability_are_enforced() {
-		$page = sc_wpun()->settings_page();
+		$page = sc_wpun()->channels_tab();
 
-		$_POST['sc_wpun_test_nonce'] = 'bad';
+		$_POST['_wpnonce'] = 'bad';
 		$this->assertFalse( $page->process_test_send() );
 
-		unset( $_POST['sc_wpun_test_nonce'] );
+		unset( $_POST['_wpnonce'] );
 		$this->assertFalse( $page->process_test_send() );
 
 		wp_set_current_user( self::$editor_id );
-		$_POST['sc_wpun_test_nonce'] = wp_create_nonce( 'sc_wpun_send_test' );
+		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_email' );
 		$this->assertFalse( $page->process_test_send() );
 
 		$this->assertSame( 0, $this->sent_mail_count() );

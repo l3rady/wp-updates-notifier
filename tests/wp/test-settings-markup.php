@@ -22,11 +22,14 @@ class Test_Settings_Markup extends WPUN_Test_Case {
 	private $errors = array();
 
 	/**
-	 * The General tab as an administrator, parsed as a whole page.
+	 * A tab as an administrator, parsed as a whole page.
+	 *
+	 * @param string $tab Tab slug.
 	 *
 	 * @return DOMXPath
 	 */
-	private function page(): DOMXPath {
+	private function page( string $tab = 'general' ): DOMXPath {
+		$_GET['tab'] = $tab;
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		sc_wpun()->settings_page()->admin_settings_init();
 		ob_start();
@@ -141,11 +144,7 @@ class Test_Settings_Markup extends WPUN_Test_Case {
 		$this->assertSame( 'Save settings', $save->item( 0 )->getAttribute( 'value' ) );
 		$this->assertStringContainsString( 'button-primary', $save->item( 0 )->getAttribute( 'class' ) );
 
-		$test = $xpath->query( '//form[contains(@action,"admin-post.php")]//input[@type="submit"]' );
-		$this->assertSame( 1, $test->length );
-		$this->assertSame( 'Send test email', $test->item( 0 )->getAttribute( 'value' ) );
-		$this->assertNotSame( $save->item( 0 )->getAttribute( 'id' ), $test->item( 0 )->getAttribute( 'id' ) );
-		$this->assertSame( 1, $xpath->query( '//form[contains(@action,"admin-post.php")]//*[contains(@class,"description")]' )->length );
+		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"admin-post.php")]' )->length, 'The test form moved to the Channels tab.' );
 
 		foreach ( $xpath->query( '//p' ) as $paragraph ) {
 			$empty = '' === trim( str_replace( "\xC2\xA0", ' ', $paragraph->textContent ) ) && 0 === $paragraph->getElementsByTagName( '*' )->length;
@@ -154,13 +153,51 @@ class Test_Settings_Markup extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The test form has its own nonce field, so `_wpnonce` is not repeated.
+	 * The Channels tab is valid HTML with unique ids, even with several rows that each have forms.
 	 */
-	public function test_the_test_form_has_its_own_nonce() {
-		$xpath = $this->page();
+	public function test_the_channels_tab_is_valid_with_unique_ids() {
+		sc_wpun_channels()->save( new Channel_Instance( 'second', 'email', 'Second', true, array( 'to' => 'a@example.org' ) ) );
+		$xpath = $this->page( 'channels' );
 
-		$this->assertSame( 1, $xpath->query( '//input[@name="_wpnonce"]' )->length );
-		$this->assertSame( 1, $xpath->query( '//form[contains(@action,"admin-post.php")]//input[@name="sc_wpun_test_nonce"]' )->length );
+		$errors = array_filter( $this->errors, static fn( $error ) => 801 !== $error->code );
+		$this->assertSame( array(), array_map( static fn( $error ) => trim( $error->message ), array_values( $errors ) ) );
+		$this->assertSame( 2, $xpath->query( '//tr[@data-id]' )->length );
+
+		$ids = array();
+		foreach ( $xpath->query( '//*[@id]' ) as $node ) {
+			$ids[] = $node->getAttribute( 'id' );
+		}
+		$this->assertSame( array(), array_keys( array_filter( array_count_values( $ids ), static fn( $count ) => $count > 1 ) ) );
+	}
+
+	/**
+	 * Every button of the Channels tab is a real button with a name that says which channel it is for, and the table has headers.
+	 */
+	public function test_the_channels_tab_buttons_are_named() {
+		$xpath = $this->page( 'channels' );
+
+		$buttons = $xpath->query( '//table//button' );
+		$this->assertGreaterThan( 2, $buttons->length );
+		foreach ( $buttons as $button ) {
+			$this->assertSame( 'submit', $button->getAttribute( 'type' ) );
+			$this->assertStringContainsString( 'Email', $button->getAttribute( 'aria-label' ) );
+		}
+		$this->assertStringContainsString( 'Email', $xpath->query( '//a[contains(@class,"sc-wpun-delete")]' )->item( 0 )->getAttribute( 'aria-label' ) );
+		$this->assertSame( 5, $xpath->query( '//table/thead//th[@scope="col"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//table/caption' )->length );
+		foreach ( $xpath->query( '//form[contains(@action,"admin-post.php")]' ) as $form ) {
+			$this->assertSame( 1, $xpath->query( './/input[@name="_wpnonce"]', $form )->length );
+			$this->assertSame( 1, $xpath->query( './/input[@name="id"]', $form )->length );
+		}
+	}
+
+	/**
+	 * Every control of the Channels tab is named.
+	 */
+	public function test_the_channels_tab_has_no_unnamed_controls() {
+		$xpath = $this->page( 'channels' );
+
+		$this->assertSame( 0, $xpath->query( '//input[not(@type="hidden")] | //select | //textarea' )->length );
 	}
 
 	/**

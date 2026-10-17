@@ -112,14 +112,14 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * With nothing added, General is the only tab, it is current and draws the settings.
+	 * With nothing added, General and Channels are the tabs, General is current and draws the settings.
 	 */
 	public function test_general_is_the_default_tab() {
 		$xpath = $this->xpath( $this->html() );
 
 		$this->assertSame( 1, $xpath->query( '//div[@class="wrap"]/h1' )->length );
 		$this->assertSame( 1, $xpath->query( '//nav[@class="nav-tab-wrapper"][@aria-label]' )->length );
-		$this->assertSame( array( 'general' ), $this->tab_slugs( $xpath ) );
+		$this->assertSame( array( 'general', 'channels' ), $this->tab_slugs( $xpath ) );
 		$active = $xpath->query( '//a[contains(@class,"nav-tab-active")]' );
 		$this->assertSame( 1, $active->length );
 		$this->assertSame( 'page', $active->item( 0 )->getAttribute( 'aria-current' ) );
@@ -129,31 +129,14 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The channels tab is built in but hidden while nothing draws it, and asking for it shows General.
+	 * The Channels tab is listed, can be chosen and draws the channel list instead of the settings form.
 	 */
-	public function test_channels_is_hidden_until_something_draws_it() {
-		$_GET['tab'] = 'channels';
-		$xpath       = $this->xpath( $this->html() );
-
-		$this->assertSame( array( 'general' ), $this->tab_slugs( $xpath ) );
-		$this->assertSame( 1, $xpath->query( '//form[contains(@action,"options.php")]' )->length );
-	}
-
-	/**
-	 * Once something draws the channels tab it is listed and can be chosen.
-	 */
-	public function test_channels_shows_once_it_is_drawn() {
-		add_action(
-			'sc_wpun_settings_tab_channels',
-			static function () {
-				echo '<p class="drawn-channels">Drawn</p>';
-			}
-		);
+	public function test_channels_is_listed_and_drawn() {
 		$_GET['tab'] = 'channels';
 		$xpath       = $this->xpath( $this->html() );
 
 		$this->assertSame( array( 'general', 'channels' ), $this->tab_slugs( $xpath ) );
-		$this->assertSame( 1, $xpath->query( '//p[@class="drawn-channels"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//table[contains(@class,"sc-wpun-channels")]' )->length );
 		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"options.php")]' )->length );
 	}
 
@@ -165,7 +148,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		$_GET['tab'] = 'mine';
 		$xpath       = $this->xpath( $this->html() );
 
-		$this->assertSame( array( 'general', 'mine' ), $this->tab_slugs( $xpath ) );
+		$this->assertSame( array( 'general', 'channels', 'mine' ), $this->tab_slugs( $xpath ) );
 		$this->assertSame( 1, $xpath->query( '//p[@class="drawn-mine"]' )->length );
 		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"options.php")]' )->length );
 		$this->assertSame( 1, $xpath->query( '//a[@aria-current]' )->length );
@@ -197,7 +180,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 			}
 		);
 
-		$this->assertSame( array( 'general' ), $this->tab_slugs( $this->xpath( $this->html() ) ) );
+		$this->assertSame( array( 'general', 'channels' ), $this->tab_slugs( $this->xpath( $this->html() ) ) );
 	}
 
 	/**
@@ -253,21 +236,11 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		$_GET['tab'] = 'mine';
 		$admin       = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin );
-		update_user_meta(
-			get_current_user_id(),
-			'sc_wpun_test_result',
-			array(
-				'success' => true,
-				'message' => '',
-				'label'   => 'Email',
-				'site'    => get_current_blog_id(),
-				'time'    => time(),
-			)
-		);
+		sc_wpun()->notices()->add( true, 'Done.' );
 		$xpath = $this->xpath( $this->html( $admin ) );
 
-		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-test-result")]/following-sibling::nav' )->length );
-		$this->assertSame( 0, $xpath->query( '//nav/following-sibling::div[contains(@class,"sc-wpun-test-result")]' )->length );
+		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-notice")]/following-sibling::nav' )->length );
+		$this->assertSame( 0, $xpath->query( '//nav/following-sibling::div[contains(@class,"sc-wpun-notice")]' )->length );
 	}
 
 	/**

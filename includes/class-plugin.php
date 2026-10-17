@@ -7,6 +7,8 @@
 
 namespace WPUN;
 
+use WPUN\Admin\Channels_Tab;
+use WPUN\Admin\Notices;
 use WPUN\Admin\Settings_Page;
 use WPUN\Admin\Update_Nag;
 
@@ -91,11 +93,47 @@ class Plugin {
 	private $settings_page = null;
 
 	/**
+	 * Channels tab.
+	 *
+	 * @var Channels_Tab|null
+	 */
+	private $channels_tab = null;
+
+	/**
+	 * Notices about what an admin action did.
+	 *
+	 * @var Notices|null
+	 */
+	private $notices = null;
+
+	/**
 	 * Update nag.
 	 *
 	 * @var Update_Nag|null
 	 */
 	private $update_nag = null;
+
+	/**
+	 * Channels tab, built on first use: front-end requests never need it.
+	 *
+	 * @return Channels_Tab
+	 */
+	public function channels_tab(): Channels_Tab {
+		$this->channels_tab ??= new Channels_Tab( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices() );
+
+		return $this->channels_tab;
+	}
+
+	/**
+	 * Notices about what an admin action did, built on first use.
+	 *
+	 * @return Notices
+	 */
+	public function notices(): Notices {
+		$this->notices ??= new Notices();
+
+		return $this->notices;
+	}
 
 	/**
 	 * Notice about Slack no longer being supported.
@@ -222,7 +260,7 @@ class Plugin {
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
-		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->channel_store, $this->slack_notice, $this->dispatcher, $this->config_report );
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->channel_store, $this->slack_notice, $this->config_report, $this->channels_tab(), $this->notices() );
 
 		return $this->settings_page;
 	}
@@ -316,7 +354,7 @@ class Plugin {
 	 * Register the hooks of the admin components.
 	 *
 	 * Only admin requests (which include `admin-post.php` and `admin-ajax.php`) need the settings page
-	 * and the update nag, so front-end requests never load their classes. Read `Settings_Page::TEST_ACTION`
+	 * and the update nag, so front-end requests never load their classes. Read `Channels_Tab::TEST_ACTION`
 	 * only here: reading a class constant loads the class.
 	 *
 	 * @return void
@@ -327,7 +365,10 @@ class Plugin {
 		add_action( 'admin_init', array( $this->settings_page(), 'admin_settings_init' ) ); // Add admin init functions.
 		add_action( 'admin_init', array( $this->update_nag(), 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins.
 		add_filter( 'option_page_capability_' . Settings::OPT_FIELD, array( Settings_Page::class, 'capability' ) ); // options.php accepts saves with the same capability.
-		add_action( 'admin_post_' . Settings_Page::TEST_ACTION, array( $this->settings_page(), 'handle_test_send' ) ); // Send a test message from the settings page.
+		add_action( 'admin_post_' . Channels_Tab::TEST_ACTION, array( $this->channels_tab(), 'handle_test_send' ) ); // Send a test message through a channel.
+		add_action( 'admin_post_' . Channels_Tab::TOGGLE_ACTION, array( $this->channels_tab(), 'handle_toggle' ) ); // Switch a channel on or off.
+		add_action( 'admin_post_' . Channels_Tab::DUPLICATE_ACTION, array( $this->channels_tab(), 'handle_duplicate' ) ); // Duplicate a channel.
+		add_action( 'admin_post_' . Channels_Tab::DELETE_ACTION, array( $this->channels_tab(), 'handle_delete' ) ); // Delete a channel.
 	}
 
 	/**

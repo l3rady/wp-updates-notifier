@@ -327,15 +327,15 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	public function test_a_test_send_uses_the_external_recipient() {
 		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__TO' => 'vault@example.org' ) );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
-		$_POST['sc_wpun_test_nonce'] = wp_create_nonce( 'sc_wpun_send_test' );
-		$_POST['instance']           = 'email';
+		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_email' );
+		$_POST['id']       = 'email';
 		reset_phpmailer_instance();
 
-		$this->assertTrue( sc_wpun()->settings_page()->process_test_send() );
+		$this->assertTrue( sc_wpun()->channels_tab()->process_test_send() );
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertSame( 'vault@example.org', tests_retrieve_phpmailer_instance()->get_recipient( 'to' )->address );
-		unset( $_POST['sc_wpun_test_nonce'], $_POST['instance'] );
+		unset( $_POST['_wpnonce'], $_POST['id'] );
 	}
 
 	/**
