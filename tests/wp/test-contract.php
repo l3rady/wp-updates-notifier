@@ -84,14 +84,26 @@ class Test_Contract extends WPUN_Test_Case {
 		$this->assertNotFalse( has_action( 'sc_wpun_update_check' ), 'The cron event needs a callback.' );
 		$this->assertNotFalse( has_action( 'sc_wpun_enable_cron' ) );
 		$this->assertNotFalse( has_action( 'sc_wpun_disable_cron' ) );
-		$this->assertNotFalse( has_action( 'admin_menu' ) );
-		$this->assertNotFalse( has_action( 'admin_init' ) );
 		$this->assertNotFalse( has_filter( 'auto_core_update_email' ) );
-		$this->assertNotFalse( has_filter( 'plugin_action_links' ) );
+		$this->assertFalse( has_filter( 'plugin_action_links' ), 'The settings link uses the filter specific to the plugin.' );
 		// Delivery state is per instance now, so the plugin leaves these public filters to third parties.
 		$this->assertFalse( has_filter( 'sc_wpun_plugins_need_update' ) );
 		$this->assertFalse( has_filter( 'sc_wpun_themes_need_update' ) );
 		$this->assertNotFalse( has_action( 'sc_wpun_channel_deleted' ) );
+	}
+
+	/**
+	 * Admin requests also register the hooks of the settings page and the update nag.
+	 */
+	public function test_the_plugin_registers_its_admin_hooks_in_admin() {
+		set_current_screen( 'dashboard' );
+		( new \WPUN\Plugin() )->boot();
+
+		$this->assertNotFalse( has_action( 'admin_menu' ) );
+		$this->assertNotFalse( has_action( 'admin_init' ) );
+		$this->assertNotFalse( has_filter( 'plugin_action_links_' . plugin_basename( SC_WPUN_FILE ) ) );
+		$this->assertNotFalse( has_filter( 'option_page_capability_sc_wpun_settings' ) );
+		$this->assertNotFalse( has_action( 'admin_post_sc_wpun_send_test' ) );
 	}
 
 	/**

@@ -86,16 +86,16 @@ class Plugin {
 	/**
 	 * Settings page.
 	 *
-	 * @var Settings_Page
+	 * @var Settings_Page|null
 	 */
-	private $settings_page;
+	private $settings_page = null;
 
 	/**
 	 * Update nag.
 	 *
-	 * @var Update_Nag
+	 * @var Update_Nag|null
 	 */
-	private $update_nag;
+	private $update_nag = null;
 
 	/**
 	 * Notice about Slack no longer being supported.
@@ -133,8 +133,6 @@ class Plugin {
 		$this->dispatcher     = new Dispatcher( $this->channels, $this->channel_store );
 		$this->update_checker = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store );
 		$this->slack_notice   = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
-		$this->settings_page  = new Settings_Page( $this->settings, $this->state, $this->notifier, $this->channel_store, $this->slack_notice, $this->dispatcher, $this->config_report );
-		$this->update_nag     = new Update_Nag( $this->settings );
 	}
 
 	/**
@@ -219,11 +217,13 @@ class Plugin {
 	}
 
 	/**
-	 * Settings page.
+	 * Settings page, built on first use: front-end requests never need it.
 	 *
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->channel_store, $this->slack_notice, $this->dispatcher, $this->config_report );
+
 		return $this->settings_page;
 	}
 
@@ -237,11 +237,13 @@ class Plugin {
 	}
 
 	/**
-	 * Update nag.
+	 * Update nag, built on first use: front-end requests never need it.
 	 *
 	 * @return Update_Nag
 	 */
 	public function update_nag(): Update_Nag {
+		$this->update_nag ??= new Update_Nag( $this->settings );
+
 		return $this->update_nag;
 	}
 
@@ -280,13 +282,8 @@ class Plugin {
 		// Internationalization.
 		load_plugin_textdomain( 'wp-updates-notifier', false, dirname( plugin_basename( SC_WPUN_FILE ) ) . '/languages/' );
 		// Add Filters.
-		add_filter( 'plugin_action_links', array( $this->settings_page, 'plugin_action_links' ), 10, 2 ); // Add settings link to plugin in plugin list.
 		add_filter( 'auto_core_update_email', array( $this->notifier, 'filter_auto_core_update_email' ), 1 ); // Filter the background update notification email.
 		// Add Actions.
-		add_action( 'admin_menu', array( $this->settings_page, 'admin_settings_menu' ) ); // Add menu to options.
-		add_action( 'admin_init', array( $this->settings_page, 'admin_settings_init' ) ); // Add admin init functions.
-		add_action( 'admin_init', array( $this->update_nag, 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins.
-		add_filter( 'option_page_capability_' . Settings::OPT_FIELD, array( Settings_Page::class, 'capability' ) ); // options.php accepts saves with the same capability.
 		add_action( 'switch_blog', array( $this->config, 'flush' ) ); // Values are resolved per site.
 		add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
 		add_action( 'sc_wpun_channel_deleted', array( $this->state, 'forget_channel' ) ); // Deleting an instance deletes its delivery state.
@@ -294,11 +291,14 @@ class Plugin {
 		add_action( 'sc_wpun_disable_cron', array( $this->scheduler, 'disable_cron' ) ); // action to disable cron.
 		add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.
 		add_action( Scheduler::CRON_NAME, array( $this->slack_notice, 'maybe_send_email' ), 5 ); // Tell the admin once that Slack is no longer supported, before the check.
-		add_action( 'admin_post_' . Settings_Page::TEST_ACTION, array( $this->settings_page, 'handle_test_send' ) ); // Send a test message from the settings page.
 		add_action( 'admin_post_' . Slack_Notice::DISMISS_ACTION, array( $this->slack_notice, 'handle_dismiss' ) ); // Dismiss the notice on the settings page.
 		add_filter( 'site_status_tests', array( $this->slack_notice, 'add_site_health_test' ) ); // Site Health test while Slack settings are stored but unused.
 		add_action( 'init', array( $this->scheduler, 'maybe_schedule' ) ); // Put the check back on the schedule if it is missing.
 		add_action( 'update_option_' . Settings::OPT_FIELD, array( $this->scheduler, 'settings_updated' ), 10, 2 ); // Reschedule when the frequency changes.
+
+		if ( is_admin() ) {
+			$this->register_admin_hooks();
+		}
 
 		/**
 		 * Fires when the plugin has loaded and its hooks are registered.
@@ -308,6 +308,24 @@ class Plugin {
 		 * @since 2.0.0
 		 */
 		do_action( 'sc_wpun_loaded' );
+	}
+
+	/**
+	 * Register the hooks of the admin components.
+	 *
+	 * Only admin requests (which include `admin-post.php` and `admin-ajax.php`) need the settings page
+	 * and the update nag, so front-end requests never load their classes. Read `Settings_Page::TEST_ACTION`
+	 * only here: reading a class constant loads the class.
+	 *
+	 * @return void
+	 */
+	public function register_admin_hooks(): void {
+		add_filter( 'plugin_action_links_' . plugin_basename( SC_WPUN_FILE ), array( $this->settings_page(), 'plugin_action_links' ), 10, 2 ); // Add settings link to plugin in plugin list.
+		add_action( 'admin_menu', array( $this->settings_page(), 'admin_settings_menu' ) ); // Add menu to options.
+		add_action( 'admin_init', array( $this->settings_page(), 'admin_settings_init' ) ); // Add admin init functions.
+		add_action( 'admin_init', array( $this->update_nag(), 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins.
+		add_filter( 'option_page_capability_' . Settings::OPT_FIELD, array( Settings_Page::class, 'capability' ) ); // options.php accepts saves with the same capability.
+		add_action( 'admin_post_' . Settings_Page::TEST_ACTION, array( $this->settings_page(), 'handle_test_send' ) ); // Send a test message from the settings page.
 	}
 
 	/**

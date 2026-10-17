@@ -190,15 +190,16 @@ class Settings_Page {
 	 * Adds the settings link under the plugin on the plugin screen.
 	 *
 	 * @param array<mixed> $links Links to list on the plugin screen.
-	 * @param string       $file Filename.
+	 * @param string|null  $file Plugin file the links belong to. Null when the filter is specific to this plugin.
 	 *
 	 * @return array<mixed> $links
 	 */
-	public function plugin_action_links( $links, $file ) {
-		if ( plugin_basename( SC_WPUN_FILE ) === $file ) {
-			$settings_link = '<a href="' . admin_url( 'options-general.php?page=wp-updates-notifier' ) . '">' . __( 'Settings', 'wp-updates-notifier' ) . '</a>';
-			array_unshift( $links, $settings_link );
+	public function plugin_action_links( $links, $file = null ) {
+		if ( null !== $file && plugin_basename( SC_WPUN_FILE ) !== $file ) {
+			return $links;
 		}
+		$settings_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=wp-updates-notifier' ) ) . '">' . esc_html__( 'Settings', 'wp-updates-notifier' ) . '</a>';
+		array_unshift( $links, $settings_link );
 		return $links;
 	}
 
