@@ -69,6 +69,13 @@ class Channels_Tab {
 	private $notices;
 
 	/**
+	 * The add and edit forms.
+	 *
+	 * @var Channel_Form
+	 */
+	private $form;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Channel_Store    $store      Channel instance storage.
@@ -76,13 +83,15 @@ class Channels_Tab {
 	 * @param Dispatcher       $dispatcher Dispatcher.
 	 * @param State            $state      Run state.
 	 * @param Notices          $notices    Notices shown after an action.
+	 * @param Channel_Form     $form       The add and edit forms.
 	 */
-	public function __construct( Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Notices $notices ) {
+	public function __construct( Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Notices $notices, Channel_Form $form ) {
 		$this->store      = $store;
 		$this->registry   = $registry;
 		$this->dispatcher = $dispatcher;
 		$this->state      = $state;
 		$this->notices    = $notices;
+		$this->form       = $form;
 	}
 
 	/**
@@ -106,37 +115,80 @@ class Channels_Tab {
 	}
 
 	/**
-	 * Output the tab: the list, or the confirmation of a delete.
+	 * Output the tab: the list, the form to add or edit a channel, or the confirmation of a delete.
 	 *
 	 * @return void
 	 */
 	public function render(): void {
-		$id = $this->requested_delete();
-		if ( null !== $id ) {
+		$request = $this->requested();
+		$problem = null;
+
+		if ( 'add' === $request['action'] ) {
+			$this->form->render_picker();
+			return;
+		}
+
+		if ( 'new' === $request['action'] ) {
+			$problem = $this->form->render_new( $request['key'] );
+			if ( null === $problem ) {
+				return;
+			}
+		} elseif ( 'edit' === $request['action'] ) {
+			$problem = $this->form->render_edit( $request['key'] );
+			if ( null === $problem ) {
+				return;
+			}
+		} elseif ( 'delete' === $request['action'] ) {
+			$id       = $request['key'];
 			$instance = $this->listed()[ $id ] ?? null;
 			if ( null !== $instance && ! $this->store->is_code_defined( $id ) ) {
 				$this->render_confirm_delete( $instance );
 				return;
 			}
-			echo '<div class="notice notice-error inline sc-wpun-inline-notice"><p>' . esc_html( $this->no_such_channel() ) . '</p></div>';
+			$problem = $this->no_such_channel();
+		}
+
+		if ( null !== $problem ) {
+			echo '<div class="notice notice-error inline sc-wpun-inline-notice"><p>' . esc_html( $problem ) . '</p></div>';
 		}
 
 		$this->render_list();
 	}
 
 	/**
-	 * The id in a request to confirm a delete.
+	 * The route in the request.
 	 *
-	 * @return string|null Null if this is not such a request.
+	 * @return array{action: string, key: string} The action (`add`, `new`, `edit`, `delete`; empty for the list) and the type or id it is about.
 	 */
-	private function requested_delete(): ?string {
+	private function requested(): array {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Choosing what to display, nothing is changed.
-		if ( ! isset( $_GET['action'], $_GET['id'] ) || ! is_string( $_GET['action'] ) || ! is_string( $_GET['id'] ) || 'delete' !== $_GET['action'] ) {
-			return null;
+		$action = isset( $_GET['action'] ) && is_string( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
+		$name   = 'new' === $action ? 'type' : 'id';
+		$key    = isset( $_GET[ $name ] ) && is_string( $_GET[ $name ] ) ? sanitize_key( wp_unslash( $_GET[ $name ] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( in_array( $action, array( 'add', 'new', 'edit', 'delete' ), true ) ) {
+			return array(
+				'action' => $action,
+				'key'    => $key,
+			);
 		}
 
-		return sanitize_key( wp_unslash( $_GET['id'] ) );
-		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		return array(
+			'action' => '',
+			'key'    => '',
+		);
+	}
+
+	/**
+	 * Output the link to the module picker, styled as a button.
+	 *
+	 * @return void
+	 */
+	private function render_add_link(): void {
+		?>
+		<p><a class="button sc-wpun-add-channel" href="<?php echo esc_url( $this->tab_url( array( 'action' => 'add' ) ) ); ?>"><?php esc_html_e( 'Add channel', 'wp-updates-notifier' ); ?></a></p>
+		<?php
 	}
 
 	/**
@@ -146,6 +198,7 @@ class Channels_Tab {
 	 */
 	private function render_list(): void {
 		$instances = $this->listed();
+		$this->render_add_link();
 		if ( array() === $instances ) {
 			echo '<p class="sc-wpun-no-channels">' . esc_html__( 'No channels are set up yet. A channel is where the update notifications are sent, for example an email address.', 'wp-updates-notifier' ) . '</p>';
 			return;
@@ -201,6 +254,11 @@ class Channels_Tab {
 						$this->action_form( self::TEST_ACTION, $id, __( 'Send test', 'wp-updates-notifier' ), sprintf( __( 'Send test to %s', 'wp-updates-notifier' ), $label ) );
 					}
 					if ( ! $code_defined ) {
+						// translators: %s: Label of the channel.
+						$edit_name = sprintf( __( 'Edit %s', 'wp-updates-notifier' ), $label );
+						?>
+						<a class="sc-wpun-edit" href="<?php echo esc_url( $this->tab_url( array( 'action' => 'edit', 'id' => $id ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound ?>" aria-label="<?php echo esc_attr( $edit_name ); ?>"><?php esc_html_e( 'Edit', 'wp-updates-notifier' ); ?></a>
+						<?php
 						// translators: %s: Label of the channel.
 						$this->action_form( self::DUPLICATE_ACTION, $id, __( 'Duplicate', 'wp-updates-notifier' ), sprintf( __( 'Duplicate %s', 'wp-updates-notifier' ), $label ) );
 						// translators: %s: Label of the channel.

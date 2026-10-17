@@ -66,6 +66,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Every channel has an `enabled` setting, which is not part of get_fields(). Channel::enabled_field() is its shared boolean
  * schema, used by the settings screen and for values supplied from outside the database.
  *
+ * The fields in use are those of get_form_fields(): get_fields() passed through the `sc_wpun_channel_fields` filter.
+ *
  * An `enum` stores the key of the option, never its position, so options can be added, removed or reordered.
  * Supplied from outside the database (constants, environment variables), a single choice is the key and a list is
  * comma-separated, for example `core,plugin`; one unknown key makes the whole value unusable. `select` is an alias
@@ -129,6 +131,50 @@ abstract class Channel {
 	}
 
 	/**
+	 * The fields of the settings form, validated and stored: get_fields() after the `sc_wpun_channel_fields` filter.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	final public function get_form_fields(): array {
+		$fields = $this->get_fields();
+
+		/**
+		 * Filters the settings fields of a channel type.
+		 *
+		 * The fields are drawn on the add and edit forms, checked by the default Channel::validate_settings() and can be
+		 * supplied from outside the database. Same schema as Channel::get_fields().
+		 *
+		 * A channel that overrides validate_settings() decides for itself what it keeps, so a field added to it here is
+		 * drawn but may not be saved. The email channel is one: it keeps only its own fields. Changing the texts of
+		 * existing fields is always safe.
+		 *
+		 * Example, change the help text of the email channel's recipients:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_channel_fields',
+		 *         function ( $fields, $type ) {
+		 *             if ( 'email' === $type && isset( $fields['to'] ) ) {
+		 *                 $fields['to']['description'] = 'Use the team mailing list.';
+		 *             }
+		 *             return $fields;
+		 *         },
+		 *         10,
+		 *         2
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param array<string, array<string, mixed>> $fields The field schemas by name.
+		 * @param string                              $type   The channel type.
+		 */
+		$filtered = apply_filters( 'sc_wpun_channel_fields', $fields, $this->get_type() );
+
+		return is_array( $filtered ) ? $filtered : $fields;
+	}
+
+	/**
 	 * The field schema of the `enabled` setting every instance has, shared by all channels.
 	 *
 	 * @since 2.0.0
@@ -158,7 +204,8 @@ abstract class Channel {
 	 * A secret keeps its stored value when nothing is submitted for it, and is emptied by a true
 	 * `<name>__clear` setting, which is never part of the result. A field of a type nothing handles is dropped.
 	 * A channel can override it to check more, and return a WP_Error whose error data names the field
-	 * at fault.
+	 * at fault. The fields are those of get_form_fields(), so a field added by the `sc_wpun_channel_fields`
+	 * filter is checked too; a channel that overrides this method decides for itself.
 	 *
 	 * @since 2.0.0
 	 *
@@ -168,7 +215,7 @@ abstract class Channel {
 	 * @return array<string, mixed>|\WP_Error The settings to store.
 	 */
 	public function validate_settings( array $settings, array $stored = array() ) {
-		return Field_Types::validate( $this->get_fields(), $settings, $stored );
+		return Field_Types::validate( $this->get_form_fields(), $settings, $stored );
 	}
 
 	/**
@@ -185,7 +232,13 @@ abstract class Channel {
 	}
 
 	/**
-	 * Markup of the settings form of an instance, for a channel that draws its own.
+	 * Markup of the settings fields of an instance, for a channel that draws its own.
+	 *
+	 * It replaces only the module fields part of the add and edit form. The inputs must be named `settings[<field>]`.
+	 * The core form still draws the label, the enabled switch, the routing, the nonce and the buttons, and saves
+	 * the result, through validate_settings(). The instance is the one being edited, with the values just submitted
+	 * after a failed save. The markup is output as it is, so it must be escaped. The instance holds the saved
+	 * values of secrets: never output them. Errors of a failed save are listed above the form, as plain text.
 	 *
 	 * @since 2.0.0
 	 *
