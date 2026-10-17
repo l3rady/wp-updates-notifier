@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Field schema returned by get_fields(): an array keyed by the setting's name,
  * each entry an array with these keys, all optional except `type`:
  *
- * - `type` (string): text, textarea, url, email_list, secret, checkbox, enum, select or number.
+ * - `type` (string): text, textarea, url, email_list, secret, boolean, checkbox, enum, select or number.
  * - `label` (string): label of the field.
  * - `description` (string): help text.
  * - `default` (mixed): value used when nothing is stored.
@@ -29,11 +29,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `secret` (bool): the value is never shown again once saved.
  * - `options` (array): key => label, for `enum` and `select`.
  * - `multiple` (bool): for `enum`, true when any number of the options can be chosen. The value is then a list of keys.
- * - `display` (string): for `enum`, `select`, `radio` or `checkboxes`. A single choice cannot use checkboxes and several
- *   choices cannot use radios. Defaults to radio (single) or checkboxes (several) for up to five options, a select above that.
+ * - `display` (string): for `boolean`, `checkbox` (default), `radio` or `select`. For `enum`, `select`, `radio` or
+ *   `checkboxes`: a single choice cannot use checkboxes and several choices cannot use radios, and the default is radio
+ *   (single) or checkboxes (several) for up to five options, a select above that.
+ * - `labels` (array): for `boolean`, the `on` and `off` texts. `on` is the checkbox text and the "on" choice, and defaults to the
+ *   label for a checkbox and to Yes otherwise; `off` defaults to No.
  * - `min`, `max` (int): for an `enum` with several choices, how many may be chosen.
  * - `sanitize_callback` (callable): receives the submitted value, returns the clean value.
  * - `validate_callback` (callable): receives the clean value, returns true or a WP_Error.
+ *
+ * A `boolean` is always `true` or `false`; a submitted or stored `1`, `0`, `'1'`, `'0'` or `''` (off) is accepted and anything else
+ * is invalid. `checkbox` is an alias of `boolean` with the checkbox display. Supplied from outside the database, `1`, `true`,
+ * `yes` and `on` are on, and `0`, `false`, `no`, `off` and an empty value are off, in any case.
  *
  * An `enum` stores the key of the option, never its position, so options can be added, removed or reordered.
  * Supplied from outside the database (constants, environment variables), a single choice is the key and a list is
@@ -101,7 +108,8 @@ abstract class Channel {
 	 * Clean and check the settings submitted for an instance.
 	 *
 	 * The default keeps the fields declared by get_fields(), runs each field's
-	 * `sanitize_callback` and then checks an `enum` field against its options: a single
+	 * `sanitize_callback` and then checks a `boolean` field is an on or off value (anything else returns a
+	 * WP_Error naming the field) and an `enum` field against its options: a single
 	 * choice that is not an option, or a list with too few or too many choices, returns a
 	 * WP_Error naming the field; unknown keys in a list are dropped. A channel can
 	 * override it to check more, and return a WP_Error whose error data names the field
@@ -124,7 +132,21 @@ abstract class Channel {
 			if ( isset( $field['sanitize_callback'] ) && is_callable( $field['sanitize_callback'] ) ) {
 				$value = call_user_func( $field['sanitize_callback'], $value );
 			}
-			if ( Enum_Field::is_enum( $field ) ) {
+			if ( Boolean_Field::is_boolean( $field ) ) {
+				$checked = Boolean_Field::sanitize( $value, $field );
+				if ( ! $checked['ok'] ) {
+					return new \WP_Error(
+						'invalid_field',
+						sprintf(
+							// translators: %s: Name of the field.
+							__( 'The value for "%s" is not valid.', 'wp-updates-notifier' ),
+							isset( $field['label'] ) && is_string( $field['label'] ) && '' !== $field['label'] ? $field['label'] : $name
+						),
+						array( 'field' => $name )
+					);
+				}
+				$value = $checked['value'];
+			} elseif ( Enum_Field::is_enum( $field ) ) {
 				$checked = Enum_Field::sanitize( $value, $field );
 				if ( ! $checked['ok'] ) {
 					return new \WP_Error(

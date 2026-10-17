@@ -133,7 +133,7 @@ final class Config {
 	 * A value that cannot be used is recorded as a problem and not used.
 	 *
 	 * @param Config_Context       $context What to resolve.
-	 * @param array<string, mixed> $field   Field schema: `type` (checkbox, number, enum, select, or text-like) and, for
+	 * @param array<string, mixed> $field   Field schema: `type` (boolean, checkbox, number, enum, select, or text-like) and, for
 	 *                                      `enum` and `select`, `options` (and for `enum` `multiple`, `min` and `max`, see
 	 *                                      Enum_Field); for `number`, optional `min` and `max`.
 	 *
@@ -237,23 +237,9 @@ final class Config {
 		}
 
 		switch ( $type ) {
+			case 'boolean':
 			case 'checkbox':
-				if ( is_string( $raw ) ) {
-					$raw = strtolower( trim( $raw ) );
-				}
-				if ( in_array( $raw, array( true, 1, '1', 'true', 'yes', 'on' ), true ) ) {
-					return array(
-						'ok'    => true,
-						'value' => true,
-					);
-				}
-				if ( in_array( $raw, array( false, 0, '0', 'false', 'no', 'off', '' ), true ) ) {
-					return array(
-						'ok'    => true,
-						'value' => false,
-					);
-				}
-				return $bad;
+				return Boolean_Field::cast_external( $raw, $field );
 
 			case 'number':
 				if ( is_bool( $raw ) || ! is_numeric( $raw ) ) {
@@ -319,7 +305,7 @@ final class Config {
 			return false;
 		}
 
-		$cast = $this->cast( $value, array( 'type' => 'checkbox' ) );
+		$cast = $this->cast( $value, array( 'type' => 'boolean' ) );
 		if ( ! $cast['ok'] ) {
 			$this->add_problem( $key, ( new Env_Source() )->get_label( $key ), __( 'The value is not a recognised on or off value (1, true, yes, on, 0, false, no, off), so environment variables are not read.', 'wp-updates-notifier' ) );
 			return false;
