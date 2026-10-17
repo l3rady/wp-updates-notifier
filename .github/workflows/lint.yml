@@ -19,3 +19,5 @@ jobs:
         run: make lint
       - name: Check every hook is documented
         run: make check-hooks
+      - name: Check add-ons and modules use only the public API
+        run: make check-public-api
