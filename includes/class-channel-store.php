@@ -364,7 +364,7 @@ class Channel_Store {
 		$channel = $this->registry->get( $type );
 		$schemas = array();
 
-		foreach ( null === $channel ? array() : $channel->get_fields() as $name => $field ) {
+		foreach ( null === $channel ? array() : $channel->get_form_fields() as $name => $field ) {
 			$name = (string) $name;
 			if ( 'enabled' === $name || ! $this->is_valid_name( $name ) ) {
 				if ( ! isset( $this->warned[ $type . '|' . $name ] ) ) {

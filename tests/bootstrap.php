@@ -33,3 +33,4 @@ require_once __DIR__ . '/wp/class-wpun-test-case.php';
 require_once __DIR__ . '/wp/fixtures/class-test-channel.php';
 require_once __DIR__ . '/wp/fixtures/class-test-config-source.php';
 require_once __DIR__ . '/wp/fixtures/class-test-fields-channel.php';
+require_once __DIR__ . '/wp/fixtures/class-test-form-channel.php';
