@@ -9,13 +9,18 @@ namespace WPUN\Admin;
 
 use WPUN\Boolean_Field;
 use WPUN\Enum_Field;
+use WPUN\Field_Types;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Not loaded by WordPress.
 }
 
 /**
- * Draws form controls from field schemas. The enum and boolean types are drawn so far.
+ * Draws form controls from field schemas: the built-in types, and any type registered through the
+ * `sc_wpun_field_types` filter.
+ *
+ * A control with an error is marked `aria-invalid` (the select, text-like input or number, or the fieldset of a
+ * group of radio buttons or checkboxes) and linked to the error message by `aria-describedby`.
  *
  * @internal
  */
@@ -37,10 +42,11 @@ final class Field_Renderer {
 	 * @param string                  $described_by Id of the element that describes the field, if any.
 	 * @param array<int|string,mixed> $extra_options Choices shown before the field's own options, key => label, for example a saved
 	 *                                              value that is no longer offered. They do not change the default display.
+	 * @param string                  $error        Error message of the field, if any: the control is marked invalid.
 	 *
 	 * @return string
 	 */
-	public static function enum( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', array $extra_options = array() ): string {
+	public static function enum( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', array $extra_options = array(), string $error = '' ): string {
 		$field    = Enum_Field::normalise( $field );
 		$multiple = true === $field['multiple'];
 		$chosen   = array_map( 'strval', array_filter( is_array( $value ) ? $value : array( $value ), 'is_scalar' ) );
@@ -51,7 +57,7 @@ final class Field_Renderer {
 
 		$input_name = $multiple ? $name . '[]' : $name;
 		$disable    = $disabled ? ' disabled="disabled"' : '';
-		$describe   = '' !== $described_by ? ' aria-describedby="' . esc_attr( $described_by ) . '"' : '';
+		$describe   = ( '' !== $described_by ? ' aria-describedby="' . esc_attr( $described_by ) . '"' : '' ) . ( '' !== $error ? ' aria-invalid="true"' : '' );
 		$html       = '';
 
 		// Nothing chosen submits nothing at all, so a list says so with an empty value.
@@ -85,28 +91,215 @@ final class Field_Renderer {
 	}
 
 	/**
-	 * The markup of a field of type `enum`, `select`, `boolean` or `checkbox`, by its type.
+	 * The markup of a field, by its type.
 	 *
-	 * @param array<string, mixed>    $field        Field schema.
-	 * @param string                  $name         The `name` attribute of the input, without `[]`.
-	 * @param string                  $id           Base of the `id` attributes.
-	 * @param mixed                   $value        The current value.
-	 * @param bool                    $disabled     Whether the inputs are disabled.
-	 * @param string                  $described_by Id of the element that describes the field, if any.
+	 * The type is looked up among the registered field types (see the `sc_wpun_field_types` filter), `checkbox` and
+	 * `select` being aliases of `boolean` and `enum`. A type nothing handles draws nothing, with a notice to the
+	 * developer. With an error, the message follows the control in a paragraph linked to it by `aria-describedby`.
+	 *
+	 * @param array<string, mixed>    $field         Field schema.
+	 * @param string                  $name          The `name` attribute of the input, without `[]`.
+	 * @param string                  $id            Base of the `id` attributes.
+	 * @param mixed                   $value         The current value.
+	 * @param bool                    $disabled      Whether the inputs are disabled.
+	 * @param string                  $described_by  Id of the element that describes the field, if any.
 	 * @param array<int|string,mixed> $extra_options Extra choices for an enum, see enum().
+	 * @param string                  $error         Error message of the field, if any.
 	 *
-	 * @return string Empty for a type that is not drawn here.
+	 * @return string Empty for a type that nothing handles.
 	 */
-	public static function field( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', array $extra_options = array() ): string {
-		if ( Enum_Field::is_enum( $field ) ) {
-			return self::enum( $field, $name, $id, is_array( $value ) ? array_values( $value ) : ( is_scalar( $value ) ? (string) $value : '' ), $disabled, $described_by, $extra_options );
+	public static function field( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', array $extra_options = array(), string $error = '' ): string {
+		$handler = Field_Types::get( $field['type'] ?? null );
+		if ( null === $handler ) {
+			Field_Types::unknown( $field['type'] ?? null );
+
+			return '';
 		}
 
-		if ( Boolean_Field::is_boolean( $field ) ) {
-			return self::boolean( $field, $name, $id, $value, $disabled, $described_by );
+		$error_id = $id . '-error';
+		if ( '' !== $error ) {
+			$described_by = trim( $described_by . ' ' . $error_id );
 		}
 
-		return '';
+		if ( array( Field_Types::class, 'render_enum' ) === $handler['render'] ) {
+			$html = self::enum( $field, $name, $id, Field_Types::enum_value( $value ), $disabled, $described_by, $extra_options, $error );
+		} else {
+			$drawn = call_user_func( $handler['render'], $field, $name, $id, $value, $disabled, $described_by, $error );
+			$html  = is_scalar( $drawn ) ? (string) $drawn : '';
+		}
+
+		if ( '' !== $error ) {
+			$html .= '<p class="sc-wpun-field-error" id="' . esc_attr( $error_id ) . '">' . esc_html( $error ) . '</p>';
+		}
+
+		return $html;
+	}
+
+	/**
+	 * The markup of a single-line text field.
+	 *
+	 * @param array<string, mixed> $field        Field schema; `secret` set draws a secret.
+	 * @param string               $name         The `name` attribute.
+	 * @param string               $id           The `id` attribute.
+	 * @param mixed                $value        The current value.
+	 * @param bool                 $disabled     Whether the input is disabled.
+	 * @param string               $described_by Ids of the elements that describe the field, if any.
+	 * @param string               $error        Error message of the field, if any: the input is marked invalid.
+	 *
+	 * @return string
+	 */
+	public static function text( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string {
+		return self::input( 'text', 'regular-text', $field, $name, $id, $value, $disabled, $described_by, $error );
+	}
+
+	/**
+	 * The markup of a URL field.
+	 *
+	 * @param array<string, mixed> $field        Field schema; `secret` set draws a secret.
+	 * @param string               $name         The `name` attribute.
+	 * @param string               $id           The `id` attribute.
+	 * @param mixed                $value        The current value.
+	 * @param bool                 $disabled     Whether the input is disabled.
+	 * @param string               $described_by Ids of the elements that describe the field, if any.
+	 * @param string               $error        Error message of the field, if any: the input is marked invalid.
+	 *
+	 * @return string
+	 */
+	public static function url( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string {
+		return self::input( 'url', 'regular-text', $field, $name, $id, $value, $disabled, $described_by, $error );
+	}
+
+	/**
+	 * The markup of a field for a list of email addresses: a text input, as `type="email"` cannot hold several.
+	 *
+	 * @param array<string, mixed> $field        Field schema; `secret` set draws a secret.
+	 * @param string               $name         The `name` attribute.
+	 * @param string               $id           The `id` attribute.
+	 * @param mixed                $value        The current value.
+	 * @param bool                 $disabled     Whether the input is disabled.
+	 * @param string               $described_by Ids of the elements that describe the field, if any.
+	 * @param string               $error        Error message of the field, if any: the input is marked invalid.
+	 *
+	 * @return string
+	 */
+	public static function email_list( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string {
+		return self::input( 'text', 'regular-text', $field, $name, $id, $value, $disabled, $described_by, $error );
+	}
+
+	/**
+	 * The markup of a number field, with `min` and `max` attributes when the schema sets them.
+	 *
+	 * @param array<string, mixed> $field        Field schema.
+	 * @param string               $name         The `name` attribute.
+	 * @param string               $id           The `id` attribute.
+	 * @param mixed                $value        The current value.
+	 * @param bool                 $disabled     Whether the input is disabled.
+	 * @param string               $described_by Ids of the elements that describe the field, if any.
+	 * @param string               $error        Error message of the field, if any: the input is marked invalid.
+	 *
+	 * @return string
+	 */
+	public static function number( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string {
+		$extra = '';
+		foreach ( array( 'min', 'max' ) as $key ) {
+			$bound = Field_Types::bound( $field, $key );
+			if ( null !== $bound ) {
+				$extra .= ' ' . $key . '="' . $bound . '"';
+			}
+		}
+
+		return '<input type="number" class="small-text" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( is_scalar( $value ) ? (string) $value : '' ) . '"' . $extra . self::common( $disabled, $described_by, $error ) . ' />';
+	}
+
+	/**
+	 * The markup of a multi-line text field. A secret is drawn as a password input.
+	 *
+	 * @param array<string, mixed> $field        Field schema; `secret` set draws a secret.
+	 * @param string               $name         The `name` attribute.
+	 * @param string               $id           The `id` attribute.
+	 * @param mixed                $value        The current value.
+	 * @param bool                 $disabled     Whether the input is disabled.
+	 * @param string               $described_by Ids of the elements that describe the field, if any.
+	 * @param string               $error        Error message of the field, if any: the input is marked invalid.
+	 *
+	 * @return string
+	 */
+	public static function textarea( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string {
+		if ( Field_Types::is_secret( $field ) ) {
+			return self::secret( $field, $name, $id, $value, $disabled, $described_by, $error );
+		}
+
+		return '<textarea class="large-text" rows="5" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '"' . self::common( $disabled, $described_by, $error ) . '>'
+			. esc_textarea( is_scalar( $value ) ? (string) $value : '' ) . '</textarea>';
+	}
+
+	/**
+	 * The markup of a secret field.
+	 *
+	 * The saved value is never output: `$value` only tells whether one is saved. If so (and the field is not
+	 * disabled) a checkbox named `<name>__clear` lets the user empty it; an empty submission keeps it. For a name
+	 * like `opt[token]` the checkbox is named `opt[token__clear]`, so it arrives in the same array.
+	 *
+	 * @param array<string, mixed> $field        Field schema.
+	 * @param string               $name         The `name` attribute.
+	 * @param string               $id           The `id` attribute.
+	 * @param mixed                $value        The saved value.
+	 * @param bool                 $disabled     Whether the input is disabled.
+	 * @param string               $described_by Ids of the elements that describe the field, if any.
+	 * @param string               $error        Error message of the field, if any: the input is marked invalid.
+	 *
+	 * @return string
+	 */
+	public static function secret( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Same signature as the other types.
+		$saved = is_scalar( $value ) && '' !== (string) $value;
+		$hint  = $saved && ! $disabled ? ' placeholder="' . esc_attr__( 'A value is saved. Leave empty to keep it.', 'wp-updates-notifier' ) . '"' : '';
+		$html  = '<input type="password" class="regular-text" autocomplete="off" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value=""' . $hint . self::common( $disabled, $described_by, $error ) . ' />';
+
+		if ( $saved && ! $disabled ) {
+			$clear = ']' === substr( $name, -1 ) ? substr( $name, 0, -1 ) . '__clear]' : $name . '__clear';
+			$html .= '<br /><label for="' . esc_attr( $id . '__clear' ) . '"><input type="checkbox" id="' . esc_attr( $id . '__clear' ) . '" name="' . esc_attr( $clear ) . '" value="1" /> '
+				. esc_html__( 'Clear the saved value', 'wp-updates-notifier' ) . '</label>';
+		}
+
+		return $html;
+	}
+
+	/**
+	 * An `<input>` of a text-like type, or a secret when the schema asks for one.
+	 *
+	 * @param string               $type         The input type.
+	 * @param string               $class_name   CSS class.
+	 * @param array<string, mixed> $field        Field schema.
+	 * @param string               $name         The `name` attribute.
+	 * @param string               $id           The `id` attribute.
+	 * @param mixed                $value        The current value.
+	 * @param bool                 $disabled     Whether the input is disabled.
+	 * @param string               $described_by Ids of the elements that describe the field, if any.
+	 * @param string               $error        Error message of the field, if any.
+	 *
+	 * @return string
+	 */
+	private static function input( string $type, string $class_name, array $field, string $name, string $id, $value, bool $disabled, string $described_by, string $error ): string {
+		if ( Field_Types::is_secret( $field ) ) {
+			return self::secret( $field, $name, $id, $value, $disabled, $described_by, $error );
+		}
+
+		return '<input type="' . $type . '" class="' . $class_name . '" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( is_scalar( $value ) ? (string) $value : '' ) . '"' . self::common( $disabled, $described_by, $error ) . ' />';
+	}
+
+	/**
+	 * The attributes every control can have.
+	 *
+	 * @param bool   $disabled     Whether disabled.
+	 * @param string $described_by Ids of the elements that describe the field.
+	 * @param string $error        Error message, if any.
+	 *
+	 * @return string
+	 */
+	private static function common( bool $disabled, string $described_by, string $error ): string {
+		return ( $disabled ? ' disabled="disabled"' : '' )
+			. ( '' !== $described_by ? ' aria-describedby="' . esc_attr( $described_by ) . '"' : '' )
+			. ( '' !== $error ? ' aria-invalid="true"' : '' );
 	}
 
 	/**
@@ -122,14 +315,15 @@ final class Field_Renderer {
 	 * @param mixed                $value        The current value: on for true, 1 and '1'.
 	 * @param bool                 $disabled     Whether the inputs are disabled.
 	 * @param string               $described_by Id of the element that describes the field, if any.
+	 * @param string               $error        Error message of the field, if any: the control is marked invalid.
 	 *
 	 * @return string
 	 */
-	public static function boolean( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '' ): string {
+	public static function boolean( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string {
 		$field    = Boolean_Field::normalise( $field );
 		$on       = true === Boolean_Field::sanitize( $value, $field )['value'];
 		$disable  = $disabled ? ' disabled="disabled"' : '';
-		$describe = '' !== $described_by ? ' aria-describedby="' . esc_attr( $described_by ) . '"' : '';
+		$describe = ( '' !== $described_by ? ' aria-describedby="' . esc_attr( $described_by ) . '"' : '' ) . ( '' !== $error ? ' aria-invalid="true"' : '' );
 		$labels   = $field['labels'];
 
 		if ( 'checkbox' === $field['display'] ) {
