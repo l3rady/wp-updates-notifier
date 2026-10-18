@@ -268,7 +268,7 @@ class Settings_Page {
 			/**
 			 * Draws a tab of the settings screen.
 			 *
-			 * The dynamic part is the tab's slug. Add the tab with the `sc_wpun_settings_tabs` filter;
+			 * The dynamic part, `$tab`, is the tab's slug. Add the tab with the `sc_wpun_settings_tabs` filter;
 			 * it is listed only while something is hooked here. Output inside the screen's wrapper.
 			 *
 			 * @since 2.0.0
