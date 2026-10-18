@@ -6,11 +6,15 @@
  * Requires at least: 6.7
  * Requires PHP:      7.4
  * Requires Plugins:  wp-updates-notifier
+ * Requires WPUN API: ^1.0
  * License:           GPL-2.0-or-later
  * Text Domain:       wpun-example-channel
  *
  * This is an add-on: a separate plugin that extends WP Updates Notifier through its public API only. Everything
  * you need to know to write one is in this file and in class-example-channel.php.
+ *
+ * `Requires WPUN API` is the same constraint as REQUIRED_API below. WP Updates Notifier reads it to show a notice on the
+ * Plugins screen, before and after activation, when the installed plugin's API does not satisfy it.
  *
  * Loading this file only defines things and adds one hook. Everything else is wired from boot() on `plugins_loaded`,
  * by which time every active plugin, WP Updates Notifier included, has been loaded.
