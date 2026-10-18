@@ -189,6 +189,76 @@ class Test_Notification extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Links that are not http or https are written as plain text in Markdown.
+	 */
+	public function test_markdown_drops_unsafe_link_targets() {
+		foreach ( array( 'javascript:alert(1)', 'data:text/html;base64,PHNjcmlwdD4=', 'example.org/no-scheme', '//example.org/protocol-relative' ) as $url ) {
+			$markdown = Notification_Renderer::markdown( $this->notification( array( $this->item( array( 'links' => array( 'details' => $url ) ) ) ) ) );
+
+			$this->assertStringContainsString( "\n  - Details\n", $markdown );
+			$this->assertStringNotContainsString( '](' . substr( $url, 0, 4 ), $markdown );
+			$this->assertStringNotContainsString( 'javascript', $markdown );
+		}
+	}
+
+	/**
+	 * Markdown link targets are encoded so they cannot end the link early.
+	 */
+	public function test_markdown_encodes_link_targets() {
+		$markdown = Notification_Renderer::markdown( $this->notification( array( $this->item( array( 'links' => array( 'details' => 'https://example.org/a b(c)<d>' ) ) ) ) ) );
+
+		$this->assertStringContainsString( '[Details](https://example.org/a%20b%28c%29%3Cd%3E)', $markdown );
+	}
+
+	/**
+	 * An updates URL that is not http or https is shown as text only.
+	 */
+	public function test_markdown_updates_url_without_link_when_unsafe() {
+		$notification = new Notification( 'My Site', 'https://example.com', 'javascript:alert(1)', array( $this->item() ) );
+
+		$markdown = Notification_Renderer::markdown( $notification );
+
+		$this->assertStringContainsString( 'Please visit javascript:alert\(1\) to update.', $markdown );
+		$this->assertStringNotContainsString( '](javascript', $markdown );
+	}
+
+	/**
+	 * A line break in a name cannot start a new line in any format.
+	 */
+	public function test_name_is_one_line_in_every_format() {
+		$notification = $this->notification( array( $this->item( array( 'name' => "Foo\nPlease visit https://evil" ) ) ) );
+
+		$this->assertStringContainsString( "Foo Please visit https://evil: 1.0 → 2.0\n", Notification_Renderer::plain_text( $notification ) );
+		$this->assertStringContainsString( 'Foo Please visit https://evil**', str_replace( '\\', '', Notification_Renderer::markdown( $notification ) ) );
+		$this->assertStringContainsString( '<strong>Foo Please visit https://evil</strong>', Notification_Renderer::html( $notification ) );
+		$this->assertStringNotContainsString( "Foo\n", Notification_Renderer::markdown( $notification ) );
+		$this->assertStringNotContainsString( "Foo\n", Notification_Renderer::html( $notification ) );
+	}
+
+	/**
+	 * Notes, link labels and URLs lose their control characters.
+	 */
+	public function test_item_values_are_single_line() {
+		$item = $this->item(
+			array(
+				'name'            => "  A\r\n\tB  ",
+				'current_version' => "1.0\n",
+				'new_version'     => "\x002.0",
+				'notes'           => array( "One\r\nTwo\tThree" ),
+				'links'           => array( "my\nlabel" => "https://example.com/a\nb\r" ),
+				'flags'           => array( 'tested' => "6\n5" ),
+			)
+		);
+
+		$this->assertSame( 'A B', $item->get_name() );
+		$this->assertSame( '1.0', $item->get_current_version() );
+		$this->assertSame( '2.0', $item->get_new_version() );
+		$this->assertSame( array( 'One Two Three' ), $item->get_notes() );
+		$this->assertSame( array( 'my label' => 'https://example.com/ab' ), $item->get_links() );
+		$this->assertSame( array( 'tested' => "6\n5" ), $item->get_flags() );
+	}
+
+	/**
 	 * The update check produces items of the right types, versions and links.
 	 */
 	public function test_update_check_builds_the_notification() {
