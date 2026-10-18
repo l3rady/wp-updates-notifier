@@ -123,7 +123,9 @@ services:
         condition: service_healthy
     ports:
       # The same port inside, so the site URL works from inside the container too (loopback, REST, WP-Cron).
-      - "8080:8080"
+      # Published on loopback only: the site has debug output on and a fixed admin login, so it must not be
+      # reachable from the local network.
+      - "127.0.0.1:8080:8080"
     environment:
       WORDPRESS_DB_HOST: site-db
       WORDPRESS_DB_USER: root
@@ -191,7 +193,8 @@ services:
     profiles: [site]
     image: axllent/mailpit:latest
     ports:
-      - "8025:8025"
+      # Loopback only: Mailpit shows every captured email, password-reset links included.
+      - "127.0.0.1:8025:8025"
 
   # Echoes every request it receives (a stand-in for a Slack or other webhook):
   # http://webhook:8080 inside the network, `docker compose logs webhook` to read.
