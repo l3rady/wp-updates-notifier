@@ -974,3 +974,28 @@ do_action( 'sc_wpun_enable_cron', 'daily' );
 | `$frequency` | `string` | Optional. A frequency key from `sc_wpun_frequencies`, such as `daily`, or `manual`. Default is the saved frequency. |
 
 Handled in `includes/class-plugin.php`.
+
+### `sc_wpun_run_check`
+
+*Action*, since 2.0.0
+
+Runs the update check now.
+
+It works as a scheduled run does: same routing, per-instance dedupe, delivery state and
+hooks, so items an instance was already told about are not sent again. The notification
+source is `manual` and the schedule is not changed. Use it from a deploy script, or from
+a system cron when `DISABLE_WP_CRON` is set, for example
+`wp eval "do_action( 'sc_wpun_run_check' );"`.
+
+There is no lock: a run that overlaps another check, scheduled or manual, can send an
+update the other is also sending, so it may arrive twice. A channel that must never
+deliver twice can keep its own record of what it sent.
+
+```php
+do_action( 'sc_wpun_run_check' );
+```
+
+There is no capability check. Before firing it from anything a user can reach, check
+`current_user_can()` with the capability from the `sc_wpun_capability` filter.
+
+Handled in `includes/class-plugin.php`.

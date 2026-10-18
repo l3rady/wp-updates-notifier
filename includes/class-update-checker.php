@@ -78,15 +78,35 @@ class Update_Checker {
 	}
 
 	/**
-	 * This is run by the cron. The update check collects what is waiting for an update, then
-	 * delivers to each enabled channel instance the items it has not been told about yet.
-	 *
-	 * What was delivered is remembered per instance, so an instance that failed is tried again
-	 * on the next run without the others sending twice.
+	 * This is run by the cron.
 	 *
 	 * @return void
 	 */
 	public function do_update_check() {
+		$this->check( 'cron' );
+	}
+
+	/**
+	 * Runs the check now, for the `sc_wpun_run_check` action.
+	 *
+	 * @return void
+	 */
+	public function run_manual_check() {
+		$this->check( 'manual' );
+	}
+
+	/**
+	 * The update check collects what is waiting for an update, then delivers to each enabled
+	 * channel instance the items it has not been told about yet.
+	 *
+	 * What was delivered is remembered per instance, so an instance that failed is tried again
+	 * on the next run without the others sending twice.
+	 *
+	 * @param string $source What started the check, kept in the notification context.
+	 *
+	 * @return void
+	 */
+	private function check( string $source ) {
 		/**
 		 * Fires when an update check starts, before anything is looked up.
 		 *
@@ -165,7 +185,7 @@ class Update_Checker {
 		// The global veto comes after, so a vetoed item still counts as waiting.
 		$items = array_values( array_filter( $items, array( $this, 'should_notify' ) ) );
 
-		$notification = new Notification( get_bloginfo(), home_url(), admin_url( 'update-core.php' ), $items, array( 'source' => 'cron' ) );
+		$notification = new Notification( get_bloginfo(), home_url(), admin_url( 'update-core.php' ), $items, array( 'source' => $source ) );
 
 		/**
 		 * Filters the notification built by the update check, before any channel instance gets its share.
