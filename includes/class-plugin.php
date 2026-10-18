@@ -9,6 +9,7 @@ namespace WPUN;
 
 use WPUN\Admin\Channel_Form;
 use WPUN\Admin\Channels_Tab;
+use WPUN\Admin\Check_Now;
 use WPUN\Admin\Notices;
 use WPUN\Admin\Settings_Page;
 use WPUN\Admin\Plugin_Requirements;
@@ -109,6 +110,13 @@ class Plugin {
 	private $channels_tab = null;
 
 	/**
+	 * The Check now button.
+	 *
+	 * @var Check_Now|null
+	 */
+	private $check_now = null;
+
+	/**
 	 * The add and edit forms of a channel.
 	 *
 	 * @var Channel_Form|null
@@ -145,6 +153,17 @@ class Plugin {
 		$this->channels_tab ??= new Channels_Tab( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->channel_form() );
 
 		return $this->channels_tab;
+	}
+
+	/**
+	 * The Check now button, built on first use: front-end requests never need it.
+	 *
+	 * @return Check_Now
+	 */
+	public function check_now(): Check_Now {
+		$this->check_now ??= new Check_Now( $this->channel_store, $this->dispatcher, $this->notices(), $this->update_checker );
+
+		return $this->check_now;
 	}
 
 	/**
@@ -302,7 +321,7 @@ class Plugin {
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
-		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices() );
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now() );
 
 		return $this->settings_page;
 	}
@@ -491,6 +510,7 @@ class Plugin {
 		add_action( 'admin_post_' . Channels_Tab::TOGGLE_ACTION, array( $this->channels_tab(), 'handle_toggle' ) ); // Switch a channel on or off.
 		add_action( 'admin_post_' . Channels_Tab::DUPLICATE_ACTION, array( $this->channels_tab(), 'handle_duplicate' ) ); // Duplicate a channel.
 		add_action( 'admin_post_' . Channels_Tab::DELETE_ACTION, array( $this->channels_tab(), 'handle_delete' ) ); // Delete a channel.
+		add_action( 'admin_post_' . Check_Now::ACTION, array( $this->check_now(), 'handle' ) ); // Run the update check on demand.
 		add_action( 'admin_post_' . Channel_Form::SAVE_ACTION, array( $this->channel_form(), 'handle_save' ) ); // Add or edit a channel.
 	}
 
