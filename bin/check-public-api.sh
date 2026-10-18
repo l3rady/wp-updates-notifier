@@ -7,5 +7,5 @@ set -eu
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
-php bin/check-public-api.php modules examples tests/fixtures/plugins
+php bin/check-public-api.php modules examples tests/fixtures/plugins docker/dev-plugins
 sh tests/bin/test-check-public-api.sh
