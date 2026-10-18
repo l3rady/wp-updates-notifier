@@ -43,15 +43,35 @@ class Notifier {
 	}
 
 	/**
-	 * A setting of the email instance, as a string.
+	 * The email instance whose addresses the automatic update emails use: the `email` instance when it is an enabled
+	 * email channel, otherwise the first enabled email instance.
 	 *
-	 * @param string $id  Instance id.
+	 * @return Channel_Instance|null Null if no email instance is enabled.
+	 */
+	private function email_instance(): ?Channel_Instance {
+		$preferred = $this->channels->get( 'email' );
+		if ( null !== $preferred && 'email' === $preferred->get_type() && $preferred->is_enabled() ) {
+			return $preferred;
+		}
+
+		foreach ( $this->channels->all() as $instance ) {
+			if ( 'email' === $instance->get_type() && $instance->is_enabled() ) {
+				return $instance;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * A setting of the email instance from email_instance(), as a string.
+	 *
 	 * @param string $key Setting name.
 	 *
-	 * @return string Empty if there is no such instance or setting.
+	 * @return string Empty if no email instance is enabled or it has no such setting.
 	 */
-	private function instance_setting( string $id, string $key ): string {
-		$instance = $this->channels->get( $id );
+	private function instance_setting( string $key ): string {
+		$instance = $this->email_instance();
 		$value    = null === $instance ? null : $instance->get_setting( $key );
 
 		return is_scalar( $value ) ? (string) $value : '';
@@ -105,7 +125,7 @@ class Notifier {
 	 * @return string
 	 */
 	public function mail_from() {
-		return $this->instance_setting( 'email', 'from' );
+		return $this->instance_setting( 'from' );
 	}
 
 	/**
@@ -117,8 +137,8 @@ class Notifier {
 	 */
 	public function filter_auto_core_update_email( $email ) {
 		$options     = $this->settings->get(); // Get settings.
-		$notify_to   = $this->instance_setting( 'email', 'to' );
-		$notify_from = sanitize_email( $this->instance_setting( 'email', 'from' ) );
+		$notify_to   = $this->instance_setting( 'to' );
+		$notify_from = sanitize_email( $this->instance_setting( 'from' ) );
 
 		if ( true === $options['notify_automatic'] ) {
 			if ( ! empty( $notify_to ) ) { // If an email address has been set, override the WordPress default.
@@ -133,7 +153,7 @@ class Notifier {
 				}
 			}
 
-			$notify_reply_to = sanitize_email( $this->instance_setting( 'email', 'reply_to' ) );
+			$notify_reply_to = sanitize_email( $this->instance_setting( 'reply_to' ) );
 			if ( ! empty( $notify_reply_to ) ) {
 				$email['headers'] = $this->normalise_mail_headers( $email['headers'] ?? array() );
 
