@@ -112,6 +112,70 @@ final class Delivery_Result {
 	}
 
 	/**
+	 * Seconds to wait, read from the Retry-After header of an HTTP response.
+	 *
+	 * Understands both forms of RFC 9110: a number of seconds, or an HTTP date. Returns null if there is no
+	 * header, it is not understood, or the wait is already over. It does not cap the wait; the plugin caps the
+	 * time it defers an instance at 7 days when it stores it.
+	 *
+	 *     if ( 429 === $status ) {
+	 *         return Delivery_Result::failure(
+	 *             'Rate limited.',
+	 *             'rate_limited',
+	 *             429,
+	 *             Delivery_Result::retry_after_from_response( $response )
+	 *         );
+	 *     }
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array<string, mixed>|\WP_Error|mixed $response What wp_remote_request() and friends returned.
+	 *
+	 * @return int|null
+	 */
+	public static function retry_after_from_response( $response ): ?int {
+		if ( ! is_array( $response ) ) {
+			return null;
+		}
+
+		$value = wp_remote_retrieve_header( $response, 'retry-after' );
+		if ( is_array( $value ) ) {
+			$value = reset( $value ); // The header was sent more than once: use the first.
+		}
+		if ( ! is_string( $value ) ) {
+			return null;
+		}
+
+		$value = trim( $value );
+		if ( '' !== $value && ctype_digit( $value ) ) {
+			$seconds = strlen( $value ) > 9 ? 999999999 : (int) $value; // Far beyond any cap, and no overflow.
+
+			return $seconds > 0 ? $seconds : null;
+		}
+
+		// IMF-fixdate, RFC 850 and asctime. The day name is matched but not parsed: PHP reads it as "next <day>"
+		// and would move a date whose day name is wrong.
+		$formats = array(
+			'/^[A-Z][a-z]{2}, (\d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2}) GMT$/' => 'd M Y H:i:s',
+			'/^[A-Z][a-z]+day, (\d{2}-[A-Z][a-z]{2}-\d{2} \d{2}:\d{2}:\d{2}) GMT$/' => 'd-M-y H:i:s',
+			'/^[A-Z][a-z]{2} ([A-Z][a-z]{2} +\d{1,2} \d{2}:\d{2}:\d{2} \d{4})$/'    => 'M j H:i:s Y',
+		);
+		foreach ( $formats as $pattern => $format ) {
+			if ( ! preg_match( $pattern, $value, $matches ) ) {
+				continue;
+			}
+			$date = \DateTimeImmutable::createFromFormat( '!' . $format, (string) preg_replace( '/ +/', ' ', $matches[1] ), new \DateTimeZone( 'UTC' ) );
+			if ( false !== $date && 0 === ( \DateTimeImmutable::getLastErrors()['warning_count'] ?? 0 ) ) {
+				$seconds = $date->getTimestamp() - time();
+
+				return $seconds > 0 ? $seconds : null;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Whether delivery worked.
 	 *
 	 * @since 2.0.0

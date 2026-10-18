@@ -214,6 +214,9 @@ class Update_Checker {
 			if ( ! $instance->is_enabled() ) {
 				continue; // Switched off: nothing is sent or recorded, and a pending skip waits.
 			}
+			if ( ( $channels[ $id ]['retry_at'] ?? 0 ) > time() ) {
+				continue; // Told to wait (Retry-After): nothing is sent or recorded, its items go out on the first check after, and a pending skip waits.
+			}
 			$entry = $channels[ $id ] ?? array(
 				'notified'     => array(),
 				'skip_pending' => false,
@@ -245,12 +248,15 @@ class Update_Checker {
 			$channels[ $id ] = $entry;
 		}
 
-		// Sending saved each instance's last result in the stored state, which the copy read at the start lacks.
+		// Sending saved each instance's last result and retry time in the stored state, which the copy read at the start lacks.
 		$fresh = $this->state->get()['channels'];
 		foreach ( $channels as $id => $entry ) {
-			unset( $channels[ $id ]['last_result'] );
+			unset( $channels[ $id ]['last_result'], $channels[ $id ]['retry_at'] );
 			if ( isset( $fresh[ $id ]['last_result'] ) ) {
 				$channels[ $id ]['last_result'] = $fresh[ $id ]['last_result'];
+			}
+			if ( isset( $fresh[ $id ]['retry_at'] ) ) {
+				$channels[ $id ]['retry_at'] = $fresh[ $id ]['retry_at'];
 			}
 		}
 

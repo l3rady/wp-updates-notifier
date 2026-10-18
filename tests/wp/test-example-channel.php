@@ -368,10 +368,21 @@ class Test_Example_Channel extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A 429 with a Retry-After date in the future has the seconds until then.
+	 */
+	public function test_rate_limiting_with_a_future_date() {
+		$this->webhook_answers( 429, array( 'retry-after' => gmdate( 'D, d M Y H:i:s \G\M\T', time() + 120 ) ) );
+
+		$result = sc_wpun()->dispatcher()->send_one( $this->notification(), $this->instance() );
+
+		$this->assertEqualsWithDelta( 120, $result->get_retry_after(), 2 );
+	}
+
+	/**
 	 * A 429 without a usable Retry-After has none.
 	 */
 	public function test_rate_limiting_without_a_usable_header() {
-		foreach ( array( array(), array( 'retry-after' => 'Wed, 21 Oct 2026 07:28:00 GMT' ) ) as $headers ) {
+		foreach ( array( array(), array( 'retry-after' => gmdate( 'D, d M Y H:i:s \G\M\T', time() - 3600 ) ) ) as $headers ) {
 			$this->reset_http();
 			$this->webhook_answers( 429, $headers );
 
@@ -383,7 +394,7 @@ class Test_Example_Channel extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A failed delivery is retried by the next update check; a successful one is not repeated.
+	 * A rate limited delivery is retried by the first update check after the wait; a successful one is not repeated.
 	 */
 	public function test_failed_updates_are_retried_on_the_next_run() {
 		$this->instance();
@@ -398,6 +409,13 @@ class Test_Example_Channel extends WPUN_Test_Case {
 
 		$this->reset_http();
 		$this->webhook_answers( 200 );
+		sc_wpun()->update_checker()->do_update_check();
+
+		$this->assertCount( 0, $this->requests_to( 'chat.example.org' ), 'Not tried while the service asked to wait.' );
+
+		$state                                      = get_option( 'sc_wpun_state' );
+		$state['channels']['example_1']['retry_at'] = time() - 1;
+		update_option( 'sc_wpun_state', $state, false );
 		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertCount( 1, $this->requests_to( 'chat.example.org' ), 'Tried again.' );

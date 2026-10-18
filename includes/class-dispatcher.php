@@ -303,6 +303,8 @@ class Dispatcher {
 				 * Also fires for an instance that is switched off or whose channel is not available,
 				 * when a delivery to it was asked for.
 				 *
+				 * A result with a `retry_after` defers the instance: update checks skip it until then (at most 7 days).
+				 *
 				 * @since 2.0.0
 				 *
 				 * @param Delivery_Result  $result       The result, with the reason in its code and message.

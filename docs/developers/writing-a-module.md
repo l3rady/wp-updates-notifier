@@ -196,21 +196,20 @@ return Delivery_Result::success();
 
 ### Rate limits and retries
 
-When the service answers HTTP 429, return a failure with the status and the seconds from the `Retry-After` header:
+When the service answers HTTP 429, return a failure with the status and the wait from the `Retry-After` header. `Delivery_Result::retry_after_from_response( $response )` reads it, as seconds or as an HTTP date, and gives null if there is none or it is not usable:
 
 ```php
 if ( 429 === $status ) {
-	$wait = wp_remote_retrieve_header( $response, 'retry-after' );
 	return Delivery_Result::failure(
 		__( 'The webhook is limiting requests.', 'my-chat-channel' ),
 		'rate_limited',
 		429,
-		is_string( $wait ) && ctype_digit( $wait ) ? (int) $wait : null
+		Delivery_Result::retry_after_from_response( $response )
 	);
 }
 ```
 
-As with any failure, the items are retried on the next scheduled check, which is at least an hour away. In API 1.0.0 the plugin keeps `retry_after` with the result but does not schedule anything from it. Don't retry inside `send()`, and don't sleep.
+A failure with a `retry_after` defers the instance: update checks skip it until that long after the failure, and its items stay unsent and go out on the first check after. Other instances are not affected, and nothing extra is scheduled. The plugin caps the wait at 7 days. A test send ignores the deferral and does not set it, and a later success, or a failure without `retry_after`, clears it. Without a `retry_after`, the items are retried on the next scheduled check, which is at least an hour away. Don't retry inside `send()`, and don't sleep.
 
 ### Length limits
 
