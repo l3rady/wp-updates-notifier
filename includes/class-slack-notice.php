@@ -197,10 +197,10 @@ class Slack_Notice {
 	 * @return bool False if the user may not manage options or the nonce is not valid.
 	 */
 	public function dismiss_request(): bool {
-		if ( ! current_user_can( Settings_Page::capability() ) || ! isset( $_REQUEST['_wpnonce'] ) ) {
+		if ( ! current_user_can( Settings_Page::capability() ) || ! isset( $_GET['_wpnonce'] ) || ! is_string( $_GET['_wpnonce'] ) ) {
 			return false;
 		}
-		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_REQUEST['_wpnonce'] ) ), self::DISMISS_ACTION ) ) {
+		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_GET['_wpnonce'] ) ), self::DISMISS_ACTION ) ) {
 			return false;
 		}
 

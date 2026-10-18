@@ -29,6 +29,7 @@
 /examples
 /node_modules
 /.gitleaks.toml
+/.semgrep
 /phpcs.xml.dist
 /phpstan-baseline.neon
 /phpstan.neon.dist
