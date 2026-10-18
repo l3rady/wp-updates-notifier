@@ -10,6 +10,7 @@ parameters:
         - includes
         - modules
         - examples
+        - docker/dev-plugins
         - uninstall.php
         - tests/fixtures/plugins
     scanFiles:
