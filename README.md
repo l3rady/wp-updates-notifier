@@ -52,7 +52,7 @@ make stan                        # PHPStan level 8 with the WordPress stubs
 make rector                      # PHP 7.4 syntax upgrades still to do (none expected)
 make commits                     # check the commit messages on this branch (Conventional Commits)
 make shell                       # shell in the PHP container
-make up                          # local site: http://localhost:8080, mail in Mailpit on :8025
+make up                          # local site: http://localhost:8080, mail in Mailpit on :8025 (see Local site)
 make down
 ```
 
@@ -80,10 +80,21 @@ make test-wp WP_VERSION=6.7.9 PHP_VERSION=7.4   # pick versions (WP_VERSION is a
 
 The suite runs on WordPress's own test library with a real database, no real network (every HTTP request must be faked or the test fails) and no real mail. Tests for a bug that is still open carry `@group known-bug`, assert the *correct* behaviour, and are excluded from the normal run; the fix removes the tag.
 
-`make up` starts WordPress with the plugin mounted, [Mailpit](https://mailpit.axllent.org/) (catches all outgoing mail) and an echo server standing in for a webhook. Use WP-CLI with `docker compose run --rm wp-cli <command>`.
+### Local site
 
+```sh
+make up                          # start the site and set it up: http://localhost:8080 (admin / admin)
+make site-setup                  # set it up again (make up runs it; safe to repeat)
+make wp ARGS="plugin list"       # WP-CLI on the site
+make site-log                    # follow wp-content/debug.log
+make down                        # stop it; make clean also deletes its data
+```
+
+`make up` starts WordPress with the plugin mounted, [Mailpit](https://mailpit.axllent.org/) (catches all outgoing mail) and an echo server standing in for a webhook. Then `make site-setup` (`docker/site-setup.sh`) installs WordPress if the site is new, sets the constants below in `wp-config.php` and installs the debugging plugins. It is safe to run again, and it works on an existing site as well as a fresh one.
+
+- **Debugging:** `WP_DEBUG`, `WP_DEBUG_LOG`, `WP_DEBUG_DISPLAY`, `SCRIPT_DEBUG`, `SAVEQUERIES` and `WP_DEVELOPMENT_MODE` (`plugin`) are on, and `WP_ENVIRONMENT_TYPE` is `local`, for the web server and WP-CLI alike. PHP notices show on the page and go to `wp-content/debug.log` (`make site-log`). [Query Monitor](https://wordpress.org/plugins/query-monitor/) (PHP errors, hooks, HTTP API calls, queries, `doing_it_wrong` notices), [Debug Bar](https://wordpress.org/plugins/debug-bar/) and [WP Crontrol](https://wordpress.org/plugins/wp-crontrol/) (view and run `sc_wpun_update_check`) are active. They cost a little: `SCRIPT_DEBUG` turns off script concatenation (an admin page loads about 120 separate scripts and styles), and `SAVEQUERIES` and Query Monitor add 10–25 ms to every page.
 - The example add-on (`examples/wpun-example-channel/`) is mounted too: activate "WP Updates Notifier Example Channel" on the Plugins screen.
 - Channels can post to the echo server at `http://webhook:8080/<any path>`. Read what it received with `docker compose logs webhook`.
-- WP-Cron runs by itself on page loads. WP-CLI calls don't spawn it; run due events with `docker compose run --rm wp-cli cron event run --due-now`.
+- WP-Cron runs by itself on page loads. WP-CLI calls don't spawn it; run due events with `make wp ARGS="cron event run --due-now"`.
 
 All of this is set up by files in `docker/`, which never reach the plugin zip.
