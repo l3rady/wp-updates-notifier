@@ -219,7 +219,7 @@ class Channels_Tab {
 			</thead>
 			<tbody>
 				<?php foreach ( $instances as $id => $instance ) : ?>
-					<?php $this->render_row( $instance, $channels[ $id ]['last_result'] ?? null ); ?>
+					<?php $this->render_row( $instance, $channels[ $id ]['last_result'] ?? null, $channels[ $id ]['retry_at'] ?? null ); ?>
 				<?php endforeach; ?>
 			</tbody>
 		</table>
@@ -231,10 +231,11 @@ class Channels_Tab {
 	 *
 	 * @param Channel_Instance                                      $instance    The instance.
 	 * @param array{success: bool, message: string, time: int}|null $last_result Its last delivery, if any.
+	 * @param int|null                                              $retry_at    When it may be tried again, if it was asked to wait.
 	 *
 	 * @return void
 	 */
-	private function render_row( Channel_Instance $instance, ?array $last_result ): void {
+	private function render_row( Channel_Instance $instance, ?array $last_result, ?int $retry_at = null ): void {
 		$id           = $instance->get_id();
 		$label        = $instance->get_label();
 		$channel      = $this->registry->get( $instance->get_type() );
@@ -290,7 +291,7 @@ class Channels_Tab {
 				?>
 			</td>
 			<td class="sc-wpun-channel-routing"><?php echo esc_html( self::routing_summary( $instance->get_routing() ) ); ?></td>
-			<td class="sc-wpun-channel-last"><?php echo esc_html( self::last_delivery_text( $last_result ) ); ?></td>
+			<td class="sc-wpun-channel-last"><?php echo esc_html( self::last_delivery_text( $last_result, $retry_at ) ); ?></td>
 		</tr>
 		<?php
 	}
@@ -390,10 +391,11 @@ class Channels_Tab {
 	 * @internal
 	 *
 	 * @param array{success: bool, message: string, time: int}|null $last_result The stored result.
+	 * @param int|null                                              $retry_at    When the instance may be tried again, if it was asked to wait.
 	 *
 	 * @return string
 	 */
-	public static function last_delivery_text( ?array $last_result ): string {
+	public static function last_delivery_text( ?array $last_result, ?int $retry_at = null ): string {
 		if ( null === $last_result ) {
 			return __( 'Never', 'wp-updates-notifier' );
 		}
@@ -405,7 +407,13 @@ class Channels_Tab {
 		}
 
 		// translators: 1: Date and time of the delivery. 2: Why it failed.
-		return sprintf( __( 'Failed %1$s: %2$s', 'wp-updates-notifier' ), $time, $last_result['message'] );
+		$text = sprintf( __( 'Failed %1$s: %2$s', 'wp-updates-notifier' ), $time, $last_result['message'] );
+		if ( null !== $retry_at && $retry_at > time() ) {
+			// translators: %s: Date and time the channel will be tried again.
+			$text .= ' ' . sprintf( __( 'Rate limited, next try after %s', 'wp-updates-notifier' ), Settings_Page::format_site_time( $retry_at ) );
+		}
+
+		return $text;
 	}
 
 	/**
