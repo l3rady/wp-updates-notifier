@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return void
  */
 function boot(): void {
-	if ( ! function_exists( 'sc_wpun_api_supports' ) || ! \sc_wpun_api_supports( '1.0.0' ) ) {
+	if ( ! function_exists( 'sc_wpun_api_satisfies' ) || ! \sc_wpun_api_satisfies( '^1.0' ) ) {
 		add_action(
 			'admin_notices',
 			static function () {

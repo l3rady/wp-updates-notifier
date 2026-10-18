@@ -27,24 +27,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * The version of the WP Updates Notifier extension API this add-on was written for.
+ * The versions of the WP Updates Notifier extension API this add-on works with, as a constraint.
  *
- * It is the API version (sc_wpun_api_version()), not the plugin version: it only changes when the API does, and a
- * new minor version only ever adds to the API. Ask for the oldest version that has everything you use.
+ * It matches the API version (sc_wpun_api_version()), not the plugin version: it only changes when the API does, and a
+ * new minor version only ever adds to the API. `^1.0` means any 1.x from 1.0 on. Ask for the oldest version that has
+ * everything you use. Composer's syntax applies, so `>=1.0 <3.0` or `^1.0 || ^2.0` work too.
  */
-const REQUIRED_API = '1.0.0';
+const REQUIRED_API = '^1.0';
 
 /**
  * Whether the installed WP Updates Notifier offers the API this add-on was written for.
  *
  * `Requires Plugins` in the header makes WordPress 6.5 and later refuse to activate this plugin without
- * WP Updates Notifier. It does not check the version, so this does: sc_wpun_api_supports() is true when the
- * installed API has the same major version as REQUIRED_API and is at least as new.
+ * WP Updates Notifier. It does not check the version, so this does: sc_wpun_api_satisfies() is true when the
+ * installed API version matches REQUIRED_API.
  *
  * @return bool
  */
 function api_is_supported(): bool {
-	return function_exists( 'sc_wpun_api_supports' ) && \sc_wpun_api_supports( REQUIRED_API );
+	return function_exists( 'sc_wpun_api_satisfies' ) && \sc_wpun_api_satisfies( REQUIRED_API );
 }
 
 /**
