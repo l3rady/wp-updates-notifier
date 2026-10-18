@@ -47,4 +47,28 @@ install_plugin query-monitor
 install_plugin debug-bar
 install_plugin wp-crontrol
 
+# Persistent object cache (#177): Redis Object Cache with phpredis, talking to the valkey service. The prefix keeps
+# this site's keys apart, so another local site can share the same Valkey. OBJECT_CACHE=off removes the drop-in.
+wp config set WP_REDIS_HOST valkey --type=constant --quiet
+wp config set WP_REDIS_PORT 6379 --raw --type=constant --quiet
+wp config set WP_REDIS_PREFIX wpun-single: --type=constant --quiet
+wp config set WP_REDIS_CLIENT phpredis --type=constant --quiet
+install_plugin redis-cache
+if [ "${OBJECT_CACHE:-on}" = off ]; then
+	if [ -f wp-content/object-cache.php ]; then
+		wp redis disable --quiet
+	fi
+	echo 'Persistent object cache: off'
+else
+	# update-dropin writes the drop-in whether or not one is there, and keeps it current after a plugin update.
+	was_on=no
+	[ -f wp-content/object-cache.php ] && was_on=yes
+	wp redis update-dropin --quiet
+	if [ "$was_on" = no ]; then
+		# Valkey still holds what it cached before the cache was switched off, and the database has changed since.
+		wp cache flush --quiet
+	fi
+	echo 'Persistent object cache: on (Valkey)'
+fi
+
 echo "Local site ready: $SITE_URL (admin / admin), mail in Mailpit on http://localhost:8025"
