@@ -54,7 +54,7 @@ defined( 'SC_WPUN_FILE' ) || define( 'SC_WPUN_FILE', __FILE__ );
 /*
  * Version of the public API (channels, routing, hooks), separate from the plugin version.
  * Semver: a minor release adds API, a major release removes or changes some. Add-ons check
- * it with sc_wpun_api_supports().
+ * it with sc_wpun_api_satisfies().
  */
 defined( 'SC_WPUN_API_VERSION' ) || define( 'SC_WPUN_API_VERSION', '1.0.0' );
 
@@ -499,7 +499,7 @@ if ( ! function_exists( 'sc_wpun_api_version' ) ) {
 	 * The version of the public API, for add-ons to check what they can use.
 	 *
 	 * Semver, separate from the plugin version: a minor version adds API, a major version
-	 * removes or changes some. Most add-ons want sc_wpun_api_supports() instead.
+	 * removes or changes some. Most add-ons want sc_wpun_api_satisfies() instead.
 	 *
 	 * @since 2.0.0
 	 *
@@ -510,24 +510,56 @@ if ( ! function_exists( 'sc_wpun_api_version' ) ) {
 	}
 }
 
-if ( ! function_exists( 'sc_wpun_api_supports' ) ) {
+if ( ! function_exists( 'sc_wpun_api_satisfies' ) ) {
 	/**
-	 * Whether the installed plugin offers the API version an add-on was written for.
+	 * Whether the installed plugin's API version satisfies a version constraint.
 	 *
-	 * True when the API has the same major version and is at least as new: an add-on written
-	 * for 1.2.0 works with 1.2.0 and 1.5.0, but not with 1.1.0 or 2.0.0.
-	 *
-	 * Check it before using the API, and show an admin notice instead of failing when it is
-	 * false. Declare `Requires Plugins: wp-updates-notifier` in the add-on's header too, so
-	 * WordPress makes sure the plugin is active:
+	 * Constraints use Composer's syntax. Check one before using the API, and show an admin
+	 * notice instead of failing when it is false. Declare `Requires Plugins: wp-updates-notifier`
+	 * in the add-on's header too, so WordPress makes sure the plugin is active:
 	 *
 	 *     add_action( 'plugins_loaded', function () {
-	 *         if ( ! function_exists( 'sc_wpun_api_supports' ) || ! sc_wpun_api_supports( '1.0.0' ) ) {
+	 *         if ( ! function_exists( 'sc_wpun_api_satisfies' ) || ! sc_wpun_api_satisfies( '^1.0' ) ) {
 	 *             add_action( 'admin_notices', 'my_addon_needs_newer_updates_notifier' );
 	 *             return;
 	 *         }
 	 *         add_action( 'sc_wpun_register_channels', 'my_addon_register_channel' );
 	 *     } );
+	 *
+	 * | Constraint                                  | Meaning                  |
+	 * | ------------------------------------------- | ------------------------ |
+	 * | `1.2.0`, `=1.2.0`                           | exactly                  |
+	 * | `>=1.0`, `>1.0`, `<2.0`, `<=1.4`, `!=1.3.0` | comparison               |
+	 * | `^1.2`                                      | `>=1.2.0 <2.0.0`         |
+	 * | `~1.2`                                      | `>=1.2.0 <2.0.0`         |
+	 * | `~1.2.3`                                    | `>=1.2.3 <1.3.0`         |
+	 * | `1.2.*`                                     | `>=1.2.0 <1.3.0`         |
+	 * | `>=1.0 <1.4`, `>=1.0, <1.4`                 | both (AND)               |
+	 * | `^1.0 || ^2.0`                              | either (OR)              |
+	 *
+	 * Missing minor and patch parts count as 0, and pre-release suffixes are not supported.
+	 * An invalid constraint returns false and triggers `_doing_it_wrong()`. See
+	 * WPUN\Version_Constraint for the details.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $constraint The API versions the add-on works with, for example "^1.0".
+	 *
+	 * @return bool
+	 */
+	function sc_wpun_api_satisfies( string $constraint ): bool {
+		return \WPUN\Version_Constraint::satisfies( sc_wpun_api_version(), $constraint );
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_api_supports' ) ) {
+	/**
+	 * Whether the installed plugin offers the API version an add-on was written for.
+	 *
+	 * The `^` shorthand of sc_wpun_api_satisfies(), which is the one to prefer: this is the same
+	 * as `sc_wpun_api_satisfies( '^' . $required )`. True when the API has the same major
+	 * version and is at least as new: an add-on written for 1.2.0 works with 1.2.0 and 1.5.0,
+	 * but not with 1.1.0 or 2.0.0. Anything but a full "X.Y.Z" version returns false.
 	 *
 	 * @since 2.0.0
 	 *
@@ -536,11 +568,8 @@ if ( ! function_exists( 'sc_wpun_api_supports' ) ) {
 	 * @return bool
 	 */
 	function sc_wpun_api_supports( string $required ): bool {
-		$available = sc_wpun_api_version();
-
 		return 1 === preg_match( '/^\d+\.\d+\.\d+$/D', $required )
-			&& strtok( $required, '.' ) === strtok( $available, '.' )
-			&& version_compare( $available, $required, '>=' );
+			&& \WPUN\Version_Constraint::satisfies( sc_wpun_api_version(), '^' . $required );
 	}
 }
 // phpcs:enable Universal.Files.SeparateFunctionsFromOO.Mixed
