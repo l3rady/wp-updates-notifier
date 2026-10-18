@@ -147,11 +147,15 @@ class Test_Settings_Markup extends WPUN_Test_Case {
 	public function test_the_channels_tab_buttons_are_named() {
 		$xpath = $this->page( 'channels' );
 
-		$buttons = $xpath->query( '//table//button' );
+		$buttons = $xpath->query( '//table//form//button' );
 		$this->assertGreaterThan( 2, $buttons->length );
 		foreach ( $buttons as $button ) {
 			$this->assertSame( 'submit', $button->getAttribute( 'type' ) );
 			$this->assertStringContainsString( 'Email', $button->getAttribute( 'aria-label' ) );
+		}
+		foreach ( $xpath->query( '//table//button[@class="toggle-row"]' ) as $toggle ) {
+			$this->assertSame( 'button', $toggle->getAttribute( 'type' ) );
+			$this->assertNotSame( '', trim( $toggle->textContent ), 'Named by its screen reader text.' );
 		}
 		$this->assertStringContainsString( 'Email', $xpath->query( '//a[contains(@class,"sc-wpun-delete")]' )->item( 0 )->getAttribute( 'aria-label' ) );
 		$this->assertSame( 5, $xpath->query( '//table/thead//th[@scope="col"]' )->length );

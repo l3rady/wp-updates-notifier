@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Not loaded by WordPress.
 }
 
+use WPUN\Channel;
 use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
 use WPUN\Channel_Store;
@@ -229,15 +230,15 @@ class Channels_Tab {
 
 		$channels = $this->state->get()['channels'];
 		?>
-		<table class="widefat striped sc-wpun-channels">
+		<table class="wp-list-table widefat fixed striped table-view-list sc-wpun-channels">
 			<caption class="screen-reader-text"><?php esc_html_e( 'Channels', 'wp-updates-notifier' ); ?></caption>
 			<thead>
 				<tr>
-					<th scope="col"><?php esc_html_e( 'Label', 'wp-updates-notifier' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Module', 'wp-updates-notifier' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Enabled', 'wp-updates-notifier' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Routing', 'wp-updates-notifier' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Last delivery', 'wp-updates-notifier' ); ?></th>
+					<th scope="col" class="manage-column column-primary"><?php esc_html_e( 'Label', 'wp-updates-notifier' ); ?></th>
+					<th scope="col" class="manage-column"><?php esc_html_e( 'Module', 'wp-updates-notifier' ); ?></th>
+					<th scope="col" class="manage-column"><?php esc_html_e( 'Enabled', 'wp-updates-notifier' ); ?></th>
+					<th scope="col" class="manage-column"><?php esc_html_e( 'Routing', 'wp-updates-notifier' ); ?></th>
+					<th scope="col" class="manage-column"><?php esc_html_e( 'Last delivery', 'wp-updates-notifier' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -311,81 +312,109 @@ class Channels_Tab {
 		$external     = $this->store->external_source( $id, 'enabled' );
 		?>
 		<tr class="sc-wpun-channel" data-id="<?php echo esc_attr( $id ); ?>">
-			<th scope="row" class="sc-wpun-channel-label">
+			<th scope="row" class="column-primary has-row-actions sc-wpun-channel-label">
 				<strong><?php echo esc_html( $label ); ?></strong>
 				<?php if ( $code_defined ) : ?>
 					<span class="sc-wpun-code-defined description"><?php esc_html_e( 'Defined in code', 'wp-updates-notifier' ); ?></span>
 				<?php endif; ?>
-				<div class="sc-wpun-row-actions">
-					<?php
-					if ( null !== $channel && $channel->supports( 'test_message' ) ) {
-						// translators: %s: Label of the channel.
-						$this->action_form( self::TEST_ACTION, $id, __( 'Send test', 'wp-updates-notifier' ), sprintf( __( 'Send test to %s', 'wp-updates-notifier' ), $label ) );
-					}
-					if ( ! $code_defined ) {
-						// translators: %s: Label of the channel.
-						$edit_name = sprintf( __( 'Edit %s', 'wp-updates-notifier' ), $label );
-						?>
-						<a class="sc-wpun-edit" href="<?php echo esc_url( $this->tab_url( array( 'action' => 'edit', 'id' => $id ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound ?>" aria-label="<?php echo esc_attr( $edit_name ); ?>"><?php esc_html_e( 'Edit', 'wp-updates-notifier' ); ?></a>
-						<?php
-						// translators: %s: Label of the channel.
-						$this->action_form( self::DUPLICATE_ACTION, $id, __( 'Duplicate', 'wp-updates-notifier' ), sprintf( __( 'Duplicate %s', 'wp-updates-notifier' ), $label ) );
-						// translators: %s: Label of the channel.
-						$delete_name = sprintf( __( 'Delete %s', 'wp-updates-notifier' ), $label );
-						?>
-						<a class="sc-wpun-delete" href="<?php echo esc_url( $this->tab_url( array( 'action' => 'delete', 'id' => $id ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound ?>" aria-label="<?php echo esc_attr( $delete_name ); ?>"><?php esc_html_e( 'Delete', 'wp-updates-notifier' ); ?></a>
-						<?php
-					}
-					?>
-				</div>
+				<?php $this->render_row_actions( $instance, $channel, $code_defined, null !== $external ); ?>
+				<button type="button" class="toggle-row"><span class="screen-reader-text"><?php esc_html_e( 'Show more details', 'wp-updates-notifier' ); ?></span></button>
 			</th>
-			<td class="sc-wpun-channel-module"><?php echo esc_html( null === $channel ? $instance->get_type() : $channel->get_label() ); ?></td>
-			<td class="sc-wpun-channel-enabled">
+			<td class="sc-wpun-channel-module" data-colname="<?php esc_attr_e( 'Module', 'wp-updates-notifier' ); ?>"><?php echo esc_html( null === $channel ? $instance->get_type() : $channel->get_label() ); ?></td>
+			<td class="sc-wpun-channel-enabled" data-colname="<?php esc_attr_e( 'Enabled', 'wp-updates-notifier' ); ?>">
 				<span class="sc-wpun-state"><?php echo esc_html( $instance->is_enabled() ? __( 'On', 'wp-updates-notifier' ) : __( 'Off', 'wp-updates-notifier' ) ); ?></span>
 				<?php
-				if ( ! $code_defined ) {
-					if ( $instance->is_enabled() ) {
-						// translators: %s: Label of the channel.
-						$this->action_form( self::TOGGLE_ACTION, $id, __( 'Disable', 'wp-updates-notifier' ), sprintf( __( 'Disable %s', 'wp-updates-notifier' ), $label ), null !== $external );
-					} else {
-						// translators: %s: Label of the channel.
-						$this->action_form( self::TOGGLE_ACTION, $id, __( 'Enable', 'wp-updates-notifier' ), sprintf( __( 'Enable %s', 'wp-updates-notifier' ), $label ), null !== $external );
-					}
-					if ( null !== $external ) {
-						// translators: %s: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
-						echo ' <span class="description sc-wpun-external">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';
-					}
+				if ( ! $code_defined && null !== $external ) {
+					// translators: %s: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
+					echo ' <span class="description sc-wpun-external">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';
 				}
 				?>
 			</td>
-			<td class="sc-wpun-channel-routing"><?php echo esc_html( self::routing_summary( $instance->get_routing() ) ); ?></td>
-			<td class="sc-wpun-channel-last"><?php echo esc_html( self::last_delivery_text( $last_result, $retry_at ) ); ?></td>
+			<td class="sc-wpun-channel-routing" data-colname="<?php esc_attr_e( 'Routing', 'wp-updates-notifier' ); ?>"><?php echo esc_html( self::routing_summary( $instance->get_routing() ) ); ?></td>
+			<td class="sc-wpun-channel-last" data-colname="<?php esc_attr_e( 'Last delivery', 'wp-updates-notifier' ); ?>"><?php echo esc_html( self::last_delivery_text( $last_result, $retry_at ) ); ?></td>
 		</tr>
 		<?php
 	}
 
 	/**
-	 * Output a button in a small form posting to admin-post.php.
+	 * Output the actions under the label, in the style of the core list tables.
 	 *
-	 * The nonce is tied to the action and the instance, and has no id attribute, so rows do not repeat one.
+	 * Nothing is output when no action applies. A code-defined instance can only be tested, and the
+	 * enable switch is left out when something outside the database sets it.
 	 *
-	 * @param string $action   The admin-post action.
-	 * @param string $id       Instance id.
-	 * @param string $text     Button text.
-	 * @param string $name     Accessible name of the button, including the label of the instance.
-	 * @param bool   $disabled Whether the button is disabled.
+	 * @param Channel_Instance $instance      The instance.
+	 * @param Channel|null     $channel       Its module, if it is registered.
+	 * @param bool             $code_defined  Whether the instance is defined in code.
+	 * @param bool             $external_flag Whether an external source sets `enabled`.
 	 *
 	 * @return void
 	 */
-	private function action_form( string $action, string $id, string $text, string $name, bool $disabled = false ): void {
+	private function render_row_actions( Channel_Instance $instance, ?Channel $channel, bool $code_defined, bool $external_flag ): void {
+		$id    = $instance->get_id();
+		$label = $instance->get_label();
+		$items = array();
+
+		if ( ! $code_defined ) {
+			// translators: %s: Label of the channel.
+			$edit_name     = sprintf( __( 'Edit %s', 'wp-updates-notifier' ), $label );
+			$items['edit'] = '<a class="sc-wpun-edit" href="' . esc_url( $this->tab_url( array( 'action' => 'edit', 'id' => $id ) ) ) . '" aria-label="' . esc_attr( $edit_name ) . '">' . esc_html__( 'Edit', 'wp-updates-notifier' ) . '</a>'; // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		}
+		if ( null !== $channel && $channel->supports( 'test_message' ) ) {
+			// translators: %s: Label of the channel.
+			$items['sc-wpun-test'] = $this->action_form( self::TEST_ACTION, $id, __( 'Send test', 'wp-updates-notifier' ), sprintf( __( 'Send test to %s', 'wp-updates-notifier' ), $label ) );
+		}
+		if ( ! $code_defined ) {
+			// translators: %s: Label of the channel.
+			$items['sc-wpun-duplicate'] = $this->action_form( self::DUPLICATE_ACTION, $id, __( 'Duplicate', 'wp-updates-notifier' ), sprintf( __( 'Duplicate %s', 'wp-updates-notifier' ), $label ) );
+			if ( ! $external_flag ) {
+				if ( $instance->is_enabled() ) {
+					// translators: %s: Label of the channel.
+					$items['sc-wpun-toggle'] = $this->action_form( self::TOGGLE_ACTION, $id, __( 'Disable', 'wp-updates-notifier' ), sprintf( __( 'Disable %s', 'wp-updates-notifier' ), $label ) );
+				} else {
+					// translators: %s: Label of the channel.
+					$items['sc-wpun-toggle'] = $this->action_form( self::TOGGLE_ACTION, $id, __( 'Enable', 'wp-updates-notifier' ), sprintf( __( 'Enable %s', 'wp-updates-notifier' ), $label ) );
+				}
+			}
+			// translators: %s: Label of the channel.
+			$delete_name    = sprintf( __( 'Delete %s', 'wp-updates-notifier' ), $label );
+			$items['trash'] = '<a class="submitdelete sc-wpun-delete" href="' . esc_url( $this->tab_url( array( 'action' => 'delete', 'id' => $id ) ) ) . '" aria-label="' . esc_attr( $delete_name ) . '">' . esc_html__( 'Delete', 'wp-updates-notifier' ) . '</a>'; // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		}
+		if ( array() === $items ) {
+			return;
+		}
+
+		// As core does: the separator sits inside every item but the last.
+		$last = array_key_last( $items );
+		$html = '';
+		foreach ( $items as $class => $item ) {
+			$html .= '<span class="' . esc_attr( $class ) . '">' . $item . ( $class === $last ? '' : ' | ' ) . '</span>';
+		}
+		echo '<div class="row-actions">' . $html . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each item is escaped where it is built.
+	}
+
+	/**
+	 * A button in a small form posting to admin-post.php, styled as a link.
+	 *
+	 * The nonce is tied to the action and the instance, and has no id attribute, so rows do not repeat one.
+	 *
+	 * @param string $action The admin-post action.
+	 * @param string $id     Instance id.
+	 * @param string $text   Button text.
+	 * @param string $name   Accessible name of the button, including the label of the instance.
+	 *
+	 * @return string The escaped markup.
+	 */
+	private function action_form( string $action, string $id, string $text, string $name ): string {
+		ob_start();
 		?>
-		<form class="sc-wpun-row-action" style="display:inline" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+		<form class="sc-wpun-row-action" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 			<input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
 			<input type="hidden" name="id" value="<?php echo esc_attr( $id ); ?>" />
 			<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( $action . '_' . $id ) ); ?>" />
-			<button type="submit" class="button button-small" aria-label="<?php echo esc_attr( $name ); ?>"<?php disabled( $disabled ); ?>><?php echo esc_html( $text ); ?></button>
+			<button type="submit" class="button-link" aria-label="<?php echo esc_attr( $name ); ?>"><?php echo esc_html( $text ); ?></button>
 		</form>
 		<?php
+		return (string) ob_get_clean();
 	}
 
 	/**
