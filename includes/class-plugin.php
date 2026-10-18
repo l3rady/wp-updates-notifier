@@ -11,6 +11,7 @@ use WPUN\Admin\Channel_Form;
 use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Notices;
 use WPUN\Admin\Settings_Page;
+use WPUN\Admin\Plugin_Requirements;
 use WPUN\Admin\Update_Nag;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,6 +24,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @internal
  */
 class Plugin {
+	/**
+	 * The plugin header an add-on declares the API version it needs in, as a version constraint.
+	 *
+	 * @var string
+	 */
+	public const API_HEADER = 'Requires WPUN API';
+
 	/**
 	 * Whether the plugin has been initialised in this request.
 	 *
@@ -120,6 +128,13 @@ class Plugin {
 	 * @var Update_Nag|null
 	 */
 	private $update_nag = null;
+
+	/**
+	 * The notices about the API requirement of add-ons on the Plugins screen.
+	 *
+	 * @var Plugin_Requirements|null
+	 */
+	private $plugin_requirements = null;
 
 	/**
 	 * Channels tab, built on first use: front-end requests never need it.
@@ -322,6 +337,34 @@ class Plugin {
 	}
 
 	/**
+	 * Plugins screen notices, built on first use: front-end requests never need them.
+	 *
+	 * @return Plugin_Requirements
+	 */
+	public function plugin_requirements(): Plugin_Requirements {
+		$this->plugin_requirements ??= new Plugin_Requirements();
+
+		return $this->plugin_requirements;
+	}
+
+	/**
+	 * Add the plugin header an add-on declares the API version it needs in.
+	 *
+	 * It is registered on every request so `get_plugins()` and `get_plugin_data()` return it anywhere.
+	 *
+	 * @param mixed $headers The extra plugin headers.
+	 * @return mixed
+	 */
+	public function add_plugin_header( $headers ) {
+		if ( ! is_array( $headers ) ) {
+			return $headers;
+		}
+		$headers[] = self::API_HEADER;
+
+		return $headers;
+	}
+
+	/**
 	 * Initialise the plugin when all plugins are loaded.
 	 *
 	 * The activation and deactivation hooks are registered here, when the file
@@ -333,6 +376,7 @@ class Plugin {
 	 */
 	public function register(): void {
 		add_action( 'plugins_loaded', array( $this, 'boot' ) );
+		add_filter( 'extra_plugin_headers', array( $this, 'add_plugin_header' ) ); // Let add-ons declare the API version they need.
 		register_activation_hook( SC_WPUN_FILE, array( $this, 'activate' ) );
 		register_deactivation_hook( SC_WPUN_FILE, array( $this, 'deactivate' ) );
 	}
@@ -398,6 +442,7 @@ class Plugin {
 	 */
 	public function register_admin_hooks(): void {
 		add_filter( 'plugin_action_links_' . plugin_basename( SC_WPUN_FILE ), array( $this->settings_page(), 'plugin_action_links' ), 10, 2 ); // Add settings link to plugin in plugin list.
+		add_action( 'after_plugin_row', array( $this->plugin_requirements(), 'render_row' ), 10, 2 ); // Notice below an add-on that needs another API version.
 		add_action( 'admin_menu', array( $this->settings_page(), 'admin_settings_menu' ) ); // Add menu to options.
 		add_action( 'admin_init', array( $this->settings_page(), 'admin_settings_init' ) ); // Add admin init functions.
 		add_action( 'admin_init', array( $this->update_nag(), 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins.

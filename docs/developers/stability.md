@@ -27,7 +27,10 @@ The public API has its own semantic version, separate from the plugin's: `SC_WPU
 - A **minor** bump (1.0.0 to 1.1.0) adds API.
 - A **major** bump (1.x to 2.0.0) removes or changes some, following the deprecation rules above.
 
-Check it before using the API, with a version constraint for the API versions your add-on works with:
+State the API versions your add-on works with as a version constraint, in any of three ways:
+
+- The `Requires WPUN API` plugin header, for example `Requires WPUN API: ^1.0`. WP Updates Notifier shows a notice below the add-on on the **Plugins** screen, before and after activation, when the site's API does not satisfy it or the value cannot be read. It does not block activation.
+- `sc_wpun_api_satisfies()` in your add-on's `boot()`, before using the API:
 
 ```php
 add_action(
@@ -41,6 +44,8 @@ add_action(
 	}
 );
 ```
+
+- `Channel::get_api_constraint()`, which the registry enforces (see below).
 
 `sc_wpun_api_satisfies()` takes Composer's constraint syntax and nothing else. `^1.0` is true for any 1.x from 1.0.0 on, and false for 2.0.0, since a new major version may have removed what you use.
 

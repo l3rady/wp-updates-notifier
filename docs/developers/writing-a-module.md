@@ -17,10 +17,13 @@ A module is an ordinary WordPress plugin. Its header declares the dependency, so
  * Requires at least: 6.7
  * Requires PHP:      7.4
  * Requires Plugins:  wp-updates-notifier
+ * Requires WPUN API: ^1.0
  */
 ```
 
-`Requires Plugins` does not check the version, so check the API version before using anything, and register the channel on the `sc_wpun_register_channels` action:
+`Requires WPUN API` is optional. It takes the same constraint syntax as `sc_wpun_api_satisfies()`, and WP Updates Notifier shows a notice below the add-on on the **Plugins** screen, before and after activation, when the site's API version does not satisfy it or the value cannot be read. It does not block activation.
+
+`Requires Plugins` makes WordPress check that WP Updates Notifier is active, not its version. Three checks cover the version: the header (the Plugins screen notice), the boot check below (code outside the channel, with your own notice) and `get_api_constraint()` (the channel itself, enforced by the registry, see [Declare the API version you need](#declare-the-api-version-you-need)). Check the API version before using anything, and register the channel on the `sc_wpun_register_channels` action:
 
 ```php
 namespace My_Chat_Channel;
@@ -280,7 +283,7 @@ Return a `WP_Error` from the filter to test a failed connection.
 
 ## Checklist
 
-- The header has `Requires Plugins: wp-updates-notifier`, and `boot()` checks `sc_wpun_api_satisfies( '^1.0' )` for code outside the channel.
+- The header has `Requires Plugins: wp-updates-notifier` and `Requires WPUN API` with the constraint, and `boot()` checks `sc_wpun_api_satisfies( '^1.0' )` for code outside the channel.
 - `get_api_constraint()` returns the API versions the channel needs.
 - The type is unique and never changes.
 - Every credential is a secret field, and no secret reaches a message, notice or log.
