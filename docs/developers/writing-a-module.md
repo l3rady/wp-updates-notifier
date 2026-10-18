@@ -26,7 +26,7 @@ A module is an ordinary WordPress plugin. Its header declares the dependency, so
 namespace My_Chat_Channel;
 
 function boot(): void {
-	if ( ! function_exists( 'sc_wpun_api_supports' ) || ! \sc_wpun_api_supports( '1.0.0' ) ) {
+	if ( ! function_exists( 'sc_wpun_api_satisfies' ) || ! \sc_wpun_api_satisfies( '^1.0' ) ) {
 		add_action( 'admin_notices', __NAMESPACE__ . '\\api_notice' );
 		return;
 	}
@@ -43,7 +43,7 @@ function boot(): void {
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\boot' );
 ```
 
-`sc_wpun_api_supports( '1.0.0' )` is true for any 1.x API from 1.0.0 on. Ask for the oldest version that has everything you use. See [Stability and deprecation](stability.md).
+`sc_wpun_api_satisfies( '^1.0' )` is true for any 1.x API from 1.0.0 on. Ask for the oldest version that has everything you use, and use a wider constraint such as `>=1.0 <3.0` only for versions you have tested. See [Stability and deprecation](stability.md).
 
 Do the work on `plugins_loaded`, not when the file is included. By then every active plugin is loaded, whatever order WordPress loaded them in.
 
@@ -265,7 +265,7 @@ Return a `WP_Error` from the filter to test a failed connection.
 
 ## Checklist
 
-- The header has `Requires Plugins: wp-updates-notifier`, and `boot()` checks `sc_wpun_api_supports()`.
+- The header has `Requires Plugins: wp-updates-notifier`, and `boot()` checks `sc_wpun_api_satisfies( '^1.0' )`.
 - The type is unique and never changes.
 - Every credential is a secret field, and no secret reaches a message, notice or log.
 - `send()` always returns a `Delivery_Result` and never retries or sleeps.
