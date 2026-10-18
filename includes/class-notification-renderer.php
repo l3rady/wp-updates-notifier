@@ -51,6 +51,10 @@ final class Notification_Renderer {
 	/**
 	 * Markdown, with Markdown characters in names, versions and notes escaped.
 	 *
+	 * The target is CommonMark, where a backslash escapes a character. A service with its own dialect, for example
+	 * Slack mrkdwn, which ignores backslashes and needs `&`, `<` and `>` turned into entities, must escape for that
+	 * dialect itself. Links whose URL is not http or https are written as plain text without a link.
+	 *
 	 * The limits work as on plain_text(): lengths are in characters, a limit of 0 or less is no limit, and a line
 	 * "…and N more" (escaped for Markdown) follows the list when items are left out.
 	 *
@@ -257,7 +261,9 @@ final class Notification_Renderer {
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
 			$lines[] = '- ' . sprintf( __( '%1$s: %2$s → %3$s', 'wp-updates-notifier' ), '**' . self::escape_markdown( $item->get_name() ) . '**', self::escape_markdown( $item->get_current_version() ), self::escape_markdown( $item->get_new_version() ) );
 			foreach ( $item->get_links() as $label => $url ) {
-				$lines[] = '  - [' . self::escape_markdown( self::link_label( (string) $label ) ) . '](' . str_replace( array( ' ', '(', ')' ), array( '%20', '%28', '%29' ), $url ) . ')';
+				$link_url = self::markdown_url( $url );
+				$text     = self::escape_markdown( self::link_label( (string) $label ) );
+				$lines[]  = '  - ' . ( '' === $link_url ? $text : '[' . $text . '](' . $link_url . ')' );
 			}
 			foreach ( $item->get_notes() as $note ) {
 				$lines[] = '  - ' . self::escape_markdown( $note );
@@ -269,8 +275,10 @@ final class Notification_Renderer {
 			$lines[] = self::escape_markdown( self::more_text( $hidden, $full ) );
 			$lines[] = '';
 		}
+		$updates_url  = self::markdown_url( $notification->get_updates_url() );
+		$updates_text = self::escape_markdown( $notification->get_updates_url() );
 		// translators: %s: Address of the WordPress updates screen.
-		$lines[] = sprintf( __( 'Please visit %s to update.', 'wp-updates-notifier' ), '[' . self::escape_markdown( $notification->get_updates_url() ) . '](' . str_replace( array( ' ', '(', ')' ), array( '%20', '%28', '%29' ), $notification->get_updates_url() ) . ')' );
+		$lines[] = sprintf( __( 'Please visit %s to update.', 'wp-updates-notifier' ), '' === $updates_url ? $updates_text : '[' . $updates_text . '](' . $updates_url . ')' );
 
 		return implode( "\n", $lines );
 	}
@@ -335,6 +343,24 @@ final class Notification_Renderer {
 			default:
 				return ucfirst( str_replace( '_', ' ', $label ) );
 		}
+	}
+
+	/**
+	 * A URL for the target of a Markdown link, or an empty string when it is not a safe http or https URL.
+	 *
+	 * @param string $url URL.
+	 *
+	 * @return string
+	 */
+	private static function markdown_url( string $url ): string {
+		$url    = trim( $url );
+		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
+		// esc_url_raw() adds http:// to a URL without a scheme, so the scheme is checked first.
+		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) || '' === esc_url_raw( $url, array( 'http', 'https' ) ) ) {
+			return '';
+		}
+
+		return str_replace( array( ' ', '(', ')', '<', '>' ), array( '%20', '%28', '%29', '%3C', '%3E' ), $url );
 	}
 
 	/**
