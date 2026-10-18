@@ -1,0 +1,60 @@
+# gitleaks configuration (`make secrets`): the default rules plus the shapes of secret this plugin handles.
+# Allowlist entries are always a path AND the exact value, never a whole rule, and say why.
+title = "wp-updates-notifier"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "wpun-slack-webhook-url"
+description = "Slack incoming webhook URL"
+regex = '''https://hooks\.slack\.com/services/T[A-Za-z0-9]+/B[A-Za-z0-9]+/[A-Za-z0-9]+'''
+keywords = ["hooks.slack.com"]
+
+[[rules.allowlists]]
+# T000/B000/XXXX is not a real workspace: it is the placeholder every Slack test fixture uses.
+description = "Placeholder Slack URL in the test fixtures"
+condition = "AND"
+paths = ['''^(?:/app/)?tests/(?:wp|fixtures)/''']
+regexes = ['''^https://hooks\.slack\.com/services/T000/B000/XXXX$''']
+regexTarget = "match"
+
+[[rules]]
+id = "wpun-channel-secret-literal"
+description = "SC_WPUN_CHANNEL_* / SC_WPUN_SETTING_* defined with a literal credential-like value"
+# A quoted literal of 16 or more token-ish characters, or a URL whose path carries such a token. A value read from
+# the environment or another variable is not quoted, so it does not match.
+regex = '''SC_WPUN_(?:CHANNEL|SETTING)_[A-Z0-9_]+['"]?\s*(?:,|=>|=)\s*['"](https?://[^'"\s/]+/[^'"\s]*[A-Za-z0-9_-]{16,}[^'"\s]*|[A-Za-z0-9_+=-]{16,})['"]'''
+keywords = ["SC_WPUN_"]
+
+[[rules.allowlists]]
+# A list of constant names (for example in a test of the config problems), not a credential.
+description = "A value that is itself an SC_WPUN_ constant name"
+regexes = ['''^SC_WPUN_[A-Z0-9_]+$''']
+regexTarget = "secret"
+
+[[rules.allowlists]]
+description = "Throwaway value in the test of a secret read from a config source"
+condition = "AND"
+paths = ['''^(?:/app/)?tests/wp/test-channel-form\.php$''']
+regexes = ['''^vault-SECRET-999$''']
+regexTarget = "secret"
+
+[[rules.allowlists]]
+description = "Throwaway value in the test of a secret read from an external config source"
+condition = "AND"
+paths = ['''^(?:/app/)?tests/wp/test-channels-tab\.php$''']
+regexes = ['''^ok-external-secret$''']
+regexTarget = "secret"
+
+[[rules]]
+id = "wpun-authorization-header"
+description = "Authorization header with a literal Bearer or Basic value"
+regex = '''(?i)authorization['"]?\s*(?:=>|[:=,])\s*['"]?(?:bearer|basic)\s+([A-Za-z0-9._~+/=-]{16,})'''
+keywords = ["authorization"]
+
+[allowlist]
+description = "Not scanned: dependencies and build output are not the project's files (the zip is scanned on its own)"
+paths = [
+  '''^/app/(?:vendor|build|node_modules|security-reports|\.git)/''',
+]

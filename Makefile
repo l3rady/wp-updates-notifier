@@ -25,8 +25,16 @@ COMMITS_TO   ?= HEAD
 ZIZMOR_FORMAT ?= plain
 ZIZMOR_OUT    ?=
 
+# gitleaks: SECRETS_LOG_OPTS limits the history scan (a pull request: base..head); SECRETS_SARIF=1 also writes
+# SARIF reports to security-reports/ for code scanning. Values are always redacted.
+SECRETS_LOG_OPTS ?=
+SECRETS_SARIF    ?=
+GITLEAKS         := $(COMPOSE) --profile security run --rm -T
+GITLEAKS_ARGS    := --no-banner --verbose --redact -c /app/.gitleaks.toml
+secrets_report    = $(if $(SECRETS_SARIF),--report-format sarif --report-path /reports/$(1).sarif)
+
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor security
+.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -121,7 +129,22 @@ check-workflows: ## Audit .github/workflows/ with actionlint (and shellcheck) an
 zizmor: ## Audit .github/workflows/ with zizmor only (ZIZMOR_FORMAT=sarif ZIZMOR_OUT=file for code scanning)
 	$(COMPOSE) --profile security run --rm -T zizmor --format $(ZIZMOR_FORMAT) .github/workflows/$(if $(ZIZMOR_OUT), > $(ZIZMOR_OUT))
 
-security: check-workflows ## Run every security check
+secrets: secrets-history secrets-tree secrets-zip ## Scan the git history, the working tree and the built zip for secrets with gitleaks (make -k runs all three)
+
+secrets-history: ## gitleaks over the git history (SECRETS_LOG_OPTS=base..head for just a pull request's commits)
+	@mkdir -p security-reports
+	$(GITLEAKS) gitleaks git $(GITLEAKS_ARGS) $(call secrets_report,history) $(if $(SECRETS_LOG_OPTS),--log-opts=$(SECRETS_LOG_OPTS)) /app
+
+secrets-tree: ## gitleaks over the working tree (not vendor/, build/, node_modules/ or .git/)
+	@mkdir -p security-reports
+	$(GITLEAKS) gitleaks dir $(GITLEAKS_ARGS) $(call secrets_report,tree) /app
+
+secrets-zip: dist ## gitleaks over the built zip, unpacked (dist builds from the tracked files)
+	@mkdir -p security-reports
+	$(COMPOSE) run --rm -T php sh -c 'rm -rf build/zip-scan && mkdir build/zip-scan && unzip -q build/wp-updates-notifier-*.zip -d build/zip-scan'
+	$(GITLEAKS) -v "$(CURDIR)/build/zip-scan:/scan:ro" gitleaks dir $(GITLEAKS_ARGS) $(call secrets_report,zip) /scan
+
+security: check-workflows secrets ## Run every security check
 
 up: ## Start the local WordPress site (http://localhost:8080) with Mailpit (:8025), then set it up
 	$(COMPOSE) --profile site up -d --build wordpress mailpit webhook

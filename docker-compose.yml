@@ -225,6 +225,21 @@ services:
     environment:
       - GH_TOKEN
 
+  # Scans for committed secrets: `make secrets`. Needs .git for the history scan. Reports go to security-reports/.
+  gitleaks:
+    profiles: [security]
+    image: ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+      - ./security-reports:/reports
+    environment:
+      # The repo is owned by the host user, git refuses it otherwise.
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: "*"
+
 volumes:
   composer-cache:
   site-db:
