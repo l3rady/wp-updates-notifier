@@ -31,6 +31,29 @@ sh "$work/bin/set-stable-tag.sh" 2.0.0
 [ "$(diff "$here/readme.txt" "$work/readme.txt" | grep -c '^>')" = 1 ] || fail "readme.txt changed in more than one line"
 echo "ok: stable tag"
 
+# The commit request: an existing file is added with its contents in base64, a missing one is deleted, and the
+# branch, expected head and message are passed through.
+cp "$here/bin/commit-payload.php" "$work/bin/"
+(
+	cd "$work"
+	php bin/commit-payload.php owner/repo release-branch abc123 "chore: a message" readme.txt gone.txt > payload.json
+	php -r '
+		$p = json_decode( file_get_contents( "payload.json" ), true );
+		$i = $p["variables"]["input"];
+		$ok = false !== strpos( $p["query"], "createCommitOnBranch" )
+			&& "owner/repo" === $i["branch"]["repositoryNameWithOwner"]
+			&& "release-branch" === $i["branch"]["branchName"]
+			&& "abc123" === $i["expectedHeadOid"]
+			&& "chore: a message" === $i["message"]["headline"]
+			&& "readme.txt" === $i["fileChanges"]["additions"][0]["path"]
+			&& file_get_contents( "readme.txt" ) === base64_decode( $i["fileChanges"]["additions"][0]["contents"] )
+			&& array( array( "path" => "gone.txt" ) ) === $i["fileChanges"]["deletions"];
+		exit( $ok ? 0 : 1 );
+	' || fail "commit payload is wrong"
+	if php bin/commit-payload.php owner/repo branch abc123 2>/dev/null; then fail "commit payload without files was accepted"; fi
+)
+echo "ok: commit payload"
+
 # The plugin header still has exactly one parseable Version line between the markers.
 sed -n '/x-release-please-start-version/,/x-release-please-end/p' "$here/wp-updates-notifier.php" | grep -Eq '^ \* Version: [0-9]+\.[0-9]+\.[0-9]+$' || fail "no semver Version line between the release-please markers"
 echo "ok: version markers"
