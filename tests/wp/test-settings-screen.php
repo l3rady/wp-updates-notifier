@@ -167,4 +167,31 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 		$this->assertSame( 0, $xpath->query( '//input[@name="sc_wpun_settings[hide_updates]"][@disabled]' )->length );
 		$this->assertSame( 0, $xpath->query( '//input[@name="sc_wpun_settings[notify_plugins]"][@disabled]' )->length );
 	}
+
+	/**
+	 * The page checks the capability itself, not only through core's menu check (#233).
+	 */
+	public function test_the_page_refuses_users_without_the_capability() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+		add_filter(
+			'wp_die_handler',
+			static function () {
+				return static function ( $message, $title, $args ) {
+					throw new WPDieException( 'status ' . absint( $args['response'] ) );
+				};
+			}
+		);
+
+		ob_start();
+		try {
+			sc_wpun()->settings_page()->settings_page();
+			$this->fail( 'The page was drawn for an editor.' );
+		} catch ( WPDieException $e ) {
+			$this->assertSame( 'status 403', $e->getMessage() );
+		} finally {
+			$html = (string) ob_get_clean();
+		}
+
+		$this->assertStringNotContainsString( 'nav-tab', $html );
+	}
 }

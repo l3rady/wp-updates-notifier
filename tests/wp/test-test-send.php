@@ -173,7 +173,9 @@ class Test_Test_Send extends WPUN_Test_Case {
 
 		sc_wpun()->channels_tab()->process_test_send();
 
-		switch_to_blog( self::factory()->blog->create() );
+		$blog_id = self::factory()->blog->create();
+		add_user_to_blog( $blog_id, self::$admin_id, 'administrator' ); // The page checks the capability on that site too.
+		switch_to_blog( $blog_id );
 		$this->assertStringNotContainsString( 'sc-wpun-notice', $this->page() );
 		restore_current_blog();
 
