@@ -44,6 +44,19 @@ class Test_Autoloader extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Only plain identifiers map to a file, so a crafted name can't reach outside includes (#233).
+	 */
+	public function test_names_with_path_characters_are_refused() {
+		// includes/admin/../class-settings.php exists, so this one resolved to a file before the check.
+		$this->assertNull( Autoloader::path_for( 'WPUN\\Admin\\..\\Settings' ) );
+		$this->assertNull( Autoloader::path_for( 'WPUN\\..\\Settings' ) );
+		$this->assertNull( Autoloader::path_for( 'WPUN\\..\\..\\wp-updates-notifier' ) );
+		$this->assertNull( Autoloader::path_for( 'WPUN\\Admin/../Settings' ) );
+		$this->assertNull( Autoloader::path_for( 'WPUN\\Admin\\' ) );
+		$this->assertNull( Autoloader::path_for( 'WPUN\\Set.tings' ) );
+	}
+
+	/**
 	 * A WPUN class with no file is not an error.
 	 */
 	public function test_missing_class_is_quietly_skipped() {
