@@ -94,3 +94,55 @@ jobs:
         with:
           sarif_file: security-reports/zip.sarif
           category: gitleaks-zip
+
+  # Known vulnerabilities and abandoned packages in the locked dependencies: composer audit and OSV-Scanner.
+  dependencies:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # make -k so OSV-Scanner still runs (and writes its report) when composer audit fails.
+      - name: Audit the dependencies (composer audit, OSV-Scanner)
+        run: make -k audit AUDIT_SARIF=1
+      # Fork pull requests cannot upload SARIF.
+      - name: Upload the findings to code scanning
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('security-reports/osv.sarif') != ''
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: security-reports/osv.sarif
+          category: osv-scanner
+
+  # What a pull request adds to the dependency graph: no new known vulnerabilities, and only licences that
+  # fit a GPL-2.0-or-later plugin. The dependencies are development tools and are not shipped in the zip.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          # GPL-compatible licences. Apache-2.0 is not compatible with GPL-2.0-only, but the plugin is
+          # GPL-2.0-or-later (compatible with GPLv3) and these are development tools that are not shipped.
+          allow-licenses: >-
+            MIT, BSD-2-Clause, BSD-3-Clause, ISC, Apache-2.0, GPL-2.0-or-later, GPL-2.0-only,
+            GPL-3.0-or-later, GPL-3.0-only, LGPL-2.1-or-later, LGPL-3.0-or-later, MPL-2.0,
+            Unlicense, CC0-1.0, 0BSD, Zlib
+
+  # Trivy over docker/ and the image CI builds. It only reports (exit code 0): the base image's findings are
+  # fixed by a new base image, not by this repository. Not on pull requests, it needs no gate there.
+  images:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Scan the Dockerfile and the image (Trivy)
+        run: make audit-images
