@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<ruleset name="WP Updates Notifier Example Channel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PHPCSStandards/PHP_CodeSniffer/master/phpcs.xsd">
+	<description>WordPress Coding Standards for the example add-on. It is a plugin of its own, so it has its own text domain and prefix. Copy this file with the add-on.</description>
+
+	<!-- p: show progress, s: show sniff codes. -->
+	<arg value="ps"/>
+	<arg name="basepath" value="."/>
+	<arg name="extensions" value="php"/>
+
+	<file>.</file>
+
+	<!-- WordPress coding standards: Core, Docs and Extra. -->
+	<rule ref="WordPress"/>
+
+	<!-- The same PHP and WordPress versions as WP Updates Notifier. -->
+	<rule ref="PHPCompatibilityWP"/>
+	<config name="testVersion" value="7.4-"/>
+	<config name="minimum_wp_version" value="6.7"/>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="wpun-example-channel"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="WPUN_Example_Channel"/>
+			</property>
+		</properties>
+	</rule>
+</ruleset>
