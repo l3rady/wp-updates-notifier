@@ -29,6 +29,13 @@ class Channel_Registry {
 	private $channels = array();
 
 	/**
+	 * Channels refused because the API version of the site does not satisfy what they need.
+	 *
+	 * @var array<string, array{label: string, constraint: string, reason: string}>
+	 */
+	private $rejected = array();
+
+	/**
 	 * Whether the registration action has run.
 	 *
 	 * @var bool
@@ -42,7 +49,7 @@ class Channel_Registry {
 	 *
 	 * @param Channel $channel The channel.
 	 *
-	 * @return bool False if its type is invalid or already registered.
+	 * @return bool False if its type is invalid or already registered, or its API constraint is not met.
 	 */
 	public function register( Channel $channel ): bool {
 		$type = $channel->get_type();
@@ -68,8 +75,70 @@ class Channel_Registry {
 			return false;
 		}
 
+		$constraint = $channel->get_api_constraint();
+		if ( '' !== $constraint && ! Version_Constraint::satisfies( sc_wpun_api_version(), $constraint ) ) {
+			$this->reject( $channel, $constraint );
+			return false;
+		}
+
+		unset( $this->rejected[ $type ] );
 		$this->channels[ $type ] = $channel;
 		return true;
+	}
+
+	/**
+	 * Refuse a channel: record why, and tell listeners.
+	 *
+	 * @param Channel $channel    The channel.
+	 * @param string  $constraint The API constraint it declared.
+	 *
+	 * @return void
+	 */
+	private function reject( Channel $channel, string $constraint ): void {
+		$type = $channel->get_type();
+
+		if ( Version_Constraint::is_valid( $constraint ) ) {
+			$reason = sprintf(
+				// translators: 1: The API version constraint the module needs, 2: The API version of this site.
+				__( 'Needs WP Updates Notifier API %1$s; this site has %2$s. Update WP Updates Notifier.', 'wp-updates-notifier' ),
+				$constraint,
+				sc_wpun_api_version()
+			);
+		} else {
+			$reason = sprintf(
+				// translators: %s: The API version constraint the module declared.
+				__( 'Its API requirement "%s" could not be read.', 'wp-updates-notifier' ),
+				$constraint
+			);
+		}
+
+		$this->rejected[ $type ] = array(
+			'label'      => $channel->get_label(),
+			'constraint' => $constraint,
+			'reason'     => $reason,
+		);
+
+		/**
+		 * Fires when a channel is refused because the API version of the site does not satisfy what it needs.
+		 *
+		 * Example:
+		 *
+		 *     add_action(
+		 *         'sc_wpun_channel_rejected',
+		 *         function ( $type, $reason, $channel ) {
+		 *             error_log( sprintf( 'Channel "%s" was refused: %s', $type, $reason ) );
+		 *         },
+		 *         10,
+		 *         3
+		 *     );
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param string  $type    The channel type.
+		 * @param string  $reason  Why it was refused, as plain text.
+		 * @param Channel $channel The channel that was refused.
+		 */
+		do_action( 'sc_wpun_channel_rejected', $type, $reason, $channel );
 	}
 
 	/**
@@ -131,6 +200,20 @@ class Channel_Registry {
 	public function all(): array {
 		$this->load();
 		return $this->channels;
+	}
+
+	/**
+	 * The channels that were refused because the site's API version does not satisfy what they need.
+	 *
+	 * A later successful registration of the same type, for example by an updated add-on, removes it.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return array<string, array{label: string, constraint: string, reason: string}> By channel type.
+	 */
+	public function get_rejected(): array {
+		$this->load();
+		return $this->rejected;
 	}
 
 	/**
