@@ -19,7 +19,7 @@ flowchart TD
 
 ## The pieces
 
-**Update check.** WP-Cron runs the `sc_wpun_update_check` event at the frequency chosen on the settings screen. The check asks WordPress for core, plugin and theme updates and turns each one into a `WPUN\Notification_Item`. The global settings decide which plugins and themes are looked at (none, all or only active ones).
+**Update check.** WP-Cron runs the `sc_wpun_update_check` event at the frequency chosen on the settings screen. You can also run it on demand with `do_action( 'sc_wpun_run_check' )`: it works like a scheduled run, the notification's source is `manual` instead of `cron`, and the schedule is not changed. There is no lock between runs, by design: if a manual run overlaps a scheduled one, both can send the same update before either records it, so a notification can arrive twice. That is rare and harmless for update notices, so the plugin keeps the check simple. A channel that must never deliver twice can keep its own record of what it sent. The check asks WordPress for core, plugin and theme updates and turns each one into a `WPUN\Notification_Item`. The global settings decide which plugins and themes are looked at (none, all or only active ones).
 
 **Items.** A `Notification_Item` is one thing waiting for an update: its `type` (`core`, `plugin`, `theme` or a type an add-on registers), a `key` that identifies it within the type (the plugin file, the theme stylesheet or `core`), a name, the installed and the available version, links, notes and machine-readable flags such as `active`. Add-ons can add their own items with the `sc_wpun_update_items` filter. See [Item types and routing](item-types-and-routing.md).
 
