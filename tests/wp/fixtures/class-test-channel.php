@@ -11,7 +11,7 @@ use WPUN\Delivery_Result;
 use WPUN\Notification;
 
 /**
- * Behaves as the `behaviour` setting of the instance says: succeed (default), fail, throw or invalid.
+ * Behaves as the `behaviour` setting of the instance says: succeed (default), fail, limit (a 429 with the `retry_after` setting), throw or invalid.
  *
  * It records every call, so tests can see what each instance received.
  */
@@ -65,7 +65,12 @@ class Test_Channel extends Channel {
 	 */
 	public function get_fields(): array {
 		return array(
-			'behaviour' => array(
+			'retry_after' => array(
+				'type'              => 'text',
+				'label'             => 'Retry after',
+				'sanitize_callback' => 'absint',
+			),
+			'behaviour'   => array(
 				'type'              => 'text',
 				'label'             => 'Behaviour',
 				'sanitize_callback' => 'sanitize_key',
@@ -87,6 +92,9 @@ class Test_Channel extends Channel {
 		switch ( $instance->get_setting( 'behaviour', 'succeed' ) ) {
 			case 'fail':
 				return Delivery_Result::failure( 'It failed.', 'test_failure', 500 );
+			case 'limit':
+				$wait = $instance->get_setting( 'retry_after', null );
+				return Delivery_Result::failure( 'It is limiting requests.', 'rate_limited', 429, null === $wait ? null : (int) $wait );
 			case 'throw':
 				throw new RuntimeException( 'It threw.' );
 			case 'invalid':

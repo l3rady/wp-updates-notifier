@@ -236,17 +236,15 @@ class Example_Channel extends Channel {
 			return Delivery_Result::success();
 		}
 
-		// 429 Too Many Requests: the service says how many seconds to wait. Pass it on: the plugin keeps it with
-		// the result. Like any failure, the updates stay unsent and go out again on the next scheduled check.
+		// 429 Too Many Requests: the service says how long to wait. Pass it on: the plugin then skips this
+		// channel until then (at most 7 days). The updates stay unsent and go out on the first check after.
 		if ( 429 === $status ) {
-			$wait = wp_remote_retrieve_header( $response, 'retry-after' );
-
 			return Delivery_Result::failure(
 				// translators: %d: HTTP status code.
 				sprintf( __( 'The webhook is limiting requests (HTTP %d).', 'wpun-example-channel' ), $status ),
 				'rate_limited',
 				$status,
-				is_string( $wait ) && ctype_digit( $wait ) ? (int) $wait : null
+				Delivery_Result::retry_after_from_response( $response )
 			);
 		}
 

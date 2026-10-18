@@ -18,11 +18,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @phpstan-type Generic_Notified array<string, array<string, string>>
  * @phpstan-type Legacy_Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
  * @phpstan-type Last_Result array{success: bool, message: string, time: int}
- * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, last_result?: Last_Result}
+ * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, last_result?: Last_Result, retry_at?: int}
  * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified}
  */
 class State {
 	const OPT_FIELD = 'sc_wpun_state';
+
+	/**
+	 * The longest, in seconds, that a failed delivery's Retry-After can defer an instance.
+	 */
+	const MAX_RETRY_AFTER = 604800; // 7 days.
 
 	/**
 	 * What the plugin has already notified about and when it last checked.
@@ -80,6 +85,9 @@ class State {
 			$last_result = $this->normalise_last_result( $entry['last_result'] ?? null );
 			if ( null !== $last_result ) {
 				$clean['last_result'] = $last_result;
+			}
+			if ( isset( $entry['retry_at'] ) && is_numeric( $entry['retry_at'] ) && (int) $entry['retry_at'] > 0 ) {
+				$clean['retry_at'] = (int) $entry['retry_at'];
 			}
 			$channels[ (string) $id ] = $clean;
 		}
@@ -140,6 +148,7 @@ class State {
 	 * Remember the outcome of the latest delivery through a channel instance.
 	 *
 	 * Hooked on `sc_wpun_notification_sent` and `sc_wpun_notification_failed`. A test send never counts.
+	 * A failure with a `retry_after` also stores when the instance may be tried again, `retry_at`, capped at `MAX_RETRY_AFTER`.
 	 *
 	 * @param mixed $result       The delivery result.
 	 * @param mixed $notification The notification.
@@ -159,11 +168,20 @@ class State {
 			'skip_pending' => false,
 		);
 
-		$entry['last_result']     = array(
+		$entry['last_result'] = array(
 			'success' => $result->is_success(),
 			'message' => $result->get_message(),
 			'time'    => time(),
 		);
+
+		// A service that asked to be left alone defers the instance; any other outcome lifts that.
+		$retry_after = $result->is_success() ? null : $result->get_retry_after();
+		if ( null !== $retry_after && $retry_after > 0 ) {
+			$entry['retry_at'] = time() + min( $retry_after, self::MAX_RETRY_AFTER );
+		} else {
+			unset( $entry['retry_at'] );
+		}
+
 		$state['channels'][ $id ] = $entry;
 		$this->save( $state );
 	}
