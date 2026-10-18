@@ -29,7 +29,8 @@ jobs:
       security-events: write
     env:
       # Lets zizmor run the audits that ask the GitHub API; without a token it skips them.
-      GH_TOKEN: ${{ github.token }}
+      # docker-compose.yml hands it to zizmor as GH_TOKEN.
+      GITHUB_PUBLIC_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

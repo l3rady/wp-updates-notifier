@@ -136,8 +136,8 @@ check-workflows: ## Audit .github/workflows/ with actionlint (and shellcheck) an
 	$(COMPOSE) --profile security run --rm -T actionlint
 	$(MAKE) --no-print-directory zizmor
 
-zizmor: ## Audit .github/workflows/ with zizmor only (ZIZMOR_FORMAT=sarif ZIZMOR_OUT=file for code scanning)
-	$(COMPOSE) --profile security run --rm -T zizmor --format $(ZIZMOR_FORMAT) .github/workflows/$(if $(ZIZMOR_OUT), > $(ZIZMOR_OUT))
+zizmor: ## Audit .github/workflows/ with zizmor only (GITHUB_PUBLIC_TOKEN enables online audits; ZIZMOR_FORMAT=sarif ZIZMOR_OUT=file)
+	$(COMPOSE) --profile security run --rm -T $${GITHUB_PUBLIC_TOKEN:+-e GH_TOKEN=$$GITHUB_PUBLIC_TOKEN} zizmor --format $(ZIZMOR_FORMAT) .github/workflows/$(if $(ZIZMOR_OUT), > $(ZIZMOR_OUT))
 
 secrets: secrets-history secrets-tree secrets-zip ## Scan the git history, the working tree and the built zip for secrets with gitleaks (make -k runs all three)
 
