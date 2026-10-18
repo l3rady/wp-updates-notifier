@@ -41,8 +41,73 @@ function wpun_hook_files( array $paths ): array {
  * @return array<int, array<string, mixed>>
  */
 function wpun_scan_hooks( array $paths ): array {
-	$functions = array( 'apply_filters', 'apply_filters_deprecated', 'do_action', 'do_action_deprecated' );
-	$calls     = array();
+	return wpun_scan_calls( $paths, array( 'apply_filters', 'apply_filters_deprecated', 'do_action', 'do_action_deprecated' ) );
+}
+
+/**
+ * Whether a hook name is one of the fired names, where a fired name with a `{...}` part also matches every name it can make.
+ *
+ * @param string   $name  A literal hook name.
+ * @param string[] $fired Fired hook names, from wpun_scan_hooks().
+ * @return bool
+ */
+function wpun_is_fired( string $name, array $fired ): bool {
+	foreach ( $fired as $pattern ) {
+		if ( $pattern === $name ) {
+			return true;
+		}
+		if ( false !== strpos( $pattern, '{' ) ) {
+			$regex = '/^' . preg_replace( '/\\\{[^}]*\\\}/', '.+', preg_quote( $pattern, '/' ) ) . '$/';
+			if ( 1 === preg_match( $regex, $name ) ) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Every add_action() or add_filter() call in the given paths whose hook name is a string literal starting with sc_wpun_.
+ *
+ * Each call has the keys of wpun_scan_hooks() plus `listened` (the doc block has the `@hook-listened` tag, which marks
+ * a public hook that the plugin handles but never fires, and so documents it for the reference).
+ *
+ * @param string[] $paths Files and directories.
+ * @return array<int, array<string, mixed>>
+ */
+function wpun_scan_listened( array $paths ): array {
+	$calls = array();
+	$used  = array();
+	foreach ( wpun_scan_calls( $paths, array( 'add_action', 'add_filter' ) ) as $call ) {
+		// A doc block belongs to the first call below it, not to the calls that follow within 3 lines.
+		if ( null !== $call['doc'] ) {
+			$key = $call['file'] . "\0" . $call['doc'];
+			if ( isset( $used[ $key ] ) ) {
+				$call['doc']        = null;
+				$call['documented'] = false;
+			}
+			$used[ $key ] = true;
+		}
+		if ( null === $call['name'] || 0 !== strpos( $call['name'], 'sc_wpun_' ) || false !== strpos( $call['name'], '$' ) ) {
+			continue;
+		}
+		$call['listened'] = null !== $call['doc'] && 1 === preg_match( '/^\s*\*?\s*@hook-listened\b/m', $call['doc'] );
+		$calls[]          = $call;
+	}
+
+	return $calls;
+}
+
+/**
+ * Every call of the given functions in the given paths, with the doc block above it.
+ *
+ * @param string[] $paths     Files and directories.
+ * @param string[] $functions Function names.
+ * @return array<int, array<string, mixed>>
+ */
+function wpun_scan_calls( array $paths, array $functions ): array {
+	$calls = array();
 
 	foreach ( wpun_hook_files( $paths ) as $file ) {
 		$tokens = token_get_all( (string) file_get_contents( $file ) );
@@ -299,6 +364,66 @@ function wpun_hook_sections(): array {
 }
 
 /**
+ * One hook of the reference as Markdown lines: title, kind and since, description, parameters, return and where it is.
+ *
+ * @param array{name: string, kind: string, files: array<string, bool>, doc: string|null} $hook Hook.
+ * @param string                                                                          $verb "Fired in" or "Handled in".
+ * @return string[]
+ */
+function wpun_render_hook( array $hook, string $verb ): array {
+	$out    = array();
+	$doc    = null === $hook['doc'] ? array(
+		'text'   => array(),
+		'params' => array(),
+		'return' => '',
+		'since'  => array(),
+	) : wpun_parse_doc( $hook['doc'] );
+	$text   = null === $hook['doc'] ? '' : implode( "\n", $doc['text'] );
+	$title2 = $hook['name'];
+	if ( false !== strpos( $hook['name'], '{' ) ) {
+		if ( 1 === preg_match( '/dynamic (?:part|portion)[^`]*`\$(\w+)`/', $text, $m ) || 1 === preg_match( '/\{\$(\w+)\}/', $hook['name'], $m ) ) {
+			$placeholder = $m[1];
+		} else {
+			$placeholder = 'dynamic';
+		}
+		$title2 = (string) preg_replace( '/\{[^}]*\}/', '{' . $placeholder . '}', $hook['name'] );
+	}
+
+	$out[] = '### `' . $title2 . '`';
+	$out[] = '';
+	$since = array();
+	foreach ( $doc['since'] as $entry ) {
+		$bits    = explode( ' ', $entry, 2 );
+		$since[] = 'since ' . $bits[0] . ( isset( $bits[1] ) ? '. ' . $bits[1] : '' );
+	}
+	$out[] = '*' . ucfirst( $hook['kind'] ) . '*' . ( array() !== $since ? ', ' . implode( '; ', $since ) : '' );
+	$out[] = '';
+	if ( '' !== $text ) {
+		$out[] = wpun_markdown_text( $doc['text'] );
+		$out[] = '';
+	}
+	if ( array() !== $doc['params'] ) {
+		$out[] = '| Parameter | Type | Description |';
+		$out[] = '| --- | --- | --- |';
+		foreach ( $doc['params'] as $param ) {
+			$desc  = str_replace( array( '|', "\n" ), array( '\\|', '<br>' ), $param['description'] );
+			$out[] = '| `' . $param['name'] . '` | `' . str_replace( '|', '\\|', $param['type'] ) . '` | ' . $desc . ' |';
+		}
+		$out[] = '';
+	}
+	if ( 'filter' === $hook['kind'] && '' !== $doc['return'] ) {
+		$out[] = '**Returns:** ' . $doc['return'];
+		$out[] = '';
+	}
+	$files = array_keys( $hook['files'] );
+	sort( $files, SORT_STRING );
+	$out[] = $verb . ' ' . implode( ', ', array_map( static fn( $f ) => '`' . $f . '`', $files ) ) . '.';
+	$out[] = '';
+
+	return $out;
+}
+
+/**
  * The Markdown hook reference for the hooks fired in the given paths.
  *
  * Output depends only on the doc blocks and the file names (never on line numbers), so it is stable.
@@ -353,7 +478,25 @@ function wpun_render_hook_docs( array $paths ): string {
 		$sections[ $placed ][ $name ] = $hook;
 	}
 
+	// Public hooks the plugin only listens to, documented where it adds its handler.
 	$callable = array();
+	foreach ( wpun_scan_listened( $paths ) as $call ) {
+		$name = (string) $call['name'];
+		if ( ! $call['listened'] || wpun_is_fired( $name, array_keys( $hooks ) ) ) {
+			continue;
+		}
+		if ( ! isset( $callable[ $name ] ) ) {
+			$callable[ $name ] = array(
+				'name'  => $name,
+				'kind'  => 'add_filter' === $call['function'] ? 'filter' : 'action',
+				'files' => array(),
+				'doc'   => $call['doc'],
+			);
+		}
+		$callable[ $name ]['files'][ $call['file'] ] = true;
+	}
+	ksort( $callable, SORT_STRING );
+
 	$out      = array();
 	$out[]    = '# Hook reference';
 	$out[] = '';
@@ -371,11 +514,8 @@ function wpun_render_hook_docs( array $paths ): string {
 		}
 		$toc[] = '- [' . $title . '](#' . strtolower( str_replace( ' ', '-', $title ) ) . ')';
 	}
-	foreach ( wpun_callable_actions() as $name => $text ) {
-		if ( ! isset( $hooks[ $name ] ) ) {
-			$toc[] = '- [Actions you can fire](#actions-you-can-fire)';
-			break;
-		}
+	if ( array() !== $callable ) {
+		$toc[] = '- [Actions you can fire](#actions-you-can-fire)';
 	}
 	$out = array_merge( $out, $toc, array( '' ) );
 
@@ -386,84 +526,19 @@ function wpun_render_hook_docs( array $paths ): string {
 		$out[] = '## ' . $title;
 		$out[] = '';
 		foreach ( $items as $name => $hook ) {
-			$doc    = null === $hook['doc'] ? array(
-				'text'   => array(),
-				'params' => array(),
-				'return' => '',
-				'since'  => array(),
-			) : wpun_parse_doc( $hook['doc'] );
-			$text   = null === $hook['doc'] ? '' : implode( "\n", $doc['text'] );
-			$title2 = $name;
-			if ( false !== strpos( $name, '{' ) ) {
-				if ( 1 === preg_match( '/dynamic (?:part|portion)[^`]*`\$(\w+)`/', $text, $m ) || 1 === preg_match( '/\{\$(\w+)\}/', $name, $m ) ) {
-					$placeholder = $m[1];
-				} else {
-					$placeholder = 'dynamic';
-				}
-				$title2      = (string) preg_replace( '/\{[^}]*\}/', '{' . $placeholder . '}', $name );
-			}
-
-			$out[] = '### `' . $title2 . '`';
-			$out[] = '';
-			$since = array();
-			foreach ( $doc['since'] as $entry ) {
-				$bits    = explode( ' ', $entry, 2 );
-				$since[] = 'since ' . $bits[0] . ( isset( $bits[1] ) ? '. ' . $bits[1] : '' );
-			}
-			$out[] = '*' . ucfirst( $hook['kind'] ) . '*' . ( array() !== $since ? ', ' . implode( '; ', $since ) : '' );
-			$out[] = '';
-			if ( '' !== $text ) {
-				$out[] = wpun_markdown_text( $doc['text'] );
-				$out[] = '';
-			}
-			if ( array() !== $doc['params'] ) {
-				$out[] = '| Parameter | Type | Description |';
-				$out[] = '| --- | --- | --- |';
-				foreach ( $doc['params'] as $param ) {
-					$desc  = str_replace( array( '|', "\n" ), array( '\\|', '<br>' ), $param['description'] );
-					$out[] = '| `' . $param['name'] . '` | `' . str_replace( '|', '\\|', $param['type'] ) . '` | ' . $desc . ' |';
-				}
-				$out[] = '';
-			}
-			if ( 'filter' === $hook['kind'] && '' !== $doc['return'] ) {
-				$out[] = '**Returns:** ' . $doc['return'];
-				$out[] = '';
-			}
-			$files = array_keys( $hook['files'] );
-			sort( $files, SORT_STRING );
-			$out[] = 'Fired in ' . implode( ', ', array_map( static fn( $f ) => '`' . $f . '`', $files ) ) . '.';
-			$out[] = '';
+			$out = array_merge( $out, wpun_render_hook( $hook, 'Fired in' ) );
 		}
 	}
 
-	foreach ( wpun_callable_actions() as $name => $text ) {
-		if ( ! isset( $hooks[ $name ] ) ) {
-			$callable[ $name ] = $text;
-		}
-	}
 	if ( array() !== $callable ) {
 		$out[] = '## Actions you can fire';
 		$out[] = '';
 		$out[] = 'The plugin listens to these actions but does not fire them itself. Call them with `do_action()`.';
 		$out[] = '';
-		foreach ( $callable as $name => $text ) {
-			$out[] = '### `' . $name . '`';
-			$out[] = '';
-			$out[] = $text;
-			$out[] = '';
+		foreach ( $callable as $hook ) {
+			$out = array_merge( $out, wpun_render_hook( $hook, 'Handled in' ) );
 		}
 	}
 
 	return rtrim( implode( "\n", $out ) ) . "\n";
-}
-
-/**
- * Public actions the plugin only listens to, so the scan of fired hooks cannot find them: name => Markdown text.
- *
- * @return array<string, string>
- */
-function wpun_callable_actions(): array {
-	return array(
-		'sc_wpun_enable_cron' => "*Action*, since 1.0.0\n\nKept from 1.x. Schedules the update check at the saved frequency, unless it is already scheduled at it. The plugin does this itself on every request (on `init`), so there is rarely a reason to call it.\n\n```php\ndo_action( 'sc_wpun_enable_cron' );\n```\n\nHandled in `includes/class-scheduler.php`.",
-	);
 }

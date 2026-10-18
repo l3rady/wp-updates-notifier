@@ -408,6 +408,23 @@ class Plugin {
 		add_action( 'sc_wpun_channel_deleted', array( $this->state, 'forget_channel' ) ); // Deleting an instance deletes its delivery state.
 		add_action( 'sc_wpun_notification_sent', array( $this->state, 'record_delivery' ), 10, 3 ); // Remember each instance's latest delivery result.
 		add_action( 'sc_wpun_notification_failed', array( $this->state, 'record_delivery' ), 10, 3 );
+		/**
+		 * Schedules the update check. Handled by the `Scheduler` class.
+		 *
+		 * Kept from 1.x. Schedules the check at the saved frequency, unless it is already scheduled at it.
+		 * The plugin does this itself on every request (on `init`), so there is rarely a reason to call it.
+		 * Pass a frequency to schedule at it instead of the saved one; `manual` stops the checks, as
+		 * `sc_wpun_disable_cron` does.
+		 *
+		 *     do_action( 'sc_wpun_enable_cron' );
+		 *     do_action( 'sc_wpun_enable_cron', 'daily' );
+		 *
+		 * @hook-listened
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $frequency Optional. A frequency key from `sc_wpun_frequencies`, such as `daily`, or `manual`. Default is the saved frequency.
+		 */
 		add_action( 'sc_wpun_enable_cron', array( $this->scheduler, 'enable_cron' ) ); // action to enable cron.
 		add_action( 'sc_wpun_disable_cron', array( $this->scheduler, 'disable_cron' ) ); // action to disable cron.
 		add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.
