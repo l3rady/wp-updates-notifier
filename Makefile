@@ -20,8 +20,13 @@ COMPOSE := docker compose --progress quiet
 COMMITS_FROM ?= origin/main
 COMMITS_TO   ?= HEAD
 
+# zizmor's output: plain, json, sarif, ... With ZIZMOR_OUT it is written to that file instead of the terminal
+# (CI uploads the SARIF file to code scanning).
+ZIZMOR_FORMAT ?= plain
+ZIZMOR_OUT    ?=
+
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp
+.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -108,6 +113,15 @@ matrix: ## Smoke test on every PHP version in MATRIX
 		echo "=== PHP $$v ==="; \
 		PHP_VERSION=$$v $(COMPOSE) run --build --rm php sh docker/smoke.sh || exit 1; \
 	done
+
+check-workflows: ## Audit .github/workflows/ with actionlint (and shellcheck) and zizmor (fails on findings)
+	$(COMPOSE) --profile security run --rm -T actionlint
+	$(MAKE) --no-print-directory zizmor
+
+zizmor: ## Audit .github/workflows/ with zizmor only (ZIZMOR_FORMAT=sarif ZIZMOR_OUT=file for code scanning)
+	$(COMPOSE) --profile security run --rm -T zizmor --format $(ZIZMOR_FORMAT) .github/workflows/$(if $(ZIZMOR_OUT), > $(ZIZMOR_OUT))
+
+security: check-workflows ## Run every security check
 
 up: ## Start the local WordPress site (http://localhost:8080) with Mailpit (:8025), then set it up
 	$(COMPOSE) --profile site up -d --build wordpress mailpit webhook

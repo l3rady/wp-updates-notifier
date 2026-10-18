@@ -7,3 +7,4 @@
 .DS_Store
 # Local settings for docker compose, e.g. OBJECT_CACHE=off
 .env
+/zizmor.sarif

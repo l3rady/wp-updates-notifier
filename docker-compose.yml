@@ -204,6 +204,27 @@ services:
     environment:
       HTTP_PORT: "8080"
 
+  # ----- Security checks (`make security`), profile "security": not started by `make up` -----
+
+  # Lints .github/workflows/ (and runs shellcheck on the run: blocks): `make check-workflows`.
+  actionlint:
+    profiles: [security]
+    image: rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+
+  # Audits .github/workflows/ for insecure patterns: `make check-workflows`. A GH_TOKEN in the environment enables
+  # the audits that ask the GitHub API (for example impostor commits); without one they are skipped.
+  zizmor:
+    profiles: [security]
+    image: ghcr.io/zizmorcore/zizmor:1.30.1@sha256:a2eb396d886c053073405c7a980f2139ba2248ec172243cfa3841e57196e8101
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+    environment:
+      - GH_TOKEN
+
 volumes:
   composer-cache:
   site-db:
