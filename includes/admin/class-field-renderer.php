@@ -116,6 +116,11 @@ final class Field_Renderer {
 			return '';
 		}
 
+		if ( Field_Types::is_secret( $field ) ) {
+			// A secret's renderer is only told whether a value is saved, never the value.
+			$value = is_scalar( $value ) && '' !== (string) $value ? '1' : '';
+		}
+
 		$error_id = $id . '-error';
 		if ( '' !== $error ) {
 			$described_by = trim( $described_by . ' ' . $error_id );

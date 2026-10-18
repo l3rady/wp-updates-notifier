@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Field_Types {
 
 	/**
-	 * Types whose value is text, so that a schema can ask for it to be kept secret.
+	 * Types whose value is text. An externally supplied value of one is not shown on the edit form unless the schema sets `show_external`.
 	 */
 	const TEXT_LIKE = array( 'text', 'textarea', 'url', 'email_list', 'secret' );
 
@@ -87,6 +87,9 @@ final class Field_Types {
 		 * value, `$disabled` whether the control is read-only and `$described_by` the ids of the elements that
 		 * describe it. `$error` is the message of an error to show, or an empty string; the error text itself is
 		 * drawn by the caller, so the control only needs to be marked invalid.
+		 *
+		 * For a field with `secret` set, `$value` is `'1'` when a value is saved and `''` when not: the real value is
+		 * never passed to the callable.
 		 *
 		 * `sanitize( $value, $field )` returns the clean value, or a WP_Error when the value is not valid. `$field`
 		 * is the field schema, with its `name` added. The error is reported against the field.
@@ -178,7 +181,7 @@ final class Field_Types {
 	}
 
 	/**
-	 * Whether a field's value is kept secret: a `secret`, or a text-like type with `secret` set.
+	 * Whether a field's value is kept secret: a `secret` type, or any known type with `secret` set.
 	 *
 	 * @param array<string, mixed> $field Field schema.
 	 *
@@ -187,7 +190,7 @@ final class Field_Types {
 	public static function is_secret( array $field ): bool {
 		$type = self::canonical( $field['type'] ?? null );
 
-		return 'secret' === $type || ( true === ( $field['secret'] ?? false ) && in_array( $type, self::TEXT_LIKE, true ) );
+		return 'secret' === $type || true === ( $field['secret'] ?? false );
 	}
 
 	/**

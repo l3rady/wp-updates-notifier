@@ -27,7 +27,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `description` (string): help text.
  * - `default` (mixed): value used when nothing is stored.
  * - `required` (bool): the field must have a value. A `false` boolean and a `0` number count as values.
- * - `secret` (bool): for `text`, `textarea`, `url` and `email_list`, the value is never shown again once saved, like a `secret`.
+ * - `secret` (bool): the value is never shown again once saved, like a `secret`. Works for every type, including added ones, whose renderer then
+ *   only gets `'1'` (a value is saved) or `''`.
+ * - `show_external` (bool): for `text`, `textarea`, `url` and `email_list`, show the value on the edit screen when it comes from outside the
+ *   database (a constant, an environment variable or a source). By default such a value is not printed, only "Set by ...". Don't use it for secrets.
  * - `options` (array): key => label, for `enum` and `select`.
  * - `multiple` (bool): for `enum`, true when any number of the options can be chosen. The value is then a list of keys.
  * - `display` (string): for `boolean`, `checkbox` (default), `radio` or `select`. For `enum`, `select`, `radio` or
@@ -47,7 +50,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `email_list`: addresses separated by commas, shown as a text input. One bad address makes the field invalid. Stored joined with `,`.
  * - `secret`: a string, shown as a password input, trimmed and with control characters removed. The saved value is never output. Submitting nothing keeps the saved value, and a
  *   `<name>__clear` setting that is true (the "Clear" checkbox of the form) empties it. `'secret' => true` does the same for the other
- *   text types.
+ *   types.
  * - `number`: a whole number, shown as a number input, within `min` and `max`. An empty value is left out, so the stored value or the
  *   default applies.
  * - `boolean`: `true` or `false`, shown as a checkbox, radio buttons or a select.
@@ -301,6 +304,8 @@ abstract class Channel {
 		 *         3
 		 *     );
 		 *
+		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+		 *
 		 * @since 2.0.0
 		 *
 		 * @param mixed            $payload      The payload.
@@ -314,6 +319,8 @@ abstract class Channel {
 		 *
 		 * The dynamic part, `$type`, is the channel type, for example `email`. The arguments are the
 		 * same as for `sc_wpun_channel_payload`.
+		 *
+		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 		 *
 		 * @since 2.0.0
 		 *

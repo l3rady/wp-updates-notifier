@@ -265,27 +265,15 @@ class Test_Field_Types extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A secret flag only means something on a text-like type.
+	 * The secret flag works on every type, built in or added.
 	 */
 	public function test_secret_flag_on_other_types() {
 		$this->assertFalse( Field_Types::is_secret( array( 'type' => 'text' ) ) );
+		$this->assertFalse( Field_Types::is_secret( array( 'type' => 'text', 'secret' => 'yes' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$this->assertTrue( Field_Types::is_secret( array( 'type' => 'secret' ) ) );
-		$this->assertTrue(
-			Field_Types::is_secret(
-				array(
-					'type'   => 'textarea',
-					'secret' => true,
-				)
-			)
-		);
-		$this->assertFalse(
-			Field_Types::is_secret(
-				array(
-					'type'   => 'number',
-					'secret' => true,
-				)
-			)
-		);
+		foreach ( array( 'textarea', 'number', 'boolean', 'enum', 'whatever' ) as $type ) {
+			$this->assertTrue( Field_Types::is_secret( array( 'type' => $type, 'secret' => true ) ), $type ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		}
 	}
 
 	/**
