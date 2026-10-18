@@ -14,6 +14,14 @@ updates:
     commit-message:
       prefix: build
 
+  # The pinned images of the security tools in docker-compose.yml.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+
   - package-ecosystem: composer
     directory: /
     schedule:

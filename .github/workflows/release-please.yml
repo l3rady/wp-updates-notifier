@@ -7,14 +7,15 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -27,7 +28,7 @@ jobs:
 
       # release-please only rewrites version strings in the files it is told
       # about, so these two are set here, on the Release PR's own branch.
-      - name: Check out the Release PR
+      - name: Check out the Release PR # zizmor: ignore[artipacked] the next step pushes with the checkout's credentials
         if: ${{ steps.release.outputs.pr != '' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
