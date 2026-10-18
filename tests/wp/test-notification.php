@@ -189,6 +189,26 @@ class Test_Notification extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Dumping an instance shows the setting names but not the values.
+	 */
+	public function test_instance_debug_output_hides_setting_values() {
+		$instance = new Channel_Instance( 'ops', 'slack', 'Ops', true, array( 'webhook_url' => 'https://hooks.example.org/SECRET-1', 'token' => 'SECRET-2' ), array( 'scope' => 'all' ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+
+		ob_start();
+		var_dump( $instance ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_dump
+		$dump = ob_get_clean();
+		foreach ( array( print_r( $instance, true ), $dump ) as $out ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+			$this->assertStringNotContainsString( 'SECRET', $out );
+			$this->assertStringNotContainsString( 'hooks.example.org', $out );
+			$this->assertStringContainsString( 'webhook_url', $out );
+			$this->assertStringContainsString( 'token', $out );
+			$this->assertStringContainsString( '[redacted]', $out );
+			$this->assertStringContainsString( 'ops', $out );
+		}
+		$this->assertSame( 'SECRET-2', $instance->get_setting( 'token' ), 'The real value is still there.' );
+	}
+
+	/**
 	 * Links that are not http or https are written as plain text in Markdown.
 	 */
 	public function test_markdown_drops_unsafe_link_targets() {

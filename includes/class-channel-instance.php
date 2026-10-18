@@ -18,6 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * A site can have several instances of the same type. Immutable. Part of the extension API.
  *
+ * The settings of an effective instance are resolved, secrets included. The values are hidden from var_dump() and
+ * print_r(), but don't log or dump them yourself.
+ *
  * @since 2.0.0
  */
 final class Channel_Instance {
@@ -91,6 +94,22 @@ final class Channel_Instance {
 		$this->enabled  = $enabled;
 		$this->settings = $settings;
 		$this->routing  = $routing;
+	}
+
+	/**
+	 * What var_dump() and print_r() show: the settings keys, never the values, which can be resolved secrets.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function __debugInfo(): array {
+		return array(
+			'id'       => $this->id,
+			'type'     => $this->type,
+			'label'    => $this->label,
+			'enabled'  => $this->enabled,
+			'routing'  => $this->routing,
+			'settings' => array_fill_keys( array_keys( $this->settings ), '[redacted]' ),
+		);
 	}
 
 	/**

@@ -126,7 +126,7 @@ public function get_fields(): array {
 }
 ```
 
-The types are `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `boolean` and `enum` (with `checkbox` and `select` as aliases). The full list of keys (`default`, `required`, `options`, `multiple`, `display`, `min`, `max`, `sanitize_callback`, `validate_callback` and more) is documented on the `WPUN\Channel` class in [`includes/abstract-class-channel.php`](../../includes/abstract-class-channel.php).
+The types are `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `boolean` and `enum` (with `checkbox` and `select` as aliases). The full list of keys (`default`, `required`, `secret`, `show_external`, `options`, `multiple`, `display`, `min`, `max`, `sanitize_callback`, `validate_callback` and more) is documented on the `WPUN\Channel` class in [`includes/abstract-class-channel.php`](../../includes/abstract-class-channel.php).
 
 Every instance also has a label, an on/off switch and routing. The plugin adds these; don't put them in `get_fields()`.
 
@@ -149,10 +149,15 @@ public function validate_settings( array $settings, array $stored = array() ) {
 
 ### Secrets
 
-Mark anything that grants access as secret: API tokens, passwords, and webhook URLs that carry a token. Use the `secret` type, or `'secret' => true` on a `text`, `textarea`, `url` or `email_list` field. A secret:
+Mark anything that grants access as secret: API tokens, passwords, and webhook URLs that carry a token. Use the `secret` type, or `'secret' => true` on a field of any type, including a custom one. A secret:
 
 - is never written back into the form once saved. The form shows that a value is saved, leaving the field empty keeps it, and a "Clear" checkbox empties it;
+- is never handed to the field's renderer: a custom type's `render` callable gets `'1'` as the value when one is saved and `''` when not;
 - is still stored in the database in plain text, like other plugin settings. Site owners who want it out of the database can supply it from `wp-config.php`, an environment variable or a secrets service instead. See [Configuration sources](configuration-sources.md). Your fields support this automatically, for example `SC_WPUN_CHANNEL_OPS_CHAT__WEBHOOK_URL`.
+
+A value that comes from outside the database (a constant, an environment variable or a source) is not printed on the edit screen for the text types (`text`, `textarea`, `url`, `email_list`) unless the field sets `'show_external' => true`: the screen then only says "Set by ...". Flag secrets with `secret`, and set `show_external` only for harmless values such as an address or a name.
+
+Instances that reach hooks and your `send()` hold the resolved settings, secrets included. `var_dump()` and `print_r()` of a `Channel_Instance` show the setting names with `[redacted]` values, but don't log or dump the settings yourself.
 
 Your own code must keep secrets secret too. Never put one in a `Delivery_Result` message, an admin notice or a log. Results are shown to administrators and stored. The error messages of the HTTP API can contain the URL that was requested, so don't pass them on as they are.
 

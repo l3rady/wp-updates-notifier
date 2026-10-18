@@ -295,6 +295,8 @@ class Channel_Store {
 			/**
 			 * Fires after a channel instance was deleted.
 			 *
+			 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+			 *
 			 * @since 2.0.0
 			 *
 			 * @param string           $id       Identifier of the deleted instance.

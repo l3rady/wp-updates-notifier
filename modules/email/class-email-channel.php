@@ -85,20 +85,23 @@ class Email_Channel extends Channel {
 	public function get_fields(): array {
 		return array(
 			'to'             => array(
-				'type'        => 'email_list',
-				'label'       => __( 'Send to', 'wp-updates-notifier' ),
-				'description' => __( 'Separate multiple email addresses with a comma (,).', 'wp-updates-notifier' ),
-				'required'    => true,
+				'type'          => 'email_list',
+				'label'         => __( 'Send to', 'wp-updates-notifier' ),
+				'description'   => __( 'Separate multiple email addresses with a comma (,).', 'wp-updates-notifier' ),
+				'required'      => true,
+				'show_external' => true,
 			),
 			'from'           => array(
 				'type'              => 'text',
 				'label'             => __( 'From address', 'wp-updates-notifier' ),
 				'description'       => __( 'Leave empty to use the WordPress default. Only set an address at a domain this site is allowed to send mail for.', 'wp-updates-notifier' ),
+				'show_external'     => true,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
 			'reply_to'       => array(
 				'type'              => 'text',
 				'label'             => __( 'Reply-To address', 'wp-updates-notifier' ),
+				'show_external'     => true,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
 			'format'         => array(
@@ -113,6 +116,7 @@ class Email_Channel extends Channel {
 			'subject_prefix' => array(
 				'type'              => 'text',
 				'label'             => __( 'Subject prefix', 'wp-updates-notifier' ),
+				'show_external'     => true,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
 		);
@@ -216,6 +220,8 @@ class Email_Channel extends Channel {
 		/**
 		 * Filters the subject of the email.
 		 *
+		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+		 *
 		 * @since 1.4.3 Since 2.0.0 also receives the notification and the instance.
 		 *
 		 * @param string           $subject      Subject, including the prefix.
@@ -226,6 +232,8 @@ class Email_Channel extends Channel {
 
 		/**
 		 * Filters the body of the email.
+		 *
+		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 		 *
 		 * @since 1.4.3 Since 2.0.0 also receives the notification and the instance, and is not HTML-escaped.
 		 *
