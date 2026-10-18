@@ -23,7 +23,8 @@ use WPUN\State;
  * Lists the channel instances with their last delivery, and handles the row actions that need no form:
  * send a test message, switch on or off, duplicate and delete.
  *
- * An instance whose module is not registered is not listed and every action treats it as missing.
+ * An instance whose module is not registered is not listed and every action treats it as missing. If the module
+ * was refused for needing a newer API, its instances are shown below the list, read-only, with the reason.
  *
  * @internal
  */
@@ -115,6 +116,27 @@ class Channels_Tab {
 	}
 
 	/**
+	 * The stored or code-defined instances of modules the registry refused, with the reason.
+	 *
+	 * @return array<string, array{instance: Channel_Instance, label: string, reason: string}>
+	 */
+	private function unavailable(): array {
+		$rejected = $this->registry->get_rejected();
+		$found    = array();
+		foreach ( $this->store->all() as $id => $instance ) {
+			if ( isset( $rejected[ $instance->get_type() ] ) ) {
+				$found[ $id ] = array(
+					'instance' => $instance,
+					'label'    => $rejected[ $instance->get_type() ]['label'],
+					'reason'   => $rejected[ $instance->get_type() ]['reason'],
+				);
+			}
+		}
+
+		return $found;
+	}
+
+	/**
 	 * Output the tab: the list, the form to add or edit a channel, or the confirmation of a delete.
 	 *
 	 * @return void
@@ -153,6 +175,7 @@ class Channels_Tab {
 		}
 
 		$this->render_list();
+		$this->render_unavailable();
 	}
 
 	/**
@@ -220,6 +243,51 @@ class Channels_Tab {
 			<tbody>
 				<?php foreach ( $instances as $id => $instance ) : ?>
 					<?php $this->render_row( $instance, $channels[ $id ]['last_result'] ?? null, $channels[ $id ]['retry_at'] ?? null ); ?>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Output the read-only table of instances whose module was refused, if there are any.
+	 *
+	 * @return void
+	 */
+	private function render_unavailable(): void {
+		$unavailable = $this->unavailable();
+		if ( array() === $unavailable ) {
+			return;
+		}
+		?>
+		<h3><?php esc_html_e( 'Unavailable channels', 'wp-updates-notifier' ); ?></h3>
+		<p><?php esc_html_e( 'These channels belong to modules that need a newer version of WP Updates Notifier. Nothing is sent through them and their settings are kept.', 'wp-updates-notifier' ); ?></p>
+		<table class="widefat striped sc-wpun-unavailable-channels">
+			<caption class="screen-reader-text"><?php esc_html_e( 'Unavailable channels', 'wp-updates-notifier' ); ?></caption>
+			<thead>
+				<tr>
+					<th scope="col"><?php esc_html_e( 'Label', 'wp-updates-notifier' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Module', 'wp-updates-notifier' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Status', 'wp-updates-notifier' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $unavailable as $item ) : ?>
+					<tr>
+						<td><?php echo esc_html( $item['instance']->get_label() ); ?></td>
+						<td><?php echo esc_html( $item['label'] ); ?></td>
+						<td>
+							<?php
+							echo esc_html(
+								sprintf(
+									// translators: %s: Why the module is not available.
+									__( 'Unavailable: %s', 'wp-updates-notifier' ),
+									$item['reason']
+								)
+							);
+							?>
+						</td>
+					</tr>
 				<?php endforeach; ?>
 			</tbody>
 		</table>

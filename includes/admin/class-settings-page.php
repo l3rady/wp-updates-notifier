@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use WPUN\Boolean_Field;
 use WPUN\Config_Report;
+use WPUN\Rejected_Channels;
 use WPUN\Enum_Field;
 use WPUN\Notifier;
 use WPUN\Scheduler;
@@ -62,6 +63,13 @@ class Settings_Page {
 	private $config_report;
 
 	/**
+	 * Report of modules refused for needing a newer API.
+	 *
+	 * @var Rejected_Channels
+	 */
+	private $rejected_channels;
+
+	/**
 	 * The Channels tab.
 	 *
 	 * @var Channels_Tab
@@ -78,22 +86,24 @@ class Settings_Page {
 	/**
 	 * Constructor.
 	 *
-	 * @param Settings      $settings  Settings.
-	 * @param State         $state     Run state.
-	 * @param Notifier      $notifier  Notifier.
-	 * @param Slack_Notice  $slack_notice Notice about Slack no longer being supported.
-	 * @param Config_Report $config_report Report of configuration problems.
-	 * @param Channels_Tab  $channels_tab The Channels tab.
-	 * @param Notices       $notices Notices about what an admin action did.
+	 * @param Settings          $settings  Settings.
+	 * @param State             $state     Run state.
+	 * @param Notifier          $notifier  Notifier.
+	 * @param Slack_Notice      $slack_notice Notice about Slack no longer being supported.
+	 * @param Config_Report     $config_report Report of configuration problems.
+	 * @param Rejected_Channels $rejected_channels Report of modules refused for needing a newer API.
+	 * @param Channels_Tab      $channels_tab The Channels tab.
+	 * @param Notices           $notices Notices about what an admin action did.
 	 */
-	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Channels_Tab $channels_tab, Notices $notices ) {
-		$this->settings      = $settings;
-		$this->state         = $state;
-		$this->notifier      = $notifier;
-		$this->slack_notice  = $slack_notice;
-		$this->config_report = $config_report;
-		$this->channels_tab  = $channels_tab;
-		$this->notices       = $notices;
+	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices ) {
+		$this->settings          = $settings;
+		$this->state             = $state;
+		$this->notifier          = $notifier;
+		$this->slack_notice      = $slack_notice;
+		$this->config_report     = $config_report;
+		$this->rejected_channels = $rejected_channels;
+		$this->channels_tab      = $channels_tab;
+		$this->notices           = $notices;
 	}
 
 	/**
@@ -245,6 +255,7 @@ class Settings_Page {
 
 			<?php $this->slack_notice->render(); ?>
 			<?php $this->config_report->render(); ?>
+			<?php $this->rejected_channels->render(); ?>
 			<?php $this->notices->render(); ?>
 
 			<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Settings sections', 'wp-updates-notifier' ); ?>">

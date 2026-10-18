@@ -33,6 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   Notification_Renderer does it for you when you pass it the limits.
  * - Never put a secret, such as the webhook address, in a result, a notice or a log. They are shown to
  *   administrators and written to the stored state.
+ * - Declare the API version you need in get_api_constraint(), so the plugin refuses the channel on a site that is too old.
  * - Let site code change the payload with filter_payload(), and check it is still what you can send.
  *
  * @since 1.0.0
@@ -66,6 +67,17 @@ class Example_Channel extends Channel {
 	 */
 	public function get_type(): string {
 		return self::TYPE;
+	}
+
+	/**
+	 * The API versions this channel needs. The registry refuses the channel, and tells the site owner, if the site's API is older.
+	 *
+	 * REQUIRED_API is defined in the main plugin file, which is loaded before this class is used.
+	 *
+	 * @return string
+	 */
+	public function get_api_constraint(): string {
+		return REQUIRED_API;
 	}
 
 	/**

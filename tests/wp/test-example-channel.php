@@ -68,6 +68,38 @@ class Test_Example_Channel extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The channel declares the add-on's constraint, which this site meets, so it is registered.
+	 */
+	public function test_the_channel_declares_the_api_it_needs() {
+		$this->assertSame( WPUN_Example_Channel\REQUIRED_API, ( new Example_Channel() )->get_api_constraint() );
+		$this->assertTrue( sc_wpun()->channels()->has( Example_Channel::TYPE ) );
+		$this->assertArrayNotHasKey( Example_Channel::TYPE, sc_wpun()->channels()->get_rejected() );
+	}
+
+	/**
+	 * A copy that needs a newer API than the site has is refused and the reason is recorded.
+	 */
+	public function test_a_channel_that_needs_a_newer_api_is_refused() {
+		$registry = new Channel_Registry();
+		// Let the registry load first, so the add-on's own registration is out of the way.
+		$registry->unregister( Example_Channel::TYPE );
+		$channel = new class() extends Example_Channel {
+			/**
+			 * An API version the site does not have.
+			 *
+			 * @return string
+			 */
+			public function get_api_constraint(): string {
+				return '^99.0';
+			}
+		};
+
+		$this->assertFalse( $registry->register( $channel ) );
+		$this->assertNull( $registry->get( Example_Channel::TYPE ) );
+		$this->assertStringContainsString( '^99.0', $registry->get_rejected()[ Example_Channel::TYPE ]['reason'] );
+	}
+
+	/**
 	 * A notification of plugin updates.
 	 *
 	 * @param int    $count  Number of plugins.

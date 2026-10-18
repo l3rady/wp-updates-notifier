@@ -232,6 +232,21 @@ abstract class Channel {
 	}
 
 	/**
+	 * The versions of the extension API this module needs, as a constraint.
+	 *
+	 * The registry refuses to register the module when the API version of the site (sc_wpun_api_version())
+	 * does not satisfy it, and tells the site owner. An empty string, the default, means no check.
+	 * Composer's syntax applies, for example `'^1.0'` (any 1.x from 1.0 on) or `'>=1.0 <3.0'`.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return string The constraint, or an empty string to skip the check.
+	 */
+	public function get_api_constraint(): string {
+		return '';
+	}
+
+	/**
 	 * Markup of the settings fields of an instance, for a channel that draws its own.
 	 *
 	 * It replaces only the module fields part of the add and edit form. The inputs must be named `settings[<field>]`.

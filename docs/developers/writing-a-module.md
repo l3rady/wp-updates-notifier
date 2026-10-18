@@ -45,6 +45,8 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\\boot' );
 
 `sc_wpun_api_satisfies( '^1.0' )` is true for any 1.x API from 1.0.0 on. Ask for the oldest version that has everything you use, and use a wider constraint such as `>=1.0 <3.0` only for versions you have tested. See [Stability and deprecation](stability.md).
 
+The check in `boot()` is for everything outside the channel. The registry already checks the channel itself (see the next step), but only your code knows what else it does: hooks your add-on adds on its own, or its own settings screen, would still run against an API that is too old. Keep the explicit `sc_wpun_api_satisfies()` check for those, and for showing your own notice.
+
 Do the work on `plugins_loaded`, not when the file is included. By then every active plugin is loaded, whatever order WordPress loaded them in.
 
 ## 2. The channel class
@@ -82,9 +84,22 @@ The optional methods:
 | --- | --- | --- |
 | `get_description()` | empty | Describe the channel in one sentence on the "Add channel" screen. |
 | `get_fields()` | no fields | Describe the settings of an instance. See step 3. |
+| `get_api_constraint()` | empty: no check | Declare the API versions the channel needs, for example `'^1.0'`. The registry refuses the channel on a site whose API does not satisfy it. See "Declare the API version you need" below. |
 | `supports( $feature )` | false | Return true for `test_message` to get a "Send test message" button. |
 | `validate_settings( $settings, $stored )` | checks every field against its schema | Add checks that span several fields. Call `parent::validate_settings()` first. |
 | `render_settings( $instance )` | null: the form is drawn from the schema | Draw the fields yourself. Rarely needed. |
+
+### Declare the API version you need
+
+Override `get_api_constraint()` to say which API versions the channel works with. It takes the same constraint syntax as `sc_wpun_api_satisfies()`:
+
+```php
+public function get_api_constraint(): string {
+	return '^1.0';
+}
+```
+
+When the channel is registered, the registry checks the constraint against `sc_wpun_api_version()`. If it is not satisfied, or cannot be read, `register()` returns false, the channel is not available, and the `sc_wpun_channel_rejected` action fires. Site owners see "Unavailable: ..." for the channel's instances on the **Channels** tab, a notice on the plugin's settings page and a Site Health recommendation. Their settings are kept, so everything works again once WP Updates Notifier is updated. See [Stability and deprecation](stability.md#the-api-version).
 
 ## 3. Settings: the field schema
 
@@ -265,7 +280,8 @@ Return a `WP_Error` from the filter to test a failed connection.
 
 ## Checklist
 
-- The header has `Requires Plugins: wp-updates-notifier`, and `boot()` checks `sc_wpun_api_satisfies( '^1.0' )`.
+- The header has `Requires Plugins: wp-updates-notifier`, and `boot()` checks `sc_wpun_api_satisfies( '^1.0' )` for code outside the channel.
+- `get_api_constraint()` returns the API versions the channel needs.
 - The type is unique and never changes.
 - Every credential is a secret field, and no secret reaches a message, notice or log.
 - `send()` always returns a `Delivery_Result` and never retries or sleeps.
