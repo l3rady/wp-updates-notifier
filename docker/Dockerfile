@@ -5,6 +5,7 @@
 #   docker build --target dev      --build-arg PHP_VERSION=7.4 -f docker/Dockerfile .
 #   docker build --target wp-tests --build-arg WP_VERSION=7.1.3 ...   (WordPress test suite)
 #   docker build --target coverage ...                                (adds pcov)
+#   docker build --target site ...                                    (the local site, `make up`)
 
 ARG PHP_VERSION=8.3
 
@@ -98,6 +99,23 @@ ENV WP_TESTS_DIR=/opt/wordpress-develop/tests/phpunit
 WORKDIR /opt/wordpress-develop
 ENTRYPOINT ["wp-tests-entrypoint"]
 CMD ["php", "./vendor/bin/phpunit", "--version"]
+
+# ---------------------------------------------------------------------------
+# site: the local site's WordPress (`make up`). The wordpress and wp-cli services
+# both run this image, so the web server and WP-CLI share one PHP, with the
+# phpredis extension for the persistent object cache (Valkey) and a MySQL client
+# for `wp db`.
+# ---------------------------------------------------------------------------
+FROM wordpress:php${PHP_VERSION} AS site
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends mariadb-client ${PHPIZE_DEPS} \
+    && pecl install redis-6.3.0 \
+    && docker-php-ext-enable redis \
+    && apt-get purge -y --auto-remove ${PHPIZE_DEPS} \
+    && rm -rf /var/lib/apt/lists/* /tmp/pear
+
+COPY --from=wordpress:cli /usr/local/bin/wp /usr/local/bin/wp
 
 # ---------------------------------------------------------------------------
 # commitlint: checks that commit messages follow Conventional Commits.

@@ -109,9 +109,17 @@ services:
 
   wordpress:
     profiles: [site]
-    image: wordpress:php${PHP_VERSION:-8.3}
+    build: &site-build
+      context: .
+      dockerfile: docker/Dockerfile
+      target: site
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.3}
+    image: &site-image wp-updates-notifier:site-php${PHP_VERSION:-8.3}
     depends_on:
       site-db:
+        condition: service_healthy
+      valkey:
         condition: service_healthy
     ports:
       # The same port inside, so the site URL works from inside the container too (loopback, REST, WP-Cron).
@@ -132,11 +140,14 @@ services:
       - ./docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
       - ./docker/site/php.ini:/usr/local/etc/php/conf.d/zz-site.ini:ro
 
-  # WP-CLI against the local site: `docker compose run --rm wp-cli plugin list`
+  # WP-CLI against the local site: `make wp ARGS="plugin list"`. The same image as the site, so it reaches the same
+  # object cache.
   wp-cli:
     profiles: [site]
-    image: wordpress:cli
+    build: *site-build
+    image: *site-image
     user: "33:33"
+    working_dir: /var/www/html
     depends_on:
       - wordpress
     volumes:
@@ -151,7 +162,19 @@ services:
       WORDPRESS_DB_PASSWORD: root
       WORDPRESS_DB_NAME: wordpress
       SITE_URL: http://localhost:8080
+      # `on` or `off`: whether `make site-setup` turns the persistent object cache on (set it in .env to keep it off).
+      OBJECT_CACHE: ${OBJECT_CACHE:-on}
     entrypoint: ["wp"]
+
+  # Persistent object cache for the local site (Redis Object Cache talks to it). `make wp ARGS="redis status"`.
+  valkey:
+    profiles: [site]
+    image: valkey/valkey:9.1-alpine
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
 
   # Catches all outgoing mail: http://localhost:8025
   mailpit:
