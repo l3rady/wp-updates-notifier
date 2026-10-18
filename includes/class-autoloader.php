@@ -61,11 +61,15 @@ final class Autoloader {
 		}
 
 		$parts = explode( '\\', substr( $class_name, strlen( self::NAMESPACE_PREFIX ) ) );
-		$name  = strtolower( str_replace( '_', '-', (string) array_pop( $parts ) ) );
 
-		if ( '' === $name ) {
-			return null;
+		// Only plain identifiers, so a name such as `WPUN\..\x` can never reach a file outside includes/.
+		foreach ( $parts as $part ) {
+			if ( 1 !== preg_match( '/^[A-Za-z0-9_]+$/D', $part ) ) {
+				return null;
+			}
 		}
+
+		$name = strtolower( str_replace( '_', '-', (string) array_pop( $parts ) ) );
 
 		$dir = __DIR__ . '/';
 

@@ -127,6 +127,18 @@ class Settings_Page {
 		 * It decides who sees the settings page, saves the settings, sends a test message
 		 * and dismisses the plugin's notice. An empty or non-string value is ignored.
 		 *
+		 * Lowering it hands every user with the capability control over where the plugin's
+		 * notifications go. Such a user can:
+		 *
+		 * - send the update notifications, a list of the site's outdated and possibly
+		 *   vulnerable plugins and themes, to any address;
+		 * - send test messages to any address;
+		 * - change the From and Reply-To addresses;
+		 * - add, edit, switch off, duplicate and delete channels;
+		 * - hide the core update notice and run the update check on demand;
+		 * - see the values of channel settings set in `wp-config.php` or by the environment
+		 *   when the field is not secret and its schema sets `show_external`.
+		 *
 		 * Example, let editors manage the plugin:
 		 *
 		 *     add_filter( 'sc_wpun_capability', fn() => 'edit_pages' );
@@ -263,6 +275,11 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function settings_page() {
+		// Core only shows the page to users with the menu capability; check again rather than rely on that alone.
+		if ( ! current_user_can( self::capability() ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
+		}
+
 		// Drawn like any other tab. Added here, not only at boot, so the page works however it is reached.
 		add_action( 'sc_wpun_settings_tab_general', array( $this, 'render_general_tab' ) );
 
