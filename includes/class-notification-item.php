@@ -18,6 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Immutable. Part of the extension API: channels receive these inside a Notification.
  *
+ * Values are single-line: in the name, versions, notes and link labels every run of control characters (line breaks,
+ * tabs and the like) becomes one space and the value is trimmed, and control characters are removed from link URLs.
+ * `key`, `type` and flags are kept as given.
+ *
  * @since 2.0.0
  */
 final class Notification_Item {
@@ -105,21 +109,21 @@ final class Notification_Item {
 
 		$this->type            = $type;
 		$this->key             = self::string_value( $data, 'key' );
-		$this->name            = self::string_value( $data, 'name' );
-		$this->current_version = self::string_value( $data, 'current_version' );
-		$this->new_version     = self::string_value( $data, 'new_version' );
+		$this->name            = self::single_line( self::string_value( $data, 'name' ) );
+		$this->current_version = self::single_line( self::string_value( $data, 'current_version' ) );
+		$this->new_version     = self::single_line( self::string_value( $data, 'new_version' ) );
 
 		$this->links = array();
 		foreach ( isset( $data['links'] ) && is_array( $data['links'] ) ? $data['links'] : array() as $label => $url ) {
 			if ( is_scalar( $url ) ) {
-				$this->links[ (string) $label ] = (string) $url;
+				$this->links[ self::single_line( (string) $label ) ] = (string) preg_replace( '/[\x00-\x1F\x7F]+/', '', (string) $url );
 			}
 		}
 
 		$this->notes = array();
 		foreach ( isset( $data['notes'] ) && is_array( $data['notes'] ) ? $data['notes'] : array() as $note ) {
 			if ( is_scalar( $note ) ) {
-				$this->notes[] = (string) $note;
+				$this->notes[] = self::single_line( (string) $note );
 			}
 		}
 
@@ -129,6 +133,17 @@ final class Notification_Item {
 				$this->flags[ (string) $flag ] = $value;
 			}
 		}
+	}
+
+	/**
+	 * Collapse control characters (line breaks, tabs and the like) to one space and trim.
+	 *
+	 * @param string $value Value.
+	 *
+	 * @return string
+	 */
+	private static function single_line( string $value ): string {
+		return trim( (string) preg_replace( '/[\x00-\x1F\x7F]+/', ' ', $value ) );
 	}
 
 	/**
