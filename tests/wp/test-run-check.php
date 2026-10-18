@@ -43,15 +43,14 @@ class Test_Run_Check extends WPUN_Test_Case {
 	 *
 	 * @param string $action Action name.
 	 *
-	 * @return ArrayObject Holds the count in `count`.
+	 * @return ArrayObject Holds the count under `count`.
 	 */
 	private function count_action( $action ) {
-		$counter        = new ArrayObject();
-		$counter->count = 0;
+		$counter = new ArrayObject( array( 'count' => 0 ) );
 		add_action(
 			$action,
 			static function () use ( $counter ) {
-				++$counter->count;
+				++$counter['count'];
 			}
 		);
 
@@ -84,8 +83,8 @@ class Test_Run_Check extends WPUN_Test_Case {
 		do_action( 'sc_wpun_run_check' );
 
 		$this->assertSame( 'manual', sc_wpun()->update_checker()->last_notification()->get_source() );
-		$this->assertSame( 1, $before->count );
-		$this->assertSame( 1, $after->count );
+		$this->assertSame( 1, $before['count'] );
+		$this->assertSame( 1, $after['count'] );
 
 		do_action( Scheduler::CRON_NAME );
 		$this->assertSame( 'cron', sc_wpun()->update_checker()->last_notification()->get_source() );
