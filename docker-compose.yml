@@ -128,6 +128,7 @@ services:
       - site-wp:/var/www/html
       - .:/var/www/html/wp-content/plugins/wp-updates-notifier
       - ./docker/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./examples/wpun-example-channel:/var/www/html/wp-content/plugins/wpun-example-channel:ro
       - ./docker/apache/ports.conf:/etc/apache2/ports.conf:ro
       - ./docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
 
@@ -142,6 +143,7 @@ services:
       - site-wp:/var/www/html
       - .:/var/www/html/wp-content/plugins/wp-updates-notifier
       - ./docker/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./examples/wpun-example-channel:/var/www/html/wp-content/plugins/wpun-example-channel:ro
     environment:
       WORDPRESS_DB_HOST: site-db
       WORDPRESS_DB_USER: root

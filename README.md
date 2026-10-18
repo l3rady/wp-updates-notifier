@@ -80,4 +80,10 @@ make test-wp WP_VERSION=6.7.9 PHP_VERSION=7.4   # pick versions (WP_VERSION is a
 
 The suite runs on WordPress's own test library with a real database, no real network (every HTTP request must be faked or the test fails) and no real mail. Tests for a bug that is still open carry `@group known-bug`, assert the *correct* behaviour, and are excluded from the normal run; the fix removes the tag.
 
-`make up` starts WordPress with the plugin mounted, [Mailpit](https://mailpit.axllent.org/) (catches all outgoing mail) and an echo server standing in for a webhook (`docker compose logs webhook`). Use WP-CLI with `docker compose run --rm wp-cli <command>`.
+`make up` starts WordPress with the plugin mounted, [Mailpit](https://mailpit.axllent.org/) (catches all outgoing mail) and an echo server standing in for a webhook. Use WP-CLI with `docker compose run --rm wp-cli <command>`.
+
+- The example add-on (`examples/wpun-example-channel/`) is mounted too: activate "WP Updates Notifier Example Channel" on the Plugins screen.
+- Channels can post to the echo server at `http://webhook:8080/<any path>`. Read what it received with `docker compose logs webhook`.
+- WP-Cron runs by itself on page loads. WP-CLI calls don't spawn it; run due events with `docker compose run --rm wp-cli cron event run --due-now`.
+
+All of this is set up by files in `docker/`, which never reach the plugin zip.
