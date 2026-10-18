@@ -12,7 +12,6 @@
 	<file>wp-updates-notifier.php</file>
 	<file>includes</file>
 	<file>modules</file>
-	<file>examples</file>
 	<file>uninstall.php</file>
 	<file>rector.php</file>
 	<file>tests</file>
@@ -21,6 +20,8 @@
 	<exclude-pattern>*/node_modules/*</exclude-pattern>
 	<exclude-pattern>*/build/*</exclude-pattern>
 	<exclude-pattern>*/docker/*</exclude-pattern>
+	<!-- The example add-on is a plugin of its own, linted with examples/wpun-example-channel/phpcs.xml.dist. -->
+	<exclude-pattern>*/examples/*</exclude-pattern>
 	<exclude-pattern>*/tests/bin/check-hooks/*</exclude-pattern>
 
 	<!-- WordPress coding standards: Core, Docs and Extra. -->
@@ -35,8 +36,6 @@
 		<properties>
 			<property name="text_domain" type="array">
 				<element value="wp-updates-notifier"/>
-				<!-- The example add-on in examples/ is a plugin of its own, with its own text domain. -->
-				<element value="wpun-example-channel"/>
 			</property>
 		</properties>
 	</rule>
@@ -48,8 +47,6 @@
 				<element value="SC_WP_Updates_Notifier"/>
 				<element value="SC_WPUN"/>
 				<element value="WPUN"/>
-				<!-- The namespace of the example add-on in examples/. -->
-				<element value="WPUN_Example_Channel"/>
 			</property>
 		</properties>
 	</rule>
