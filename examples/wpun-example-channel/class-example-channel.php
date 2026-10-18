@@ -30,6 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Use the WordPress HTTP API with a short timeout, and wp_safe_remote_post() for an address the site owner typed in.
  * - Tell the plugin when the service asked to slow down (HTTP 429), with the number of seconds from `Retry-After`.
  * - Respect the limits of the service: send a summary ("...and 12 more") instead of a message that is too long.
+ *   Notification_Renderer does it for you when you pass it the limits.
  * - Never put a secret, such as the webhook address, in a result, a notice or a log. They are shown to
  *   administrators and written to the stored state.
  * - Let site code change the payload with filter_payload(), and check it is still what you can send.
@@ -177,36 +178,9 @@ class Example_Channel extends Channel {
 			return sprintf( __( 'This is a test message from WP Updates Notifier for %1$s (%2$s).', 'wpun-example-channel' ), $site, $notification->get_site_url() );
 		}
 
-		// Start with as many updates as the item limit allows, and show fewer until the message fits.
-		// with_items() returns a copy of the notification with only the items given, so the site name, the links
-		// and the closing line stay. The plugin counts every item as delivered when send() succeeds, which is why
-		// the message has to say how many were left out.
-		$items = $notification->get_items();
-		$shown = min( count( $items ), self::MAX_ITEMS );
-
-		while ( true ) {
-			$text = Notification_Renderer::plain_text( $notification->with_items( array_slice( $items, 0, $shown ) ) );
-			$left = count( $items ) - $shown;
-			if ( $left > 0 ) {
-				$text .= "\n" . $this->more_line( $left );
-			}
-
-			if ( 0 === $shown || mb_strlen( $text ) <= self::MAX_LENGTH ) {
-				return $text;
-			}
-			--$shown;
-		}
-	}
-
-	/**
-	 * The line that says how many updates were left out of the message.
-	 *
-	 * @param int $count How many.
-	 * @return string
-	 */
-	private function more_line( int $count ): string {
-		// translators: %d: Number of updates that are not listed in the message.
-		return sprintf( _n( '…and %d more', '…and %d more', $count, 'wpun-example-channel' ), $count );
+		// The renderer lists as many updates as the limits allow and says how many were left out ("...and 12 more").
+		// The plugin counts every item as delivered when send() succeeds, which is why the message has to say so.
+		return Notification_Renderer::plain_text( $notification, self::MAX_LENGTH, self::MAX_ITEMS );
 	}
 
 	/**

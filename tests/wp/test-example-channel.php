@@ -441,7 +441,7 @@ class Test_Example_Channel extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'Plugin ' . Example_Channel::MAX_ITEMS . ':', $text );
 		$this->assertStringNotContainsString( 'Plugin ' . ( Example_Channel::MAX_ITEMS + 1 ) . ':', $text );
 		$this->assertStringContainsString( '…and 7 more', $text );
-		$this->assertStringEndsWith( '…and 7 more', $text );
+		$this->assertMatchesRegularExpression( '/…and 7 more\n\nPlease visit [^\n]+ to update\.$/D', $text, 'The line sits before the closing line.' );
 	}
 
 	/**
@@ -454,8 +454,8 @@ class Test_Example_Channel extends WPUN_Test_Case {
 
 		$text = $this->sent_payload()['text'];
 		$this->assertLessThanOrEqual( Example_Channel::MAX_LENGTH, mb_strlen( $text ) );
-		$this->assertMatchesRegularExpression( '/…and (\d+) more$/D', $text );
-		preg_match( '/…and (\d+) more$/D', $text, $m );
+		$this->assertMatchesRegularExpression( '/…and (\d+) more\n\nPlease visit [^\n]+$/D', $text );
+		preg_match( '/…and (\d+) more\n\nPlease visit [^\n]+$/D', $text, $m );
 		$this->assertSame( 40, substr_count( $text, ': 1.0 → 2.0' ) + (int) $m[1], 'Every update is either listed or counted.' );
 		$this->assertGreaterThan( 0, substr_count( $text, ': 1.0 → 2.0' ) );
 	}

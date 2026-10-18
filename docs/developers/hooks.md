@@ -362,6 +362,10 @@ Fired in `includes/class-notifier.php`, `modules/email/class-email-channel.php`.
 
 Filters the plain text of a notification, which channels use as the message.
 
+When a length limit is given to the renderer, the filter may run more than once for one message, and the
+length is measured on what the filter returns. `$notification` is then a copy with only the items shown
+when the message was shortened.
+
 Example, add a line at the end:
 
 ```php
@@ -379,6 +383,37 @@ add_filter(
 | --- | --- | --- |
 | `$text` | `string` | The plain text. |
 | `$notification` | `Notification` | The notification it was made from. |
+| `$hidden` | `int` | How many items were left out of the text, 0 when none. |
+
+Fired in `includes/class-notification-renderer.php`.
+
+### `sc_wpun_more_items_text`
+
+*Filter*, since 2.0.0
+
+Filters the line that says how many items were left out of a shortened message.
+
+Return plain text: it is escaped for the format (Markdown, HTML) where needed. The line only exists
+when at least one item was left out.
+
+Example, say it in another way:
+
+```php
+add_filter(
+    'sc_wpun_more_items_text',
+    function ( $text, $hidden ) {
+        return sprintf( '(%d more not shown)', $hidden );
+    },
+    10,
+    2
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$text` | `string` | The line, for example "…and 3 more". |
+| `$hidden` | `int` | How many items were left out. |
+| `$notification` | `Notification` | The notification, with all its items. |
 
 Fired in `includes/class-notification-renderer.php`.
 
