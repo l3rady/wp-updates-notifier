@@ -28,6 +28,7 @@
 /docs
 /examples
 /node_modules
+/.gitleaks.toml
 /phpcs.xml.dist
 /phpstan-baseline.neon
 /phpstan.neon.dist
