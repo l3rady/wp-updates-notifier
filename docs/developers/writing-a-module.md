@@ -213,7 +213,19 @@ A failure with a `retry_after` defers the instance: update checks skip it until 
 
 ### Length limits
 
-Most services limit the size of a message. Respect the limit by sending a summary rather than a message the service will refuse: list as many items as fit and end with "…and N more". `Notification::with_items()` returns a copy of the notification with only the items you pass, so you can render a shorter one. The example channel's `message()` method does this.
+Most services limit the size of a message. Respect the limit by sending a summary rather than a message the service will refuse. `Notification_Renderer` does this for you: pass the limits to `plain_text()`, `markdown()` or `html()`.
+
+```php
+$text = Notification_Renderer::plain_text( $notification, 4000, 50 );
+```
+
+- `$max_length` is the longest result in characters, and `$max_items` the most items to list. 0 (the default) means no limit. Output is the same as without limits when everything fits.
+- The renderer lists the largest number of items that fits and adds a line "…and N more" (translatable, with a plural form) when some are left out. The line sits before the closing "Please visit…" line; in Markdown it follows the list after a blank line, in HTML it is a paragraph after the list. Nothing is added when no item is left out.
+- If even a message without any item is longer than `$max_length`, it is returned anyway (title, "more" line and closing line), never an empty string, so the result can then exceed the limit.
+- Lengths are characters (`mb_strlen()`). Some services count bytes or UTF-16 code units, so leave a margin or measure the result yourself.
+- Site code can change the "more" line with the `sc_wpun_more_items_text` filter (return plain text, it is escaped for the format). The `sc_wpun_message_text` filter still applies to plain text, and the length is measured after it. With a limit, it may run several times per message and receives the number of items left out as its third argument.
+
+The example channel's `message()` method does this.
 
 Bear in mind that a successful send counts every item as delivered, including the ones summarised as "…and N more". They are not sent again.
 
@@ -223,7 +235,7 @@ The plugin's own tests show how to test a module with WordPress's PHPUnit test s
 
 - It loads the add-on's main file the way WordPress would, calls `boot()`, and registers the channel.
 - It answers HTTP requests with the `pre_http_request` filter, so no request leaves the machine, and it checks what was sent.
-- It covers success, an error status, a `WP_Error`, a 429 with and without `Retry-After`, the summary of a long list, and that no failure message contains the webhook URL.
+- It covers success, an error status, a `WP_Error`, a 429 with and without `Retry-After`, the summary of a long list (by count and by length), and that no failure message contains the webhook URL.
 - It runs a whole update check to show a failed send is retried on the next run.
 
 A minimal mocked request in your own tests:
