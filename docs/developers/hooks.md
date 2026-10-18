@@ -534,6 +534,33 @@ add_filter(
 
 Fired in `includes/abstract-class-channel.php`.
 
+### `sc_wpun_channel_rejected`
+
+*Action*, since 2.0.0
+
+Fires when a channel is refused because the API version of the site does not satisfy what it needs.
+
+Example:
+
+```php
+add_action(
+    'sc_wpun_channel_rejected',
+    function ( $type, $reason, $channel ) {
+        error_log( sprintf( 'Channel "%s" was refused: %s', $type, $reason ) );
+    },
+    10,
+    3
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$type` | `string` | The channel type. |
+| `$reason` | `string` | Why it was refused, as plain text. |
+| `$channel` | `Channel` | The channel that was refused. |
+
+Fired in `includes/class-channel-registry.php`.
+
 ### `sc_wpun_channels`
 
 *Filter*, since 2.0.0

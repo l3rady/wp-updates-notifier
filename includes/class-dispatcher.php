@@ -258,13 +258,22 @@ class Dispatcher {
 	}
 
 	/**
-	 * The result for an instance whose channel is not registered.
+	 * The result for an instance whose channel is not registered, with the reason if the module was refused.
 	 *
 	 * @param Channel_Instance $instance The instance.
 	 *
 	 * @return Delivery_Result
 	 */
 	private function unavailable( Channel_Instance $instance ): Delivery_Result {
+		$rejected = $this->registry->get_rejected()[ $instance->get_type() ] ?? null;
+		if ( null !== $rejected ) {
+			return Delivery_Result::failure(
+				// translators: 1: Channel type, 2: Why the module was refused.
+				sprintf( __( 'The "%1$s" channel is not available: %2$s', 'wp-updates-notifier' ), $instance->get_type(), $rejected['reason'] ),
+				'unavailable'
+			);
+		}
+
 		return Delivery_Result::failure(
 			// translators: %s: Channel type.
 			sprintf( __( 'The "%s" channel is not available.', 'wp-updates-notifier' ), $instance->get_type() ),

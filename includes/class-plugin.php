@@ -176,20 +176,28 @@ class Plugin {
 	private $config_report;
 
 	/**
+	 * Report of modules refused for needing a newer API.
+	 *
+	 * @var Rejected_Channels
+	 */
+	private $rejected_channels;
+
+	/**
 	 * Build the components. Nothing is hooked until register() runs.
 	 */
 	public function __construct() {
-		$this->state          = new State();
-		$this->config         = new Config();
-		$this->channels       = new Channel_Registry();
-		$this->channel_store  = new Channel_Store( $this->config, $this->channels );
-		$this->settings       = new Settings( $this->state, $this->channel_store, $this->config );
-		$this->config_report  = new Config_Report( $this->config, $this->settings, $this->channel_store );
-		$this->scheduler      = new Scheduler( $this->settings );
-		$this->notifier       = new Notifier( $this->settings, $this->channel_store );
-		$this->dispatcher     = new Dispatcher( $this->channels, $this->channel_store );
-		$this->update_checker = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store );
-		$this->slack_notice   = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
+		$this->state             = new State();
+		$this->config            = new Config();
+		$this->channels          = new Channel_Registry();
+		$this->channel_store     = new Channel_Store( $this->config, $this->channels );
+		$this->settings          = new Settings( $this->state, $this->channel_store, $this->config );
+		$this->config_report     = new Config_Report( $this->config, $this->settings, $this->channel_store );
+		$this->rejected_channels = new Rejected_Channels( $this->channels );
+		$this->scheduler         = new Scheduler( $this->settings );
+		$this->notifier          = new Notifier( $this->settings, $this->channel_store );
+		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store );
+		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store );
+		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
 	}
 
 	/**
@@ -279,9 +287,18 @@ class Plugin {
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
-		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->channels_tab(), $this->notices() );
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices() );
 
 		return $this->settings_page;
+	}
+
+	/**
+	 * Report of modules refused for needing a newer API.
+	 *
+	 * @return Rejected_Channels
+	 */
+	public function rejected_channels(): Rejected_Channels {
+		return $this->rejected_channels;
 	}
 
 	/**
@@ -343,6 +360,7 @@ class Plugin {
 		// Add Actions.
 		add_action( 'switch_blog', array( $this->config, 'flush' ) ); // Values are resolved per site.
 		add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
+		add_filter( 'site_status_tests', array( $this->rejected_channels, 'add_site_health_test' ) ); // Site Health test while a module is refused for needing a newer API.
 		add_action( 'sc_wpun_channel_deleted', array( $this->state, 'forget_channel' ) ); // Deleting an instance deletes its delivery state.
 		add_action( 'sc_wpun_notification_sent', array( $this->state, 'record_delivery' ), 10, 3 ); // Remember each instance's latest delivery result.
 		add_action( 'sc_wpun_notification_failed', array( $this->state, 'record_delivery' ), 10, 3 );

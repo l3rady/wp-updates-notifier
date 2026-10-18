@@ -42,6 +42,10 @@ const REQUIRED_API = '^1.0';
  * WP Updates Notifier. It does not check the version, so this does: sc_wpun_api_satisfies() is true when the
  * installed API version matches REQUIRED_API.
  *
+ * The channel declares the same constraint (Example_Channel::get_api_constraint()), and the registry refuses it on a
+ * site that is too old. This check is still needed for code that runs outside the channel, such as hooks the add-on adds
+ * itself, and to show the add-on's own notice.
+ *
  * @return bool
  */
 function api_is_supported(): bool {

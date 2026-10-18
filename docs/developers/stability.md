@@ -61,6 +61,18 @@ Missing minor and patch parts count as 0. Pre-release suffixes are not supported
 
 To check some other version against a constraint, call `WPUN\Version_Constraint::satisfies( $version, $constraint )`. `Version_Constraint::is_valid( $constraint )` tells whether a constraint can be read, without a notice.
 
+### Enforcement by the registry
+
+A channel can declare the API versions it needs in `Channel::get_api_constraint()`, and the registry enforces it. When the site's API version does not satisfy the constraint, or the constraint cannot be read (which also triggers `_doing_it_wrong()`), `Channel_Registry::register()` returns false and fires `sc_wpun_channel_rejected`. `Channel_Registry::get_rejected()` lists the refused channels with the reason.
+
+A site owner sees it in three places:
+
+- On the **Channels** tab, instances of the refused module are listed below the channels in an "Unavailable channels" table with "Unavailable: ..." and the reason. They cannot be edited, tested, switched, duplicated or deleted, and their settings are kept.
+- A notice on the plugin's own settings page (never site-wide) lists each refused module once.
+- Site Health shows a recommendation while a module is refused.
+
+Updating WP Updates Notifier, or the add-on to a version that registers successfully, clears all of it. The check in your `plugins_loaded` callback is still needed for code that runs outside the channel and for your own notice. See [Writing a module](writing-a-module.md).
+
 Also declare the dependency in your plugin header, so WordPress (6.5 and later) refuses to activate your add-on without WP Updates Notifier:
 
 ```php
