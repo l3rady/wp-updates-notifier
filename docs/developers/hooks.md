@@ -303,6 +303,8 @@ add_filter(
 );
 ```
 
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$payload` | `mixed` | The payload. |
@@ -320,6 +322,8 @@ Filters the payload of the channels of one type just before it is sent.
 The dynamic part, `$type`, is the channel type, for example `email`. The arguments are the
 same as for `sc_wpun_channel_payload`.
 
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$payload` | `mixed` | The payload. |
@@ -334,6 +338,8 @@ Fired in `includes/abstract-class-channel.php`.
 
 Filters the body of the email.
 
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$body` | `string` | Body: plain text, or HTML if the instance is set to HTML. |
@@ -347,6 +353,8 @@ Fired in `includes/class-notifier.php`, `modules/email/class-email-channel.php`.
 *Filter*, since 1.4.3. Since 2.0.0 also receives the notification and the instance.
 
 Filters the subject of the email.
+
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
@@ -428,6 +436,8 @@ when a delivery to it was asked for.
 
 A result with a `retry_after` defers the instance: update checks skip it until then (at most 7 days).
 
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$result` | `Delivery_Result` | The result, with the reason in its code and message. |
@@ -441,6 +451,8 @@ Fired in `includes/class-dispatcher.php`.
 *Action*, since 2.0.0
 
 Fires when a notification was delivered through a channel instance.
+
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
@@ -475,6 +487,8 @@ add_filter(
 );
 ```
 
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$pre` | `null\|Delivery_Result` | Null. Return a Delivery_Result to short-circuit. |
@@ -490,6 +504,8 @@ Fired in `includes/class-dispatcher.php`.
 *Action*, since 2.0.0
 
 Fires after a channel instance was deleted.
+
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
@@ -628,6 +644,9 @@ control. `$field` is the field schema, `$name` the `name` attribute, `$id` the `
 value, `$disabled` whether the control is read-only and `$described_by` the ids of the elements that
 describe it. `$error` is the message of an error to show, or an empty string; the error text itself is
 drawn by the caller, so the control only needs to be marked invalid.
+
+For a field with `secret` set, `$value` is `'1'` when a value is saved and `''` when not: the real value is
+never passed to the callable.
 
 `sanitize( $value, $field )` returns the clean value, or a WP_Error when the value is not valid. `$field`
 is the field schema, with its `name` added. The error is reported against the field.
@@ -837,6 +856,8 @@ add_action(
 );
 ```
 
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$instance` | `Channel_Instance` | The instance being edited, or the provisional one of a new channel. |
@@ -866,6 +887,8 @@ add_action(
     2
 );
 ```
+
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 
 | Parameter | Type | Description |
 | --- | --- | --- |

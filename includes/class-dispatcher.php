@@ -192,6 +192,8 @@ class Dispatcher {
 			 *         3
 			 *     );
 			 *
+			 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+			 *
 			 * @since 2.0.0
 			 *
 			 * @param null|Delivery_Result $pre          Null. Return a Delivery_Result to short-circuit.
@@ -298,6 +300,8 @@ class Dispatcher {
 				/**
 				 * Fires when a notification was delivered through a channel instance.
 				 *
+				 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+				 *
 				 * @since 2.0.0
 				 *
 				 * @param Delivery_Result  $result       The result.
@@ -313,6 +317,8 @@ class Dispatcher {
 				 * when a delivery to it was asked for.
 				 *
 				 * A result with a `retry_after` defers the instance: update checks skip it until then (at most 7 days).
+				 *
+				 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 				 *
 				 * @since 2.0.0
 				 *

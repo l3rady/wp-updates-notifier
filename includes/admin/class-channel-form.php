@@ -308,6 +308,8 @@ class Channel_Form {
 				 *         2
 				 *     );
 				 *
+				 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+				 *
 				 * @since 2.0.0
 				 *
 				 * @param Channel_Instance $instance The instance being edited, or the provisional one of a new channel.
@@ -335,6 +337,8 @@ class Channel_Form {
 				 *         10,
 				 *         2
 				 *     );
+				 *
+				 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 				 *
 				 * @since 2.0.0
 				 *
@@ -458,7 +462,11 @@ class Channel_Form {
 	 */
 	private function control( array $schema, string $name, string $id, $value, string $error, ?string $external = null ): string {
 		$description = isset( $schema['description'] ) && is_string( $schema['description'] ) && '' !== $schema['description'] ? $schema['description'] : '';
-		$html        = Field_Renderer::field( $schema, $name, $id, $value, null !== $external, '' !== $description ? $id . '-description' : '', array(), $error );
+		if ( null !== $external && true !== ( $schema['show_external'] ?? false ) && ! Field_Types::is_secret( $schema ) && in_array( Field_Types::canonical( $schema['type'] ?? null ), Field_Types::TEXT_LIKE, true ) ) {
+			// A value from outside the database may be a secret the schema forgot to flag: don't print it.
+			$value = '';
+		}
+		$html = Field_Renderer::field( $schema, $name, $id, $value, null !== $external, '' !== $description ? $id . '-description' : '', array(), $error );
 		if ( null !== $external ) {
 			// translators: %s: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__TO".
 			$html .= ' <span class="description sc-wpun-external">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';

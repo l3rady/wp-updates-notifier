@@ -1362,4 +1362,145 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertSame( 'email', $seen->get_id() );
 		$this->assertSame( 'Email', $this->stored_instance( 'email' )->get_label(), 'Nothing was saved.' );
 	}
+
+	// Secrets and outside values (#232).
+
+	/**
+	 * An outside value of a non-secret text-like field is not printed, unless the schema opts in.
+	 */
+	public function test_an_external_text_value_is_not_printed_unless_show_external() {
+		$show = false;
+		add_filter(
+			'sc_wpun_channel_fields',
+			static function ( $fields, $type ) use ( &$show ) {
+				if ( 'fixture' === $type ) {
+					$fields['hook']                  = array(
+						'type'  => 'url',
+						'label' => 'Hook',
+					);
+					$fields['note']['show_external'] = $show;
+				}
+				return $fields;
+			},
+			10,
+			2
+		);
+		$this->store_fixture();
+		$this->add_source(
+			array(
+				'SC_WPUN_CHANNEL_FIXTURE__HOOK' => 'https://hooks.example.org/vault-HOOK-777',
+				'SC_WPUN_CHANNEL_FIXTURE__NOTE' => 'vault-NOTE-888',
+			)
+		);
+		$get = array(
+			'action' => 'edit',
+			'id'     => 'fixture',
+		);
+
+		$html = $this->html( $get );
+		$this->assertStringNotContainsString( 'vault-HOOK-777', $html );
+		$this->assertStringNotContainsString( 'vault-NOTE-888', $html );
+		$this->assertStringContainsString( 'Set by Test vault', $html );
+		$xpath = $this->parse( $html );
+		$this->assertSame( 'disabled', $xpath->query( '//input[@name="settings[hook]"]' )->item( 0 )->getAttribute( 'disabled' ) );
+
+		$show = true;
+		$html = $this->html( $get );
+		$this->assertStringContainsString( 'vault-NOTE-888', $html, 'show_external opts in.' );
+		$this->assertStringNotContainsString( 'vault-HOOK-777', $html, 'Only the field that opted in.' );
+	}
+
+	/**
+	 * The email module sets show_external, so its outside address is still shown.
+	 */
+	public function test_the_email_address_from_outside_is_still_shown() {
+		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__TO' => 'vault@example.org' ) );
+
+		$to = $this->edit_page()->query( '//input[@name="settings[to]"]' )->item( 0 );
+		$this->assertSame( 'vault@example.org', $to->getAttribute( 'value' ) );
+	}
+
+	/**
+	 * A custom type flagged secret is told only whether a value is saved, keeps it on an empty submission and never
+	 * stores what was typed when a save fails.
+	 */
+	public function test_a_custom_secret_type() {
+		$seen = array();
+		add_filter(
+			'sc_wpun_field_types',
+			static function ( $types ) use ( &$seen ) {
+				$types['test_blob'] = array(
+					'render'   => static function ( $field, $name, $id, $value ) use ( &$seen ) {
+						$seen[] = $value;
+						return '<input type="text" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( (string) $value ) . '" />';
+					},
+					'sanitize' => static fn( $value ) => is_string( $value ) ? trim( $value ) : '',
+				);
+				return $types;
+			}
+		);
+		add_filter(
+			'sc_wpun_channel_fields',
+			static function ( $fields, $type ) {
+				if ( 'fixture' === $type ) {
+					$fields['blob'] = array(
+						'type'   => 'test_blob',
+						'label'  => 'Blob',
+						'secret' => true,
+					);
+				}
+				return $fields;
+			},
+			10,
+			2
+		);
+
+		// Nothing saved yet.
+		$this->store_fixture();
+		$html = $this->html(
+			array(
+				'action' => 'edit',
+				'id'     => 'fixture',
+			)
+		);
+		$this->assertSame( array( '' ), $seen );
+
+		// A value is saved: the renderer only learns that.
+		$this->store_fixture( 'fixture', array( 'blob' => 'stored-BLOB-123' ) );
+		$seen = array();
+		$html = $this->html(
+			array(
+				'action' => 'edit',
+				'id'     => 'fixture',
+			)
+		);
+		$this->assertSame( array( '1' ), $seen );
+		$this->assertStringNotContainsString( 'stored-BLOB-123', $html );
+
+		// A failed save (the required name is empty) does not keep what was typed.
+		$this->post_fixture(
+			array(
+				'settings' => array(
+					'name' => '',
+					'blob' => 'typed-BLOB-456',
+				),
+			),
+			'edit'
+		);
+		sc_wpun()->channel_form()->process_save();
+		$meta = get_user_meta( self::$admin_id, 'sc_wpun_channel_form', true );
+		$this->assertNotEmpty( $meta['errors'] );
+		$this->assertArrayNotHasKey( 'blob', $meta['values']['settings'] );
+		$this->assertStringNotContainsString( 'typed-BLOB-456', (string) wp_json_encode( $meta ) );
+		delete_user_meta( self::$admin_id, 'sc_wpun_channel_form' );
+
+		// An empty submission keeps the saved value; a new one replaces it.
+		$this->post_fixture( array( 'settings' => array( 'blob' => '' ) ), 'edit' );
+		sc_wpun()->channel_form()->process_save();
+		$this->assertSame( 'stored-BLOB-123', $this->raw( 'fixture' )['settings']['blob'] );
+
+		$this->post_fixture( array( 'settings' => array( 'blob' => 'new-BLOB' ) ), 'edit' );
+		sc_wpun()->channel_form()->process_save();
+		$this->assertSame( 'new-BLOB', $this->raw( 'fixture' )['settings']['blob'] );
+	}
 }
