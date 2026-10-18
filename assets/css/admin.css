@@ -1,0 +1,39 @@
+/*
+ * Channels list. Its row actions are always shown: core's `.visible` class is not enough,
+ * because common.js removes it from every row when focus leaves one.
+ */
+.sc-wpun-channels .row-actions {
+	position: static;
+}
+
+/* Row actions that post (send test, duplicate, enable) sit in small forms. */
+.sc-wpun-channels .row-actions form {
+	display: inline;
+	margin: 0;
+}
+
+@media screen and (min-width: 783px) {
+	/* Room for the actions on one line. */
+	.sc-wpun-channels .column-primary {
+		width: 30%;
+	}
+
+	/* The buttons look like the Edit and Delete links. Below 783px core styles both alike. */
+	.sc-wpun-channels .row-actions .button-link {
+		font-size: inherit;
+		line-height: inherit;
+		vertical-align: baseline;
+		text-decoration: none;
+	}
+
+	.sc-wpun-channels .row-actions .button-link:hover {
+		text-decoration: underline;
+	}
+}
+
+@media screen and (max-width: 782px) {
+	/* Core widens cells from the third on, as its tables start with a checkbox; this one does not. */
+	.sc-wpun-channels tr td {
+		flex: 0 1 100%;
+	}
+}

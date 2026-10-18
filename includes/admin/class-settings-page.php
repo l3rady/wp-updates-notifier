@@ -163,7 +163,19 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function admin_settings_menu() {
-		add_options_page( __( 'Updates Notifier', 'wp-updates-notifier' ), __( 'Updates Notifier', 'wp-updates-notifier' ), self::capability(), 'wp-updates-notifier', array( $this, 'settings_page' ) );
+		$hook = add_options_page( __( 'Updates Notifier', 'wp-updates-notifier' ), __( 'Updates Notifier', 'wp-updates-notifier' ), self::capability(), 'wp-updates-notifier', array( $this, 'settings_page' ) );
+		if ( $hook ) {
+			add_action( 'load-' . $hook, array( $this, 'enqueue_styles' ) );
+		}
+	}
+
+	/**
+	 * Load the stylesheet of the settings screen. Hooked on `load-{$hook}`, so no other screen gets it.
+	 *
+	 * @return void
+	 */
+	public function enqueue_styles() {
+		wp_enqueue_style( 'sc-wpun-admin', plugins_url( 'assets/css/admin.css', SC_WPUN_FILE ), array(), SC_WPUN_VERSION );
 	}
 
 	/**

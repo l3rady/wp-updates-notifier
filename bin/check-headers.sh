@@ -15,6 +15,8 @@ field() { sed -n "s/^$1: *//p" "$readme" | head -n 1; }
 name="$(header 'Plugin Name')"
 [ "$(head -n 1 "$readme")" = "=== $name ===" ] || fail "readme.txt must start with '=== $name ==='"
 
+const="$(sed -n "s/^defined( 'SC_WPUN_VERSION' ) || define( 'SC_WPUN_VERSION', '\\([^']*\\)' );.*/\\1/p" "$main")"
+[ "$const" = "$(header 'Version')" ] || fail "SC_WPUN_VERSION ($const) differs from Version ($(header 'Version'))"
 [ "$(field 'Stable tag')" = "$(header 'Version')" ] || fail "Stable tag ($(field 'Stable tag')) differs from Version ($(header 'Version'))"
 [ "$(field 'Requires at least')" = "$(header 'Requires at least')" ] || fail "Requires at least differs between the header and readme.txt"
 [ "$(field 'Requires PHP')" = "$(header 'Requires PHP')" ] || fail "Requires PHP differs between the header and readme.txt"

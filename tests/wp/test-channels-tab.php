@@ -222,8 +222,9 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		}
 		$this->assertSame( array( 'email', 'second' ), $ids );
 		$this->assertStringStartsWith( 'Off', $this->cell( $xpath, 'second', 'enabled' ) );
-		$this->assertStringContainsString( 'Enable', $this->cell( $xpath, 'second', 'enabled' ) );
-		$this->assertStringContainsString( 'Disable', $this->cell( $xpath, 'email', 'enabled' ) );
+		$this->assertStringContainsString( 'Enable', $this->cell( $xpath, 'second', 'label' ) );
+		$this->assertStringContainsString( 'Disable', $this->cell( $xpath, 'email', 'label' ) );
+		$this->assertSame( 'Off', $this->cell( $xpath, 'second', 'enabled' ), 'The column shows the state only.' );
 		$this->assertStringStartsWith( 'Second <b>', $this->cell( $xpath, 'second', 'label' ), 'Escaped.' );
 		$this->assertSame( 0, $xpath->query( '//b' )->length );
 	}
@@ -364,7 +365,8 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		foreach ( array( Channels_Tab::TOGGLE_ACTION, Channels_Tab::DUPLICATE_ACTION, 'delete' ) as $action ) {
 			$this->assertFalse( $this->has_action( $xpath, 'ops_code', $action ), $action );
 		}
-		$this->assertSame( 1, $xpath->query( '//tr[@data-id="ops_code"]//button' )->length, 'Only the test button.' );
+		$this->assertSame( 1, $xpath->query( '//tr[@data-id="ops_code"]//form//button' )->length, 'Only the test button.' );
+		$this->assertStringNotContainsString( '|', $this->cell( $xpath, 'ops_code', 'label' ), 'A single action has no separator.' );
 
 		$before = $this->snapshot();
 		foreach ( array( Channels_Tab::TOGGLE_ACTION, Channels_Tab::DUPLICATE_ACTION, Channels_Tab::DELETE_ACTION ) as $action ) {
@@ -388,7 +390,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	}
 
 	/**
-	 * An externally supplied enabled value shows a disabled button with its source, and the handler refuses.
+	 * An externally supplied enabled value has no toggle, shows its source, and the handler refuses.
 	 */
 	public function test_an_external_enabled_is_read_only() {
 		$source = new Test_Config_Source( array( 'SC_WPUN_CHANNEL_EMAIL__ENABLED' => 'true' ) );
@@ -402,9 +404,9 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		sc_wpun()->config()->flush();
 		$xpath = $this->tab();
 
-		$button = $xpath->query( '//tr[@data-id="email"]//form[input[@value="' . Channels_Tab::TOGGLE_ACTION . '"]]//button' );
-		$this->assertSame( 1, $button->length );
-		$this->assertTrue( $button->item( 0 )->hasAttribute( 'disabled' ) );
+		$this->assertFalse( $this->has_action( $xpath, 'email', Channels_Tab::TOGGLE_ACTION ) );
+		$this->assertSame( 0, $xpath->query( '//tr[@data-id="email"]//button[@disabled]' )->length );
+		$this->assertSame( 1, $xpath->query( '//tr[@data-id="email"]//*[contains(@class,"sc-wpun-state")]' )->length );
 		$this->assertStringContainsString( 'Set by', $this->cell( $xpath, 'email', 'enabled' ) );
 		$this->assertStringContainsString( 'Set by Test vault', $this->cell( $xpath, 'email', 'enabled' ) );
 
@@ -623,5 +625,130 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		$this->assertFalse( $notice['success'] );
 		$this->assertSame( 'Plain can not send a test message.', $notice['message'] );
 		$this->assertSame( array(), sc_wpun()->channels()->get( 'test' )->received );
+	}
+
+	/**
+	 * Core-style row actions in order, with separators inside every item but the last.
+	 */
+	public function test_row_actions_order_and_separators() {
+		$xpath = $this->tab();
+
+		$actions = $xpath->query( '//tr[@data-id="email"]//div[@class="row-actions"]' );
+		$this->assertSame( 1, $actions->length );
+		$spans = $xpath->query( './span', $actions->item( 0 ) );
+		$this->assertSame( array( 'edit', 'sc-wpun-test', 'sc-wpun-duplicate', 'sc-wpun-toggle', 'trash' ), array_map( static fn( $span ) => $span->getAttribute( 'class' ), iterator_to_array( $spans ) ) );
+		$this->assertSame(
+			array( 'Edit |', 'Send test |', 'Duplicate |', 'Disable |', 'Delete' ),
+			array_map( static fn( $span ) => trim( preg_replace( '/\s+/', ' ', $span->textContent ) ), iterator_to_array( $spans ) )
+		);
+	}
+
+	/**
+	 * The POST buttons look like links and keep their accessible names; Delete is core's destructive link.
+	 */
+	public function test_row_action_buttons_links_and_names() {
+		$xpath = $this->tab();
+
+		$names = array();
+		foreach ( $xpath->query( '//tr[@data-id="email"]//form//button' ) as $button ) {
+			$this->assertSame( 'button-link', $button->getAttribute( 'class' ) );
+			$names[] = $button->getAttribute( 'aria-label' );
+		}
+		$label = sc_wpun_channels()->get( 'email' )->get_label();
+		$this->assertSame( array( 'Send test to ' . $label, 'Duplicate ' . $label, 'Disable ' . $label ), $names );
+
+		$edit = $xpath->query( '//tr[@data-id="email"]//a[contains(@class,"sc-wpun-edit")]' );
+		$this->assertSame( 'Edit ' . $label, $edit->item( 0 )->getAttribute( 'aria-label' ) );
+		$delete = $xpath->query( '//tr[@data-id="email"]//span[@class="trash"]/a[contains(@class,"submitdelete")][contains(@class,"sc-wpun-delete")]' );
+		$this->assertSame( 1, $delete->length );
+		$this->assertSame( 'Delete ' . $label, $delete->item( 0 )->getAttribute( 'aria-label' ) );
+	}
+
+	/**
+	 * Styling lives in the stylesheet, not in style attributes.
+	 */
+	public function test_no_inline_styles() {
+		$this->assertSame( 0, $this->tab()->query( '//*[@style]' )->length );
+	}
+
+	/**
+	 * A code-defined instance whose module can not test has no row actions at all.
+	 */
+	public function test_code_defined_without_actions_has_no_row_actions() {
+		sc_wpun()->channels()->register( new Test_Channel( 'test' ) );
+		add_filter(
+			'sc_wpun_channels',
+			static function ( $channels ) {
+				$channels[] = array(
+					'id'    => 'plain_code',
+					'type'  => 'test',
+					'label' => 'Plain code',
+				);
+				return $channels;
+			}
+		);
+		sc_wpun()->config()->flush();
+		$xpath = $this->tab();
+
+		$this->assertSame( 1, $xpath->query( '//tr[@data-id="plain_code"]' )->length );
+		$this->assertSame( 0, $xpath->query( '//tr[@data-id="plain_code"]//div[contains(concat(" ",@class," ")," row-actions ")]' )->length );
+	}
+
+	/**
+	 * A code-defined instance that can test has one action and no separator.
+	 */
+	public function test_code_defined_with_one_action() {
+		$this->define_in_code();
+		$xpath = $this->tab();
+
+		$spans = $xpath->query( '//tr[@data-id="ops_code"]//div[contains(concat(" ",@class," ")," row-actions ")]/span' );
+		$this->assertSame( 1, $spans->length );
+		$this->assertSame( 'Send test', trim( $spans->item( 0 )->textContent ) );
+	}
+
+	/**
+	 * The responsive hooks of the core list table: primary column, column names, toggle button.
+	 */
+	public function test_responsive_markup() {
+		$xpath = $this->tab();
+
+		$this->assertSame( 1, $xpath->query( '//table[contains(@class,"wp-list-table")][contains(@class,"table-view-list")]' )->length );
+		$this->assertSame( 1, $xpath->query( '//thead//th[contains(@class,"column-primary")]' )->length );
+		$this->assertSame( 1, $xpath->query( '//tr[@data-id="email"]/th[@scope="row"][contains(@class,"column-primary")]//button[@type="button"][@class="toggle-row"]' )->length );
+		$names = array();
+		foreach ( $xpath->query( '//tr[@data-id="email"]/td' ) as $td ) {
+			$names[] = $td->getAttribute( 'data-colname' );
+		}
+		$this->assertSame( array( 'Module', 'Enabled', 'Routing', 'Last delivery' ), $names );
+	}
+
+	/**
+	 * The stylesheet loads on the settings screen only.
+	 */
+	public function test_stylesheet_is_enqueued_on_the_settings_screen_only() {
+		wp_dequeue_style( 'sc-wpun-admin' );
+		$this->assertFalse( wp_style_is( 'sc-wpun-admin' ) );
+
+		sc_wpun()->settings_page()->admin_settings_menu();
+		$hook = get_plugin_page_hookname( 'wp-updates-notifier', 'options-general.php' );
+		$this->assertNotEmpty( $hook );
+		$this->assertFalse( wp_style_is( 'sc-wpun-admin' ), 'Not before the screen loads.' );
+
+		do_action( 'load-index.php' ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
+		$this->assertFalse( wp_style_is( 'sc-wpun-admin' ), 'Not on other screens.' );
+
+		do_action( 'load-' . $hook ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
+		$this->assertTrue( wp_style_is( 'sc-wpun-admin' ) );
+		$style = wp_styles()->registered['sc-wpun-admin'];
+		$this->assertStringEndsWith( 'assets/css/admin.css', $style->src );
+		$this->assertSame( SC_WPUN_VERSION, $style->ver );
+		$this->assertFileExists( plugin_dir_path( SC_WPUN_FILE ) . 'assets/css/admin.css' );
+	}
+
+	/**
+	 * The version constant is the one in the plugin header.
+	 */
+	public function test_version_constant_matches_the_header() {
+		$this->assertSame( get_plugin_data( SC_WPUN_FILE, false, false )['Version'], SC_WPUN_VERSION );
 	}
 }

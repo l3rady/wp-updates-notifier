@@ -52,6 +52,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 defined( 'SC_WPUN_FILE' ) || define( 'SC_WPUN_FILE', __FILE__ );
 
 /*
+ * Version of the plugin, the same as the Version header. Used to version the admin stylesheet.
+ * Release-please keeps it in step with the header; bin/check-headers.sh fails if they differ.
+ */
+/* x-release-please-start-version */
+defined( 'SC_WPUN_VERSION' ) || define( 'SC_WPUN_VERSION', '1.6.0' );
+/* x-release-please-end */
+
+/*
  * Version of the public API (channels, routing, hooks), separate from the plugin version.
  * Semver: a minor release adds API, a major release removes or changes some. Add-ons check
  * it with sc_wpun_api_satisfies().
