@@ -161,7 +161,8 @@ services:
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: root
       WORDPRESS_DB_NAME: wordpress
-      SITE_URL: http://localhost:8080
+      # SITE_HOST=127.0.0.1 in .env (then `make site-setup`) avoids the slow IPv6 `localhost` from a Windows browser on WSL2.
+      SITE_URL: http://${SITE_HOST:-localhost}:8080
       # `on` or `off`: whether `make site-setup` turns the persistent object cache on (set it in .env to keep it off).
       OBJECT_CACHE: ${OBJECT_CACHE:-on}
     entrypoint: ["wp"]
@@ -170,6 +171,11 @@ services:
   valkey:
     profiles: [site]
     image: valkey/valkey:9.1-alpine
+    # Kept on disk: with the cache on, transients live only here, among them the update data WordPress fetches from
+    # wordpress.org. Losing it on every restart would make the next admin page wait for those requests again.
+    command: ["valkey-server", "--save", "60", "1"]
+    volumes:
+      - site-cache:/data
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 3s
@@ -195,3 +201,4 @@ volumes:
   composer-cache:
   site-db:
   site-wp:
+  site-cache:
