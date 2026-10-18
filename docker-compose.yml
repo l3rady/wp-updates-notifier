@@ -121,9 +121,8 @@ services:
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: root
       WORDPRESS_DB_NAME: wordpress
-      WORDPRESS_DEBUG: "1"
-      WORDPRESS_CONFIG_EXTRA: |
-        define( 'WP_ENVIRONMENT_TYPE', 'local' );
+      # WP_DEBUG and the other debug constants are set in wp-config.php by `make site-setup` (docker/site-setup.sh),
+      # so WP-CLI sees them too.
     volumes:
       - site-wp:/var/www/html
       - .:/var/www/html/wp-content/plugins/wp-updates-notifier
@@ -131,6 +130,7 @@ services:
       - ./examples/wpun-example-channel:/var/www/html/wp-content/plugins/wpun-example-channel:ro
       - ./docker/apache/ports.conf:/etc/apache2/ports.conf:ro
       - ./docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
+      - ./docker/site/php.ini:/usr/local/etc/php/conf.d/zz-site.ini:ro
 
   # WP-CLI against the local site: `docker compose run --rm wp-cli plugin list`
   wp-cli:
@@ -144,11 +144,13 @@ services:
       - .:/var/www/html/wp-content/plugins/wp-updates-notifier
       - ./docker/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
       - ./examples/wpun-example-channel:/var/www/html/wp-content/plugins/wpun-example-channel:ro
+      - ./docker/site-setup.sh:/usr/local/bin/wpun-site-setup:ro
     environment:
       WORDPRESS_DB_HOST: site-db
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: root
       WORDPRESS_DB_NAME: wordpress
+      SITE_URL: http://localhost:8080
     entrypoint: ["wp"]
 
   # Catches all outgoing mail: http://localhost:8025
