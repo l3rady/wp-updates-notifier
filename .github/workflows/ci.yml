@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Static analysis (PHPStan)
         run: make stan
 
@@ -40,6 +42,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: PHP 7.4 syntax (Rector dry run)
         run: make rector
 
@@ -49,6 +53,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Rehearse the release scripts
         run: make test-release
 
@@ -66,6 +72,8 @@ jobs:
       PHP_VERSION: ${{ matrix.php }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Build the zip
         run: make dist
       - name: Check its contents
@@ -80,6 +88,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Plugin header and readme.txt
         run: make check-headers
       - name: Build the zip
@@ -100,6 +110,8 @@ jobs:
       PHP_VERSION: ${{ matrix.php }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Check PHP and lint every file
         run: make smoke
 
@@ -128,6 +140,8 @@ jobs:
       WP_MULTISITE: ${{ matrix.multisite }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Run the tests
         run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
 
@@ -147,5 +161,7 @@ jobs:
       WP_MULTISITE: ${{ matrix.multisite }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Run the tests against trunk
         run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}

@@ -1,0 +1,51 @@
+name: security
+
+# Security checks, one job per tool, each run through its make target in the same
+# Docker setup used locally (see the Makefile). Findings fail the job and, where the
+# tool writes SARIF, also go to code scanning. Weekly, because new rules and new
+# advisories appear without any change to this repository.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '41 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # The workflows themselves: actionlint (with shellcheck on the run: blocks) and zizmor.
+  workflows:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      # Lets zizmor run the audits that ask the GitHub API; without a token it skips them.
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Audit the workflows (actionlint, zizmor)
+        run: make check-workflows
+      # zizmor again as SARIF, so its findings also show up in code scanning. Its own
+      # target, so it runs even when actionlint failed above; that failure is already
+      # reported by the step above.
+      - name: Write zizmor's findings as SARIF
+        if: always()
+        run: make zizmor ZIZMOR_FORMAT=sarif ZIZMOR_OUT=zizmor.sarif || true
+      # Fork pull requests cannot upload SARIF.
+      - name: Upload the findings to code scanning
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('zizmor.sarif') != ''
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: zizmor.sarif
+          category: zizmor
