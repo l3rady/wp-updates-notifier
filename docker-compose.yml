@@ -214,16 +214,16 @@ services:
     volumes:
       - .:/app:ro
 
-  # Audits .github/workflows/ for insecure patterns: `make check-workflows`. A GH_TOKEN in the environment enables
-  # the audits that ask the GitHub API (for example impostor commits); without one they are skipped.
+  # Audits .github/workflows/ for insecure patterns: `make check-workflows`. A GITHUB_PUBLIC_TOKEN in the environment
+  # (a token that can only read public repositories) enables the audits that ask the GitHub API, for example impostor
+  # commits; without one they are skipped. `make zizmor` hands it to the container as GH_TOKEN, and only when it is
+  # set (zizmor refuses an empty token), so the gh CLI's own login on the host is left alone.
   zizmor:
     profiles: [security]
     image: ghcr.io/zizmorcore/zizmor:1.30.1@sha256:a2eb396d886c053073405c7a980f2139ba2248ec172243cfa3841e57196e8101
     working_dir: /app
     volumes:
       - .:/app:ro
-    environment:
-      - GH_TOKEN
 
   # Scans for committed secrets: `make secrets`. Needs .git for the history scan. Reports go to security-reports/.
   gitleaks:
