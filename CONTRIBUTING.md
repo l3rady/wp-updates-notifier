@@ -6,6 +6,9 @@ Thanks for helping. Everything runs in Docker, so the only things you need are
 - Set up, tests and coding standards: see **Development** in the
   [README](README.md). `make lint`, `make stan`, `make rector` and `make test`
   must pass; CI runs them on every pull request.
+- Check changes by hand on the local site (`make up`, see **Local site** in the
+  README): debugging is on there, with Query Monitor, so a change must not add
+  PHP notices or `doing_it_wrong` messages.
 - Commits use [Conventional Commits](https://www.conventionalcommits.org/)
   (`fix(cron): …`, `feat!: …` for breaking changes). They decide the next
   version number, so write them with care. `make commits` checks the commits on

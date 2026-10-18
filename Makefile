@@ -21,7 +21,7 @@ COMMITS_FROM ?= origin/main
 COMMITS_TO   ?= HEAD
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean
+.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -109,8 +109,18 @@ matrix: ## Smoke test on every PHP version in MATRIX
 		PHP_VERSION=$$v $(COMPOSE) run --build --rm php sh docker/smoke.sh || exit 1; \
 	done
 
-up: ## Start the local WordPress site (http://localhost:8080) with Mailpit (:8025)
-	$(COMPOSE) --profile site up -d --build wordpress wp-cli mailpit webhook
+up: ## Start the local WordPress site (http://localhost:8080) with Mailpit (:8025), then set it up
+	$(COMPOSE) --profile site up -d --build wordpress mailpit webhook
+	$(MAKE) --no-print-directory site-setup
+
+site-setup: ## Install and configure the local site: debug settings and plugins (safe to run again)
+	$(COMPOSE) --profile site run --rm -T --entrypoint sh wp-cli /usr/local/bin/wpun-site-setup
+
+site-log: ## Follow the local site's debug log (wp-content/debug.log)
+	$(COMPOSE) --profile site exec wordpress sh -c 'touch wp-content/debug.log && tail -n 50 -f wp-content/debug.log'
+
+wp: ## Run WP-CLI on the local site, e.g. make wp ARGS="plugin list"
+	$(COMPOSE) --profile site run --rm wp-cli $(ARGS)
 
 down: ## Stop the local site
 	$(COMPOSE) --profile site down
