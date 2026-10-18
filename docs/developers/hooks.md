@@ -895,13 +895,13 @@ add_filter( 'sc_wpun_capability', fn() => 'edit_pages' );
 
 Fired in `includes/admin/class-settings-page.php`.
 
-### `sc_wpun_settings_tab_{current}`
+### `sc_wpun_settings_tab_{tab}`
 
 *Action*, since 2.0.0
 
 Draws a tab of the settings screen.
 
-The dynamic part is the tab's slug. Add the tab with the `sc_wpun_settings_tabs` filter;
+The dynamic part, `$tab`, is the tab's slug. Add the tab with the `sc_wpun_settings_tabs` filter;
 it is listed only while something is hooked here. Output inside the screen's wrapper.
 
 Fired in `includes/admin/class-settings-page.php`.
@@ -957,10 +957,20 @@ The plugin listens to these actions but does not fire them itself. Call them wit
 
 *Action*, since 1.0.0
 
-Kept from 1.x. Schedules the update check at the saved frequency, unless it is already scheduled at it. The plugin does this itself on every request (on `init`), so there is rarely a reason to call it.
+Schedules the update check. Handled by the `Scheduler` class.
+
+Kept from 1.x. Schedules the check at the saved frequency, unless it is already scheduled at it.
+The plugin does this itself on every request (on `init`), so there is rarely a reason to call it.
+Pass a frequency to schedule at it instead of the saved one; `manual` stops the checks, as
+`sc_wpun_disable_cron` does.
 
 ```php
 do_action( 'sc_wpun_enable_cron' );
+do_action( 'sc_wpun_enable_cron', 'daily' );
 ```
 
-Handled in `includes/class-scheduler.php`.
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$frequency` | `string` | Optional. A frequency key from `sc_wpun_frequencies`, such as `daily`, or `manual`. Default is the saved frequency. |
+
+Handled in `includes/class-plugin.php`.
