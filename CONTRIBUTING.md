@@ -8,7 +8,9 @@ Thanks for helping. Everything runs in Docker, so the only things you need are
   must pass; CI runs them on every pull request.
 - Check changes by hand on the local site (`make up`, see **Local site** in the
   README): debugging is on there, with Query Monitor, so a change must not add
-  PHP notices or `doing_it_wrong` messages.
+  PHP notices or `doing_it_wrong` messages. It also runs with a persistent
+  object cache. For changes that save or read options, transients or channels,
+  check them with the cache on and with `make site-setup OBJECT_CACHE=off`.
 - Commits use [Conventional Commits](https://www.conventionalcommits.org/)
   (`fix(cron): …`, `feat!: …` for breaking changes). They decide the next
   version number, so write them with care. `make commits` checks the commits on
