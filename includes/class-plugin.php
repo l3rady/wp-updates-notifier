@@ -427,6 +427,29 @@ class Plugin {
 		 */
 		add_action( 'sc_wpun_enable_cron', array( $this->scheduler, 'enable_cron' ) ); // action to enable cron.
 		add_action( 'sc_wpun_disable_cron', array( $this->scheduler, 'disable_cron' ) ); // action to disable cron.
+		/**
+		 * Runs the update check now.
+		 *
+		 * It works as a scheduled run does: same routing, per-instance dedupe, delivery state and
+		 * hooks, so items an instance was already told about are not sent again. The notification
+		 * source is `manual` and the schedule is not changed. Use it from a deploy script, or from
+		 * a system cron when `DISABLE_WP_CRON` is set, for example
+		 * `wp eval "do_action( 'sc_wpun_run_check' );"`.
+		 *
+		 * There is no lock: a run that overlaps another check, scheduled or manual, can send an
+		 * update the other is also sending, so it may arrive twice. A channel that must never
+		 * deliver twice can keep its own record of what it sent.
+		 *
+		 *     do_action( 'sc_wpun_run_check' );
+		 *
+		 * There is no capability check. Before firing it from anything a user can reach, check
+		 * `current_user_can()` with the capability from the `sc_wpun_capability` filter.
+		 *
+		 * @hook-listened
+		 *
+		 * @since 2.0.0
+		 */
+		add_action( 'sc_wpun_run_check', array( $this->update_checker, 'run_manual_check' ) );
 		add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.
 		add_action( Scheduler::CRON_NAME, array( $this->slack_notice, 'maybe_send_email' ), 5 ); // Tell the admin once that Slack is no longer supported, before the check.
 		add_action( 'admin_post_' . Slack_Notice::DISMISS_ACTION, array( $this->slack_notice, 'handle_dismiss' ) ); // Dismiss the notice on the settings page.
