@@ -36,8 +36,15 @@ secrets_report    = $(if $(SECRETS_SARIF),--report-format sarif --report-path /r
 # OSV-Scanner: AUDIT_SARIF=1 also writes security-reports/osv.sarif for code scanning.
 AUDIT_SARIF ?=
 
+# Semgrep: SAST_SARIF=1 also writes security-reports/semgrep.sarif for code scanning. Only the rules in .semgrep/ run,
+# offline, with no metrics.
+SAST_SARIF ?=
+SEMGREP    := $(COMPOSE) --profile security run --rm -T semgrep semgrep
+SEMGREP_ARGS := --metrics=off --disable-version-check
+SAST_PATHS := wp-updates-notifier.php uninstall.php includes modules examples
+
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images security
+.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -163,7 +170,20 @@ audit-images: build ## Trivy over docker/ and the built image (HIGH and CRITICAL
 	$(COMPOSE) --profile security run --rm -T trivy config --skip-version-check --severity HIGH,CRITICAL --exit-code 0 docker/
 	$(COMPOSE) --profile security run --rm -T -v /var/run/docker.sock:/var/run/docker.sock:ro trivy image --skip-version-check --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 wp-updates-notifier:php$(PHP_VERSION)
 
-security: check-workflows secrets audit ## Run every security check
+sast: sast-scan sast-test sast-ignores ## Static analysis of the shipped code with the rules in .semgrep/, their tests, and the suppression checks (make -k runs all)
+
+sast-scan: ## Semgrep over the plugin and examples/ (fails on findings; SAST_SARIF=1 also writes the SARIF report)
+	@mkdir -p security-reports
+	$(SEMGREP) scan --error $(SEMGREP_ARGS) --no-git-ignore --config .semgrep/ $(if $(SAST_SARIF),--sarif-output=/reports/semgrep.sarif) $(SAST_PATHS)
+
+# The test file is named, as `semgrep --test .semgrep/` does not look inside a hidden directory.
+sast-test: ## Test the Semgrep rules against .semgrep/wpun.php
+	$(SEMGREP) --test $(SEMGREP_ARGS) --config .semgrep/wpun.yml .semgrep/wpun.php
+
+sast-ignores: ## Suppressions need a reason, every PHP file has its guard, and test the checker
+	$(COMPOSE) run --build --rm php sh -c 'sh tests/bin/test-check-security-ignores.sh && sh bin/check-security-ignores.sh'
+
+security: check-workflows secrets audit sast ## Run every security check
 
 up: ## Start the local WordPress site (http://localhost:8080) with Mailpit (:8025), then set it up
 	$(COMPOSE) --profile site up -d --build wordpress mailpit webhook

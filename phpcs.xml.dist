@@ -23,6 +23,7 @@
 	<!-- The example add-on is a plugin of its own, linted with examples/wpun-example-channel/phpcs.xml.dist. -->
 	<exclude-pattern>*/examples/*</exclude-pattern>
 	<exclude-pattern>*/tests/bin/check-hooks/*</exclude-pattern>
+	<exclude-pattern>*/tests/bin/check-security-ignores/*</exclude-pattern>
 
 	<!-- WordPress coding standards: Core, Docs and Extra. -->
 	<rule ref="WordPress"/>

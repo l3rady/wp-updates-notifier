@@ -50,7 +50,7 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		unset( $_REQUEST['_wpnonce'] );
+		unset( $_GET['_wpnonce'] );
 	}
 
 	/**
@@ -58,7 +58,7 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 	 */
 	public function tear_down() {
 		sc_wpun()->channels()->unregister( 'slack' );
-		unset( $_REQUEST['_wpnonce'] );
+		unset( $_GET['_wpnonce'] );
 
 		parent::tear_down();
 	}
@@ -327,12 +327,12 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 
 		wp_set_current_user( self::$admin_id );
 		$this->assertFalse( $notice->dismiss_request(), 'No nonce.' );
-		$_REQUEST['_wpnonce'] = 'bad';
+		$_GET['_wpnonce'] = 'bad';
 		$this->assertFalse( $notice->dismiss_request(), 'Bad nonce.' );
 		$this->assertSame( '', get_user_meta( self::$admin_id, 'sc_wpun_dismissed_slack_notice', true ) );
 
 		wp_set_current_user( self::$editor_id );
-		$_REQUEST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
+		$_GET['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 		$this->assertFalse( $notice->dismiss_request(), 'Not an administrator.' );
 		$this->assertSame( '', get_user_meta( self::$editor_id, 'sc_wpun_dismissed_slack_notice', true ) );
 
@@ -351,7 +351,7 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 			)
 		);
 		wp_set_current_user( self::$admin_id );
-		$_REQUEST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
+		$_GET['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 
 		$this->assertTrue( sc_wpun()->slack_notice()->dismiss_request() );
 		$this->assertStringNotContainsString( 'sc-wpun-slack-notice', $this->settings_page_html() );
