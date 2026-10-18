@@ -27,7 +27,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           # Only what release-please and the commit below need, not everything the app is installed with.
           permission-contents: write
@@ -58,15 +58,18 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
-          BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          # The raw JSON, parsed below: a step's env is evaluated even when the step is skipped, and fromJSON('')
+          # fails the whole job when there is no Release PR.
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
         run: |
+          branch="$(printf '%s' "$RELEASE_PR" | jq -r .headBranchName)"
           version="$(sed -n 's/.*"\.": "\(.*\)".*/\1/p' .release-please-manifest.json)"
           sh bin/update-copyright-year.sh "$(date +%Y)"
           sh bin/set-stable-tag.sh "$version"
           files="$(git diff --name-only)"
           if [ -n "$files" ]; then
             # shellcheck disable=SC2086 # One argument per changed file; the paths have no spaces.
-            php bin/commit-payload.php "$REPO" "$BRANCH" "$(git rev-parse HEAD)" \
+            php bin/commit-payload.php "$REPO" "$branch" "$(git rev-parse HEAD)" \
               "chore: set the copyright year and the stable tag for $version" $files \
               | gh api graphql --input - --jq '.data.createCommitOnBranch.commit.url'
           fi
