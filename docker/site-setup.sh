@@ -76,4 +76,35 @@ else
 	echo 'Persistent object cache: on (Valkey)'
 fi
 
+# Outdated plugins and themes (#173), so an update check finds real updates. Each is put back at its pinned version
+# when it differs, so running this again after updating one resets it. hello (bundled with WordPress) stays current
+# as the control. hello-dolly is WordPress.org's copy of it: keep it inactive, the two can't be active together.
+seed_plugin() { # <slug> <version> <active|inactive>
+	if [ "$(wp plugin get "$1" --field=version 2>/dev/null)" != "$2" ]; then
+		wp plugin install "$1" --version="$2" --force --quiet
+	fi
+	if [ "$3" = active ]; then
+		wp plugin is-active "$1" || wp plugin activate "$1" --quiet
+	elif wp plugin is-active "$1"; then
+		wp plugin deactivate "$1" --quiet
+	fi
+}
+seed_theme() { # <slug> <version>
+	if [ "$(wp theme get "$1" --field=version 2>/dev/null)" != "$2" ]; then
+		wp theme install "$1" --version="$2" --force --quiet
+	fi
+}
+seed_plugin akismet 5.6 active
+seed_plugin classic-editor 1.6.7 inactive
+seed_plugin hello-dolly 1.6 inactive
+if ! wp plugin auto-updates status hello-dolly --enabled-only --field=name | grep -q hello-dolly; then
+	wp plugin auto-updates enable hello-dolly --quiet
+fi
+wp plugin is-active hello || wp plugin activate hello --quiet
+wp plugin is-installed wpun-dummy && { wp plugin is-active wpun-dummy || wp plugin activate wpun-dummy --quiet; }
+seed_theme twentytwentyfour 1.3
+seed_theme twentytwentythree 1.5
+wp theme is-installed twentytwentyfive || wp theme install twentytwentyfive --quiet
+[ "$(wp option get stylesheet)" = twentytwentyfour ] || wp theme activate twentytwentyfour --quiet
+
 echo "Local site ready: $SITE_URL (admin / admin), mail in Mailpit on http://localhost:8025"
