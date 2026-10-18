@@ -6,43 +6,67 @@ on:
   push:
     branches:
       - main
+  # Refresh the Release PR by hand, without a push to main.
+  workflow_dispatch:
 
 permissions: {}
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    # The release app's token does the writing; GITHUB_TOKEN only reads.
     permissions:
-      contents: write
-      issues: write
-      pull-requests: write
+      contents: read
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
+      # A short-lived token from the release GitHub App, not GITHUB_TOKEN: pull requests it opens trigger CI (so the
+      # required checks run on the Release PR), and commits it makes through the API are signed by GitHub.
+      - name: Get a token from the release app
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          # Only what release-please and the commit below need, not everything the app is installed with.
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
+          token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
       # release-please only rewrites version strings in the files it is told
       # about, so these two are set here, on the Release PR's own branch.
-      - name: Check out the Release PR # zizmor: ignore[artipacked] the next step pushes with the checkout's credentials
+      - name: Check out the Release PR
         if: ${{ steps.release.outputs.pr != '' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          persist-credentials: false
 
+      # Committed through GitHub's API with the app token, so the commit is signed (main requires signed commits; a
+      # git push from the runner would not be). bin/commit-payload.php builds the request; make test-release
+      # rehearses it.
       - name: Set the copyright year and the stable tag
         if: ${{ steps.release.outputs.pr != '' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
         run: |
           version="$(sed -n 's/.*"\.": "\(.*\)".*/\1/p' .release-please-manifest.json)"
           sh bin/update-copyright-year.sh "$(date +%Y)"
           sh bin/set-stable-tag.sh "$version"
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -am "chore: set the copyright year and the stable tag for $version"
-            git push
+          files="$(git diff --name-only)"
+          if [ -n "$files" ]; then
+            # shellcheck disable=SC2086 # One argument per changed file; the paths have no spaces.
+            php bin/commit-payload.php "$REPO" "$BRANCH" "$(git rev-parse HEAD)" \
+              "chore: set the copyright year and the stable tag for $version" $files \
+              | gh api graphql --input - --jq '.data.createCommitOnBranch.commit.url'
           fi

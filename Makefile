@@ -96,7 +96,7 @@ rector: deps ## Show the PHP 7.4 syntax upgrades Rector would make (changes noth
 rector-fix: deps ## Apply Rector's upgrades, then run make fix and make lint
 	$(COMPOSE) run --build --rm php vendor/bin/rector process --no-progress-bar $(ARGS)
 
-test-release: ## Rehearse the scripts the release workflow runs (copyright year, stable tag)
+test-release: ## Rehearse the scripts the release workflow runs (copyright year, stable tag, signed commit request)
 	$(COMPOSE) run --build --rm php sh tests/bin/test-release-scripts.sh
 
 dist: ## Build build/wp-updates-notifier-<version>.zip (runtime files only)
