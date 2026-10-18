@@ -48,6 +48,8 @@ install_plugin() {
 }
 
 wp plugin is-active wp-updates-notifier || wp plugin activate wp-updates-notifier --quiet
+# The field showcase channel (#172): every settings field, for checking the channel forms by hand.
+wp plugin is-active wpun-field-showcase || wp plugin activate wpun-field-showcase --quiet
 install_plugin query-monitor
 install_plugin debug-bar
 install_plugin wp-crontrol
