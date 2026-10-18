@@ -114,7 +114,8 @@ services:
       site-db:
         condition: service_healthy
     ports:
-      - "8080:80"
+      # The same port inside, so the site URL works from inside the container too (loopback, REST, WP-Cron).
+      - "8080:8080"
     environment:
       WORDPRESS_DB_HOST: site-db
       WORDPRESS_DB_USER: root
@@ -127,6 +128,8 @@ services:
       - site-wp:/var/www/html
       - .:/var/www/html/wp-content/plugins/wp-updates-notifier
       - ./docker/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./docker/apache/ports.conf:/etc/apache2/ports.conf:ro
+      - ./docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
 
   # WP-CLI against the local site: `docker compose run --rm wp-cli plugin list`
   wp-cli:
