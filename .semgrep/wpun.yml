@@ -1,0 +1,97 @@
+# Semgrep rules for the plugin (`make sast`). Semgrep CE, custom rules only.
+#
+# These rules are written for this repository. None is copied from the Semgrep registry: those rules are under the
+# Semgrep Rules License, which does not allow redistributing them in this GPL project. Runs use `--config .semgrep/`
+# and nothing else (never `--config auto` or `p/...`), with metrics and the version check off, so they work offline
+# and give the same result every time.
+#
+# Not here, on purpose:
+# - Every PHP file starts with an ABSPATH guard: Semgrep cannot say "this file lacks X" with a reportable line, so
+#   bin/check-security-ignores.sh checks it.
+# - "An admin_post / wp_ajax handler calls current_user_can() and checks a nonce": Semgrep CE cannot reliably follow
+#   the add_action() callback to the method. The capability and nonce matrix test (#220) covers it.
+#
+# A rule is silenced for one line with `// nosemgrep: <rule-id> -- <reason>`. The reason is required, and
+# bin/check-security-ignores.sh fails without it. Each rule has `// ruleid:` and `// ok:` cases in wpun.php
+# (`semgrep --test .semgrep/`).
+rules:
+  - id: wpun-forbidden-function
+    languages: [php]
+    severity: ERROR
+    message: >-
+      eval, assert with a string, create_function, extract and the process-execution functions are not
+      allowed in the plugin.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: assert("...", ...)
+      - pattern: assert($A . $B, ...)
+      - pattern: create_function(...)
+      - pattern: extract(...)
+      - pattern: exec(...)
+      - pattern: shell_exec(...)
+      - pattern: system(...)
+      - pattern: passthru(...)
+      - pattern: proc_open(...)
+      - pattern: popen(...)
+
+  - id: wpun-backtick-shell
+    languages: [php]
+    severity: ERROR
+    message: Backtick shell execution is not allowed in the plugin.
+    pattern: "`...`"
+
+  - id: wpun-no-request-superglobal
+    languages: [php]
+    severity: ERROR
+    message: >-
+      Read $_GET or $_POST, whichever the request really uses. $_REQUEST also takes cookies and makes the source
+      of a value unclear.
+    pattern: $_REQUEST
+
+  - id: wpun-no-unserialize
+    languages: [php]
+    severity: ERROR
+    message: >-
+      unserialize and maybe_unserialize can instantiate objects from data. The plugin stores JSON-safe values and
+      has no use for them.
+    pattern-either:
+      - pattern: unserialize(...)
+      - pattern: maybe_unserialize(...)
+
+  - id: wpun-outbound-http-safe-only
+    languages: [php]
+    severity: ERROR
+    message: >-
+      Send outbound HTTP with wp_safe_remote_*, which refuses private addresses and unsafe redirects. A fixed
+      address the plugin owns may use the plain function with a nosemgrep and the reason.
+    pattern-either:
+      - pattern: wp_remote_get(...)
+      - pattern: wp_remote_post(...)
+      - pattern: wp_remote_request(...)
+      - pattern: wp_remote_head(...)
+      - pattern: file_get_contents("=~/^https?:/", ...)
+      - pattern: curl_exec(...)
+      - pattern: fsockopen(...)
+
+  - id: wpun-wpdb-unprepared
+    languages: [php]
+    severity: ERROR
+    message: >-
+      Pass $wpdb->query and the get_* methods a literal or $wpdb->prepare(...), never a built string.
+    patterns:
+      - pattern: $WPDB->$METHOD($ARG, ...)
+      - metavariable-regex:
+          metavariable: $WPDB
+          regex: ^\$wpdb$
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(query|get_var|get_row|get_col|get_results)$
+      - pattern-not: $WPDB->$METHOD("...", ...)
+      - pattern-not: $WPDB->$METHOD($WPDB->prepare(...), ...)
+
+  - id: wpun-no-nopriv-hooks
+    languages: [php]
+    severity: ERROR
+    message: >-
+      The plugin has no public endpoints. A wp_ajax_nopriv_ or admin_post_nopriv_ hook needs a deliberate review.
+    pattern-regex: (?:wp_ajax|admin_post)_nopriv_

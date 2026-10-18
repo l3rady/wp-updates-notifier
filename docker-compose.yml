@@ -250,6 +250,20 @@ services:
       - .:/app:ro
       - ./security-reports:/reports
 
+  # Static analysis with the plugin's own rules in .semgrep/: `make sast`. No network needed.
+  semgrep:
+    profiles: [security]
+    image: semgrep/semgrep:1.179.0@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /src
+    volumes:
+      - .:/src:ro
+      - ./security-reports:/reports
+    environment:
+      HOME: /tmp
+      SEMGREP_SEND_METRICS: "off"
+      SEMGREP_ENABLE_VERSION_CHECK: "0"
+
   # Dockerfile misconfigurations and known vulnerabilities in the built image: `make audit-images`. Reports only.
   # Root, as the cache volume and (for the image scan, added by the make target) the Docker socket need it.
   trivy:

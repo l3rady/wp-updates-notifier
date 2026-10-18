@@ -209,15 +209,15 @@ class Test_Hooks extends WPUN_Test_Case {
 		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_email' );
 		$_POST['id']       = 'email';
 		$this->assertTrue( sc_wpun()->channels_tab()->process_test_send() );
-		$_REQUEST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
+		$_GET['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 		$this->assertTrue( sc_wpun()->slack_notice()->dismiss_request() );
 
 		wp_set_current_user( $author );
-		$_POST['_wpnonce']    = wp_create_nonce( 'sc_wpun_send_test_email' );
-		$_REQUEST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
+		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_email' );
+		$_GET['_wpnonce']  = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 		$this->assertFalse( sc_wpun()->channels_tab()->process_test_send() );
 		$this->assertFalse( sc_wpun()->slack_notice()->dismiss_request() );
-		unset( $_REQUEST['_wpnonce'] );
+		unset( $_GET['_wpnonce'] );
 
 		remove_all_filters( 'sc_wpun_capability' );
 		add_filter( 'sc_wpun_capability', '__return_empty_string' );

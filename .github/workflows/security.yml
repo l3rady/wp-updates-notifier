@@ -146,3 +146,25 @@ jobs:
           persist-credentials: false
       - name: Scan the Dockerfile and the image (Trivy)
         run: make audit-images
+
+  # Semgrep with the plugin's own rules in .semgrep/ (CodeQL does not read PHP), plus the check that every
+  # suppression carries a reason and every PHP file has its guard.
+  sast:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # make -k so the rule tests and the suppression check still run when the scan finds something.
+      - name: Static analysis (Semgrep)
+        run: make -k sast SAST_SARIF=1
+      # Fork pull requests cannot upload SARIF.
+      - name: Upload the findings to code scanning
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('security-reports/semgrep.sarif') != ''
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: security-reports/semgrep.sarif
+          category: semgrep
