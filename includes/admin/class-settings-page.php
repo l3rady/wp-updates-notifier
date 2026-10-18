@@ -84,6 +84,13 @@ class Settings_Page {
 	private $notices;
 
 	/**
+	 * The Check now button.
+	 *
+	 * @var Check_Now
+	 */
+	private $check_now;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings          $settings  Settings.
@@ -94,8 +101,9 @@ class Settings_Page {
 	 * @param Rejected_Channels $rejected_channels Report of modules refused for needing a newer API.
 	 * @param Channels_Tab      $channels_tab The Channels tab.
 	 * @param Notices           $notices Notices about what an admin action did.
+	 * @param Check_Now         $check_now The Check now button.
 	 */
-	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices ) {
+	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now ) {
 		$this->settings          = $settings;
 		$this->state             = $state;
 		$this->notifier          = $notifier;
@@ -104,6 +112,7 @@ class Settings_Page {
 		$this->rejected_channels = $rejected_channels;
 		$this->channels_tab      = $channels_tab;
 		$this->notices           = $notices;
+		$this->check_now         = $check_now;
 	}
 
 	/**
@@ -311,6 +320,8 @@ class Settings_Page {
 			?>
 			</span>
 		</p>
+
+		<?php $this->check_now->render(); ?>
 
 		<form action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" method="post">
 			<?php

@@ -115,7 +115,7 @@ class Test_Settings_Markup extends WPUN_Test_Case {
 		$this->assertSame( 'Save settings', $save->item( 0 )->getAttribute( 'value' ) );
 		$this->assertStringContainsString( 'button-primary', $save->item( 0 )->getAttribute( 'class' ) );
 
-		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"admin-post.php")]' )->length, 'The test form moved to the Channels tab.' );
+		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"admin-post.php")][not(@class="sc-wpun-check-now")]' )->length, 'The test form moved to the Channels tab.' );
 
 		foreach ( $xpath->query( '//p' ) as $paragraph ) {
 			$empty = '' === trim( str_replace( "\xC2\xA0", ' ', $paragraph->textContent ) ) && 0 === $paragraph->getElementsByTagName( '*' )->length;
