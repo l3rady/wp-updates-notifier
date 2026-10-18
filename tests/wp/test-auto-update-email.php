@@ -145,4 +145,94 @@ class Test_Auto_Update_Email extends WPUN_Test_Case {
 		$email = $this->filter_email( array( 'reply-to: other@example.org' ) );
 		$this->assertSame( array( 'reply-to: other@example.org' ), $email['headers'] );
 	}
+
+	/**
+	 * An email instance with its own addresses.
+	 *
+	 * @param string $id      Instance id.
+	 * @param bool   $enabled Whether it is on.
+	 * @param string $to      Recipients.
+	 * @param string $from    From address.
+	 */
+	private function save_email_instance( $id, $enabled, $to, $from ) {
+		sc_wpun_channels()->save(
+			new WPUN\Channel_Instance(
+				$id,
+				'email',
+				ucfirst( $id ),
+				$enabled,
+				array(
+					'to'   => $to,
+					'from' => $from,
+				)
+			)
+		);
+	}
+
+	/**
+	 * A switched-off email instance does not take core's email (#235).
+	 */
+	public function test_a_disabled_email_instance_is_not_used() {
+		$this->save_settings(
+			array(
+				'notify_automatic'    => true,
+				'notify_from'         => 'notifier@example.org',
+				'email_notifications' => 0,
+			)
+		);
+
+		$email = $this->filter_email( '' );
+
+		$this->assertSame( 'admin@example.org', $email['to'] );
+		$this->assertSame( '', $email['headers'] );
+	}
+
+	/**
+	 * With the `email` instance deleted, another enabled email instance is used (#235).
+	 */
+	public function test_another_enabled_email_instance_is_used() {
+		$this->save_settings( array( 'notify_automatic' => true ) );
+		sc_wpun_channels()->delete( 'email' );
+		$this->save_email_instance( 'ops', true, 'team@example.org', 'ops-sender@example.org' );
+
+		$email = $this->filter_email( '' );
+
+		$this->assertSame( 'team@example.org', $email['to'] );
+		$this->assertSame( array( 'From: WP Updates Notifier <ops-sender@example.org>' ), $email['headers'] );
+	}
+
+	/**
+	 * A disabled `email` instance is skipped for an enabled one (#235).
+	 */
+	public function test_an_enabled_instance_wins_over_a_disabled_email_instance() {
+		$this->save_settings(
+			array(
+				'notify_automatic'    => true,
+				'email_notifications' => 0,
+			)
+		);
+		$this->save_email_instance( 'ops', true, 'team@example.org', '' );
+
+		$this->assertSame( 'team@example.org', $this->filter_email( '' )['to'] );
+	}
+
+	/**
+	 * No enabled email instance: the email is left as core built it (#235).
+	 */
+	public function test_without_an_enabled_email_instance_the_email_is_unchanged() {
+		$this->save_settings(
+			array(
+				'notify_automatic'    => true,
+				'notify_from'         => 'notifier@example.org',
+				'notify_reply_to'     => 'reply@example.org',
+				'email_notifications' => 0,
+			)
+		);
+		$this->save_email_instance( 'ops', false, 'team@example.org', 'ops-sender@example.org' );
+
+		$email = $this->filter_email( '' );
+
+		$this->assertSame( 'admin@example.org', $email['to'] );
+		$this->assertSame( '', $email['headers'] );
+	}
 }
