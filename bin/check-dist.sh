@@ -1,6 +1,7 @@
 #!/bin/sh
 # Checks the zip built by `make dist`: only runtime files, the files that must
-# be there, the version in its name, and .gitattributes in step with .distignore.
+# be there, no bundled dependencies, the version in its name, and .gitattributes in
+# step with .distignore.
 # Run with `make dist-check`.
 set -eu
 
@@ -14,6 +15,14 @@ zip="$root/build/$slug-$version.zip"
 [ -f "$zip" ] || fail "$zip not found; run make dist first"
 
 entries="$(unzip -Z1 "$zip" | sort)"
+
+# The plugin has no runtime dependencies: nothing from Composer or npm ships, and composer.json requires only php.
+bundled="$(echo "$entries" | grep -E "^$slug/(.*/)?(vendor|node_modules)/" || true)"
+[ -z "$bundled" ] || fail "the zip bundles dependencies:
+$bundled"
+extra="$(php -r '$c = json_decode(file_get_contents($argv[1]), true); echo implode(", ", array_diff(array_keys($c["require"] ?? array()), array("php")));' "$root/composer.json")"
+[ -z "$extra" ] || fail "composer.json requires runtime dependencies besides php: $extra"
+echo "ok: no vendor/ or node_modules/ in the zip, and composer.json requires only php"
 
 # Everything in the zip must match one of these.
 allowed="^$slug/$

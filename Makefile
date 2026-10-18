@@ -33,8 +33,11 @@ GITLEAKS         := $(COMPOSE) --profile security run --rm -T
 GITLEAKS_ARGS    := --no-banner --verbose --redact -c /app/.gitleaks.toml
 secrets_report    = $(if $(SECRETS_SARIF),--report-format sarif --report-path /reports/$(1).sarif)
 
+# OSV-Scanner: AUDIT_SARIF=1 also writes security-reports/osv.sarif for code scanning.
+AUDIT_SARIF ?=
+
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip security
+.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -144,7 +147,23 @@ secrets-zip: dist ## gitleaks over the built zip, unpacked (dist builds from the
 	$(COMPOSE) run --rm -T php sh -c 'rm -rf build/zip-scan && mkdir build/zip-scan && unzip -q build/wp-updates-notifier-*.zip -d build/zip-scan'
 	$(GITLEAKS) -v "$(CURDIR)/build/zip-scan:/scan:ro" gitleaks dir $(GITLEAKS_ARGS) $(call secrets_report,zip) /scan
 
-security: check-workflows secrets ## Run every security check
+audit: audit-composer audit-osv ## Check the locked dependencies for known vulnerabilities and abandoned packages (make -k runs both)
+
+audit-composer: ## composer audit on composer.lock (fails on advisories and abandoned packages)
+	$(COMPOSE) run --rm composer audit --locked
+
+# Only composer.lock is a lockfile: commitlint is installed by `npm install --global` in docker/Dockerfile, pinned
+# to exact top-level versions, so its transitive npm dependencies are not covered.
+audit-osv: ## OSV-Scanner over the repository's lockfiles
+	@mkdir -p security-reports
+	$(if $(AUDIT_SARIF),-$(COMPOSE) --profile security run --rm -T osv-scanner scan source -r --format sarif --output-file /reports/osv.sarif /app)
+	$(COMPOSE) --profile security run --rm -T osv-scanner scan source -r /app
+
+audit-images: build ## Trivy over docker/ and the built image (HIGH and CRITICAL, fixable only). Reports, never fails
+	$(COMPOSE) --profile security run --rm -T trivy config --skip-version-check --severity HIGH,CRITICAL --exit-code 0 docker/
+	$(COMPOSE) --profile security run --rm -T -v /var/run/docker.sock:/var/run/docker.sock:ro trivy image --skip-version-check --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 wp-updates-notifier:php$(PHP_VERSION)
+
+security: check-workflows secrets audit ## Run every security check
 
 up: ## Start the local WordPress site (http://localhost:8080) with Mailpit (:8025), then set it up
 	$(COMPOSE) --profile site up -d --build wordpress mailpit webhook
