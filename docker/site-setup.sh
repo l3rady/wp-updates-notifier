@@ -25,6 +25,11 @@ done
 if ! wp core is-installed 2>/dev/null; then
 	wp core install --url="$SITE_URL" --title=Test --admin_user=admin --admin_password=admin \
 		--admin_email=a@example.com --skip-email
+elif [ "$(wp option get home)" != "$SITE_URL" ]; then
+	# SITE_HOST changed (see docker-compose.yml). Log in again afterwards: the cookies belong to the old host.
+	wp option update home "$SITE_URL" --quiet
+	wp option update siteurl "$SITE_URL" --quiet
+	echo "Site URL changed to $SITE_URL"
 fi
 
 # Debugging (#175). Errors show on the page and go to wp-content/debug.log (`make site-log`).
