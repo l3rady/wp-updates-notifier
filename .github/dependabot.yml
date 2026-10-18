@@ -1,9 +1,13 @@
+# Every ecosystem waits 14 days after a release before proposing it (cooldown): a compromised release is
+# usually found and pulled within days. Security updates for Dependabot alerts are not delayed.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
     commit-message:
       prefix: ci
 
@@ -11,6 +15,8 @@ updates:
     directory: /docker
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
     commit-message:
       prefix: build
 
@@ -19,6 +25,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
     commit-message:
       prefix: ci
 
@@ -26,6 +34,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
     commit-message:
       prefix: build
       include: scope
