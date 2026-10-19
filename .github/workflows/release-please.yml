@@ -1,13 +1,21 @@
 name: release-please
 
 # Merging to main never changes the version. release-please keeps a Release PR
-# open; merging that PR is what cuts a release (tag + GitHub release).
+# open; merging that PR makes a draft GitHub release, and the release job below
+# tags, attests and publishes it once the maintainer approves.
 on:
   push:
     branches:
       - main
-  # Refresh the Release PR by hand, without a push to main.
+  # Refresh the Release PR by hand, without a push to main, or rehearse the
+  # release job: it builds, signs a throwaway tag locally and stops before
+  # anything is attested, pushed or published.
   workflow_dispatch:
+    inputs:
+      rehearse:
+        description: Rehearse the release job (nothing is pushed or published)
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -20,6 +28,7 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      sha: ${{ steps.release.outputs.sha }}
     steps:
       # A short-lived token from the release GitHub App, not GITHUB_TOKEN: pull requests it opens trigger CI (so the
       # required checks run on the Release PR), and commits it makes through the API are signed by GitHub.
@@ -73,3 +82,116 @@ jobs:
               "chore: set the copyright year and the stable tag for $version" $files \
               | gh api graphql --input - --jq '.data.createCommitOnBranch.commit.url'
           fi
+
+  # release-please makes a draft release and no tag (draft: true in
+  # release-please-config.json). This job builds the zip from the release
+  # commit, attests it, creates the signed tag, uploads the assets and only then
+  # publishes the release. The v* tag ruleset forbids moving or deleting a
+  # release tag, so everything that can fail runs before the tag is pushed, and
+  # every step after it is safe to re-run.
+  release:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' || inputs.rehearse }}
+    runs-on: ubuntu-latest
+    # Holds the signing key, limited to main, and waits for the maintainer's approval.
+    environment: release
+    permissions:
+      contents: read
+      id-token: write # Sigstore signing for the attestations.
+      attestations: write
+    env:
+      # A real release always wins over a rehearsal asked for in the same run.
+      REHEARSE: ${{ inputs.rehearse && needs.release-please.outputs.release_created != 'true' && 'true' || 'false' }}
+      # In a rehearsal: the head of main and a tag name that is never pushed.
+      SHA: ${{ needs.release-please.outputs.sha || github.sha }}
+      TAG: ${{ needs.release-please.outputs.tag_name || 'v0.0.0-rehearsal' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
+          persist-credentials: false
+
+      - name: Check the version matches the tag
+        run: |
+          version="$(sed -n 's/^ \* Version: //p' wp-updates-notifier.php | head -n 1)"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          if [ "$REHEARSE" = true ]; then exit 0; fi
+          [ "v$version" = "$TAG" ] || { echo "Version $version does not match $TAG" >&2; exit 1; }
+
+      # The zip, its .sha256 and the SBOM. SOURCE_DATE_EPOCH is the commit time, so
+      # anyone can rebuild the same bytes from the tag (make dist-repro).
+      - name: Build the zip and the SBOM
+        run: |
+          make sbom
+          make dist-check
+          ls -l build/
+
+      - name: Attest the build provenance of the zip
+        if: ${{ env.REHEARSE != 'true' }}
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: build/wp-updates-notifier-${{ env.VERSION }}.zip
+
+      - name: Attest the SBOM of the zip
+        if: ${{ env.REHEARSE != 'true' }}
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: build/wp-updates-notifier-${{ env.VERSION }}.zip
+          sbom-path: build/wp-updates-notifier-${{ env.VERSION }}.cdx.json
+
+      - name: Verify the attestation as a user would
+        if: ${{ env.REHEARSE != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh attestation verify "build/wp-updates-notifier-$VERSION.zip" --repo "$REPO" \
+            --signer-workflow "$REPO/.github/workflows/release-please.yml" \
+            --source-ref refs/heads/main --source-digest "$SHA"
+
+      # The key is written to the runner's temp directory for this job only and removed at the end.
+      - name: Sign the release tag
+        env:
+          SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+          TAGGER_NAME: ${{ vars.RELEASE_TAGGER_NAME }}
+          TAGGER_EMAIL: ${{ vars.RELEASE_TAGGER_EMAIL }}
+        run: |
+          key="$RUNNER_TEMP/release-signing-key"
+          ( umask 077; printf '%s\n' "$SIGNING_KEY" > "$key" )
+          git config gpg.format ssh
+          git config user.signingkey "$key"
+          git config user.name "$TAGGER_NAME"
+          git config user.email "$TAGGER_EMAIL"
+          sh bin/sign-release-tag.sh "$TAG" "$SHA"
+
+      - name: Get a token from the release app
+        if: ${{ env.REHEARSE != 'true' }}
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      # The point of no return: a pushed v* tag can't be moved or deleted. Pushed and
+      # published with the app token, not GITHUB_TOKEN, so the published release can
+      # start the WordPress.org deploy (#57).
+      - name: Push the tag, upload the assets and publish the release
+        if: ${{ env.REHEARSE != 'true' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if ! git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w 0)"
+            git -c http.extraheader="AUTHORIZATION: basic $auth" push origin "refs/tags/$TAG"
+          fi
+          gh release upload "$TAG" --repo "$REPO" --clobber \
+            "build/wp-updates-notifier-$VERSION.zip" \
+            "build/wp-updates-notifier-$VERSION.zip.sha256" \
+            "build/wp-updates-notifier-$VERSION.cdx.json"
+          gh release edit "$TAG" --repo "$REPO" --draft=false --verify-tag --latest
+
+      - name: Remove the signing key
+        if: ${{ always() }}
+        run: rm -f "$RUNNER_TEMP/release-signing-key"

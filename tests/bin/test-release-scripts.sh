@@ -89,4 +89,41 @@ echo "stale" >> "$hooks/hooks.md"
 if php "$work/bin/check-hooks.php" --reference="$hooks/hooks.md" "$hooks/good" >/dev/null 2>&1; then fail "a stale hook reference was accepted"; fi
 echo "ok: hook documentation check"
 
+# Release tag: created signed at the given commit, re-runs only check an existing tag on origin, and a tag at the wrong
+# commit, a signature from another key or an empty signers file fails. A throwaway key, repository and origin.
+tags="$work/tags"
+mkdir -p "$tags/repo/bin" "$tags/repo/.github"
+ssh-keygen -q -t ed25519 -N '' -C release -f "$tags/key"
+ssh-keygen -q -t ed25519 -N '' -C other -f "$tags/other"
+cp "$here/bin/sign-release-tag.sh" "$tags/repo/bin/"
+(
+	cd "$tags/repo"
+	git init -q -b main .
+	git config user.name Release
+	git config user.email release@example.com
+	git config gpg.format ssh
+	git config user.signingkey "$tags/key"
+	git config commit.gpgsign false
+	echo "release@example.com namespaces=\"git\" $(cat "$tags/key.pub")" > .github/release-signers
+	git add . && git commit -qm one && first="$(git rev-parse HEAD)"
+	git commit -qm two --allow-empty && second="$(git rev-parse HEAD)"
+	git init -q --bare "$tags/origin.git" && git remote add origin "$tags/origin.git" && git push -q origin main
+
+	sh bin/sign-release-tag.sh v9.9.9 "$first" | grep -qx 'created: v9.9.9' || fail "release tag not created"
+	[ "$(git rev-parse 'v9.9.9^{commit}')" = "$first" ] || fail "release tag at the wrong commit"
+	git push -q origin refs/tags/v9.9.9
+	git tag -d v9.9.9 > /dev/null
+	sh bin/sign-release-tag.sh v9.9.9 "$first" | grep -qx 'exists: v9.9.9' || fail "existing release tag not reused"
+	git tag -d v9.9.9 > /dev/null
+	if sh bin/sign-release-tag.sh v9.9.9 "$second" > /dev/null 2>&1; then fail "a release tag at another commit was accepted"; fi
+
+	git config user.signingkey "$tags/other"
+	if sh bin/sign-release-tag.sh v9.9.8 "$first" > /dev/null 2>&1; then fail "a tag signed by another key was accepted"; fi
+	git tag -d v9.9.8 > /dev/null 2>&1 || true
+	git config user.signingkey "$tags/key"
+	echo '# no key yet' > .github/release-signers
+	if sh bin/sign-release-tag.sh v9.9.7 "$first" > /dev/null 2>&1; then fail "an empty release-signers file was accepted"; fi
+)
+echo "ok: release tag"
+
 echo "OK"
