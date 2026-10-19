@@ -47,6 +47,14 @@ paths = ['''^(?:/app/)?tests/wp/test-channels-tab\.php$''']
 regexes = ['''^ok-external-secret$''']
 regexTarget = "secret"
 
+[[rules.allowlists]]
+# The security tests check that a rejected or throwing secret from a constant never reaches a notice or log.
+description = "Throwaway values in the secret leak tests"
+condition = "AND"
+paths = ['''^(?:/app/)?tests/wp/security/test-secrets\.php$''']
+regexes = ['''^bad-SECRETTOKEN-2d8e$''', '''^throw-SECRETTOKEN-5b09$''']
+regexTarget = "secret"
+
 [[rules]]
 id = "wpun-authorization-header"
 description = "Authorization header with a literal Bearer or Basic value"
