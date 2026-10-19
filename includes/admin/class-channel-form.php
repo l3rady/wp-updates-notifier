@@ -20,6 +20,7 @@ use WPUN\Dispatcher;
 use WPUN\Enum_Field;
 use WPUN\Field_Types;
 use WPUN\Routing;
+use WPUN\Settings;
 use WPUN\State;
 
 /**
@@ -71,6 +72,13 @@ class Channel_Form {
 	private $notices;
 
 	/**
+	 * Global settings, whose notify values the routing section points out.
+	 *
+	 * @var Settings
+	 */
+	private $settings;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Channel_Store    $store      Channel instance storage.
@@ -78,13 +86,15 @@ class Channel_Form {
 	 * @param Dispatcher       $dispatcher Dispatcher.
 	 * @param State            $state      Run state.
 	 * @param Notices          $notices    Notices shown after an action.
+	 * @param Settings         $settings   Global settings.
 	 */
-	public function __construct( Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Notices $notices ) {
+	public function __construct( Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Notices $notices, Settings $settings ) {
 		$this->store      = $store;
 		$this->registry   = $registry;
 		$this->dispatcher = $dispatcher;
 		$this->state      = $state;
 		$this->notices    = $notices;
+		$this->settings   = $settings;
 	}
 
 	/**
@@ -541,6 +551,7 @@ class Channel_Form {
 	 * @return void
 	 */
 	private function render_routing_section( array $routing, array $errors ): void {
+		$notes = $this->global_notes();
 		?>
 		<h3><?php esc_html_e( 'Routing', 'wp-updates-notifier' ); ?></h3>
 		<table class="form-table" role="presentation">
@@ -548,6 +559,9 @@ class Channel_Form {
 				<?php
 				foreach ( Routing::fields() as $name => $schema ) {
 					$id = 'sc_wpun_channel_routing_' . $name;
+					if ( isset( $notes[ $name ] ) ) {
+						$schema['description'] = trim( ( isset( $schema['description'] ) && is_string( $schema['description'] ) ? $schema['description'] : '' ) . ' ' . $notes[ $name ] );
+					}
 					$this->row(
 						esc_html( isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name ),
 						$this->labels_one_control( $schema ) ? $id : '',
@@ -558,6 +572,39 @@ class Channel_Form {
 			</tbody>
 		</table>
 		<?php
+	}
+
+	/**
+	 * Notes on what the global notify settings already limit, by routing field.
+	 *
+	 * @return array<string, string> Text by `scope` and `core`; a field with nothing to say is missing.
+	 */
+	private function global_notes(): array {
+		$settings = $this->settings->get();
+		$scope    = array();
+		$notes    = array();
+
+		if ( 'none' === $settings['notify_plugins'] ) {
+			$scope[] = __( 'On the General tab, plugins are not checked.', 'wp-updates-notifier' );
+		} elseif ( 'active' === $settings['notify_plugins'] ) {
+			$scope[] = __( 'On the General tab, only active plugins are checked, so "All" here acts like "Only active ones" for plugins.', 'wp-updates-notifier' );
+		}
+		if ( 'none' === $settings['notify_themes'] ) {
+			$scope[] = __( 'On the General tab, themes are not checked.', 'wp-updates-notifier' );
+		} elseif ( 'active' === $settings['notify_themes'] ) {
+			$scope[] = __( 'On the General tab, only active themes are checked, so "All" here acts like "Only active ones" for themes.', 'wp-updates-notifier' );
+		}
+		if ( array() !== $scope ) {
+			$notes['scope'] = implode( ' ', $scope );
+		}
+
+		if ( 'none' === $settings['notify_core'] ) {
+			$notes['core'] = __( 'On the General tab, WordPress updates are not checked.', 'wp-updates-notifier' );
+		} elseif ( 'major' === $settings['notify_core'] ) {
+			$notes['core'] = __( 'On the General tab, only major releases are checked.', 'wp-updates-notifier' );
+		}
+
+		return $notes;
 	}
 
 	/**

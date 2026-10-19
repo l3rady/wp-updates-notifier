@@ -1503,4 +1503,85 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		sc_wpun()->channel_form()->process_save();
 		$this->assertSame( 'new-BLOB', $this->raw( 'fixture' )['settings']['blob'] );
 	}
+
+	/**
+	 * Text of a routing description, by field.
+	 *
+	 * @param DOMXPath $xpath Parsed form.
+	 * @param string   $name  `types`, `scope` or `core`.
+	 * @return string
+	 */
+	private function routing_description( DOMXPath $xpath, string $name ): string {
+		$id = 'sc_wpun_channel_routing_' . $name;
+		$this->assertSame( 1, $xpath->query( '//*[@id="' . $id . '"][@aria-describedby="' . $id . '-description"]' )->length, $name . ' is tied to its description.' );
+		$p = $xpath->query( '//p[@id="' . $id . '-description"]' );
+		$this->assertSame( 1, $p->length, $name );
+
+		return trim( $p->item( 0 )->textContent );
+	}
+
+	/**
+	 * The routing fields explain themselves, and with the default global settings say nothing more.
+	 */
+	public function test_routing_descriptions_are_static_with_default_settings() {
+		$this->save_settings();
+		$xpath = $this->edit_page();
+
+		$this->assertSame( 'Leave every box unticked to receive all types, including ones added later.', $this->routing_description( $xpath, 'types' ) );
+		$this->assertSame( 'Applies after the plugin and theme settings on the General tab.', $this->routing_description( $xpath, 'scope' ) );
+		$this->assertSame( 'Applies after the WordPress updates setting on the General tab.', $this->routing_description( $xpath, 'core' ) );
+	}
+
+	/**
+	 * Limits set on the General tab are named in the description of the matching routing field.
+	 */
+	public function test_routing_notes_name_the_global_limits() {
+		$this->save_settings(
+			array(
+				'notify_plugins' => 'none',
+				'notify_themes'  => 'active',
+				'notify_core'    => 'major',
+			)
+		);
+		$xpath = $this->edit_page();
+
+		$scope = $this->routing_description( $xpath, 'scope' );
+		$this->assertStringStartsWith( 'Applies after the plugin and theme settings on the General tab.', $scope );
+		$this->assertStringContainsString( 'On the General tab, plugins are not checked.', $scope );
+		$this->assertStringContainsString( 'On the General tab, only active themes are checked, so "All" here acts like "Only active ones" for themes.', $scope );
+		$this->assertStringNotContainsString( 'only active plugins', $scope );
+		$this->assertStringContainsString( 'On the General tab, only major releases are checked.', $this->routing_description( $xpath, 'core' ) );
+		$this->assertStringNotContainsString( 'not checked', $this->routing_description( $xpath, 'types' ) );
+
+		$this->save_settings(
+			array(
+				'notify_plugins' => 'active',
+				'notify_themes'  => 'none',
+				'notify_core'    => 'none',
+			)
+		);
+		$xpath = $this->edit_page();
+		$scope = $this->routing_description( $xpath, 'scope' );
+		$this->assertStringContainsString( 'only active plugins are checked, so "All" here acts like "Only active ones" for plugins.', $scope );
+		$this->assertStringContainsString( 'On the General tab, themes are not checked.', $scope );
+		$this->assertStringContainsString( 'On the General tab, WordPress updates are not checked.', $this->routing_description( $xpath, 'core' ) );
+	}
+
+	/**
+	 * A value supplied from outside the database is what the note reflects.
+	 */
+	public function test_routing_notes_follow_values_set_from_outside() {
+		$this->save_settings();
+		$this->add_source(
+			array(
+				'SC_WPUN_SETTING_NOTIFY_PLUGINS' => 'none',
+				'SC_WPUN_SETTING_NOTIFY_CORE'    => 'major',
+			)
+		);
+		$xpath = $this->edit_page();
+
+		$this->assertStringContainsString( 'On the General tab, plugins are not checked.', $this->routing_description( $xpath, 'scope' ) );
+		$this->assertStringNotContainsString( 'themes are not', $this->routing_description( $xpath, 'scope' ) );
+		$this->assertStringContainsString( 'only major releases are checked', $this->routing_description( $xpath, 'core' ) );
+	}
 }

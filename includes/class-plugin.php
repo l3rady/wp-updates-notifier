@@ -172,7 +172,7 @@ class Plugin {
 	 * @return Channel_Form
 	 */
 	public function channel_form(): Channel_Form {
-		$this->channel_form ??= new Channel_Form( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices() );
+		$this->channel_form ??= new Channel_Form( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->settings() );
 
 		return $this->channel_form;
 	}

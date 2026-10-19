@@ -39,12 +39,13 @@ final class Routing {
 	public static function fields(): array {
 		return self::choice_fields() + array(
 			'types' => array(
-				'type'     => 'enum',
-				'label'    => __( 'Item types', 'wp-updates-notifier' ),
-				'options'  => Item_Types::all(),
-				'multiple' => true,
-				'display'  => 'checkboxes',
-				'default'  => array(),
+				'type'        => 'enum',
+				'label'       => __( 'Item types', 'wp-updates-notifier' ),
+				'description' => __( 'Leave every box unticked to receive all types, including ones added later.', 'wp-updates-notifier' ),
+				'options'     => Item_Types::all(),
+				'multiple'    => true,
+				'display'     => 'checkboxes',
+				'default'     => array(),
 			),
 		);
 	}
@@ -57,24 +58,26 @@ final class Routing {
 	private static function choice_fields(): array {
 		return array(
 			'scope' => array(
-				'type'    => 'enum',
-				'label'   => __( 'Plugins and themes', 'wp-updates-notifier' ),
-				'options' => array(
+				'type'        => 'enum',
+				'label'       => __( 'Plugins and themes', 'wp-updates-notifier' ),
+				'description' => __( 'Applies after the plugin and theme settings on the General tab.', 'wp-updates-notifier' ),
+				'options'     => array(
 					'all'    => __( 'All', 'wp-updates-notifier' ),
 					'active' => __( 'Only active ones', 'wp-updates-notifier' ),
 				),
-				'default' => 'all',
-				'display' => 'radio',
+				'default'     => 'all',
+				'display'     => 'radio',
 			),
 			'core'  => array(
-				'type'    => 'enum',
-				'label'   => __( 'WordPress updates', 'wp-updates-notifier' ),
-				'options' => array(
+				'type'        => 'enum',
+				'label'       => __( 'WordPress updates', 'wp-updates-notifier' ),
+				'description' => __( 'Applies after the WordPress updates setting on the General tab.', 'wp-updates-notifier' ),
+				'options'     => array(
 					'all'   => __( 'All', 'wp-updates-notifier' ),
 					'major' => __( 'Only major releases', 'wp-updates-notifier' ),
 				),
-				'default' => 'all',
-				'display' => 'radio',
+				'default'     => 'all',
+				'display'     => 'radio',
 			),
 		);
 	}
