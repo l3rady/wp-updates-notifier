@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+	Psalm, for taint analysis only: `make taint` (taint analysis reports nothing but Tainted* issues; PHPStan
+	does the type checks). Runs in docker/psalm, because Psalm 6 needs PHP 8.1+ and the plugin supports 7.4.
+	The paths are the ones Semgrep scans (`make sast`). The repository is mounted at /app and Psalm lives in /opt/psalm.
+-->
+<psalm
+	phpVersion="7.4"
+	errorLevel="8"
+	findUnusedBaselineEntry="true"
+	findUnusedCode="false"
+	cacheDirectory="/tmp/psalm"
+	errorBaseline="psalm-baseline.xml"
+	resolveFromConfigFile="true"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="https://getpsalm.org/schema/config"
+	xsi:schemaLocation="https://getpsalm.org/schema/config https://getpsalm.org/schema/config"
+>
+	<projectFiles>
+		<file name="wp-updates-notifier.php" />
+		<file name="uninstall.php" />
+		<directory name="includes" />
+		<directory name="modules" />
+		<directory name="examples" />
+	</projectFiles>
+
+	<stubs>
+		<file name="/opt/psalm/vendor/php-stubs/wordpress-stubs/wordpress-stubs.php" />
+		<file name="docker/psalm/wordpress-taint.phpstub" />
+	</stubs>
+</psalm>

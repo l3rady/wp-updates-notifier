@@ -1,7 +1,8 @@
 #!/bin/sh
 # Security hygiene checks that Semgrep cannot express, over the code `make sast` scans (or the paths given):
-#  - every phpcs:ignore / phpcs:disable naming a WordPress.Security sniff, and every nosemgrep, says why on the same
-#    line, after " -- " ("// nosemgrep: wpun-no-unserialize -- Reads our own export.");
+#  - every phpcs:ignore / phpcs:disable naming a WordPress.Security sniff, every nosemgrep and every
+#    @psalm-suppress Tainted* (`make taint`) says why on the same line, after " -- "
+#    ("// nosemgrep: wpun-no-unserialize -- Reads our own export.");
 #  - every PHP file has an ABSPATH guard near the top (uninstall.php: WP_UNINSTALL_PLUGIN, WordPress's own rule).
 # Run by `make sast`.
 set -eu
@@ -22,7 +23,7 @@ report() { echo "$1" >&2; status=1; }
 files="$(find $paths -type f -name '*.php' | sort)"
 
 # A suppression with no reason after " -- ".
-missing="$(echo "$files" | xargs grep -HnE 'phpcs:(ignore|disable)[^-]*WordPress\.Security|nosemgrep' \
+missing="$(echo "$files" | xargs grep -HnE 'phpcs:(ignore|disable)[^-]*WordPress\.Security|nosemgrep|@psalm-suppress[[:space:]]+Tainted' \
 	| grep -Ev -- ' -- +[^ ]' || true)"
 if [ -n "$missing" ]; then
 	report "These suppressions need a reason on the same line (' -- <reason>'):"

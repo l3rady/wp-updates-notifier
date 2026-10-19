@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Findings of `make taint` that are proven safe. Each needs a comment saying why. The baseline may only shrink:
+	never add an entry to get a build through (same rule as phpstan-baseline.neon).
+-->
+<files psalm-version="6.19.1@e2ca44251c1f1aa2e35452d426895746b47de64e">
+  <!--
+	The example channel's webhook address is a setting an administrator types in (get_option() is a source), and
+	wp_safe_remote_post() refuses addresses on the server's own network unless the site allows them with core's
+	http_request_host_is_external filter. Sending to an administrator's chosen URL is the channel's job.
+  -->
+  <file src="examples/wpun-example-channel/class-example-channel.php">
+    <TaintedSSRF>
+      <code><![CDATA[$url]]></code>
+    </TaintedSSRF>
+  </file>
+</files>

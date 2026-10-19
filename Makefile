@@ -43,8 +43,13 @@ SEMGREP    := $(COMPOSE) --profile security run --rm -T semgrep semgrep
 SEMGREP_ARGS := --metrics=off --disable-version-check
 SAST_PATHS := wp-updates-notifier.php uninstall.php includes modules examples
 
+# Psalm taint analysis: TAINT_SARIF=1 also writes security-reports/psalm.sarif for code scanning. Taint findings only;
+# PHPStan does the type checks. Runs from its own image (docker/psalm), as Psalm 6 needs PHP 8.1+.
+TAINT_SARIF ?=
+PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
+
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores security
+.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -183,7 +188,11 @@ sast-test: ## Test the Semgrep rules against .semgrep/wpun.php
 sast-ignores: ## Suppressions need a reason, every PHP file has its guard, and test the checker
 	$(COMPOSE) run --build --rm php sh -c 'sh tests/bin/test-check-security-ignores.sh && sh bin/check-security-ignores.sh'
 
-security: check-workflows secrets audit sast ## Run every security check
+taint: deps ## Psalm taint analysis from untrusted sources (plugin headers, options, transients) to unsafe sinks (fails on findings; TAINT_SARIF=1 also writes the SARIF report)
+	@mkdir -p security-reports
+	$(PSALM) --taint-analysis --monochrome --no-cache --no-progress --threads=1 $(if $(TAINT_SARIF),--report=/reports/psalm.sarif)
+
+security: check-workflows secrets audit sast taint ## Run every security check
 
 up: ## Start the local WordPress site (http://localhost:8080) with Mailpit (:8025), then set it up
 	$(COMPOSE) --profile site up -d --build wordpress mailpit webhook

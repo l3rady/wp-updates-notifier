@@ -264,6 +264,20 @@ services:
       SEMGREP_SEND_METRICS: "off"
       SEMGREP_ENABLE_VERSION_CHECK: "0"
 
+  # Taint analysis with Psalm and the WordPress sources, escapes and sinks in docker/psalm/wordpress-taint.phpstub:
+  # `make taint`. Its own image, as Psalm 6 needs PHP 8.1+ and the plugin supports 7.4. No network needed.
+  psalm:
+    profiles: [security]
+    build: docker/psalm
+    image: wp-updates-notifier:psalm
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+      - ./security-reports:/reports
+    environment:
+      HOME: /tmp
+
   # Dockerfile misconfigurations and known vulnerabilities in the built image: `make audit-images`. Reports only.
   # Root, as the cache volume and (for the image scan, added by the make target) the Docker socket need it.
   trivy:

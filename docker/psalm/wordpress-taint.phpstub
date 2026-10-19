@@ -1,0 +1,182 @@
+<?php
+/**
+ * What Psalm's taint analysis needs to know about WordPress: where untrusted data comes from (sources), which
+ * functions make it safe for one kind of output (escapes) and where it must not arrive unsafe (sinks).
+ *
+ * Loaded after php-stubs/wordpress-stubs (see psalm.xml), so these declarations replace the ones there. Only
+ * the signatures that carry an annotation are listed; keep each one in step with the stubs.
+ *
+ * Sources use "input": the value is untrusted for every sink. Escapes name the sinks they make safe, and
+ * only those: esc_url() does not stop SSRF, sanitize_text_field() does not make SQL safe.
+ *
+ * @package WP_Updates_Notifier
+ */
+
+// ---------------------------------------------------------------------------
+// Sources. Plugin and theme headers are written by third parties; options, transients and the environment can
+// hold anything an administrator, another plugin or the host put there.
+// ---------------------------------------------------------------------------
+
+/**
+ * @psalm-taint-source input
+ * @return array<string, array<string, mixed>>
+ */
+function get_plugins( $plugin_folder = '' ) {}
+
+/**
+ * @psalm-taint-source input
+ * @return array<string, mixed>
+ */
+function get_plugin_data( $plugin_file, $markup = true, $translate = true ) {}
+
+/**
+ * @psalm-taint-source input
+ * @return array<string, WP_Theme>
+ */
+function wp_get_themes( $args = array() ) {}
+
+/**
+ * The update_plugins, update_themes and update_core transients are filled from WordPress.org's API response.
+ *
+ * @psalm-taint-source input
+ */
+function get_site_transient( $transient ) {}
+
+/**
+ * @psalm-taint-source input
+ */
+function get_option( $option, $default_value = false ) {}
+
+/**
+ * @psalm-taint-source input
+ */
+function get_site_option( $option, $default_value = false, $deprecated = true ) {}
+
+// ---------------------------------------------------------------------------
+// Escapes.
+// ---------------------------------------------------------------------------
+
+/**
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function esc_html( $text ) {}
+
+/**
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function esc_attr( $text ) {}
+
+/**
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function esc_textarea( $text ) {}
+
+/**
+ * esc_url() removes unsafe protocols and encodes quotes. It does not make a URL safe to fetch.
+ *
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function esc_url( $url, $protocols = null, $_context = 'display' ) {}
+
+/**
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function wp_kses( $content, $allowed_html, $allowed_protocols = array() ) {}
+
+/**
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function wp_kses_post( $data ) {}
+
+/**
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function wp_kses_data( $content ) {}
+
+/**
+ * Strips tags but leaves quotes, so it is not an escape for attributes.
+ *
+ * @psalm-taint-escape html
+ */
+function sanitize_text_field( $str ) {}
+
+/**
+ * Strips tags but leaves quotes, so it is not an escape for attributes.
+ *
+ * @psalm-taint-escape html
+ */
+function sanitize_textarea_field( $str ) {}
+
+/**
+ * Strips tags but leaves quotes, so it is not an escape for attributes.
+ *
+ * @psalm-taint-escape html
+ */
+function sanitize_email( $email ) {}
+
+/**
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function sanitize_key( $key ) {}
+
+/**
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function sanitize_title( $title, $fallback_title = '', $context = 'save' ) {}
+
+/**
+ * @psalm-taint-escape html
+ * @psalm-taint-escape has_quotes
+ */
+function sanitize_html_class( $classname, $fallback_classname = '' ) {}
+
+/**
+ * absint() returns an integer, which cannot carry markup, SQL or a header. Psalm already knows (int) and intval().
+ *
+ * @psalm-taint-escape input
+ */
+function absint( $maybeint ) {}
+
+// ---------------------------------------------------------------------------
+// Sinks.
+// ---------------------------------------------------------------------------
+
+/**
+ * The message is HTML (the plugin sends HTML mail). The recipient, subject and headers are not sinks: they come
+ * from administrator settings, and WordPress's mailer (PHPMailer) rejects header injection itself.
+ *
+ * @psalm-taint-sink html $message
+ */
+function wp_mail( $to, $subject, $message, $headers = '', $attachments = array(), $embeds = array() ) {}
+
+/**
+ * @psalm-taint-sink ssrf $url
+ */
+function wp_safe_remote_get( $url, $args = array() ) {}
+
+/**
+ * @psalm-taint-sink ssrf $url
+ */
+function wp_safe_remote_post( $url, $args = array() ) {}
+
+/**
+ * @psalm-taint-sink ssrf $url
+ */
+function wp_safe_remote_head( $url, $args = array() ) {}
+
+/**
+ * @psalm-taint-sink ssrf $url
+ */
+function wp_safe_remote_request( $url, $args = array() ) {}
+
+// $wpdb->query() is a sink too, but Psalm keeps the first declaration of a class: the Dockerfile adds
+// "@psalm-taint-sink sql $query" to wpdb::query() in the WordPress stubs (patch-wpdb-stub.php).

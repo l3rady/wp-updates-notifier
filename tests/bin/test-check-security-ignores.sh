@@ -23,6 +23,11 @@ if sh bin/check-security-ignores.sh "$fixtures/bare-nosemgrep" 2> "$work/report"
 fi
 grep -q 'a.php:5:.*nosemgrep' "$work/report" || fail "the bare nosemgrep was not reported on its line"
 
+if sh bin/check-security-ignores.sh "$fixtures/bare-psalm" 2> "$work/report" > /dev/null; then
+	fail "a bare @psalm-suppress Tainted* passed"
+fi
+grep -q 'a.php:5:.*psalm-suppress' "$work/report" || fail "the bare @psalm-suppress was not reported on its line"
+
 if sh bin/check-security-ignores.sh "$fixtures/no-guard" 2> "$work/report" > /dev/null; then
 	fail "a file without an ABSPATH guard passed"
 fi
