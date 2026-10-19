@@ -47,4 +47,10 @@ Everything in `includes/` is in the `WPUN` namespace. Classes and methods tagged
 
 ## Security
 
-The [threat model](../security/threat-model.md) lists every entry point and trust boundary: the admin-post handlers, the settings screen, update data from third parties, configuration sources, outbound requests, the add-on API, scheduled runs, stored data and the release. For each one it names the control and the test or tool that proves it.
+- **Trust boundaries.** Requests to `admin-post.php` and `options.php`, plugin and theme headers, data from api.wordpress.org, and the responses of the services a channel sends to are untrusted. Code in the same PHP process, add-ons included, is trusted, so the API keeps add-ons safe when used as documented but doesn't sandbox them.
+- **Capability and nonce.** Every screen and handler checks `current_user_can()` with the capability from `sc_wpun_capability` (`manage_options` by default), then a nonce for that action. Row actions bind the nonce to the channel id. There are no `nopriv` handlers, and the security tests discover every handler and try it with each role and bad nonce.
+- **Output.** Values are escaped late, for the context they are printed in. Update data passes through `Notification_Item`, which keeps each value to one line, and then through `Notification_Renderer`, which escapes for HTML, plain text or Markdown.
+- **Secrets.** A secret field is never rendered, and never passed to a renderer. `Channel_Instance` and `Config_Value` hide values from `var_dump()` and `print_r()`. Secrets stay in the options table in plain text unless they come from a constant, an environment variable or a source (see [Configuration sources](configuration-sources.md)).
+- **Outbound requests.** Addresses typed in by a site owner go through `wp_safe_remote_*`, which refuses private and loopback hosts.
+
+The [threat model](../security/threat-model.md) lists every entry point and trust boundary. For each one it names the control and the test or tool that proves it.

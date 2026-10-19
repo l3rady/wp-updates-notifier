@@ -55,6 +55,10 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 Version 2.0.0 no longer sends notifications to Slack. Your Slack settings have not been deleted, they are kept in case Slack notifications return, and email notifications carry on as before. We plan to add more notification channels in future releases.
 
+= How do I report a security problem? =
+
+Please don't post it in the support forum or in a public GitHub issue. Report it privately through GitHub: on the [repository's Security tab](https://github.com/l3rady/wp-updates-notifier/security), choose "Report a vulnerability". The [security policy](https://github.com/l3rady/wp-updates-notifier/blob/main/SECURITY.md) has the details, and an email address if you can't use GitHub.
+
 == Screenshots ==
 
 1. Settings page
