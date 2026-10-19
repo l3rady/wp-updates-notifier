@@ -58,7 +58,7 @@ services:
       - composer-cache:/home/dev/.composer/cache
 
   db:
-    image: mariadb:11
+    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: wordpress_test
@@ -95,7 +95,7 @@ services:
 
   site-db:
     profiles: [site]
-    image: mariadb:11
+    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: wordpress
@@ -176,7 +176,7 @@ services:
   # Persistent object cache for the local site (Redis Object Cache talks to it). `make wp ARGS="redis status"`.
   valkey:
     profiles: [site]
-    image: valkey/valkey:9.1-alpine
+    image: valkey/valkey:9.1-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11
     # Kept on disk: with the cache on, transients live only here, among them the update data WordPress fetches from
     # wordpress.org. Losing it on every restart would make the next admin page wait for those requests again.
     command: ["valkey-server", "--save", "60", "1"]
@@ -191,7 +191,7 @@ services:
   # Catches all outgoing mail: http://localhost:8025
   mailpit:
     profiles: [site]
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.31.3@sha256:ed9b00c609e77e99c79b93f1178255ebc271868920f2c69a8d166bd5634ed10d
     ports:
       # Loopback only: Mailpit shows every captured email, password-reset links included.
       - "127.0.0.1:8025:8025"
@@ -200,7 +200,7 @@ services:
   # http://webhook:8080 inside the network, `docker compose logs webhook` to read.
   webhook:
     profiles: [site]
-    image: mendhak/http-https-echo:latest
+    image: mendhak/http-https-echo:42@sha256:a265f55c86cb3baead76fdf379dc8e9e6440ed121874e101e60b833e05bce8d4
     environment:
       HTTP_PORT: "8080"
 
