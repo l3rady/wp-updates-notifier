@@ -15,12 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The plugin settings: their defaults, how they are read and written and how older ones are upgraded.
  *
  * @internal
- * @phpstan-type SettingsData array{frequency: string, notify_plugins: 'none'|'all'|'active', notify_themes: 'none'|'all'|'active', notify_automatic: bool, hide_updates: bool}
+ * @phpstan-type SettingsData array{frequency: string, notify_core: 'none'|'all'|'major', notify_plugins: 'none'|'all'|'active', notify_themes: 'none'|'all'|'active', notify_automatic: bool, hide_updates: bool}
  */
 class Settings {
 	const OPT_FIELD         = 'sc_wpun_settings';
 	const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-	const OPT_VERSION       = '11.0';
+	const OPT_VERSION       = '12.0';
 
 	/**
 	 * What the notify settings were stored as before settings version 10: 0 none, 1 all, 2 active only.
@@ -199,6 +199,7 @@ class Settings {
 	public function default_settings(): array {
 		$defaults = array(
 			'frequency'        => 'hourly',
+			'notify_core'      => 'all',
 			'notify_plugins'   => 'all',
 			'notify_themes'    => 'all',
 			'notify_automatic' => true,
@@ -228,6 +229,7 @@ class Settings {
 		 *     The default settings.
 		 *
 		 *     @type string $frequency        Name of a cron schedule.
+		 *     @type string $notify_core      `none`, `all` or `major` (major releases only).
 		 *     @type string $notify_plugins   `none`, `all` or `active` (active plugins only).
 		 *     @type string $notify_themes    `none`, `all` or `active` (active themes only).
 		 *     @type bool   $notify_automatic True to send WordPress's automatic core update emails to the notification address.
@@ -241,6 +243,7 @@ class Settings {
 
 		return array(
 			'frequency'        => $this->string_setting( $filtered, 'frequency', $defaults['frequency'] ),
+			'notify_core'      => $this->notify_key( 'notify_core', $filtered['notify_core'] ?? null, $defaults['notify_core'], false ),
 			'notify_plugins'   => $this->notify_key( 'notify_plugins', $filtered['notify_plugins'] ?? null, $defaults['notify_plugins'], false ),
 			'notify_themes'    => $this->notify_key( 'notify_themes', $filtered['notify_themes'] ?? null, $defaults['notify_themes'], false ),
 			'notify_automatic' => $this->bool_setting( $filtered, 'notify_automatic', $defaults['notify_automatic'] ),
@@ -262,6 +265,11 @@ class Settings {
 		$frequency = $this->config->resolve_typed( Config_Context::setting( 'frequency' ), $schemas['frequency'] );
 		if ( null !== $frequency ) {
 			$settings['frequency'] = (string) $frequency->get_value();
+		}
+
+		$core = $this->config->resolve_typed( Config_Context::setting( 'notify_core' ), $schemas['notify_core'] );
+		if ( null !== $core ) {
+			$settings['notify_core'] = $this->notify_key( 'notify_core', $core->get_value(), $settings['notify_core'], false );
 		}
 
 		$plugins = $this->config->resolve_typed( Config_Context::setting( 'notify_plugins' ), $schemas['notify_plugins'] );
@@ -325,6 +333,7 @@ class Settings {
 				'label'   => __( 'Frequency to check', 'wp-updates-notifier' ),
 				'options' => $frequencies,
 			),
+			'notify_core'      => $this->notify_schema( 'notify_core' ),
 			'notify_plugins'   => $this->notify_schema( 'notify_plugins' ),
 			'notify_themes'    => $this->notify_schema( 'notify_themes' ),
 			'notify_automatic' => array(
@@ -347,21 +356,37 @@ class Settings {
 	}
 
 	/**
-	 * The schema of the plugin or theme notify setting.
+	 * The schema of a notify setting, which accepts only its own keys.
 	 *
-	 * @param string $name `notify_plugins` or `notify_themes`.
+	 * @param string $name `notify_core`, `notify_plugins` or `notify_themes`.
 	 *
 	 * @return array<string, mixed>
 	 */
 	private function notify_schema( string $name ): array {
+		$none = __( 'No', 'wp-updates-notifier' );
+		$all  = __( 'Yes', 'wp-updates-notifier' );
+
+		if ( 'notify_core' === $name ) {
+			return array(
+				'type'    => 'enum',
+				'label'   => __( 'Notify about WordPress updates?', 'wp-updates-notifier' ),
+				'options' => array(
+					'none'  => $none,
+					'all'   => $all,
+					'major' => __( 'Yes, but only major releases', 'wp-updates-notifier' ),
+				),
+				'default' => 'all',
+			);
+		}
+
 		$plugins = 'notify_plugins' === $name;
 
 		return array(
 			'type'    => 'enum',
 			'label'   => $plugins ? __( 'Notify about plugin updates?', 'wp-updates-notifier' ) : __( 'Notify about theme updates?', 'wp-updates-notifier' ),
 			'options' => array(
-				'none'   => __( 'No', 'wp-updates-notifier' ),
-				'all'    => __( 'Yes', 'wp-updates-notifier' ),
+				'none'   => $none,
+				'all'    => $all,
 				'active' => $plugins ? __( 'Yes, but only active plugins', 'wp-updates-notifier' ) : __( 'Yes, but only active themes', 'wp-updates-notifier' ),
 			),
 			'default' => 'all',
@@ -369,29 +394,31 @@ class Settings {
 	}
 
 	/**
-	 * A notify setting as one of its keys.
+	 * A notify setting as one of its own keys.
 	 *
-	 * @param string $name     `notify_plugins` or `notify_themes`.
+	 * @param string $name     `notify_core`, `notify_plugins` or `notify_themes`.
 	 * @param mixed  $value    The value.
 	 * @param string $fallback Key to use when the value is not one.
-	 * @param bool   $legacy   Whether 0, 1 and 2 (as stored before settings version 10) stand for none, all and active.
+	 * @param bool   $legacy   Whether 0, 1 and 2 (as stored before settings version 10) stand for none, all and active. Never for core.
 	 *
-	 * @return 'none'|'all'|'active'
+	 * @return ($name is 'notify_core' ? 'none'|'all'|'major' : 'none'|'all'|'active')
 	 */
 	private function notify_key( string $name, $value, string $fallback, bool $legacy = true ): string {
-		if ( $legacy && ( is_int( $value ) || is_string( $value ) ) && isset( self::LEGACY_NOTIFY[ (string) $value ] ) ) {
+		if ( $legacy && 'notify_core' !== $name && ( is_int( $value ) || is_string( $value ) ) && isset( self::LEGACY_NOTIFY[ (string) $value ] ) ) {
 			$value = self::LEGACY_NOTIFY[ (string) $value ];
 		}
 
 		$schema            = $this->notify_schema( $name );
-		$schema['default'] = $fallback;
-		$key               = Enum_Field::sanitize( $value, $schema )['value'];
+		$schema['default'] = isset( $schema['options'][ $fallback ] ) ? $fallback : 'all';
 
-		if ( 'none' === $key || 'active' === $key ) {
-			return $key;
-		}
+		/**
+		 * Enum_Field only returns one of the schema's options.
+		 *
+		 * @var 'none'|'all'|'active'|'major' $key
+		 */
+		$key = Enum_Field::sanitize( $value, $schema )['value'];
 
-		return 'all';
+		return $key;
 	}
 
 	/**
@@ -411,6 +438,7 @@ class Settings {
 
 		return array(
 			'frequency'        => $this->string_setting( $stored, 'frequency', $defaults['frequency'] ),
+			'notify_core'      => $this->notify_key( 'notify_core', $stored['notify_core'] ?? null, $defaults['notify_core'] ),
 			'notify_plugins'   => $this->notify_key( 'notify_plugins', $stored['notify_plugins'] ?? null, $defaults['notify_plugins'] ),
 			'notify_themes'    => $this->notify_key( 'notify_themes', $stored['notify_themes'] ?? null, $defaults['notify_themes'] ),
 			'notify_automatic' => $this->bool_setting( $stored, 'notify_automatic', $defaults['notify_automatic'] ),

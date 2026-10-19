@@ -60,7 +60,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	public function test_the_upgrade_produces_the_current_shape( $name, $version, array $options ) {
 		$this->upgrade_from( $version, $options );
 
-		$this->assertSame( '11.0', get_option( 'sc_wpun_settings_ver' ), $name );
+		$this->assertSame( '12.0', get_option( 'sc_wpun_settings_ver' ), $name );
 		$this->assertEqualsCanonicalizing( array_keys( $this->global_settings() ), array_keys( $this->stored_settings() ), $name );
 	}
 
@@ -455,7 +455,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->assertSame( $expect_automatic, $stored['notify_automatic'] );
 		$this->assertSame( $expect_hide, $stored['hide_updates'] );
 		$this->assertSame( 'daily', $stored['frequency'] );
-		$this->assertSame( '11.0', get_option( 'sc_wpun_settings_ver' ) );
+		$this->assertSame( '12.0', get_option( 'sc_wpun_settings_ver' ) );
 	}
 
 	/**

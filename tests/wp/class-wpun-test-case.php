@@ -30,7 +30,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	/**
 	 * Settings version and key set of the current release, used as the base for fixtures.
 	 */
-	const SETTINGS_VERSION = '11.0';
+	const SETTINGS_VERSION = '12.0';
 
 	/**
 	 * Set up: block the network and reset the mailer.
@@ -134,6 +134,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	protected function settings( array $overrides = array() ) {
 		$defaults = array(
 			'frequency'              => 'hourly',
+			'notify_core'            => 'all',
 			'email_notifications'    => 1,
 			'notify_to'              => 'ops@example.org',
 			'notify_from'            => 'notifier@example.org',
@@ -161,7 +162,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	protected function global_settings( array $overrides = array() ) {
 		return array_intersect_key(
 			$this->settings( $overrides ),
-			array_flip( array( 'frequency', 'notify_plugins', 'notify_themes', 'notify_automatic', 'hide_updates' ) )
+			array_flip( array( 'frequency', 'notify_core', 'notify_plugins', 'notify_themes', 'notify_automatic', 'hide_updates' ) )
 		);
 	}
 

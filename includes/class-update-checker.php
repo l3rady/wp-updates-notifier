@@ -119,7 +119,9 @@ class Update_Checker {
 		$items   = array(); // What the check finds, in the order of the message.
 		$checked = array(); // Item type => keys still waiting, for the types this run looked at.
 
-		$this->core_update_check( $items, $checked ); // check the WP core for updates.
+		if ( 'none' !== $options['notify_core'] ) { // are we to check for WP core updates?
+			$this->core_update_check( $items, $options['notify_core'], $checked ); // check the WP core for updates.
+		}
 		if ( 'none' !== $options['notify_plugins'] ) { // are we to check for plugin updates?
 			$this->plugins_update_check( $items, $options['notify_plugins'], $checked ); // check for plugin updates.
 		}
@@ -452,11 +454,12 @@ class Update_Checker {
 	 * Checks to see if any WP core updates
 	 *
 	 * @param Notification_Item[]          $items   Collects the items to report.
+	 * @param string                       $setting The notify_core setting: `all` or `major`.
 	 * @param array<string, array<string>> $checked Collects the keys still waiting, by item type.
 	 *
 	 * @return void
 	 */
-	private function core_update_check( array &$items, array &$checked ): void {
+	private function core_update_check( array &$items, string $setting, array &$checked ): void {
 		do_action( 'wp_version_check' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_core = get_site_transient( 'update_core' ); // get information of updates.
 
@@ -478,27 +481,29 @@ class Update_Checker {
 		/**
 		 * Filters whether a WordPress core update is reported, like the plugin and theme filters do for theirs.
 		 *
-		 * Returning false reports no core item. What was already notified about core is kept
-		 * while the update is waiting.
+		 * The default follows the "Notify about WordPress updates?" setting: true, or with "only major
+		 * releases" whether the update is a major.minor change. Returning false reports no core item.
+		 * What was already notified about core is kept while the update is waiting.
 		 *
-		 * Example, ignore minor releases:
+		 * Example, ignore release candidates:
 		 *
 		 *     add_filter(
 		 *         'sc_wpun_core_needs_update',
-		 *         function ( $needs, $new_version, $current_version ) {
-		 *             return \WPUN\Routing::is_major_core_update( $current_version, $new_version );
+		 *         function ( $needs, $new_version ) {
+		 *             return $needs && false === strpos( $new_version, '-RC' );
 		 *         },
 		 *         10,
-		 *         3
+		 *         2
 		 *     );
 		 *
 		 * @since 2.0.0
 		 *
-		 * @param bool   $needs           Whether to report the update. Default true.
+		 * @param bool   $needs           Whether to report the update. Default true, or whether it is a major release with "only major releases".
 		 * @param string $new_version     The version WordPress offers.
 		 * @param string $current_version The installed version.
 		 */
-		if ( ! apply_filters( 'sc_wpun_core_needs_update', true, $new_core_ver, $current_version ) ) {
+		$needs = 'major' !== $setting || Routing::is_major_core_update( $current_version, $new_core_ver );
+		if ( ! apply_filters( 'sc_wpun_core_needs_update', $needs, $new_core_ver, $current_version ) ) {
 			return;
 		}
 

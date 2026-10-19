@@ -47,6 +47,35 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Each notify setting accepts only its own keys: major for core, active for plugins and themes.
+	 */
+	public function test_notify_settings_accept_only_their_own_keys() {
+		$valid = $this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_core' => 'major' ) ) );
+		$this->assertSame( 'major', $valid['notify_core'] );
+		$this->assertSame( array(), $this->errors() );
+
+		$valid = $this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_core' => 'none' ) ) );
+		$this->assertSame( 'none', $valid['notify_core'] );
+
+		$valid  = $this->plugin()->sc_wpun_settings_validate(
+			$this->settings(
+				array(
+					'notify_core'    => 'active',
+					'notify_plugins' => 'major',
+					'notify_themes'  => 'major',
+				)
+			)
+		);
+		$errors = $this->errors();
+		$this->assertSame( 'sc_wpun_settings_main_notify_core_error', $errors['sc_wpun_settings_main_notify_core'] );
+		$this->assertSame( 'sc_wpun_settings_main_notify_plugins_error', $errors['sc_wpun_settings_main_notify_plugins'] );
+		$this->assertSame( 'sc_wpun_settings_main_notify_themes_error', $errors['sc_wpun_settings_main_notify_themes'] );
+		$this->assertSame( 'all', $valid['notify_core'], 'The stored value is kept.' );
+		$this->assertSame( 'all', $valid['notify_plugins'] );
+		$this->assertSame( 'all', $valid['notify_themes'] );
+	}
+
+	/**
 	 * Updating the option outside the settings form (another plugin, a migration, our own code) must not die.
 	 */
 	public function test_updating_the_option_outside_the_settings_form_does_not_die() {

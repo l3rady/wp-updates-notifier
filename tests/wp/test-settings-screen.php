@@ -81,6 +81,22 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The core setting is drawn on the General tab before the plugin and theme settings, with its own three choices.
+	 */
+	public function test_the_core_setting_is_drawn_first() {
+		$this->save_settings( array( 'notify_core' => 'major' ) );
+		$xpath = $this->page();
+
+		$id = 'sc_wpun_settings_main_notify_core';
+		$this->assertSame( 3, $xpath->query( '//fieldset[@id="' . $id . '"]//input[@type="radio"][@name="sc_wpun_settings[notify_core]"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//fieldset[@id="' . $id . '"]//input[@value="major"][@checked]' )->length );
+		$this->assertSame( 0, $xpath->query( '//fieldset[@id="' . $id . '"]//input[@value="active"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//th[contains(., "Notify about WordPress updates?")]' )->length );
+		$this->assertSame( 1, $xpath->query( '//tr[.//fieldset[@id="' . $id . '"]]/following-sibling::tr[.//fieldset[@id="sc_wpun_settings_main_notify_plugins"]]' )->length, 'Before the plugin setting.' );
+		$this->assertSame( 0, $xpath->query( '//tr[.//fieldset[@id="sc_wpun_settings_main_notify_plugins"]]/following-sibling::tr[.//fieldset[@id="' . $id . '"]]' )->length );
+	}
+
+	/**
 	 * More than five schedules make frequency a select again, labelled by its row.
 	 */
 	public function test_frequency_is_a_select_with_more_than_five_schedules() {

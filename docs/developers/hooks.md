@@ -96,25 +96,26 @@ Fired in `includes/class-routing.php`.
 
 Filters whether a WordPress core update is reported, like the plugin and theme filters do for theirs.
 
-Returning false reports no core item. What was already notified about core is kept
-while the update is waiting.
+The default follows the "Notify about WordPress updates?" setting: true, or with "only major
+releases" whether the update is a major.minor change. Returning false reports no core item.
+What was already notified about core is kept while the update is waiting.
 
-Example, ignore minor releases:
+Example, ignore release candidates:
 
 ```php
 add_filter(
     'sc_wpun_core_needs_update',
-    function ( $needs, $new_version, $current_version ) {
-        return \WPUN\Routing::is_major_core_update( $current_version, $new_version );
+    function ( $needs, $new_version ) {
+        return $needs && false === strpos( $new_version, '-RC' );
     },
     10,
-    3
+    2
 );
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `$needs` | `bool` | Whether to report the update. Default true. |
+| `$needs` | `bool` | Whether to report the update. Default true, or whether it is a major release with "only major releases". |
 | `$new_version` | `string` | The version WordPress offers. |
 | `$current_version` | `string` | The installed version. |
 
@@ -787,7 +788,7 @@ add_filter(
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `$defaults` | `array<string, mixed>` | The default settings.<br>- `string` `$frequency` Name of a cron schedule.<br>- `string` `$notify_plugins` `none`, `all` or `active` (active plugins only).<br>- `string` `$notify_themes` `none`, `all` or `active` (active themes only).<br>- `bool` `$notify_automatic` True to send WordPress's automatic core update emails to the notification address.<br>- `bool` `$hide_updates` True to hide the WordPress update notice from users who cannot update. |
+| `$defaults` | `array<string, mixed>` | The default settings.<br>- `string` `$frequency` Name of a cron schedule.<br>- `string` `$notify_core` `none`, `all` or `major` (major releases only).<br>- `string` `$notify_plugins` `none`, `all` or `active` (active plugins only).<br>- `string` `$notify_themes` `none`, `all` or `active` (active themes only).<br>- `bool` `$notify_automatic` True to send WordPress's automatic core update emails to the notification address.<br>- `bool` `$hide_updates` True to hide the WordPress update notice from users who cannot update. |
 
 Fired in `includes/class-settings.php`.
 

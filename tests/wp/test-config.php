@@ -282,6 +282,27 @@ class Test_Config extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The core notify setting takes none, all and major from outside the database; active is not one of its keys.
+	 */
+	public function test_notify_core_is_supplied_from_outside() {
+		$this->save_settings( array( 'notify_core' => 'all' ) );
+		$this->add_source( array( 'SC_WPUN_SETTING_NOTIFY_CORE' => 'major' ) );
+		$this->assertSame( 'major', sc_wpun()->settings()->get()['notify_core'] );
+		$this->assertSame( 'all', $this->stored_settings()['notify_core'], 'Nothing from outside is written to the database.' );
+		$this->assertSame( array(), sc_wpun()->config()->problems() );
+
+		remove_all_filters( 'sc_wpun_config_sources' );
+		$this->add_source( array( 'SC_WPUN_SETTING_NOTIFY_CORE' => 'active' ) );
+		$this->assertSame( 'all', sc_wpun()->settings()->get()['notify_core'] );
+		$this->assertSame( array( 'SC_WPUN_SETTING_NOTIFY_CORE' ), wp_list_pluck( sc_wpun()->config()->problems(), 'key' ) );
+
+		remove_all_filters( 'sc_wpun_config_sources' );
+		$this->add_source( array( 'SC_WPUN_SETTING_NOTIFY_PLUGINS' => 'major' ) );
+		$this->assertSame( 'all', sc_wpun()->settings()->get()['notify_plugins'], 'major is not a plugin key.' );
+		$this->assertSame( array( 'SC_WPUN_SETTING_NOTIFY_PLUGINS' ), wp_list_pluck( sc_wpun()->config()->problems(), 'key' ) );
+	}
+
+	/**
 	 * An invalid value is reported without its value, and the saved value is used.
 	 */
 	public function test_an_invalid_value_is_reported_not_used() {

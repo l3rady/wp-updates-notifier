@@ -422,6 +422,7 @@ class Settings_Page {
 		// Validate main settings with their field types. A missing value keeps the stored one: a read-only setting is not submitted.
 		$messages = array(
 			'frequency'        => __( 'Invalid frequency entered', 'wp-updates-notifier' ),
+			'notify_core'      => __( 'Invalid WordPress updates value entered', 'wp-updates-notifier' ),
 			'notify_plugins'   => __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ),
 			'notify_themes'    => __( 'Invalid theme updates value entered', 'wp-updates-notifier' ),
 			'notify_automatic' => __( 'Invalid automatic updates value entered', 'wp-updates-notifier' ),
