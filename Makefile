@@ -164,8 +164,7 @@ audit: audit-composer audit-osv ## Check the locked dependencies for known vulne
 audit-composer: ## composer audit on composer.lock (fails on advisories and abandoned packages)
 	$(COMPOSE) run --rm composer audit --locked
 
-# Only composer.lock is a lockfile: commitlint is installed by `npm install --global` in docker/Dockerfile, pinned
-# to exact top-level versions, so its transitive npm dependencies are not covered.
+# The lockfiles are composer.lock, docker/psalm/composer.lock and docker/commitlint/package-lock.json.
 audit-osv: ## OSV-Scanner over the repository's lockfiles
 	@mkdir -p security-reports
 	$(if $(AUDIT_SARIF),-$(COMPOSE) --profile security run --rm -T osv-scanner scan source -r --format sarif --output-file /reports/osv.sarif /app)

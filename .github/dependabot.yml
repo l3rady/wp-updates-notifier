@@ -60,3 +60,14 @@ updates:
     commit-message:
       prefix: build
       include: scope
+
+  # commitlint for `make commits`, installed with npm ci from docker/commitlint/package-lock.json.
+  - package-ecosystem: npm
+    directory: /docker/commitlint
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope
