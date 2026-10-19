@@ -44,7 +44,7 @@ RUN . /etc/os-release \
     fi
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip zip rsync libzip-dev \
+    && apt-get install -y --no-install-recommends git openssh-client unzip zip rsync libzip-dev \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-install mysqli zip
 

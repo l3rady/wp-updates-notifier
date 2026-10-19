@@ -4,6 +4,7 @@
   "packages": {
     ".": {
       "release-type": "simple",
+      "draft": true,
       "package-name": "wp-updates-notifier",
       "include-component-in-tag": false,
       "include-v-in-tag": true,

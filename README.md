@@ -32,6 +32,9 @@ Checks run on WP-Cron, which only runs when the site gets visits. On a quiet sit
 - Questions: the [support forum](https://wordpress.org/support/plugin/wp-updates-notifier/).
 - Bugs and ideas: [GitHub issues](https://github.com/l3rady/wp-updates-notifier/issues).
 - Security problems: please report them privately, see [SECURITY.md](SECURITY.md).
+- Verifying a download: each release zip has build provenance you can check with
+  `gh attestation verify wp-updates-notifier-<version>.zip --repo l3rady/wp-updates-notifier`. See
+  [Verifying a release](SECURITY.md#verifying-a-release) for the full command, the checksum and the signed tag.
 
 Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 

@@ -1,0 +1,5 @@
+# The SSH key that signs release tags, in git's allowed-signers format
+# (`git tag -v` reads it through gpg.ssh.allowedSignersFile). The same public key
+# is registered as a signing key on the maintainer's GitHub account, and its
+# private half is the RELEASE_SIGNING_KEY secret of the `release` environment.
+# See "Verifying a release" in SECURITY.md.

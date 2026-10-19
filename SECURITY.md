@@ -79,10 +79,39 @@ directory and run:
 sha256sum -c wp-updates-notifier-<version>.zip.sha256
 ```
 
-This catches a corrupted or swapped download. The zip is also reproducible:
-check out the release tag, run `make dist` and compare the SHA-256 of
-`build/wp-updates-notifier-<version>.zip` with the one you downloaded. The two
-are identical. CI checks this on every pull request with `make dist-repro`.
+This only catches a corrupted download: anyone who can swap the zip can swap
+the checksum too. To check that the zip was built by this repository's release
+workflow, verify its build provenance with the
+[GitHub CLI](https://cli.github.com/):
+
+```sh
+gh attestation verify wp-updates-notifier-<version>.zip \
+  --repo l3rady/wp-updates-notifier \
+  --signer-workflow l3rady/wp-updates-notifier/.github/workflows/release-please.yml \
+  --source-ref refs/heads/main
+```
+
+The release also carries a CycloneDX SBOM (`.cdx.json`). It lists no
+components, because the plugin has no runtime dependencies. The SBOM is attested
+against the zip too: add `--predicate-type https://cyclonedx.org/bom` to the
+command above to check that attestation.
+
+The zip is reproducible: check out the release tag, run `make dist` and compare
+the SHA-256 of `build/wp-updates-notifier-<version>.zip` with the one you
+downloaded. The two are identical. CI checks this on every pull request with
+`make dist-repro`.
+
+Release tags (`vX.Y.Z`) are annotated and signed with a dedicated SSH key. The
+`v*` tag ruleset stops them from being moved or deleted. GitHub shows them as
+Verified, and you can check one in a clone:
+
+```sh
+git -c gpg.ssh.allowedSignersFile=.github/release-signers tag -v v<version>
+```
+
+`.github/release-signers` comes from the same clone, so also compare its key
+with the signing keys listed for the maintainer at
+`https://api.github.com/users/l3rady/ssh_signing_keys`.
 
 ## OpenSSF Scorecard
 

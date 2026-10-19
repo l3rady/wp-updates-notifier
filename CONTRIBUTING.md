@@ -91,8 +91,37 @@ keeps one **Release PR** open that collects the next version and the
 `CHANGELOG.md` entry from the commit messages: `fix` is a patch, `feat` a minor,
 and `!` with a `BREAKING CHANGE:` footer a major (`docs`, `chore`, `build`, `ci`,
 `test` and `style` do not release by themselves). Merging the Release PR creates
-the `vX.Y.Z` tag and the GitHub release. To force a version, add a
+a draft GitHub release. The `release` job then waits for the maintainer's
+approval in the `release` environment. It builds the zip, its `.sha256` and an
+SBOM, attests the zip, creates the signed `vX.Y.Z` tag, uploads the assets and
+publishes the release. Don't merge anything to `main` between merging the
+Release PR and the release being published: until then there is no tag, so
+release-please can't see the release and would open a Release PR that repeats
+it. If that happens, run the workflow by hand (Actions, release-please, Run
+workflow) after publishing to rebuild the Release PR. To force a version, add a
 `Release-As: 2.0.0` footer to a commit.
+
+If the release job fails, use **Re-run failed jobs**, not "Re-run all jobs":
+re-running release-please finds nothing new to release, and the release job is
+skipped. Every step after the tag push is safe to repeat, and a tag that is
+already pushed is checked, not created again.
+
+Run the workflow by hand with **rehearse** ticked to try the release job without
+releasing. It also waits for approval in the `release` environment. It builds
+and signs a throwaway tag on the runner, then stops before anything is
+attested, pushed or published.
+
+The `release` environment is limited to `main`, needs the maintainer's approval
+and holds:
+
+- the secret `RELEASE_SIGNING_KEY`: a dedicated ed25519 SSH key with no
+  passphrase (and LF line endings);
+- the variables `RELEASE_TAGGER_NAME` and `RELEASE_TAGGER_EMAIL`: the email must
+  be a verified email on the GitHub account where the public key is registered
+  as a **signing** key, or GitHub won't show the tag as Verified.
+
+The public key goes in `.github/release-signers` as
+`<RELEASE_TAGGER_EMAIL> namespaces="git" ssh-ed25519 AAAA…`.
 
 The workflow also sets the copyright year and the `readme.txt` stable tag on the
 Release PR's branch.
