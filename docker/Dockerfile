@@ -9,6 +9,9 @@
 
 ARG PHP_VERSION=8.3
 
+# The images that don't depend on PHP_VERSION are pinned by digest. The php and wordpress base images can't be:
+# PHP_VERSION picks one from the test matrix at build time (see SECURITY.md, "OpenSSF Scorecard").
+
 # ---------------------------------------------------------------------------
 # base: PHP + mysqli (WordPress needs it) + Composer
 # ---------------------------------------------------------------------------
@@ -31,9 +34,9 @@ RUN apt-get update \
     && docker-php-ext-install mysqli zip
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/zz-wp-updates-notifier.ini
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac /usr/bin/composer /usr/bin/composer
 # WP-CLI, to install the built plugin into a fresh WordPress (make test-dist).
-COPY --from=wordpress:cli /usr/local/bin/wp /usr/local/bin/wp
+COPY --from=wordpress:cli@sha256:36243da432a0f0a3b56dc3240ecee9b159108d71305e7c064d987a20a465bfde /usr/local/bin/wp /usr/local/bin/wp
 
 # ---------------------------------------------------------------------------
 # dev: non-root user matching the host so bind-mounted files stay owned by you
@@ -115,13 +118,13 @@ RUN apt-get update \
     && apt-get purge -y --auto-remove ${PHPIZE_DEPS} \
     && rm -rf /var/lib/apt/lists/* /tmp/pear
 
-COPY --from=wordpress:cli /usr/local/bin/wp /usr/local/bin/wp
+COPY --from=wordpress:cli@sha256:36243da432a0f0a3b56dc3240ecee9b159108d71305e7c064d987a20a465bfde /usr/local/bin/wp /usr/local/bin/wp
 
 # ---------------------------------------------------------------------------
 # commitlint: checks that commit messages follow Conventional Commits.
 # Separate from the PHP image because it is the only thing here that needs Node.
 # ---------------------------------------------------------------------------
-FROM node:26-alpine AS commitlint
+FROM node:26-alpine@sha256:6f08a523443ddedf52941874c203475b0ad503e859ad70cb26ab8be9a517dbd5 AS commitlint
 
 ENV NODE_PATH=/usr/local/lib/node_modules
 

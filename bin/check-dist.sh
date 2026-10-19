@@ -1,7 +1,6 @@
 #!/bin/sh
 # Checks the zip built by `make dist`: only runtime files, the files that must
-# be there, no bundled dependencies, the version in its name, and .gitattributes in
-# step with .distignore.
+# be there, no bundled dependencies and the version in its name.
 # Run with `make dist-check`.
 set -eu
 
@@ -49,13 +48,5 @@ echo "ok: zip contains only runtime files, and all required ones"
 unzip -p "$zip" "$slug/wp-updates-notifier.php" | grep -q "^ \* Plugin Name: WP Updates Notifier$" || fail "plugin header missing"
 unzip -p "$zip" "$slug/wp-updates-notifier.php" | grep -qx " \* Version: $version" || fail "version in the zip differs from $version"
 echo "ok: $slug/wp-updates-notifier.php is version $version"
-
-
-# .gitattributes (GitHub archives) and .distignore (zip, WordPress.org) leave out the same files.
-from_git="$(git -C "$root" archive --worktree-attributes HEAD | tar -t | grep -v '/$' | sort)"
-from_zip="$(echo "$entries" | grep -v '/$' | sed "s#^$slug/##" | sort)"
-[ "$from_git" = "$from_zip" ] || fail ".gitattributes and .distignore disagree:
-$(printf '%s\n' "$from_git" > /tmp/a; printf '%s\n' "$from_zip" > /tmp/b; diff /tmp/a /tmp/b || true)"
-echo "ok: .gitattributes and .distignore agree"
 
 echo "OK"

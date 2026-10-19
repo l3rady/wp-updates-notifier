@@ -32,3 +32,29 @@ Problems we would like to hear about include:
   did not configure;
 - flaws in the public API that make add-on channels unsafe when used as
   documented.
+
+## OpenSSF Scorecard
+
+[OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/l3rady/wp-updates-notifier)
+scores the repository's supply-chain setup every week and on every push to
+`main` (`.github/workflows/scorecard.yml`). Its results are in the repository's
+code scanning alerts. These checks score below 10 on purpose:
+
+- **Code-Review** and part of **Branch-Protection**: one maintainer writes and
+  merges every change, so `main` can't require an approving review, a code
+  owner's review or approval of the last push. Pull requests, signed commits,
+  linear history and the required CI checks still apply to every change, and
+  `.github/CODEOWNERS` marks workflow and release-script changes. The rules
+  don't bind administrators, so the maintainer can fast-forward a reviewed
+  branch onto `main` and keep its signed commits unchanged.
+- **Contributors**: a one-maintainer project.
+- **Pinned-Dependencies**: `docker/Dockerfile` builds its `php` and `wordpress`
+  images from `PHP_VERSION`, one per PHP version in the test matrix, so no single
+  digest can pin them. The `npm install` of commitlint in the same file pins exact
+  versions but has no lockfile. Both are development images that never reach the
+  plugin zip. Every other image, and every action, is pinned by digest.
+- **Fuzzing**: no fuzzing tool fits a WordPress plugin. Untrusted input is
+  covered by the Psalm taint analysis (`make taint`) and the PHPUnit tests.
+- **CII-Best-Practices**: no OpenSSF Best Practices badge yet.
+- **Packaging** and **Signed-Releases**: not scored until the release workflow
+  publishes a signed release.

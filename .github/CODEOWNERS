@@ -1,0 +1,3 @@
+# Workflow and release-script changes are always flagged for the maintainer's review.
+/.github/ @l3rady
+/bin/     @l3rady
