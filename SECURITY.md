@@ -2,7 +2,13 @@
 
 ## Supported versions
 
-Security fixes are made to the latest release only.
+| Version | Supported |
+| --- | --- |
+| 2.x | Yes: fixes go into the latest 2.x release |
+| 1.x and older | No: update to 2.x |
+
+Security fixes are made to the latest release only. 2.0.0 needs WordPress 6.7
+and PHP 7.4 or newer.
 
 ## Reporting a vulnerability
 
@@ -35,6 +41,39 @@ Problems we would like to hear about include:
 
 The [threat model](docs/security/threat-model.md) describes what the plugin
 trusts, each entry point, and the control and test that cover it.
+
+## How this plugin is checked
+
+Every pull request runs these scripted checks. A finding fails the build, and
+the reports go to the repository's code scanning alerts.
+
+- **Workflows:** actionlint and zizmor (`make check-workflows`).
+- **Secrets:** gitleaks over the git history, the working tree and the release
+  zip (`make secrets`).
+- **Dependencies:** composer audit, OSV-Scanner and GitHub's dependency
+  review. The plugin has no runtime dependencies.
+- **Static analysis:** WordPress Coding Standards, including its escaping,
+  nonce and sanitising sniffs (`make lint`), PHPStan (`make stan`), Semgrep with
+  the plugin's own rules (`make sast`), and Psalm's taint analysis (`make taint`).
+- **Security tests:** a PHPUnit group (`tests/wp/security/`). It runs every
+  admin-post handler against every role and every bad nonce. It also checks
+  that update data with markup is escaped in every output, that secrets never
+  reach a page, notice or log, and that outbound requests refuse private
+  addresses.
+- **Dynamic scan:** OWASP ZAP against a throwaway site (`make dast`),
+  authenticated and anonymous. It is run by hand before each release, as it is
+  too slow for every pull request.
+- **Repository:** OpenSSF Scorecard, see below.
+
+These are scripted tools with pinned versions. An AI-assisted review is run by
+hand before a release; it is advisory and never gates a build. The
+[threat model](docs/security/threat-model.md) maps each entry point to the
+check that covers it.
+
+## Verifying a release
+
+To be added with the release pipeline (#226): how to check that a zip was built
+by this repository's CI from a tagged commit.
 
 ## OpenSSF Scorecard
 

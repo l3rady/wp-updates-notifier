@@ -290,6 +290,13 @@ $this->assertTrue( $result->is_success() );
 
 Return a `WP_Error` from the filter to test a failed connection.
 
+### Checking your code
+
+You can run the plugin's own checks on your add-on:
+
+- **Coding standards.** Copy [`examples/wpun-example-channel/phpcs.xml.dist`](../../examples/wpun-example-channel/phpcs.xml.dist) and change the text domain and prefixes. It is the WordPress ruleset, including the escaping, nonce and sanitising sniffs, with the same PHP and WordPress versions as the plugin.
+- **Semgrep.** Run Semgrep CE with the plugin's rules on your code: `semgrep scan --config path/to/wp-updates-notifier/.semgrep/ --metrics=off your-addon/`. The rules ban `eval`, `unserialize`, `$_REQUEST` and unprepared `$wpdb` queries, and they require `wp_safe_remote_*` for HTTP. Your fixed API address may use `wp_remote_post()` with `// nosemgrep: wpun-outbound-http-safe-only -- <reason>`. The rules are GPL, like the plugin.
+
 ## Checklist
 
 - The header has `Requires Plugins: wp-updates-notifier` and `Requires WPUN API` with the constraint, and `boot()` checks `sc_wpun_api_satisfies( '^1.0' )` for code outside the channel.

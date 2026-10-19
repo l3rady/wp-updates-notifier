@@ -10,4 +10,5 @@ Closes #<!-- issue number -->
 ## Checklist
 - [ ] `make lint`, `make stan` and `make rector` pass
 - [ ] `make test` passes
+- [ ] `make security` passes (see "Security checks" in CONTRIBUTING.md)
 - [ ] Commit messages follow Conventional Commits (`make commits`; `!` and a `BREAKING CHANGE:` footer for breaking changes)
