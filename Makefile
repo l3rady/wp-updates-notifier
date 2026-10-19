@@ -49,7 +49,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -109,6 +109,13 @@ dist: ## Build build/wp-updates-notifier-<version>.zip (runtime files only)
 
 dist-check: ## Check the zip: allowlisted contents, required files, version
 	$(COMPOSE) run --build --rm php sh bin/check-dist.sh
+
+dist-repro: ## Build the zip twice from fresh clones of HEAD (different umask, file times, time zone) and fail if the SHA-256 differs
+	$(COMPOSE) run --build --rm -e DIST_REPRO_SCRIPT php sh bin/check-dist-repro.sh
+
+sbom: dist ## Write a CycloneDX SBOM of the built zip to build/wp-updates-notifier-<version>.cdx.json (Syft)
+	@v=$$(sed -n 's/^ \* Version: //p' wp-updates-notifier.php | head -n 1); \
+	$(COMPOSE) --profile security run --rm -T syft dir:/build/wp-updates-notifier --source-name wp-updates-notifier --source-version "$$v" -o cyclonedx-json=/build/wp-updates-notifier-$$v.cdx.json
 
 test-dist: ## Install the zip into a fresh WordPress, activate, deactivate and uninstall it
 	$(COMPOSE) run --build --rm dist sh bin/test-dist.sh

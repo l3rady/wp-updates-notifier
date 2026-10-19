@@ -250,6 +250,21 @@ services:
       - .:/app:ro
       - ./security-reports:/reports
 
+  # SBOM of the built zip (CycloneDX): `make sbom`. Writes to build/.
+  syft:
+    profiles: [security]
+    image: anchore/syft:v1.54.1@sha256:3eb5379ba7b409c3f4069b686110527af0c47df993fa5c10d13e7cf34f49b1aa
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /build
+    volumes:
+      - ./build:/build
+    # The image has no writable /tmp, Syft wants a cache directory.
+    tmpfs:
+      - /tmp:mode=1777
+    environment:
+      SYFT_CHECK_FOR_APP_UPDATE: "false"
+      XDG_CACHE_HOME: /tmp
+
   # Static analysis with the plugin's own rules in .semgrep/: `make sast`. No network needed.
   semgrep:
     profiles: [security]

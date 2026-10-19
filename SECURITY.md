@@ -72,8 +72,17 @@ check that covers it.
 
 ## Verifying a release
 
-To be added with the release pipeline (#226): how to check that a zip was built
-by this repository's CI from a tagged commit.
+Each release zip comes with a `.sha256` file. Download both into the same
+directory and run:
+
+```sh
+sha256sum -c wp-updates-notifier-<version>.zip.sha256
+```
+
+This catches a corrupted or swapped download. The zip is also reproducible:
+check out the release tag, run `make dist` and compare the SHA-256 of
+`build/wp-updates-notifier-<version>.zip` with the one you downloaded. The two
+are identical. CI checks this on every pull request with `make dist-repro`.
 
 ## OpenSSF Scorecard
 
