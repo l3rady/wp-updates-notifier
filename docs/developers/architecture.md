@@ -44,3 +44,7 @@ Global settings live in the `sc_wpun_settings` option, the instances in `sc_wpun
 ## Public and internal code
 
 Everything in `includes/` is in the `WPUN` namespace. Classes and methods tagged `@internal` are not part of the public API and can change in any release. Everything else that is documented with `@since` is public; see [Stability and deprecation](stability.md). The built-in email module in `modules/email/` uses only the public API, and CI (`make check-public-api`) makes sure it stays that way.
+
+## Security
+
+The [threat model](../security/threat-model.md) lists every entry point and trust boundary: the admin-post handlers, the settings screen, update data from third parties, configuration sources, outbound requests, the add-on API, scheduled runs, stored data and the release. For each one it names the control and the test or tool that proves it.
