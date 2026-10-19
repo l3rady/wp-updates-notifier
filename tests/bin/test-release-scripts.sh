@@ -25,9 +25,10 @@ sh "$work/bin/update-copyright-year.sh" 2032
 grep -q 'Copyright 2032[^-]' "$work/uninstall.php" || fail "same-year range not collapsed"
 echo "ok: copyright year"
 
-# Stable tag: replaced, once, nothing else touched.
-sh "$work/bin/set-stable-tag.sh" 2.0.0
-[ "$(grep -c '^Stable tag: 2.0.0$' "$work/readme.txt")" = 1 ] || fail "stable tag not set"
+# Stable tag: replaced, once, nothing else touched. 9.9.9 is never the real tag, so
+# this also passes on the Release PR's branch, where the tag is already set.
+sh "$work/bin/set-stable-tag.sh" 9.9.9
+[ "$(grep -c '^Stable tag: 9.9.9$' "$work/readme.txt")" = 1 ] || fail "stable tag not set"
 [ "$(diff "$here/readme.txt" "$work/readme.txt" | grep -c '^>')" = 1 ] || fail "readme.txt changed in more than one line"
 echo "ok: stable tag"
 
