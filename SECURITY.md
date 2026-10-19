@@ -51,11 +51,6 @@ code scanning alerts. These checks score below 10 on purpose:
   don't bind administrators, so the maintainer can fast-forward a reviewed
   branch onto `main` and keep its signed commits unchanged.
 - **Contributors**: a one-maintainer project.
-- **Pinned-Dependencies**: `docker/Dockerfile` builds its `php` and `wordpress`
-  images from `PHP_VERSION`, one per PHP version in the test matrix, so no single
-  digest can pin them. The `npm install` of commitlint in the same file pins exact
-  versions but has no lockfile. Both are development images that never reach the
-  plugin zip. Every other image, and every action, is pinned by digest.
 - **Fuzzing**: no fuzzing tool fits a WordPress plugin. Untrusted input is
   covered by the Psalm taint analysis (`make taint`) and the PHPUnit tests.
 - **CII-Best-Practices**: no OpenSSF Best Practices badge yet.

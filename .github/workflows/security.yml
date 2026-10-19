@@ -135,9 +135,10 @@ jobs:
             MIT, BSD-2-Clause, BSD-3-Clause, ISC, Apache-2.0, GPL-2.0-or-later, GPL-2.0-only,
             GPL-3.0-or-later, GPL-3.0-only, LGPL-2.1-or-later, LGPL-3.0-or-later, MPL-2.0,
             Unlicense, CC0-1.0, 0BSD, Zlib
-          # OSL-3.0, a dependency of Psalm in docker/psalm. It runs in its own image for `make taint`, is never
-          # shipped and never linked into the plugin.
-          allow-dependencies-licenses: pkg:composer/netresearch/jsonmapper
+          # Development tools that run in their own images and are never shipped or linked into the plugin:
+          # jsonmapper (OSL-3.0) comes with Psalm in docker/psalm, and argparse (Python-2.0, GPL-compatible) with
+          # commitlint in docker/commitlint.
+          allow-dependencies-licenses: pkg:composer/netresearch/jsonmapper, pkg:npm/argparse
 
   # Trivy over docker/ and the image CI builds. It only reports (exit code 0): the base image's findings are
   # fixed by a new base image, not by this repository. Not on pull requests, it needs no gate there.

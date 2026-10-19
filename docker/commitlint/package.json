@@ -1,0 +1,10 @@
+{
+  "name": "wp-updates-notifier-commitlint",
+  "description": "commitlint for `make commits`, installed with npm ci from package-lock.json in docker/Dockerfile. Development only, never shipped.",
+  "private": true,
+  "license": "GPL-2.0-or-later",
+  "dependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3"
+  }
+}
