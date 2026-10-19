@@ -52,6 +52,29 @@ class Test_Settings_State extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The Automatic updates setting is gone, and a value supplied for it is ignored without a problem being reported.
+	 */
+	public function test_the_automatic_updates_setting_is_gone() {
+		$settings = sc_wpun()->settings();
+		$source   = new Test_Config_Source( array( 'SC_WPUN_SETTING_NOTIFY_AUTOMATIC' => 'off' ) );
+		add_filter(
+			'sc_wpun_config_sources',
+			static function ( $sources ) use ( $source ) {
+				$sources[] = $source;
+				return $sources;
+			}
+		);
+		sc_wpun()->config()->flush();
+		$this->save_settings();
+
+		$this->assertArrayNotHasKey( 'notify_automatic', $settings->schemas() );
+		$this->assertArrayNotHasKey( 'notify_automatic', $settings->default_settings() );
+		$this->assertArrayNotHasKey( 'notify_automatic', $settings->stored() );
+		$this->assertArrayNotHasKey( 'notify_automatic', $settings->get() );
+		$this->assertSame( array(), sc_wpun()->config()->problems() );
+	}
+
+	/**
 	 * Settings missing keys get their defaults when read.
 	 */
 	public function test_missing_settings_get_defaults() {

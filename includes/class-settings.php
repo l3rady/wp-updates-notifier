@@ -15,12 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The plugin settings: their defaults, how they are read and written and how older ones are upgraded.
  *
  * @internal
- * @phpstan-type SettingsData array{frequency: string, notify_core: 'none'|'all'|'major', notify_plugins: 'none'|'all'|'active', notify_themes: 'none'|'all'|'active', notify_automatic: bool, hide_updates: bool}
+ * @phpstan-type SettingsData array{frequency: string, notify_core: 'none'|'all'|'major', notify_plugins: 'none'|'all'|'active', notify_themes: 'none'|'all'|'active', hide_updates: bool}
  */
 class Settings {
 	const OPT_FIELD         = 'sc_wpun_settings';
 	const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-	const OPT_VERSION       = '12.0';
+	const OPT_VERSION       = '13.0';
 
 	/**
 	 * What the notify settings were stored as before settings version 10: 0 none, 1 all, 2 active only.
@@ -91,7 +91,7 @@ class Settings {
 			}
 
 			// Settings version 11 stores the on/off settings as true and false instead of 1 and 0.
-			foreach ( array( 'notify_automatic', 'hide_updates' ) as $name ) {
+			foreach ( array( 'hide_updates' ) as $name ) {
 				if ( array_key_exists( $name, $options ) ) {
 					$options[ $name ] = $this->bool_setting( $options, $name, $defaults[ $name ] );
 				}
@@ -198,12 +198,11 @@ class Settings {
 	 */
 	public function default_settings(): array {
 		$defaults = array(
-			'frequency'        => 'hourly',
-			'notify_core'      => 'all',
-			'notify_plugins'   => 'all',
-			'notify_themes'    => 'all',
-			'notify_automatic' => true,
-			'hide_updates'     => true,
+			'frequency'      => 'hourly',
+			'notify_core'    => 'all',
+			'notify_plugins' => 'all',
+			'notify_themes'  => 'all',
+			'hide_updates'   => true,
 		);
 
 		/**
@@ -232,7 +231,6 @@ class Settings {
 		 *     @type string $notify_core      `none`, `all` or `major` (major releases only).
 		 *     @type string $notify_plugins   `none`, `all` or `active` (active plugins only).
 		 *     @type string $notify_themes    `none`, `all` or `active` (active themes only).
-		 *     @type bool   $notify_automatic True to send WordPress's automatic core update emails to the notification address.
 		 *     @type bool   $hide_updates     True to hide the WordPress update notice from users who cannot update.
 		 * }
 		 */
@@ -242,12 +240,11 @@ class Settings {
 		}
 
 		return array(
-			'frequency'        => $this->string_setting( $filtered, 'frequency', $defaults['frequency'] ),
-			'notify_core'      => $this->notify_key( 'notify_core', $filtered['notify_core'] ?? null, $defaults['notify_core'], false ),
-			'notify_plugins'   => $this->notify_key( 'notify_plugins', $filtered['notify_plugins'] ?? null, $defaults['notify_plugins'], false ),
-			'notify_themes'    => $this->notify_key( 'notify_themes', $filtered['notify_themes'] ?? null, $defaults['notify_themes'], false ),
-			'notify_automatic' => $this->bool_setting( $filtered, 'notify_automatic', $defaults['notify_automatic'] ),
-			'hide_updates'     => $this->bool_setting( $filtered, 'hide_updates', $defaults['hide_updates'] ),
+			'frequency'      => $this->string_setting( $filtered, 'frequency', $defaults['frequency'] ),
+			'notify_core'    => $this->notify_key( 'notify_core', $filtered['notify_core'] ?? null, $defaults['notify_core'], false ),
+			'notify_plugins' => $this->notify_key( 'notify_plugins', $filtered['notify_plugins'] ?? null, $defaults['notify_plugins'], false ),
+			'notify_themes'  => $this->notify_key( 'notify_themes', $filtered['notify_themes'] ?? null, $defaults['notify_themes'], false ),
+			'hide_updates'   => $this->bool_setting( $filtered, 'hide_updates', $defaults['hide_updates'] ),
 		);
 	}
 
@@ -280,11 +277,6 @@ class Settings {
 		$themes = $this->config->resolve_typed( Config_Context::setting( 'notify_themes' ), $schemas['notify_themes'] );
 		if ( null !== $themes ) {
 			$settings['notify_themes'] = $this->notify_key( 'notify_themes', $themes->get_value(), $settings['notify_themes'], false );
-		}
-
-		$automatic = $this->config->resolve_typed( Config_Context::setting( 'notify_automatic' ), $schemas['notify_automatic'] );
-		if ( null !== $automatic ) {
-			$settings['notify_automatic'] = (bool) $automatic->get_value();
 		}
 
 		$hide = $this->config->resolve_typed( Config_Context::setting( 'hide_updates' ), $schemas['hide_updates'] );
@@ -328,23 +320,15 @@ class Settings {
 		}
 
 		return array(
-			'frequency'        => array(
+			'frequency'      => array(
 				'type'    => 'enum',
 				'label'   => __( 'Frequency to check', 'wp-updates-notifier' ),
 				'options' => $frequencies,
 			),
-			'notify_core'      => $this->notify_schema( 'notify_core' ),
-			'notify_plugins'   => $this->notify_schema( 'notify_plugins' ),
-			'notify_themes'    => $this->notify_schema( 'notify_themes' ),
-			'notify_automatic' => array(
-				'type'    => 'boolean',
-				'label'   => __( 'Automatic updates', 'wp-updates-notifier' ),
-				'labels'  => array(
-					'on' => __( "Send WordPress's automatic core update emails to the notification address", 'wp-updates-notifier' ),
-				),
-				'default' => true,
-			),
-			'hide_updates'     => array(
+			'notify_core'    => $this->notify_schema( 'notify_core' ),
+			'notify_plugins' => $this->notify_schema( 'notify_plugins' ),
+			'notify_themes'  => $this->notify_schema( 'notify_themes' ),
+			'hide_updates'   => array(
 				'type'    => 'boolean',
 				'label'   => __( 'Update notice', 'wp-updates-notifier' ),
 				'labels'  => array(
@@ -437,12 +421,11 @@ class Settings {
 		$defaults = $this->default_settings();
 
 		return array(
-			'frequency'        => $this->string_setting( $stored, 'frequency', $defaults['frequency'] ),
-			'notify_core'      => $this->notify_key( 'notify_core', $stored['notify_core'] ?? null, $defaults['notify_core'] ),
-			'notify_plugins'   => $this->notify_key( 'notify_plugins', $stored['notify_plugins'] ?? null, $defaults['notify_plugins'] ),
-			'notify_themes'    => $this->notify_key( 'notify_themes', $stored['notify_themes'] ?? null, $defaults['notify_themes'] ),
-			'notify_automatic' => $this->bool_setting( $stored, 'notify_automatic', $defaults['notify_automatic'] ),
-			'hide_updates'     => $this->bool_setting( $stored, 'hide_updates', $defaults['hide_updates'] ),
+			'frequency'      => $this->string_setting( $stored, 'frequency', $defaults['frequency'] ),
+			'notify_core'    => $this->notify_key( 'notify_core', $stored['notify_core'] ?? null, $defaults['notify_core'] ),
+			'notify_plugins' => $this->notify_key( 'notify_plugins', $stored['notify_plugins'] ?? null, $defaults['notify_plugins'] ),
+			'notify_themes'  => $this->notify_key( 'notify_themes', $stored['notify_themes'] ?? null, $defaults['notify_themes'] ),
+			'hide_updates'   => $this->bool_setting( $stored, 'hide_updates', $defaults['hide_updates'] ),
 		);
 	}
 

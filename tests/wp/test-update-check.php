@@ -315,46 +315,4 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'Hello Dolly', $body );
 		$this->assertStringContainsString( '99.3', $body );
 	}
-
-	/**
-	 * Background core updates go to the configured recipient when asked to.
-	 */
-	public function test_the_automatic_core_update_email_is_redirected() {
-		$this->save_settings(
-			array(
-				'notify_automatic' => true,
-				'notify_to'        => 'ops@example.org',
-			)
-		);
-
-		$email = apply_filters(
-			'auto_core_update_email',
-			array(
-				'to'      => 'admin@example.org',
-				'subject' => 'Subject',
-				'body'    => 'Body',
-				'headers' => array(),
-			),
-			'success',
-			new stdClass(),
-			null
-		);
-
-		$this->assertSame( 'ops@example.org', $email['to'] );
-	}
-
-	/**
-	 * Leaving that setting off leaves WordPress's own email alone.
-	 */
-	public function test_the_automatic_core_update_email_is_left_alone_when_off() {
-		$this->save_settings( array( 'notify_automatic' => false ) );
-		$original = array(
-			'to'      => 'admin@example.org',
-			'subject' => 'Subject',
-			'body'    => 'Body',
-			'headers' => array(),
-		);
-
-		$this->assertSame( $original, apply_filters( 'auto_core_update_email', $original, 'success', new stdClass(), null ) );
-	}
 }

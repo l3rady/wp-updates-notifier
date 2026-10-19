@@ -185,7 +185,6 @@ that instance.
 | D | A service answers `Retry-After: 99999999` or garbage and silences the channel for good. | The header is parsed strictly, the wait is capped at a week, and the cap is per instance. | `test-retry-after.php`. |
 | I | An error message or `last_result` leaks the webhook URL. | The example's failures leave out the address, and the [module guide](../developers/writing-a-module.md#secrets) tells add-ons never to put a secret in a result, notice or log, nor to pass on the HTTP API's error messages as they are. | `test-example-channel.php` (`test_a_wp_error_is_a_failure_without_the_address`). `security/test-secrets.php` (#220) checks `last_result` and the delivery state. |
 | T | Mail header injection through the From name, the subject, the recipients or the payload filters. | Recipients and header lines with CR or LF are dropped after the payload filters (`Email_Channel::checked_payload`). The subject is built from `sanitize_text_field` values, and PHPMailer encodes it. From and Reply-To are validated email settings. | `test-hooks.php` (header lines with line breaks are dropped), `test-email-channel.php`. #228 re-checks this by hand. |
-| S | Auto-update emails are sent through a disabled channel. | `Notifier::email_instance()` uses an enabled email instance only, and otherwise leaves core's email alone. | `test-auto-update-email.php`. |
 
 ### 6. Public hook and add-on API
 

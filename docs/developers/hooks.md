@@ -788,7 +788,7 @@ add_filter(
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `$defaults` | `array<string, mixed>` | The default settings.<br>- `string` `$frequency` Name of a cron schedule.<br>- `string` `$notify_core` `none`, `all` or `major` (major releases only).<br>- `string` `$notify_plugins` `none`, `all` or `active` (active plugins only).<br>- `string` `$notify_themes` `none`, `all` or `active` (active themes only).<br>- `bool` `$notify_automatic` True to send WordPress's automatic core update emails to the notification address.<br>- `bool` `$hide_updates` True to hide the WordPress update notice from users who cannot update. |
+| `$defaults` | `array<string, mixed>` | The default settings.<br>- `string` `$frequency` Name of a cron schedule.<br>- `string` `$notify_core` `none`, `all` or `major` (major releases only).<br>- `string` `$notify_plugins` `none`, `all` or `active` (active plugins only).<br>- `string` `$notify_themes` `none`, `all` or `active` (active themes only).<br>- `bool` `$hide_updates` True to hide the WordPress update notice from users who cannot update. |
 
 Fired in `includes/class-settings.php`.
 

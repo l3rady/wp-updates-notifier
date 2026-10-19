@@ -43,7 +43,7 @@ class Test_Email_Legacy extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The three mail filter callbacks are deprecated and answer as before.
+	 * The mail filter callbacks are deprecated. The two for the From address do nothing now.
 	 */
 	public function test_the_mail_filter_callbacks_are_deprecated() {
 		$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::sc_wpun_wp_mail_from' );
@@ -52,8 +52,31 @@ class Test_Email_Legacy extends WPUN_Test_Case {
 		$this->save_settings( array( 'notify_from' => 'ops@example.org' ) );
 		$plugin = $this->plugin();
 
-		$this->assertSame( 'ops@example.org', $plugin->sc_wpun_wp_mail_from() );
-		$this->assertSame( 'WP Updates Notifier', $plugin->sc_wpun_wp_mail_from_name() );
+		$this->assertSame( '', $plugin->sc_wpun_wp_mail_from() );
+		$this->assertSame( '', $plugin->sc_wpun_wp_mail_from_name() );
 		$this->assertSame( 'text/plain', $plugin->sc_wpun_wp_mail_content_type() );
+	}
+
+	/**
+	 * WordPress's automatic update emails are left alone: nothing is hooked and the old callback returns the email as it got it.
+	 */
+	public function test_the_auto_update_email_callback_is_deprecated_and_changes_nothing() {
+		$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::filter_auto_core_update_email' );
+		$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::sc_wpun_settings_main_field_notify_automatic' );
+		$this->save_settings( array( 'notify_to' => 'ops@example.org' ) );
+		$email = array(
+			'to'      => 'admin@example.org',
+			'subject' => 'Subject',
+			'body'    => 'Body',
+			'headers' => '',
+		);
+
+		$this->assertFalse( has_filter( 'auto_core_update_email' ) );
+		$this->assertSame( $email, apply_filters( 'auto_core_update_email', $email, 'success', new stdClass(), null ) );
+		$this->assertSame( $email, $this->plugin()->filter_auto_core_update_email( $email ) );
+
+		ob_start();
+		$this->plugin()->sc_wpun_settings_main_field_notify_automatic();
+		$this->assertSame( '', ob_get_clean() );
 	}
 }

@@ -232,29 +232,29 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: email is sent by the email channel since 2.0.0.
+		 * Kept for backwards compatibility: WordPress's automatic update emails are no longer changed since 2.0.0.
 		 *
-		 * @deprecated 2.0.0 Use the email channel.
+		 * @deprecated 2.0.0 Use the auto_core_update_email filter.
 		 *
 		 * @return string
 		 */
 		public function sc_wpun_wp_mail_from() {
-			_deprecated_function( __METHOD__, '2.0.0', 'the email channel' );
+			_deprecated_function( __METHOD__, '2.0.0', 'the auto_core_update_email filter' );
 
-			return sc_wpun()->notifier()->mail_from();
+			return '';
 		}
 
 		/**
-		 * Kept for backwards compatibility: email is sent by the email channel since 2.0.0.
+		 * Kept for backwards compatibility: WordPress's automatic update emails are no longer changed since 2.0.0.
 		 *
-		 * @deprecated 2.0.0 Use the email channel.
+		 * @deprecated 2.0.0 Use the auto_core_update_email filter.
 		 *
 		 * @return string
 		 */
 		public function sc_wpun_wp_mail_from_name() {
-			_deprecated_function( __METHOD__, '2.0.0', 'the email channel' );
+			_deprecated_function( __METHOD__, '2.0.0', 'the auto_core_update_email filter' );
 
-			return sc_wpun()->notifier()->mail_from_name();
+			return '';
 		}
 
 		/**
@@ -271,13 +271,17 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: WordPress's automatic update emails are no longer changed since 2.0.0.
 		 *
-		 * @param mixed $email Passed on unchanged.
+		 * @deprecated 2.0.0 Use the auto_core_update_email filter.
+		 *
+		 * @param mixed $email Returned unchanged.
 		 * @return mixed
 		 */
 		public function filter_auto_core_update_email( $email ) {
-			return sc_wpun()->notifier()->filter_auto_core_update_email( $email );
+			_deprecated_function( __METHOD__, '2.0.0', 'the auto_core_update_email filter' );
+
+			return $email;
 		}
 
 		/**
@@ -394,12 +398,14 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
+		 * Kept for backwards compatibility: the Automatic updates setting was removed in 2.0.0, so this does nothing.
+		 *
+		 * @deprecated 2.0.0
 		 *
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_notify_automatic() {
-			sc_wpun()->settings_page()->sc_wpun_settings_main_field_notify_automatic();
+			_deprecated_function( __METHOD__, '2.0.0' );
 		}
 
 		/**

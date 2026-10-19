@@ -30,7 +30,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	/**
 	 * Settings version and key set of the current release, used as the base for fixtures.
 	 */
-	const SETTINGS_VERSION = '12.0';
+	const SETTINGS_VERSION = '13.0';
 
 	/**
 	 * Set up: block the network and reset the mailer.
@@ -146,7 +146,6 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 			'slack_channel_override' => '',
 			'notify_plugins'         => 'all',
 			'notify_themes'          => 'all',
-			'notify_automatic'       => true,
 			'hide_updates'           => true,
 		);
 
@@ -162,7 +161,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	protected function global_settings( array $overrides = array() ) {
 		return array_intersect_key(
 			$this->settings( $overrides ),
-			array_flip( array( 'frequency', 'notify_core', 'notify_plugins', 'notify_themes', 'notify_automatic', 'hide_updates' ) )
+			array_flip( array( 'frequency', 'notify_core', 'notify_plugins', 'notify_themes', 'hide_updates' ) )
 		);
 	}
 

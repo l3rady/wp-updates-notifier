@@ -12,7 +12,6 @@ Tells you by email when your WordPress site has core, plugin or theme updates wa
 - Checks on a schedule (hourly, twice daily, daily or weekly) and tells you about each new version once.
 - Core, plugin and theme updates, optionally only for active plugins and themes.
 - Email to one or more addresses.
-- Can send WordPress's own automatic update emails to the same addresses.
 - Hooks for developers to change what is checked and what is sent.
 
 Requires WordPress 6.7 or newer and PHP 7.4 or newer.

@@ -55,6 +55,14 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 
 Version 2.0.0 no longer sends notifications to Slack. Your Slack settings have not been deleted, they are kept in case Slack notifications return, and email notifications carry on as before. We plan to add more notification channels in future releases.
 
+= How do I send WordPress's automatic update emails to another address? =
+
+Version 2.0.0 leaves WordPress's own automatic update emails alone, so they go to the admin email under Settings > General. Change that address, or set the recipient with the `auto_core_update_email` filter:
+
+`add_filter( 'auto_core_update_email', function ( $email ) { $email['to'] = 'ops@example.org'; return $email; } );`
+
+The `auto_plugin_theme_update_email` filter does the same for plugin and theme automatic updates.
+
 = How do I report a security problem? =
 
 Please don't post it in the support forum or in a public GitHub issue. Report it privately through GitHub: on the [repository's Security tab](https://github.com/l3rady/wp-updates-notifier/security), choose "Report a vulnerability". The [security policy](https://github.com/l3rady/wp-updates-notifier/blob/main/SECURITY.md) has the details, and an email address if you can't use GitHub.
@@ -143,7 +151,7 @@ Please don't post it in the support forum or in a public GitHub issue. Report it
 == Upgrade Notice ==
 
 = 2.0.0 =
-The main file is renamed: after updating from 1.5 or 1.6, activate the plugin again (settings are kept). Slack is no longer supported; its settings are kept. Emails have a new subject, use the WordPress default From address unless you set one, and contain no HTML entities.
+From 1.5 or 1.6: activate the plugin again after updating (main file renamed, settings kept). Slack is no longer supported; its settings are kept. WordPress's auto-update emails now go to the admin email. Emails have a new subject, the default From unless set, and no HTML entities.
 
 == Filters ==
 

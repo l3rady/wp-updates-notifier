@@ -421,12 +421,11 @@ class Settings_Page {
 
 		// Validate main settings with their field types. A missing value keeps the stored one: a read-only setting is not submitted.
 		$messages = array(
-			'frequency'        => __( 'Invalid frequency entered', 'wp-updates-notifier' ),
-			'notify_core'      => __( 'Invalid WordPress updates value entered', 'wp-updates-notifier' ),
-			'notify_plugins'   => __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ),
-			'notify_themes'    => __( 'Invalid theme updates value entered', 'wp-updates-notifier' ),
-			'notify_automatic' => __( 'Invalid automatic updates value entered', 'wp-updates-notifier' ),
-			'hide_updates'     => __( 'Invalid hide updates value entered', 'wp-updates-notifier' ),
+			'frequency'      => __( 'Invalid frequency entered', 'wp-updates-notifier' ),
+			'notify_core'    => __( 'Invalid WordPress updates value entered', 'wp-updates-notifier' ),
+			'notify_plugins' => __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ),
+			'notify_themes'  => __( 'Invalid theme updates value entered', 'wp-updates-notifier' ),
+			'hide_updates'   => __( 'Invalid hide updates value entered', 'wp-updates-notifier' ),
 		);
 		foreach ( $this->settings->schemas() as $name => $schema ) {
 			if ( ! array_key_exists( $name, $input ) ) {
@@ -561,15 +560,6 @@ class Settings_Page {
 	 */
 	public function sc_wpun_settings_main_field_notify_themes() {
 		$this->render_setting( array( 'name' => 'notify_themes' ) );
-	}
-
-	/**
-	 * Settings field for notify automatic.
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_main_field_notify_automatic() {
-		$this->render_setting( array( 'name' => 'notify_automatic' ) );
 	}
 
 	/**

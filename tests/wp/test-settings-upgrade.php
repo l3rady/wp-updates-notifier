@@ -60,7 +60,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	public function test_the_upgrade_produces_the_current_shape( $name, $version, array $options ) {
 		$this->upgrade_from( $version, $options );
 
-		$this->assertSame( '12.0', get_option( 'sc_wpun_settings_ver' ), $name );
+		$this->assertSame( '13.0', get_option( 'sc_wpun_settings_ver' ), $name );
 		$this->assertEqualsCanonicalizing( array_keys( $this->global_settings() ), array_keys( $this->stored_settings() ), $name );
 	}
 
@@ -132,7 +132,6 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 
 		$this->assertTrue( $this->stored_instance( 'email' )->is_enabled() );
 		$this->assertFalse( sc_wpun_channels()->has( 'slack' ) );
-		$this->assertTrue( $this->stored_settings()['notify_automatic'], 'Added in version 5, defaults on.' );
 	}
 
 	/**
@@ -274,7 +273,6 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->assertSame( 'all', $stored['notify_plugins'] );
 		$this->assertSame( 'all', $stored['notify_themes'] );
 		$this->assertTrue( $stored['hide_updates'] );
-		$this->assertTrue( $stored['notify_automatic'] );
 		foreach ( $this->moved_keys() as $key ) {
 			$this->assertArrayNotHasKey( $key, $stored, $key );
 		}
@@ -419,13 +417,14 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	 */
 	public function on_off_values() {
 		return array(
-			'ints on'     => array( 1, 1, true, true ),
-			'ints off'    => array( 0, 0, false, false ),
-			'strings on'  => array( '1', '1', true, true ),
-			'strings off' => array( '0', '0', false, false ),
-			'mixed'       => array( 1, 0, true, false ),
-			'bools'       => array( false, true, false, true ),
-			'unusable'    => array( 'maybe', array(), true, true ),
+			'int on'     => array( 1, true ),
+			'int off'    => array( 0, false ),
+			'string on'  => array( '1', true ),
+			'string off' => array( '0', false ),
+			'bool on'    => array( true, true ),
+			'bool off'   => array( false, false ),
+			'unusable'   => array( 'maybe', true ),
+			'array'      => array( array(), true ),
 		);
 	}
 
@@ -434,71 +433,75 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	 *
 	 * @dataProvider on_off_values
 	 *
-	 * @param mixed $automatic Stored notify_automatic.
-	 * @param mixed $hide      Stored hide_updates.
-	 * @param bool  $expect_automatic Expected notify_automatic.
-	 * @param bool  $expect_hide      Expected hide_updates.
+	 * @param mixed $hide        Stored hide_updates.
+	 * @param bool  $expect_hide Expected hide_updates.
 	 */
-	public function test_on_off_settings_become_booleans( $automatic, $hide, $expect_automatic, $expect_hide ) {
+	public function test_on_off_settings_become_booleans( $hide, $expect_hide ) {
 		$this->upgrade_from(
 			'10.0',
 			array(
-				'frequency'        => 'daily',
-				'notify_plugins'   => 'all',
-				'notify_themes'    => 'all',
-				'notify_automatic' => $automatic,
-				'hide_updates'     => $hide,
+				'frequency'      => 'daily',
+				'notify_plugins' => 'all',
+				'notify_themes'  => 'all',
+				'hide_updates'   => $hide,
 			)
 		);
 
 		$stored = $this->stored_settings();
-		$this->assertSame( $expect_automatic, $stored['notify_automatic'] );
 		$this->assertSame( $expect_hide, $stored['hide_updates'] );
 		$this->assertSame( 'daily', $stored['frequency'] );
-		$this->assertSame( '12.0', get_option( 'sc_wpun_settings_ver' ) );
+		$this->assertSame( '13.0', get_option( 'sc_wpun_settings_ver' ) );
 	}
 
 	/**
-	 * After the upgrade the update notice is still hidden or shown, and the automatic update email redirected or not.
+	 * After the upgrade the update notice is still hidden or shown.
 	 *
 	 * @dataProvider on_off_values
 	 *
-	 * @param mixed $automatic Stored notify_automatic.
-	 * @param mixed $hide      Stored hide_updates.
-	 * @param bool  $expect_automatic Expected notify_automatic.
-	 * @param bool  $expect_hide      Expected hide_updates.
+	 * @param mixed $hide        Stored hide_updates.
+	 * @param bool  $expect_hide Expected hide_updates.
 	 */
-	public function test_behaviour_is_unchanged_by_the_upgrade( $automatic, $hide, $expect_automatic, $expect_hide ) {
+	public function test_behaviour_is_unchanged_by_the_upgrade( $hide, $expect_hide ) {
 		$this->upgrade_from(
 			'10.0',
 			array(
-				'frequency'        => 'daily',
-				'notify_plugins'   => 'all',
-				'notify_themes'    => 'all',
-				'notify_automatic' => $automatic,
-				'hide_updates'     => $hide,
+				'frequency'      => 'daily',
+				'notify_plugins' => 'all',
+				'notify_themes'  => 'all',
+				'hide_updates'   => $hide,
 			)
 		);
-		sc_wpun_channels()->save_raw( new WPUN\Channel_Instance( 'email', 'email', 'Email', true, array( 'to' => 'ops@example.org' ) ) );
-
-		$email = apply_filters(
-			'auto_core_update_email',
-			array(
-				'to'      => 'admin@example.org',
-				'subject' => 'Subject',
-				'body'    => 'Body',
-				'headers' => '',
-			),
-			'success',
-			new stdClass(),
-			null
-		);
-		$this->assertSame( $expect_automatic ? 'ops@example.org' : 'admin@example.org', $email['to'] );
 
 		add_action( 'admin_notices', 'update_nag', 3 );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
 		$this->plugin()->remove_update_nag_for_nonadmins();
 		$this->assertSame( $expect_hide ? false : 3, has_action( 'admin_notices', 'update_nag' ) );
 		remove_action( 'admin_notices', 'update_nag', 3 );
+	}
+
+	/**
+	 * The setting for WordPress's automatic update email was removed in settings version 13, so the upgrade drops it.
+	 *
+	 * @dataProvider on_off_values
+	 *
+	 * @param mixed $stored Stored notify_automatic.
+	 */
+	public function test_a_stored_notify_automatic_is_dropped( $stored ) {
+		$this->upgrade_from(
+			'12.0',
+			array(
+				'frequency'        => 'daily',
+				'notify_core'      => 'all',
+				'notify_plugins'   => 'all',
+				'notify_themes'    => 'all',
+				'notify_automatic' => $stored,
+				'hide_updates'     => true,
+			)
+		);
+
+		$this->assertArrayNotHasKey( 'notify_automatic', $this->stored_settings() );
+		$this->assertArrayNotHasKey( 'notify_automatic', get_option( 'sc_wpun_settings' ) );
+		$this->assertSame( 'daily', get_option( 'sc_wpun_settings' )['frequency'] );
+		$this->assertSame( '13.0', get_option( 'sc_wpun_settings_ver' ) );
 	}
 }

@@ -490,27 +490,13 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A rejected value is not used by the auto-update mail or the instance either.
+	 * A rejected value is not used by the instance.
 	 */
-	public function test_a_rejected_value_is_not_used_anywhere() {
+	public function test_a_rejected_value_is_not_used() {
 		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__TO' => 'not an address' ) );
 
 		$this->assertSame( 'ops@example.org', sc_wpun_channels()->get( 'email' )->get_setting( 'to' ) );
 		$this->assertSame( array( 'SC_WPUN_CHANNEL_EMAIL__TO' ), sc_wpun_channels()->problems( 'email' ) );
-
-		$email = apply_filters(
-			'auto_core_update_email',
-			array(
-				'to'      => 'admin@example.org',
-				'subject' => 'S',
-				'body'    => 'B',
-				'headers' => '',
-			),
-			'success',
-			new stdClass(),
-			null
-		);
-		$this->assertSame( 'ops@example.org', $email['to'], 'The stored recipient, never the rejected one.' );
 	}
 
 	/**

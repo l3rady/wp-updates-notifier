@@ -293,22 +293,18 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	public function test_a_submitted_zero_stores_false() {
 		$valid = $this->plugin()->sc_wpun_settings_validate(
 			array(
-				'notify_automatic' => '0',
-				'hide_updates'     => '0',
+				'hide_updates' => '0',
 			)
 		);
 
-		$this->assertFalse( $valid['notify_automatic'] );
 		$this->assertFalse( $valid['hide_updates'] );
 		$this->assertSame( array(), $this->errors() );
 
 		$valid = $this->plugin()->sc_wpun_settings_validate(
 			array(
-				'notify_automatic' => '1',
-				'hide_updates'     => '1',
+				'hide_updates' => '1',
 			)
 		);
-		$this->assertTrue( $valid['notify_automatic'] );
 		$this->assertTrue( $valid['hide_updates'] );
 	}
 
@@ -318,11 +314,10 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	public function test_a_missing_key_keeps_the_stored_value() {
 		$this->save_settings(
 			array(
-				'frequency'        => 'daily',
-				'notify_plugins'   => 'active',
-				'notify_themes'    => 'none',
-				'notify_automatic' => false,
-				'hide_updates'     => false,
+				'frequency'      => 'daily',
+				'notify_plugins' => 'active',
+				'notify_themes'  => 'none',
+				'hide_updates'   => false,
 			)
 		);
 
@@ -331,11 +326,10 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$this->assertSame(
 			$this->global_settings(
 				array(
-					'frequency'        => 'daily',
-					'notify_plugins'   => 'active',
-					'notify_themes'    => 'none',
-					'notify_automatic' => false,
-					'hide_updates'     => false,
+					'frequency'      => 'daily',
+					'notify_plugins' => 'active',
+					'notify_themes'  => 'none',
+					'hide_updates'   => false,
 				)
 			),
 			$valid
@@ -349,15 +343,12 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	public function test_an_invalid_boolean_is_refused() {
 		$valid = $this->plugin()->sc_wpun_settings_validate(
 			array(
-				'notify_automatic' => '2',
-				'hide_updates'     => 'yes',
+				'hide_updates' => 'yes',
 			)
 		);
 
 		$errors = $this->errors();
-		$this->assertSame( 'sc_wpun_settings_main_notify_automatic_error', $errors['sc_wpun_settings_main_notify_automatic'] );
 		$this->assertSame( 'sc_wpun_settings_main_hide_updates_error', $errors['sc_wpun_settings_main_hide_updates'] );
-		$this->assertTrue( $valid['notify_automatic'] );
 		$this->assertTrue( $valid['hide_updates'] );
 	}
 

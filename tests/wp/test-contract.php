@@ -84,7 +84,7 @@ class Test_Contract extends WPUN_Test_Case {
 		$this->assertNotFalse( has_action( 'sc_wpun_update_check' ), 'The cron event needs a callback.' );
 		$this->assertNotFalse( has_action( 'sc_wpun_enable_cron' ) );
 		$this->assertNotFalse( has_action( 'sc_wpun_disable_cron' ) );
-		$this->assertNotFalse( has_filter( 'auto_core_update_email' ) );
+		$this->assertFalse( has_filter( 'auto_core_update_email' ), 'WordPress\'s own auto-update emails are left alone.' );
 		$this->assertFalse( has_filter( 'plugin_action_links' ), 'The settings link uses the filter specific to the plugin.' );
 		// Delivery state is per instance now, so the plugin leaves these public filters to third parties.
 		$this->assertFalse( has_filter( 'sc_wpun_plugins_need_update' ) );

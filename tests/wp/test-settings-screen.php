@@ -115,17 +115,11 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 	 * The on or off values are single checkboxes with descriptive text and a hidden 0 before them.
 	 */
 	public function test_on_off_values_are_single_checkboxes() {
-		$this->save_settings(
-			array(
-				'notify_automatic' => false,
-				'hide_updates'     => true,
-			)
-		);
+		$this->save_settings( array( 'hide_updates' => true ) );
 		$xpath = $this->page();
 
 		$expected = array(
-			'sc_wpun_settings_main_notify_automatic' => array( 'notify_automatic', false, "Send WordPress's automatic core update emails to the notification address" ),
-			'sc_wpun_settings_main_hide_updates'     => array( 'hide_updates', true, 'Hide the WordPress update notice from users who cannot update WordPress' ),
+			'sc_wpun_settings_main_hide_updates' => array( 'hide_updates', true, 'Hide the WordPress update notice from users who cannot update WordPress' ),
 		);
 		foreach ( $expected as $id => list( $name, $on, $text ) ) {
 			$box = $xpath->query( '//input[@type="checkbox"][@id="' . $id . '"][@name="sc_wpun_settings[' . $name . ']"]' );
@@ -163,8 +157,8 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 		$this->save_settings();
 		$source = new Test_Config_Source(
 			array(
-				'SC_WPUN_SETTING_NOTIFY_AUTOMATIC' => 'off',
-				'SC_WPUN_SETTING_FREQUENCY'        => 'daily',
+				'SC_WPUN_SETTING_HIDE_UPDATES' => 'off',
+				'SC_WPUN_SETTING_FREQUENCY'    => 'daily',
 			)
 		);
 		add_filter(
@@ -177,11 +171,21 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 		sc_wpun()->config()->flush();
 		$xpath = $this->page();
 
-		$this->assertSame( 2, $xpath->query( '//input[@name="sc_wpun_settings[notify_automatic]"][@disabled]' )->length, 'Checkbox and hidden input.' );
-		$this->assertSame( 0, $xpath->query( '//input[@name="sc_wpun_settings[notify_automatic]"][@checked]' )->length );
+		$this->assertSame( 2, $xpath->query( '//input[@name="sc_wpun_settings[hide_updates]"][@disabled]' )->length, 'Checkbox and hidden input.' );
+		$this->assertSame( 0, $xpath->query( '//input[@name="sc_wpun_settings[hide_updates]"][@checked]' )->length );
 		$this->assertSame( 4, $xpath->query( '//input[@name="sc_wpun_settings[frequency]"][@disabled]' )->length );
-		$this->assertSame( 0, $xpath->query( '//input[@name="sc_wpun_settings[hide_updates]"][@disabled]' )->length );
 		$this->assertSame( 0, $xpath->query( '//input[@name="sc_wpun_settings[notify_plugins]"][@disabled]' )->length );
+	}
+
+	/**
+	 * The removed Automatic updates setting has no row on the page.
+	 */
+	public function test_there_is_no_automatic_updates_row() {
+		$this->save_settings();
+		$xpath = $this->page();
+
+		$this->assertSame( 0, $xpath->query( '//*[contains(@name,"notify_automatic") or contains(@id,"notify_automatic")]' )->length );
+		$this->assertSame( 0, $xpath->query( '//th[contains(.,"Automatic updates")]' )->length );
 	}
 
 	/**

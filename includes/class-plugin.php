@@ -228,7 +228,7 @@ class Plugin {
 		$this->config_report     = new Config_Report( $this->config, $this->settings, $this->channel_store );
 		$this->rejected_channels = new Rejected_Channels( $this->channels );
 		$this->scheduler         = new Scheduler( $this->settings );
-		$this->notifier          = new Notifier( $this->settings, $this->channel_store );
+		$this->notifier          = new Notifier( $this->channel_store );
 		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store );
 		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store );
 		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
@@ -418,8 +418,6 @@ class Plugin {
 		$this->settings->maybe_upgrade();
 		// Internationalization.
 		load_plugin_textdomain( 'wp-updates-notifier', false, dirname( plugin_basename( SC_WPUN_FILE ) ) . '/languages/' );
-		// Add Filters.
-		add_filter( 'auto_core_update_email', array( $this->notifier, 'filter_auto_core_update_email' ), 1 ); // Filter the background update notification email.
 		// Add Actions.
 		add_action( 'switch_blog', array( $this->config, 'flush' ) ); // Values are resolved per site.
 		add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.

@@ -77,7 +77,7 @@ class Test_Notify_Core extends WPUN_Test_Case {
 		$stored = $this->stored_settings();
 		$this->assertSame( 'all', $stored['notify_core'] );
 		$this->assertSame( 'active', $stored['notify_plugins'] );
-		$this->assertSame( '12.0', get_option( 'sc_wpun_settings_ver' ) );
+		$this->assertSame( '13.0', get_option( 'sc_wpun_settings_ver' ) );
 	}
 
 	/**

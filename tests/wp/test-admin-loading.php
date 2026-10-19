@@ -24,7 +24,7 @@ class Test_Admin_Loading extends WPUN_Test_Case {
 		$this->assertFalse( class_exists( 'WPUN\Admin\Check_Now', false ) );
 		$this->assertNotFalse( has_filter( 'extra_plugin_headers' ) );
 		$this->assertFalse( has_action( 'after_plugin_row' ) );
-		$this->assertNotFalse( has_filter( 'auto_core_update_email' ) );
+		$this->assertFalse( has_filter( 'auto_core_update_email' ) );
 		$this->assertNotFalse( has_action( 'sc_wpun_update_check' ) );
 		$this->assertNotFalse( has_action( 'admin_post_sc_wpun_dismiss_slack_notice' ) );
 		$this->assertFalse( has_filter( 'plugin_action_links_' . plugin_basename( SC_WPUN_FILE ) ) );
@@ -46,7 +46,7 @@ class Test_Admin_Loading extends WPUN_Test_Case {
 		$this->assertTrue( class_exists( 'WPUN\Admin\Check_Now', false ) );
 		$this->assertNotFalse( has_action( 'admin_post_sc_wpun_check_now' ) );
 		$this->assertNotFalse( has_action( 'after_plugin_row' ) );
-		$this->assertNotFalse( has_filter( 'auto_core_update_email' ) );
+		$this->assertFalse( has_filter( 'auto_core_update_email' ) );
 		$this->assertNotFalse( has_action( 'sc_wpun_update_check' ) );
 	}
 }
