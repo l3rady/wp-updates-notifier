@@ -39,3 +39,24 @@ updates:
     commit-message:
       prefix: build
       include: scope
+
+  # Psalm for `make taint`: its own image and Composer project, as Psalm 6 needs PHP 8.1+. Keep the WordPress stubs
+  # there at the version in the root composer.lock.
+  - package-ecosystem: docker
+    directory: /docker/psalm
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+
+  - package-ecosystem: composer
+    directory: /docker/psalm
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope

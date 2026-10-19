@@ -33,6 +33,8 @@
 /phpcs.xml.dist
 /phpstan-baseline.neon
 /phpstan.neon.dist
+/psalm-baseline.xml
+/psalm.xml
 /phpunit.xml.dist
 /rector.php
 /release-please-config.json

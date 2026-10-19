@@ -6,3 +6,5 @@ echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- 
 // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce checked above.
 wp_remote_post( $url ); // nosemgrep: wpun-outbound-http-safe-only -- A fixed address we own.
 // phpcs:ignore WordPress.NamingConventions.ValidFunctionName -- Not a security sniff, no reason needed here.
+/** @psalm-suppress TaintedHtml -- Escaped by the caller. */
+// @psalm-suppress PossiblyNullArgument Not a taint issue, no reason needed here.
