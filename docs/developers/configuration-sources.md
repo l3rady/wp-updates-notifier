@@ -34,6 +34,10 @@ Sources return scalars: a string, bool, int or float. The plugin casts the value
 - A `boolean` field accepts `1`, `true`, `yes` and `on`, or `0`, `false`, `no`, `off` and an empty value, in any case.
 - An `enum` field takes the option key; a multiple-choice `enum` takes keys separated by commas, such as `core,plugin`.
 
+## On the settings screen
+
+A value supplied from outside is read-only on the settings screen, which names where it came from ("Set by ..."). The screen never prints the value of a secret field, nor of a text-type field (`text`, `textarea`, `url`, `email_list`), unless that field sets `'show_external' => true`. The built-in email channel does this for its recipients, From address, Reply-To and subject prefix. Booleans, numbers and enum choices are shown. Duplicating an instance doesn't copy secrets that came from outside the database. Reports and Site Health name the source of a rejected value, never the value.
+
 ## Writing a source
 
 Implement `WPUN\Config_Source` and add an instance with `sc_wpun_config_sources`:

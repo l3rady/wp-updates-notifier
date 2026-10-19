@@ -69,6 +69,21 @@ make check-headers               # plugin header and readme.txt agree and follow
 
 `.distignore` lists what stays out of the zip; the WordPress.org deploy uses the same list.
 
+### Security checks
+
+```sh
+make security                    # every check below: run it before a pull request
+make check-workflows             # actionlint (with shellcheck) and zizmor over .github/workflows/
+make secrets                     # gitleaks over the git history, the working tree and the built zip
+make audit                       # composer audit and OSV-Scanner over every lockfile
+make sast                        # Semgrep with the rules in .semgrep/, and the suppression checks
+make taint                       # Psalm taint analysis
+make audit-images                # Trivy over docker/ and the built image (reports only, not in make security)
+make test-wp ARGS="--group security"   # just the security tests
+```
+
+They need only Docker. Reports go to `security-reports/` (gitignored). zizmor runs its online audits only when `GITHUB_PUBLIC_TOKEN` holds a token that can read public repositories; without one it skips them. What each check covers, and the rules for suppressions, baselines and new tools, are in [CONTRIBUTING.md](CONTRIBUTING.md#security-checks).
+
 ### Dynamic security scan
 
 ```sh
