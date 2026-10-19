@@ -81,6 +81,18 @@ jobs:
       - name: Install it into WordPress
         run: make test-dist
 
+  # Two builds of the same commit, with a different umask, file times and time
+  # zone, give a byte-identical zip.
+  dist-repro:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the zip twice and compare
+        run: make dist-repro
+
   # WordPress.org's Plugin Check on the zip, and the header and readme.txt rules
   # it enforces, so a release is never refused at submission.
   plugin-check:

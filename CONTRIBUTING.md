@@ -97,6 +97,12 @@ the `vX.Y.Z` tag and the GitHub release. To force a version, add a
 The workflow also sets the copyright year and the `readme.txt` stable tag on the
 Release PR's branch.
 
+The zip is reproducible. `make dist-repro` builds it twice from fresh clones of
+`HEAD` (so only committed changes count), with a different umask, file times and
+time zone, and fails if the SHA-256 differs. `make dist` also writes the
+`.sha256` file. `make sbom` writes a CycloneDX SBOM of the zip contents to
+`build/wp-updates-notifier-<version>.cdx.json`.
+
 Before merging the Release PR, run the OWASP ZAP scan with `make dast` (about
 11 minutes, Docker only). It is too slow for CI. It must finish with no Medium
 or High alerts. The report is in `security-reports/zap-report.html`.
