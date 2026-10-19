@@ -2,6 +2,7 @@
 
 [![ci](https://github.com/l3rady/wp-updates-notifier/actions/workflows/ci.yml/badge.svg)](https://github.com/l3rady/wp-updates-notifier/actions/workflows/ci.yml)
 [![lint](https://github.com/l3rady/wp-updates-notifier/actions/workflows/lint.yml/badge.svg)](https://github.com/l3rady/wp-updates-notifier/actions/workflows/lint.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/l3rady/wp-updates-notifier/badge)](https://scorecard.dev/viewer/?uri=github.com/l3rady/wp-updates-notifier)
 [![WordPress.org version](https://img.shields.io/wordpress/plugin/v/wp-updates-notifier)](https://wordpress.org/plugins/wp-updates-notifier/)
 [![Active installs](https://img.shields.io/wordpress/plugin/installs/wp-updates-notifier)](https://wordpress.org/plugins/wp-updates-notifier/)
 [![Licence: GPL-2.0-or-later](https://img.shields.io/badge/licence-GPL--2.0--or--later-blue)](LICENSE)
@@ -60,7 +61,7 @@ make down
 
 ```sh
 make dist                        # build/wp-updates-notifier-<version>.zip, runtime files only
-make dist-check                  # check its contents (and that .gitattributes matches .distignore)
+make dist-check                  # check its contents
 make test-dist                   # install it into a fresh WordPress, activate, deactivate, uninstall
 make plugin-check                # WordPress.org's Plugin Check on the zip (fails on errors)
 make check-headers               # plugin header and readme.txt agree and follow WordPress.org's rules

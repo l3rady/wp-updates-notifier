@@ -107,7 +107,7 @@ test-release: ## Rehearse the scripts the release workflow runs (copyright year,
 dist: ## Build build/wp-updates-notifier-<version>.zip (runtime files only)
 	$(COMPOSE) run --build --rm php sh bin/build-dist.sh
 
-dist-check: ## Check the zip: allowlisted contents, version, .gitattributes in step with .distignore
+dist-check: ## Check the zip: allowlisted contents, required files, version
 	$(COMPOSE) run --build --rm php sh bin/check-dist.sh
 
 test-dist: ## Install the zip into a fresh WordPress, activate, deactivate and uninstall it

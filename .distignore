@@ -1,7 +1,7 @@
 # Files and directories left out of the plugin zip and the WordPress.org deploy.
 # Read by bin/build-dist.sh (rsync --exclude-from) and by
-# 10up/action-wordpress-plugin-deploy. Keep .gitattributes export-ignore in step;
-# bin/check-dist.sh fails if the two disagree.
+# 10up/action-wordpress-plugin-deploy. GitHub's source archives are the whole
+# repository on purpose: OpenSSF Scorecard reads them (see SECURITY.md).
 /.claude
 /.distignore
 /.dockerignore
