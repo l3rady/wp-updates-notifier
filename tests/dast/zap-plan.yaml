@@ -1,0 +1,211 @@
+# OWASP ZAP automation plan for `make dast` (tests/dast/run.sh): a full run is defined by this file, with no clicking.
+# It attacks only the plugin's own surface on the throwaway site from tests/dast/compose.yml, as an administrator, then
+# probes the same URLs with no login. The run fails on any Medium or High alert, any failed test and any warning.
+---
+env:
+  contexts:
+    - name: wpun
+      # Not the site root: the urls become part of the scope, and the scope is only the paths below.
+      urls:
+        - http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier
+      # Only the plugin's screens and its admin-post.php handlers. Everything else (core screens, other plugins, the
+      # login page itself) is out of scope.
+      includePaths:
+        # Not narrowed to ?page=wp-updates-notifier: a pattern with the query string did not match the screens'
+        # entries in ZAP's site tree, and nothing was scanned. The requests and the spider only ever ask for that page.
+        - 'http://wordpress:8080/wp-admin/options-general\.php.*'
+        - 'http://wordpress:8080/wp-admin/admin-post\.php.*'
+      excludePaths:
+        - '.*action=logout.*'
+        - '.*wp-login\.php.*'
+        # Other plugins' settings screens live in the same options-general.php.
+        - '.*page=(?!wp-updates-notifier).*'
+      authentication:
+        method: form
+        parameters:
+          loginPageUrl: http://wordpress:8080/wp-login.php
+          loginRequestUrl: http://wordpress:8080/wp-login.php
+          # No testcookie field: WordPress only checks the test cookie when that field is sent.
+          loginRequestBody: log={%username%}&pwd={%password%}&wp-submit=Log+In
+        verification:
+          method: response
+          loggedInRegex: '\Qaction=logout\E'
+          loggedOutRegex: '\Qid="loginform"\E'
+      sessionManagement:
+        method: cookie
+      users:
+        - name: admin
+          credentials:
+            username: admin
+            # The throwaway site's fixed administrator login (docker/site-setup.sh). The site exists only for the
+            # length of the run and publishes no port.
+            password: admin
+  parameters:
+    failOnError: true
+    failOnWarning: true
+    progressToStdout: true
+
+jobs:
+  # Known false positives, each with its reason. Anything else Medium or High fails the run.
+  - type: alertFilter
+    alertFilters:
+      # CSP rules (10055, all four variants). WordPress core sends `Content-Security-Policy: frame-ancestors 'self';`
+      # with every admin response, error pages from wp_die() included, and ZAP finds that policy incomplete. The
+      # plugin sets no headers of its own, and a site-wide policy for wp-admin is not the plugin's to set.
+      - ruleId: 10055
+        ruleName: CSP
+        newRisk: False Positive
+        context: wpun
+
+      # Boolean SQL injection (40018) on the settings screens. Their query arguments (tab, action, id, type) go through
+      # sanitize_key() and are only compared with lists of known names, and `page` is routed by WordPress core's
+      # menu; none reaches a query. ZAP sees "manipulated results" because core puts a per-second timestamp
+      # (`userSettings.time`) and the requested address (canonical link) into every admin page, so two requests never
+      # match exactly. Checked by hand: the pages for `... AND 1=1` and `... AND 1=2` differ only in those two places.
+      # The admin-post.php handlers are not filtered.
+      - ruleId: 40018
+        ruleName: SQL Injection - Authentication Bypass
+        newRisk: False Positive
+        context: wpun
+        url: 'http://wordpress:8080/wp-admin/options-general\.php.*'
+        urlRegex: true
+
+  - type: passiveScan-config
+    parameters:
+      maxAlertsPerRule: 10
+
+  # The authenticated pass. These requests seed the spider with every tab and every channel action, and they prove the
+  # login worked: the settings screen must answer 200 with the plugin's page.
+  - type: requestor
+    name: authenticated
+    parameters:
+      user: admin
+    requests:
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier
+        responseCode: 200
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=general
+        responseCode: 200
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels
+        responseCode: 200
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=add
+        responseCode: 200
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=new&type=email
+        responseCode: 200
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=new&type=field_showcase
+        responseCode: 200
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=edit&id=dast_email
+        responseCode: 200
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=edit&id=dast_showcase
+        responseCode: 200
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=delete&id=dast_email
+        responseCode: 200
+      # A channel id and a type that do not exist: the error paths.
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=edit&id=nope
+        responseCode: 200
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=new&type=nope
+        responseCode: 200
+      # Without a valid nonce each of these must be refused, not run.
+      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_check_now
+      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_dismiss_slack_notice
+    tests:
+      - name: the login worked and the settings screen rendered
+        type: url
+        url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels
+        operator: or
+        responseBodyRegex: 'sc-wpun'
+        onFail: error
+
+  - type: spider
+    parameters:
+      context: wpun
+      user: admin
+      # Start from the plugin's screen: the context keeps the crawl on the plugin's URLs.
+      url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels
+      maxDuration: 3
+      maxDepth: 5
+      maxChildren: 0
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  - type: activeScan
+    parameters:
+      context: wpun
+      user: admin
+      maxScanDurationInMins: 10
+      maxRuleDurationInMins: 2
+      threadPerHost: 8
+    policyDefinition:
+      defaultStrength: medium
+      defaultThreshold: medium
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  # The unauthenticated pass, after the scan: its redirects must not become the sites tree's first message for these
+  # pages, as the scan attacks each page as first seen. Every plugin URL must refuse a visitor: the settings
+  # screens redirect to the login page (302). admin-post.php answers 400 when no handler is registered for logged-out
+  # visitors, which is WordPress's own refusal and what every action here gets (they use admin_post_{action} only,
+  # never admin_post_nopriv_{action}). Anything else (200, 500) fails the plan.
+  - type: requestor
+    name: unauthenticated
+    requests:
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier
+        responseCode: 302
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=general
+        responseCode: 302
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels
+        responseCode: 302
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=add
+        responseCode: 302
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=new&type=email
+        responseCode: 302
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=edit&id=dast_email
+        responseCode: 302
+      - url: http://wordpress:8080/wp-admin/options-general.php?page=wp-updates-notifier&tab=channels&action=delete&id=dast_email
+        responseCode: 302
+      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_check_now
+        responseCode: 400
+      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_save_channel
+        responseCode: 400
+      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_send_test
+        responseCode: 400
+      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_channel_toggle
+        responseCode: 400
+      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_channel_duplicate
+        responseCode: 400
+      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_channel_delete
+        responseCode: 400
+      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_dismiss_slack_notice
+        responseCode: 400
+      - url: http://wordpress:8080/wp-admin/admin-post.php
+        method: POST
+        data: action=sc_wpun_save_channel&type=email&label=x
+        headers:
+          - 'Content-Type: application/x-www-form-urlencoded'
+        responseCode: 400
+
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk/reports
+      reportFile: zap-report
+      reportTitle: WP Updates Notifier DAST
+    risks: [high, medium, low]
+    confidences: [high, medium, low]
+
+  - type: report
+    parameters:
+      template: sarif-json
+      reportDir: /zap/wrk/reports
+      reportFile: zap.sarif
+      reportTitle: WP Updates Notifier DAST
+    risks: [high, medium, low]
+    confidences: [high, medium, low]
+
+  # Last: Medium and High alerts fail the run (exit 1).
+  - type: exitStatus
+    parameters:
+      errorLevel: Medium

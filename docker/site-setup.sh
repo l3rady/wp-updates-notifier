@@ -32,50 +32,63 @@ elif [ "$(wp option get home)" != "$SITE_URL" ]; then
 	echo "Site URL changed to $SITE_URL"
 fi
 
-# Debugging (#175). Errors show on the page and go to wp-content/debug.log (`make site-log`).
-wp config set WP_ENVIRONMENT_TYPE local --type=constant --quiet
-wp config set WP_DEBUG true --raw --type=constant --quiet
-wp config set WP_DEBUG_LOG true --raw --type=constant --quiet
-wp config set WP_DEBUG_DISPLAY true --raw --type=constant --quiet
-wp config set SCRIPT_DEBUG true --raw --type=constant --quiet
-wp config set SAVEQUERIES true --raw --type=constant --quiet
-wp config set WP_DEVELOPMENT_MODE plugin --type=constant --quiet
+# SITE_MODE=dast (tests/dast/compose.yml, `make dast`) sets up the site the scanner will attack: production-like, with
+# no debug output, no developer tools and no object cache, and only the pieces of the plugin the scan needs.
+SITE_MODE="${SITE_MODE:-dev}"
 
-# install_plugin <slug>: install the latest version unless it is there, then activate it.
-install_plugin() {
-	wp plugin is-installed "$1" || wp plugin install "$1" --quiet
-	wp plugin is-active "$1" || wp plugin activate "$1" --quiet
-}
+if [ "$SITE_MODE" = dast ]; then
+	wp config set WP_ENVIRONMENT_TYPE production --type=constant --quiet
+	wp config set WP_DEBUG false --raw --type=constant --quiet
+	wp plugin is-active wp-updates-notifier || wp plugin activate wp-updates-notifier --quiet
+	wp plugin is-active wpun-field-showcase || wp plugin activate wpun-field-showcase --quiet
+fi
 
-wp plugin is-active wp-updates-notifier || wp plugin activate wp-updates-notifier --quiet
-# The field showcase channel (#172): every settings field, for checking the channel forms by hand.
-wp plugin is-active wpun-field-showcase || wp plugin activate wpun-field-showcase --quiet
-install_plugin query-monitor
-install_plugin debug-bar
-install_plugin wp-crontrol
+if [ "$SITE_MODE" != dast ]; then
+	# Debugging (#175). Errors show on the page and go to wp-content/debug.log (`make site-log`).
+	wp config set WP_ENVIRONMENT_TYPE local --type=constant --quiet
+	wp config set WP_DEBUG true --raw --type=constant --quiet
+	wp config set WP_DEBUG_LOG true --raw --type=constant --quiet
+	wp config set WP_DEBUG_DISPLAY true --raw --type=constant --quiet
+	wp config set SCRIPT_DEBUG true --raw --type=constant --quiet
+	wp config set SAVEQUERIES true --raw --type=constant --quiet
+	wp config set WP_DEVELOPMENT_MODE plugin --type=constant --quiet
 
-# Persistent object cache (#177): Redis Object Cache with phpredis, talking to the valkey service. The prefix keeps
-# this site's keys apart, so another local site can share the same Valkey. OBJECT_CACHE=off removes the drop-in.
-wp config set WP_REDIS_HOST valkey --type=constant --quiet
-wp config set WP_REDIS_PORT 6379 --raw --type=constant --quiet
-wp config set WP_REDIS_PREFIX wpun-single: --type=constant --quiet
-wp config set WP_REDIS_CLIENT phpredis --type=constant --quiet
-install_plugin redis-cache
-if [ "${OBJECT_CACHE:-on}" = off ]; then
-	if [ -f wp-content/object-cache.php ]; then
-		wp redis disable --quiet
+	# install_plugin <slug>: install the latest version unless it is there, then activate it.
+	install_plugin() {
+		wp plugin is-installed "$1" || wp plugin install "$1" --quiet
+		wp plugin is-active "$1" || wp plugin activate "$1" --quiet
+	}
+
+	wp plugin is-active wp-updates-notifier || wp plugin activate wp-updates-notifier --quiet
+	# The field showcase channel (#172): every settings field, for checking the channel forms by hand.
+	wp plugin is-active wpun-field-showcase || wp plugin activate wpun-field-showcase --quiet
+	install_plugin query-monitor
+	install_plugin debug-bar
+	install_plugin wp-crontrol
+
+	# Persistent object cache (#177): Redis Object Cache with phpredis, talking to the valkey service. The prefix keeps
+	# this site's keys apart, so another local site can share the same Valkey. OBJECT_CACHE=off removes the drop-in.
+	wp config set WP_REDIS_HOST valkey --type=constant --quiet
+	wp config set WP_REDIS_PORT 6379 --raw --type=constant --quiet
+	wp config set WP_REDIS_PREFIX wpun-single: --type=constant --quiet
+	wp config set WP_REDIS_CLIENT phpredis --type=constant --quiet
+	install_plugin redis-cache
+	if [ "${OBJECT_CACHE:-on}" = off ]; then
+		if [ -f wp-content/object-cache.php ]; then
+			wp redis disable --quiet
+		fi
+		echo 'Persistent object cache: off'
+	else
+		# update-dropin writes the drop-in whether or not one is there, and keeps it current after a plugin update.
+		was_on=no
+		[ -f wp-content/object-cache.php ] && was_on=yes
+		wp redis update-dropin --quiet
+		if [ "$was_on" = no ]; then
+			# Valkey still holds what it cached before the cache was switched off, and the database has changed since.
+			wp cache flush --quiet
+		fi
+		echo 'Persistent object cache: on (Valkey)'
 	fi
-	echo 'Persistent object cache: off'
-else
-	# update-dropin writes the drop-in whether or not one is there, and keeps it current after a plugin update.
-	was_on=no
-	[ -f wp-content/object-cache.php ] && was_on=yes
-	wp redis update-dropin --quiet
-	if [ "$was_on" = no ]; then
-		# Valkey still holds what it cached before the cache was switched off, and the database has changed since.
-		wp cache flush --quiet
-	fi
-	echo 'Persistent object cache: on (Valkey)'
 fi
 
 # Outdated plugins and themes (#173), so an update check finds real updates. Each is put back at its pinned version

@@ -1,0 +1,95 @@
+# The throwaway site `make dast` scans (tests/dast/zap-plan.yaml). Always run as its own project
+# (`docker compose -p wpun-dast -f tests/dast/compose.yml`): its containers, network and volumes are named after the
+# project, so nothing here can touch the local site from `make up`. No port is published; the scanner joins the
+# network and reaches WordPress at http://wordpress:8080.
+name: wpun-dast
+
+x-site: &site
+  build:
+    context: ../..
+    dockerfile: docker/Dockerfile
+    target: site
+    args:
+      PHP_VERSION: ${PHP_VERSION:-8.3}
+  # The same image as the local site (docker-compose.yml), so it is built once and shared.
+  image: wp-updates-notifier:site-php${PHP_VERSION:-8.3}
+
+services:
+  db:
+    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: wordpress
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  wordpress:
+    <<: *site
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp:/var/www/html
+      - ../../docker/apache/ports.conf:/etc/apache2/ports.conf:ro
+      - ../../docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
+      - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
+      - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
+      - ../../docker/dev-plugins/wpun-dummy:/var/www/html/wp-content/plugins/wpun-dummy:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
+  # WP-CLI: installs and seeds the site with docker/site-setup.sh (SITE_MODE=dast), then tests/dast/seed.sh.
+  wp-cli:
+    <<: *site
+    user: "33:33"
+    working_dir: /var/www/html
+    depends_on:
+      - wordpress
+    volumes:
+      - wp:/var/www/html
+      - ../../docker/site-setup.sh:/usr/local/bin/wpun-site-setup:ro
+      - ./seed.sh:/usr/local/bin/wpun-dast-seed:ro
+      - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
+      - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
+      - ../../docker/dev-plugins/wpun-dummy:/var/www/html/wp-content/plugins/wpun-dummy:ro
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_NAME: wordpress
+      SITE_MODE: dast
+      SITE_URL: http://wordpress:8080
+    entrypoint: ["wp"]
+
+  # OWASP ZAP, driven by the automation plan. Runs as the host user so the reports in security-reports/ are yours.
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:2.17.0@sha256:5ccfff9a411743ab2615136a2edd7416bec9ce41572fa94e935df38c14adb2b6
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /zap
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    environment:
+      # ZAP keeps its home in Java's user.home, which comes from /etc/passwd. A host uid other than 1000 has no entry in
+      # the image, so it would be "?" and ZAP would refuse to start.
+      HOME: /tmp
+      _JAVA_OPTIONS: -Duser.home=/tmp
+    volumes:
+      - ./zap-plan.yaml:/zap/wrk/zap-plan.yaml:ro
+      - ../../security-reports:/zap/wrk/reports
+
+volumes:
+  wp:

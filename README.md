@@ -69,6 +69,16 @@ make check-headers               # plugin header and readme.txt agree and follow
 
 `.distignore` lists what stays out of the zip; the WordPress.org deploy uses the same list.
 
+### Dynamic security scan
+
+```sh
+make dast                        # OWASP ZAP against a throwaway copy of the site (about 11 minutes)
+```
+
+`make dast` builds an isolated site as its own compose project (`wpun-dast`, from `tests/dast/compose.yml`) with the plugin active, an email channel, the field showcase and outdated plugins, scans it with OWASP ZAP and removes it again, volumes included, even when the scan fails. It publishes no ports and shares no container, volume or network with `make up`, so it never touches your local site. The scan is defined by `tests/dast/zap-plan.yaml`: it logs in as an administrator, spiders and actively scans only the plugin's settings screens and `admin-post.php` handlers, and then checks that a visitor who is not logged in is turned away from the same URLs. Any Medium or High alert fails the run; the HTML and SARIF reports are written to `security-reports/`. It is not run in CI, because the active scan alone takes about 10 minutes. Run it before each release (see [Releases](CONTRIBUTING.md#releases)).
+
+Limits: nonces turn away most of the active scan's requests to the POST handlers. That is the plugin working, and why the capability and nonce matrix tests remain the real enforcement; the scan looks at the plugin from the outside (reflected input, leaking error pages, headers, redirects), it does not replace them.
+
 ### Tests
 
 ```sh

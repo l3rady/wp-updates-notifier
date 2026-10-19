@@ -30,6 +30,16 @@ updates:
     commit-message:
       prefix: ci
 
+  # The ZAP image (and the database) of the DAST site, tests/dast/compose.yml.
+  - package-ecosystem: docker-compose
+    directory: /tests/dast
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: ci
+
   - package-ecosystem: composer
     directory: /
     schedule:
