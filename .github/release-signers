@@ -3,3 +3,4 @@
 # is registered as a signing key on the maintainer's GitHub account, and its
 # private half is the RELEASE_SIGNING_KEY secret of the `release` environment.
 # See "Verifying a release" in SECURITY.md.
+scott@cariss.dev namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGXPtwbSafND25m3NYCPvch8TIfrkoNoopJvhzc39E+w
