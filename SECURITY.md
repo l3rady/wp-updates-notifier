@@ -33,6 +33,9 @@ Problems we would like to hear about include:
 - flaws in the public API that make add-on channels unsafe when used as
   documented.
 
+The [threat model](docs/security/threat-model.md) describes what the plugin
+trusts, each entry point, and the control and test that cover it.
+
 ## OpenSSF Scorecard
 
 [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/l3rady/wp-updates-notifier)
