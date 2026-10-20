@@ -16,6 +16,7 @@ use WPUN\Config_Report;
 use WPUN\Rejected_Channels;
 use WPUN\Enum_Field;
 use WPUN\Notifier;
+use WPUN\Plugin;
 use WPUN\Scheduler;
 use WPUN\Settings;
 use WPUN\Slack_Notice;
@@ -167,6 +168,22 @@ class Settings_Page {
 		$settings_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=wp-updates-notifier' ) ) . '">' . esc_html__( 'Settings', 'wp-updates-notifier' ) . '</a>';
 		array_unshift( $links, $settings_link );
 		return $links;
+	}
+
+	/**
+	 * Adds a link to the documentation to the plugin's row on the plugin screen, after core's own links.
+	 *
+	 * @param array<mixed> $meta Links and details shown under the plugin's description.
+	 * @param string       $file Plugin file the row belongs to.
+	 *
+	 * @return array<mixed> $meta
+	 */
+	public function plugin_row_meta( $meta, $file ) {
+		if ( plugin_basename( SC_WPUN_FILE ) !== $file ) {
+			return $meta;
+		}
+		$meta[] = '<a href="' . esc_url( Plugin::SITE_URL ) . '">' . esc_html__( 'Documentation', 'wp-updates-notifier' ) . '</a>';
+		return $meta;
 	}
 
 	/**

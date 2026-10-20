@@ -102,6 +102,7 @@ class Test_Contract extends WPUN_Test_Case {
 		$this->assertNotFalse( has_action( 'admin_menu' ) );
 		$this->assertNotFalse( has_action( 'admin_init' ) );
 		$this->assertNotFalse( has_filter( 'plugin_action_links_' . plugin_basename( SC_WPUN_FILE ) ) );
+		$this->assertNotFalse( has_filter( 'plugin_row_meta' ) );
 		$this->assertNotFalse( has_filter( 'option_page_capability_sc_wpun_settings' ) );
 		$this->assertNotFalse( has_action( 'admin_post_sc_wpun_send_test' ) );
 	}

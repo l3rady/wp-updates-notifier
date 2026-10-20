@@ -33,6 +33,13 @@ class Plugin {
 	public const API_HEADER = 'Requires WPUN API';
 
 	/**
+	 * The plugin's website, with the documentation. The root opens the newest release's docs.
+	 *
+	 * @var string
+	 */
+	public const SITE_URL = 'https://wpun.cariss.dev/';
+
+	/**
 	 * Whether the plugin has been initialised in this request.
 	 *
 	 * @var bool
@@ -499,6 +506,7 @@ class Plugin {
 	 */
 	public function register_admin_hooks(): void {
 		add_filter( 'plugin_action_links_' . plugin_basename( SC_WPUN_FILE ), array( $this->settings_page(), 'plugin_action_links' ), 10, 2 ); // Add settings link to plugin in plugin list.
+		add_filter( 'plugin_row_meta', array( $this->settings_page(), 'plugin_row_meta' ), 10, 2 ); // Link the documentation from the plugin's row.
 		add_action( 'after_plugin_row', array( $this->plugin_requirements(), 'render_row' ), 10, 2 ); // Notice below an add-on that needs another API version.
 		add_action( 'admin_menu', array( $this->settings_page(), 'admin_settings_menu' ) ); // Add menu to options.
 		add_action( 'admin_init', array( $this->settings_page(), 'admin_settings_init' ) ); // Add admin init functions.

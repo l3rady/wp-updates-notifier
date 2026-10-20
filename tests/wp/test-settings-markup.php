@@ -207,4 +207,21 @@ class Test_Settings_Markup extends WPUN_Test_Case {
 		$this->assertSame( array( 'x' ), sc_wpun()->settings_page()->plugin_action_links( array( 'x' ), 'other/other.php' ) );
 		$this->assertCount( 2, sc_wpun()->settings_page()->plugin_action_links( array( 'x' ), plugin_basename( SC_WPUN_FILE ) ) );
 	}
+
+	/**
+	 * The plugin's row links the documentation site after core's links; other rows are left alone.
+	 */
+	public function test_the_plugin_row_links_the_documentation() {
+		$meta = sc_wpun()->settings_page()->plugin_row_meta( array( 'Version 2.0.0' ), plugin_basename( SC_WPUN_FILE ) );
+		$this->assertCount( 2, $meta );
+		$this->assertSame( 'Version 2.0.0', $meta[0] );
+
+		$doc = new DOMDocument();
+		$doc->loadHTML( '<html><body>' . $meta[1] . '</body></html>' );
+		$link = $doc->getElementsByTagName( 'a' )->item( 0 );
+		$this->assertSame( 'https://wpun.cariss.dev/', $link->getAttribute( 'href' ) );
+		$this->assertSame( 'Documentation', $link->textContent );
+
+		$this->assertSame( array( 'x' ), sc_wpun()->settings_page()->plugin_row_meta( array( 'x' ), 'other/other.php' ) );
+	}
 }

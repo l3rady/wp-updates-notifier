@@ -28,6 +28,7 @@ class Test_Admin_Loading extends WPUN_Test_Case {
 		$this->assertNotFalse( has_action( 'sc_wpun_update_check' ) );
 		$this->assertNotFalse( has_action( 'admin_post_sc_wpun_dismiss_slack_notice' ) );
 		$this->assertFalse( has_filter( 'plugin_action_links_' . plugin_basename( SC_WPUN_FILE ) ) );
+		$this->assertFalse( has_filter( 'plugin_row_meta' ) );
 	}
 
 	/**
