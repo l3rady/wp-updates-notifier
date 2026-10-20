@@ -178,7 +178,68 @@ class Settings_Page {
 		$hook = add_options_page( __( 'Updates Notifier', 'wp-updates-notifier' ), __( 'Updates Notifier', 'wp-updates-notifier' ), self::capability(), 'wp-updates-notifier', array( $this, 'settings_page' ) );
 		if ( $hook ) {
 			add_action( 'load-' . $hook, array( $this, 'enqueue_styles' ) );
+			add_action( 'load-' . $hook, array( $this, 'add_title_filter' ) );
 		}
+	}
+
+	/**
+	 * Name the view in the page title. Hooked on `load-{$hook}`, so no other screen's title changes.
+	 *
+	 * @return void
+	 */
+	public function add_title_filter() {
+		add_filter( 'admin_title', array( $this, 'admin_title' ) );
+	}
+
+	/**
+	 * Put the view in front of the title of the screen, and `Error:` if the view shows errors.
+	 *
+	 * Runs before the page is drawn, so it must not use up what the page shows.
+	 *
+	 * @param string $admin_title The title core built, for example "Updates Notifier ‹ Site — WordPress".
+	 *
+	 * @return string
+	 */
+	public function admin_title( $admin_title ) {
+		$this->add_tab_actions();
+		$tabs    = $this->tabs();
+		$current = $this->current_tab( $tabs );
+		$name    = $tabs[ $current ];
+		$errors  = false;
+
+		if ( 'general' === $current ) {
+			foreach ( get_settings_errors() as $error ) {
+				if ( 'error' === $error['type'] ) {
+					$errors = true;
+				}
+			}
+		} elseif ( 'channels' === $current ) {
+			$view = $this->channels_tab->view();
+			if ( null !== $view ) {
+				$name   = $view['name'];
+				$errors = $view['errors'];
+			}
+		}
+
+		// The separator is written like core's, as an entity: core escapes the whole title.
+		// translators: 1: Name of the view, for example "Channels". 2: Title of the screen and site.
+		$title = sprintf( __( '%1$s &lsaquo; %2$s', 'wp-updates-notifier' ), $name, is_string( $admin_title ) ? $admin_title : '' );
+		if ( $errors ) {
+			// translators: %s: Page title.
+			$title = sprintf( __( 'Error: %s', 'wp-updates-notifier' ), $title );
+		}
+
+		return $title;
+	}
+
+	/**
+	 * Hook the General and Channels tabs to their drawing, so the tab list includes them.
+	 *
+	 * @return void
+	 */
+	private function add_tab_actions(): void {
+		add_action( 'sc_wpun_settings_tab_general', array( $this, 'render_general_tab' ) );
+		add_action( 'sc_wpun_settings_tab_channels', array( $this->channels_tab, 'render' ) );
 	}
 
 	/**
@@ -281,9 +342,7 @@ class Settings_Page {
 		}
 
 		// Drawn like any other tab. Added here, not only at boot, so the page works however it is reached.
-		add_action( 'sc_wpun_settings_tab_general', array( $this, 'render_general_tab' ) );
-
-		add_action( 'sc_wpun_settings_tab_channels', array( $this->channels_tab, 'render' ) );
+		$this->add_tab_actions();
 
 		$tabs    = $this->tabs();
 		$current = $this->current_tab( $tabs );

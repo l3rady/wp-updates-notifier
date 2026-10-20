@@ -169,7 +169,7 @@ class Channel_Form {
 		$channels = $this->registry->all();
 		?>
 		<div class="sc-wpun-module-picker">
-			<h2><?php esc_html_e( 'Add channel', 'wp-updates-notifier' ); ?></h2>
+			<h2><?php echo esc_html( self::picker_heading() ); ?></h2>
 			<?php if ( array() === $channels ) : ?>
 				<p><?php esc_html_e( 'No channel modules are available.', 'wp-updates-notifier' ); ?></p>
 			<?php else : ?>
@@ -188,6 +188,81 @@ class Channel_Form {
 			<p><a class="button" href="<?php echo esc_url( $this->tab_url() ); ?>"><?php esc_html_e( 'Cancel', 'wp-updates-notifier' ); ?></a></p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * The title of the module picker.
+	 *
+	 * @return string
+	 */
+	public static function picker_heading(): string {
+		return __( 'Add channel', 'wp-updates-notifier' );
+	}
+
+	/**
+	 * What a new or edit form is called and whether it would show errors, for the page title.
+	 *
+	 * Does not use up the errors of a failed save: the form still shows them.
+	 *
+	 * @param string $mode `new` or `edit`.
+	 * @param string $key  Channel type for `new`, instance id for `edit`.
+	 *
+	 * @return array{name: string, errors: bool}|null Null if no form would be drawn for it.
+	 */
+	public function view( string $mode, string $key ): ?array {
+		if ( 'new' === $mode ) {
+			$channel = $this->registry->get( $key );
+			if ( null === $channel ) {
+				return null;
+			}
+
+			return array(
+				'name'   => $this->heading( $channel, null ),
+				'errors' => $this->has_errors( 'new:' . $key ),
+			);
+		}
+
+		$instance = $this->listed()[ $key ] ?? null;
+		$channel  = null === $instance ? null : $this->registry->get( $instance->get_type() );
+		if ( null === $instance || null === $channel || $this->store->is_code_defined( $key ) ) {
+			return null;
+		}
+
+		return array(
+			'name'   => $this->heading( $channel, $instance ),
+			'errors' => $this->has_errors( 'edit:' . $key ),
+		);
+	}
+
+	/**
+	 * The title of a form: also its h2.
+	 *
+	 * @param Channel               $channel  The module.
+	 * @param Channel_Instance|null $instance The instance being edited; null for a new one.
+	 *
+	 * @return string
+	 */
+	private function heading( Channel $channel, ?Channel_Instance $instance ): string {
+		if ( null === $instance ) {
+			// translators: %s: Name of the channel module, for example "Email".
+			return sprintf( __( 'Add %s channel', 'wp-updates-notifier' ), $channel->get_label() );
+		}
+
+		// translators: %s: Label of the channel.
+		return sprintf( __( 'Edit %s', 'wp-updates-notifier' ), $instance->get_label() );
+	}
+
+	/**
+	 * Whether the last failed save was for this form and left errors.
+	 *
+	 * @param string $form `edit:<id>` or `new:<type>`.
+	 *
+	 * @return bool
+	 */
+	private function has_errors( string $form ): bool {
+		$round = $this->round_trip( $form, false );
+
+		return null !== $round && array() !== $round['errors'];
 	}
 
 	/**
@@ -258,7 +333,7 @@ class Channel_Form {
 		$type     = $instance->get_type();
 		$form_key = $is_new ? 'new:' . $type : 'edit:' . $id;
 		$fields   = $channel->get_form_fields();
-		$round    = $this->take_round_trip( $form_key );
+		$round    = $this->round_trip( $form_key, true );
 		$errors   = null === $round ? array() : $round['errors'];
 
 		$was_enabled = $instance->is_enabled();
@@ -285,11 +360,7 @@ class Channel_Form {
 		// A module that draws its own fields has no field ids of ours to link its errors to.
 		$linkable = is_string( $custom ) ? array() : $fields;
 
-		$heading = $is_new
-			// translators: %s: Name of the channel module, for example "Email".
-			? sprintf( __( 'Add %s channel', 'wp-updates-notifier' ), $channel->get_label() )
-			// translators: %s: Label of the channel.
-			: sprintf( __( 'Edit %s', 'wp-updates-notifier' ), $instance->get_label() );
+		$heading = $this->heading( $channel, $is_new ? null : $instance );
 		?>
 		<div class="sc-wpun-channel-form-wrap">
 			<h2><?php echo esc_html( $heading ); ?></h2>
@@ -671,19 +742,22 @@ class Channel_Form {
 	}
 
 	/**
-	 * Read and delete what the last failed save left for the current user, if it is for this form.
+	 * Read what the last failed save left for the current user, if it is for this form, and delete it when asked to.
 	 *
-	 * @param string $form `edit:<id>` or `new:<type>`.
+	 * @param string $form   `edit:<id>` or `new:<type>`.
+	 * @param bool   $delete Whether to delete it: the form that shows it does, the page title only looks.
 	 *
 	 * @return array{values: array<string, mixed>, errors: array<string, string>}|null Null if there is none, it is for another site or form, or it is stale.
 	 */
-	private function take_round_trip( string $form ): ?array {
+	private function round_trip( string $form, bool $delete ): ?array {
 		$user_id = get_current_user_id();
 		$stored  = get_user_meta( $user_id, self::META_KEY, true );
 		if ( ! is_array( $stored ) || ( $stored['site'] ?? 0 ) !== get_current_blog_id() ) {
 			return null; // None, or it belongs to another site of the network.
 		}
-		delete_user_meta( $user_id, self::META_KEY );
+		if ( $delete ) {
+			delete_user_meta( $user_id, self::META_KEY );
+		}
 		if ( ! isset( $stored['time'] ) || ! is_int( $stored['time'] ) || $stored['time'] < time() - 5 * MINUTE_IN_SECONDS || ( $stored['form'] ?? '' ) !== $form ) {
 			return null;
 		}

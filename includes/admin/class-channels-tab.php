@@ -180,6 +180,48 @@ class Channels_Tab {
 	}
 
 	/**
+	 * What the view is called and whether it shows errors, for the page title.
+	 *
+	 * @return array{name: string, errors: bool}|null Null for the list, and when the route shows the list in its place.
+	 */
+	public function view(): ?array {
+		$request = $this->requested();
+
+		if ( 'add' === $request['action'] ) {
+			return array(
+				'name'   => Channel_Form::picker_heading(),
+				'errors' => false,
+			);
+		}
+		if ( 'new' === $request['action'] || 'edit' === $request['action'] ) {
+			return $this->form->view( $request['action'], $request['key'] );
+		}
+		if ( 'delete' === $request['action'] ) {
+			$instance = $this->listed()[ $request['key'] ] ?? null;
+			if ( null !== $instance && ! $this->store->is_code_defined( $request['key'] ) ) {
+				return array(
+					'name'   => $this->delete_heading( $instance ),
+					'errors' => false,
+				);
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * The title of the delete confirmation: also its h2.
+	 *
+	 * @param Channel_Instance $instance The instance.
+	 *
+	 * @return string
+	 */
+	private function delete_heading( Channel_Instance $instance ): string {
+		// translators: %s: Label of the channel.
+		return sprintf( __( 'Delete %s?', 'wp-updates-notifier' ), $instance->get_label() );
+	}
+
+	/**
 	 * The route in the request.
 	 *
 	 * @return array{action: string, key: string} The action (`add`, `new`, `edit`, `delete`; empty for the list) and the type or id it is about.
@@ -431,12 +473,7 @@ class Channels_Tab {
 		$id = $instance->get_id();
 		?>
 		<div class="sc-wpun-confirm-delete">
-			<h2>
-				<?php
-				// translators: %s: Label of the channel.
-				echo esc_html( sprintf( __( 'Delete %s?', 'wp-updates-notifier' ), $instance->get_label() ) );
-				?>
-			</h2>
+			<h2><?php echo esc_html( $this->delete_heading( $instance ) ); ?></h2>
 			<p>
 				<?php
 				// translators: %s: Label of the channel.
