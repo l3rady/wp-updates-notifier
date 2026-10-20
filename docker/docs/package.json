@@ -4,6 +4,6 @@
   "private": true,
   "license": "GPL-2.0-or-later",
   "dependencies": {
-    "mermaid": "11.17.2"
+    "mermaid": "12.2.0"
   }
 }
