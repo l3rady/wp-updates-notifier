@@ -222,6 +222,9 @@ class Channels_Tab {
 	 */
 	private function render_list(): void {
 		$instances = $this->listed();
+		?>
+		<h2><?php esc_html_e( 'Channels', 'wp-updates-notifier' ); ?></h2>
+		<?php
 		$this->render_add_link();
 		if ( array() === $instances ) {
 			echo '<p class="sc-wpun-no-channels">' . esc_html__( 'No channels are set up yet. A channel is where the update notifications are sent, for example an email address.', 'wp-updates-notifier' ) . '</p>';
@@ -428,6 +431,12 @@ class Channels_Tab {
 		$id = $instance->get_id();
 		?>
 		<div class="sc-wpun-confirm-delete">
+			<h2>
+				<?php
+				// translators: %s: Label of the channel.
+				echo esc_html( sprintf( __( 'Delete %s?', 'wp-updates-notifier' ), $instance->get_label() ) );
+				?>
+			</h2>
 			<p>
 				<?php
 				// translators: %s: Label of the channel.

@@ -95,6 +95,34 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The heading levels and texts of a page, in document order.
+	 *
+	 * @param DOMXPath $xpath Page.
+	 * @return array<int, array{int, string}>
+	 */
+	private function headings( DOMXPath $xpath ): array {
+		$found = array();
+		foreach ( $xpath->query( '//h1 | //h2 | //h3 | //h4 | //h5 | //h6' ) as $node ) {
+			$found[] = array( (int) substr( $node->nodeName, 1 ), trim( preg_replace( '/\s+/', ' ', $node->textContent ) ) );
+		}
+
+		return $found;
+	}
+
+	/**
+	 * Assert the outline starts at h1 and never goes down more than one level at a time.
+	 *
+	 * @param DOMXPath $xpath Page.
+	 */
+	private function assert_no_skipped_level( DOMXPath $xpath ): void {
+		$previous = 0;
+		foreach ( $this->headings( $xpath ) as $heading ) {
+			$this->assertLessThanOrEqual( $previous + 1, $heading[0], 'Heading "' . $heading[1] . '" skips a level.' );
+			$previous = $heading[0];
+		}
+	}
+
+	/**
 	 * The text of a cell of a row.
 	 *
 	 * @param DOMXPath $xpath  Page.
@@ -311,6 +339,16 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The list has an h2 under the h1, with no skipped level.
+	 */
+	public function test_the_list_has_a_heading() {
+		$xpath = $this->tab();
+
+		$this->assertSame( array( array( 1, 'Updates Notifier' ), array( 2, 'Channels' ) ), $this->headings( $xpath ) );
+		$this->assert_no_skipped_level( $xpath );
+	}
+
+	/**
 	 * With no channel the tab explains it and offers no table.
 	 */
 	public function test_an_empty_list() {
@@ -319,6 +357,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 
 		$this->assertSame( 0, $xpath->query( '//table' )->length );
 		$this->assertSame( 1, $xpath->query( '//p[contains(@class,"sc-wpun-no-channels")]' )->length );
+		$this->assertSame( array( 1, 2 ), array_column( $this->headings( $xpath ), 0 ) );
 	}
 
 	/**
@@ -572,6 +611,8 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		$xpath          = $this->tab();
 		$this->assertSame( 1, $xpath->query( '//*[contains(@class,"sc-wpun-confirm-delete")]' )->length );
 		$this->assertStringContainsString( 'Delete the channel Second?', $xpath->document->textContent );
+		$this->assertSame( array( array( 1, 'Updates Notifier' ), array( 2, 'Delete Second?' ) ), $this->headings( $xpath ) );
+		$this->assert_no_skipped_level( $xpath );
 		$this->assertSame( 0, $xpath->query( '//table' )->length );
 		$this->assertSame( 1, $xpath->query( '//form[input[@name="action"][@value="' . Channels_Tab::DELETE_ACTION . '"]][input[@name="id"][@value="second"]]//button[@type="submit"]' )->length );
 		$this->assertSame( 1, $xpath->query( '//a[text()="Cancel"]' )->length );

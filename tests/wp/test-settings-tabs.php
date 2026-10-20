@@ -129,6 +129,23 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The General tab puts the status and Check now under their own h2, before the Settings h2, with no skipped level.
+	 */
+	public function test_general_tab_heading_outline() {
+		$xpath  = $this->xpath( $this->html() );
+		$levels = array();
+		foreach ( $xpath->query( '//h1 | //h2 | //h3 | //h4 | //h5 | //h6' ) as $heading ) {
+			$levels[] = $heading->nodeName . ':' . trim( $heading->textContent );
+		}
+
+		$this->assertSame( array( 'h1:Updates Notifier', 'h2:Status', 'h2:Settings' ), $levels );
+		$status = $xpath->query( '//h2[text()="Status"]' )->item( 0 );
+		$this->assertSame( 1, $xpath->query( 'following::*[contains(@class,"sc-wpun-last-check")]', $status )->length );
+		$this->assertSame( 1, $xpath->query( 'following::form[contains(@class,"sc-wpun-check-now")]', $status )->length );
+		$this->assertSame( 0, $xpath->query( 'preceding::*[contains(@class,"sc-wpun-last-check")] | preceding::form[contains(@class,"sc-wpun-check-now")]', $status )->length );
+	}
+
+	/**
 	 * The Channels tab is listed, can be chosen and draws the channel list instead of the settings form.
 	 */
 	public function test_channels_is_listed_and_drawn() {

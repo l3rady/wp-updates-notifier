@@ -280,6 +280,12 @@ class Test_Channel_Api_Constraint extends WPUN_Test_Case {
 		libxml_clear_errors();
 		$xpath = new DOMXPath( $doc );
 
+		$levels = array();
+		foreach ( $xpath->query( '//h1 | //h2 | //h3' ) as $heading ) {
+			$levels[] = $heading->nodeName . ':' . trim( $heading->textContent ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		}
+		$this->assertSame( array( 'h1:Updates Notifier', 'h2:Channels', 'h3:Unavailable channels' ), $levels );
+
 		$rows = $xpath->query( '//table[contains(@class,"sc-wpun-unavailable-channels")]//tbody/tr' );
 		$this->assertSame( 1, $rows->length );
 		$text = preg_replace( '/\s+/', ' ', $rows->item( 0 )->textContent );

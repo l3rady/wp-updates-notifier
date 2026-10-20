@@ -90,7 +90,7 @@ The optional methods:
 | `get_api_constraint()` | empty: no check | Declare the API versions the channel needs, for example `'^1.0'`. The registry refuses the channel on a site whose API does not satisfy it. See "Declare the API version you need" below. |
 | `supports( $feature )` | false | Return true for `test_message` to get a "Send test message" button. |
 | `validate_settings( $settings, $stored )` | checks every field against its schema | Add checks that span several fields. Call `parent::validate_settings()` first. |
-| `render_settings( $instance )` | null: the form is drawn from the schema | Draw the fields yourself. Rarely needed. |
+| `render_settings( $instance )` | null: the form is drawn from the schema | Draw the fields yourself. Rarely needed. Your markup sits under the form's `<h3>Settings</h3>`, so start any headings at `<h4>` or use none. |
 
 ### Declare the API version you need
 

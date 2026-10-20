@@ -326,6 +326,7 @@ class Settings_Page {
 		$options    = $this->state->get();
 		$next_check = wp_next_scheduled( Scheduler::CRON_NAME );
 		?>
+		<h2><?php esc_html_e( 'Status', 'wp-updates-notifier' ); ?></h2>
 		<p>
 			<span class="description sc-wpun-last-check">
 			<?php
