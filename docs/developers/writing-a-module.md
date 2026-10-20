@@ -2,10 +2,10 @@
 
 A notification module adds a channel type: a new way of delivering update notifications, such as a chat service, an SMS gateway or a ticketing system. Site owners then create any number of instances of it on the **Channels** tab, each with its own settings and routing.
 
-This guide builds one step by step. The finished result is the example add-on in [`examples/wpun-example-channel/`](../../examples/wpun-example-channel/), which posts to a chat webhook. Copy it as a starting point. Two more references:
+This guide builds one step by step. The finished result is the example add-on in [`examples/wpun-example-channel/`](https://github.com/l3rady/wp-updates-notifier/tree/main/examples/wpun-example-channel/), which posts to a chat webhook. Copy it as a starting point. Two more references:
 
-- [`modules/email/`](../../modules/email/): the built-in email channel. It is written exactly like an add-on, using only the public API.
-- [`tests/fixtures/plugins/wpun-test-addon/`](../../tests/fixtures/plugins/wpun-test-addon/): the test add-on, which exercises every extension point (custom field types, configuration sources, short-circuited sends).
+- [`modules/email/`](https://github.com/l3rady/wp-updates-notifier/tree/main/modules/email/): the built-in email channel. It is written exactly like an add-on, using only the public API.
+- [`tests/fixtures/plugins/wpun-test-addon/`](https://github.com/l3rady/wp-updates-notifier/tree/main/tests/fixtures/plugins/wpun-test-addon/): the test add-on, which exercises every extension point (custom field types, configuration sources, short-circuited sends).
 
 ## 1. The plugin file
 
@@ -126,7 +126,7 @@ public function get_fields(): array {
 }
 ```
 
-The types are `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `boolean` and `enum` (with `checkbox` and `select` as aliases). The full list of keys (`default`, `required`, `secret`, `show_external`, `options`, `multiple`, `display`, `min`, `max`, `sanitize_callback`, `validate_callback` and more) is documented on the `WPUN\Channel` class in [`includes/abstract-class-channel.php`](../../includes/abstract-class-channel.php).
+The types are `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `boolean` and `enum` (with `checkbox` and `select` as aliases). The full list of keys (`default`, `required`, `secret`, `show_external`, `options`, `multiple`, `display`, `min`, `max`, `sanitize_callback`, `validate_callback` and more) is documented on the `WPUN\Channel` class in [`includes/abstract-class-channel.php`](https://github.com/l3rady/wp-updates-notifier/blob/main/includes/abstract-class-channel.php).
 
 A field with `'required' => true` is also marked in the form: "(required)" after its label (not for a `boolean`, which is always valid) and `aria-required="true"` on its control. For a group of radio buttons the fieldset gets `role="radiogroup"` to carry it; a group of checkboxes has only the text. A `secret` that already has a saved value keeps the text but not the attribute, as leaving it empty is valid. A custom field type registered with `sc_wpun_field_types` receives the schema in its `render` callable, so read `required` there and do the same.
 
@@ -165,7 +165,7 @@ Your own code must keep secrets secret too. Never put one in a `Delivery_Result`
 
 ### Custom field types
 
-If none of the types fits, register one with the `sc_wpun_field_types` filter. Each entry has a `render` callable that returns the escaped markup of the control and a `sanitize` callable that returns the clean value or a `WP_Error`. The test add-on's `test_colour` type in [`class-test-form-channel.php`](../../tests/fixtures/plugins/wpun-test-addon/class-test-form-channel.php) is a complete example, and the [hook reference](hooks.md#sc_wpun_field_types) documents both signatures.
+If none of the types fits, register one with the `sc_wpun_field_types` filter. Each entry has a `render` callable that returns the escaped markup of the control and a `sanitize` callable that returns the clean value or a `WP_Error`. The test add-on's `test_colour` type in [`class-test-form-channel.php`](https://github.com/l3rady/wp-updates-notifier/blob/main/tests/fixtures/plugins/wpun-test-addon/class-test-form-channel.php) is a complete example, and the [hook reference](hooks.md#sc_wpun_field_types) documents both signatures.
 
 Other plugins can add fields to your channel with `sc_wpun_channel_fields`. The fields your code receives are those of `get_form_fields()`, which applies that filter, so read settings by name and don't assume the list is only yours.
 
@@ -260,7 +260,7 @@ The plugin does not lock update checks against each other. If a check started wi
 
 ## 5. Testing
 
-The plugin's own tests show how to test a module with WordPress's PHPUnit test suite and mocked HTTP. [`tests/wp/test-example-channel.php`](../../tests/wp/test-example-channel.php) tests the example add-on:
+The plugin's own tests show how to test a module with WordPress's PHPUnit test suite and mocked HTTP. [`tests/wp/test-example-channel.php`](https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php) tests the example add-on:
 
 - It loads the add-on's main file the way WordPress would, calls `boot()`, and registers the channel.
 - It answers HTTP requests with the `pre_http_request` filter, so no request leaves the machine, and it checks what was sent.
@@ -296,7 +296,7 @@ Return a `WP_Error` from the filter to test a failed connection.
 
 You can run the plugin's own checks on your add-on:
 
-- **Coding standards.** Copy [`examples/wpun-example-channel/phpcs.xml.dist`](../../examples/wpun-example-channel/phpcs.xml.dist) and change the text domain and prefixes. It is the WordPress ruleset, including the escaping, nonce and sanitising sniffs, with the same PHP and WordPress versions as the plugin.
+- **Coding standards.** Copy [`examples/wpun-example-channel/phpcs.xml.dist`](https://github.com/l3rady/wp-updates-notifier/blob/main/examples/wpun-example-channel/phpcs.xml.dist) and change the text domain and prefixes. It is the WordPress ruleset, including the escaping, nonce and sanitising sniffs, with the same PHP and WordPress versions as the plugin.
 - **Semgrep.** Run Semgrep CE with the plugin's rules on your code: `semgrep scan --config path/to/wp-updates-notifier/.semgrep/ --metrics=off your-addon/`. The rules ban `eval`, `unserialize`, `$_REQUEST` and unprepared `$wpdb` queries, and they require `wp_safe_remote_*` for HTTP. Your fixed API address may use `wp_remote_post()` with `// nosemgrep: wpun-outbound-http-safe-only -- <reason>`. The rules are GPL, like the plugin.
 
 ## Accessibility
@@ -336,7 +336,7 @@ Return errors from `validate_settings()` as a `WP_Error` keyed by field, as with
 ### Labels and text
 
 - Labels are short, unique within the form and visible. Never use a placeholder as the label: it disappears when the user types.
-- In notification text avoid symbols such as arrows (read out as "right arrow" or not at all), and give a link a name that makes sense out of context, such as "Akismet changelog" rather than "Details". `Notification_Renderer` already writes "Akismet from version 5.6 to 5.7.2" and links named after the item; use it for the message, as the [example channel](../../examples/wpun-example-channel/) does.
+- In notification text avoid symbols such as arrows (read out as "right arrow" or not at all), and give a link a name that makes sense out of context, such as "Akismet changelog" rather than "Details". `Notification_Renderer` already writes "Akismet from version 5.6 to 5.7.2" and links named after the item; use it for the message, as the [example channel](https://github.com/l3rady/wp-updates-notifier/tree/main/examples/wpun-example-channel/) does.
 
 ### Checking
 

@@ -83,4 +83,4 @@ Rules for a source:
 - A source may throw. The plugin records the class of the exception (not its message, which could contain a secret) and asks the next source.
 - Results are cached for the request, so `get()` is not called again for the same key.
 
-The test add-on in [`tests/fixtures/plugins/wpun-test-addon/`](../../tests/fixtures/plugins/wpun-test-addon/class-addon-config-source.php) has a working source.
+The test add-on in [`tests/fixtures/plugins/wpun-test-addon/`](https://github.com/l3rady/wp-updates-notifier/blob/main/tests/fixtures/plugins/wpun-test-addon/class-addon-config-source.php) has a working source.

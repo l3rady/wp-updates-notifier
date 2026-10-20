@@ -1,0 +1,9 @@
+# The documentation site's direct dependencies (`make docs`). Pinned exactly; requirements.txt holds the full tree
+# with hashes, and the Dockerfile installs it with --require-hashes. Dependabot (pip ecosystem) updates both.
+#
+# Regenerate requirements.txt after changing this file (from the repository root):
+#   docker run --rm -v "$PWD/docker/docs:/w" -w /w python:3.13-slim sh -c \
+#     'pip install -q pip-tools==7.6.2 && pip-compile --quiet --generate-hashes --strip-extras --allow-unsafe --output-file requirements.txt requirements.in'
+mkdocs==1.6.1
+mkdocs-material==9.7.7
+mike==2.2.0

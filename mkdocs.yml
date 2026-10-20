@@ -1,0 +1,104 @@
+# The documentation site (https://wpun.cariss.dev): MkDocs Material, built from docs/, versioned with mike.
+# `make docs` builds it into build/docs, `make docs-serve` previews it. Runs in Docker (docker/docs).
+site_name: WP Updates Notifier
+site_description: Documentation for WP Updates Notifier, the WordPress plugin that tells you when updates are waiting.
+site_url: https://wpun.cariss.dev/
+# No repo_url: Material would then ask api.github.com for the star and release counts on every page view, a request
+# to a third party. The repository is linked from the footer instead (extra.social below).
+
+docs_dir: docs
+site_dir: build/docs
+
+# A warning fails the build, and the validation below makes broken links and anchors warnings.
+strict: true
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+# The generated hook reference stays under docs/developers/ (bin/hook-docs.php writes it), README.md is the section index.
+nav:
+  - Home: index.md
+  - Developers:
+      - developers/README.md
+      - Architecture: developers/architecture.md
+      - Writing a module: developers/writing-a-module.md
+      - Item types and routing: developers/item-types-and-routing.md
+      - Configuration sources: developers/configuration-sources.md
+      - Hook reference: developers/hooks.md
+      - Stability and deprecation: developers/stability.md
+  - Security:
+      - Threat model: security/threat-model.md
+
+theme:
+  name: material
+  language: en
+  # System fonts: nothing is loaded from Google.
+  font: false
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+  # Three states, in this order: automatic (the first visit; follows the system), dark, light. The Solarized schemes are
+  # in docs/stylesheets/extra.css.
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: solarized-dark
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: solarized-light
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to system preference
+
+extra_css:
+  - stylesheets/extra.css
+
+# Mermaid is self-hosted (docker/docs/hooks.py adds the file): Material would fetch it from unpkg.com otherwise.
+extra_javascript:
+  - assets/javascripts/mermaid.min.js
+
+hooks:
+  - docker/docs/hooks.py
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/l3rady/wp-updates-notifier
+      name: WP Updates Notifier on GitHub
+  version:
+    provider: mike
+    alias: true
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true

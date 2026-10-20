@@ -1,0 +1,9 @@
+{
+  "name": "wp-updates-notifier-docs",
+  "description": "Self-hosted Mermaid for the documentation site (docker/docs/Dockerfile copies dist/mermaid.min.js into the image). Development only, never shipped. Material would otherwise load Mermaid from unpkg.com at runtime.",
+  "private": true,
+  "license": "GPL-2.0-or-later",
+  "dependencies": {
+    "mermaid": "11.17.2"
+  }
+}

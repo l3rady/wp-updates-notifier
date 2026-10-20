@@ -41,4 +41,4 @@ function watchConsole( page ) {
 	return errors;
 }
 
-module.exports = { SETTINGS, CHANNELS, VIEWS, scan, describe, watchConsole };
+module.exports = { SETTINGS, CHANNELS, VIEWS, TAGS, scan, describe, watchConsole };

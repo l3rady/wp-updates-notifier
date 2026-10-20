@@ -12,6 +12,6 @@ WP Updates Notifier 2.0.0 and later can be extended by other plugins: new notifi
 
 ## Examples
 
-- [`examples/wpun-example-channel/`](../../examples/wpun-example-channel/): a complete, minimal channel add-on to copy. CI runs its tests ([`tests/wp/test-example-channel.php`](../../tests/wp/test-example-channel.php)) and checks it uses only the public API.
-- [`modules/email/`](../../modules/email/): the built-in email channel, written like any add-on.
-- [`tests/fixtures/plugins/wpun-test-addon/`](../../tests/fixtures/plugins/wpun-test-addon/): the add-on the test suite uses to exercise every extension point.
+- [`examples/wpun-example-channel/`](https://github.com/l3rady/wp-updates-notifier/tree/main/examples/wpun-example-channel/): a complete, minimal channel add-on to copy. CI runs its tests ([`tests/wp/test-example-channel.php`](https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php)) and checks it uses only the public API.
+- [`modules/email/`](https://github.com/l3rady/wp-updates-notifier/tree/main/modules/email/): the built-in email channel, written like any add-on.
+- [`tests/fixtures/plugins/wpun-test-addon/`](https://github.com/l3rady/wp-updates-notifier/tree/main/tests/fixtures/plugins/wpun-test-addon/): the add-on the test suite uses to exercise every extension point.

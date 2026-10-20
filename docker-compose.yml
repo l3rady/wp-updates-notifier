@@ -204,6 +204,42 @@ services:
     environment:
       HTTP_PORT: "8080"
 
+  # ----- Documentation site (`make docs`), profile "docs": not started by `make up` -----
+
+  # MkDocs Material and mike: `make docs`, `make docs-serve`, `make docs-deploy`. Writes build/docs. The Markdown
+  # files are not in the image (.dockerignore leaves them out), the repository is bind-mounted. Runs as the host user.
+  docs:
+    profiles: [docs]
+    build: docker/docs
+    image: wp-updates-notifier:docs
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      HOME: /tmp
+      # Material's banner about MkDocs 2.0 on every build.
+      NO_MKDOCS_2_WARNING: "true"
+      # MkDocs imports docker/docs/hooks.py from the bind mount: no __pycache__ in the repository.
+      PYTHONDONTWRITEBYTECODE: "1"
+      # The repository is owned by the host user and mike runs git in it.
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: "*"
+      # Who mike's commits to the local gh-pages branch are by. No credentials reach the container: the caller pushes.
+      GIT_AUTHOR_NAME: ${DOCS_GIT_NAME:-github-actions[bot]}
+      GIT_AUTHOR_EMAIL: ${DOCS_GIT_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}
+      GIT_COMMITTER_NAME: ${DOCS_GIT_NAME:-github-actions[bot]}
+      GIT_COMMITTER_EMAIL: ${DOCS_GIT_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}
+
+  # Live preview, http://localhost:8000: `make docs-serve`.
+  docs-serve:
+    extends: docs
+    ports:
+      # Loopback only, like the other published ports.
+      - "127.0.0.1:8000:8000"
+    command: ["mkdocs", "serve", "-a", "0.0.0.0:8000"]
+
   # ----- Security checks (`make security`), profile "security": not started by `make up` -----
 
   # Lints .github/workflows/ (and runs shellcheck on the run: blocks): `make check-workflows`.

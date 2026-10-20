@@ -49,7 +49,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-deploy up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -203,6 +203,32 @@ dast: ## OWASP ZAP against a throwaway copy of the site (own compose project wpu
 
 a11y: ## axe and keyboard checks of the settings screen on a throwaway site (own compose project wpun-e2e, never touches make up)
 	@./tests/e2e/run.sh
+
+# The documentation site (docker/docs, mkdocs.yml). docs-deploy is what the deploy workflow runs: it commits one version
+# to the local gh-pages branch with mike and never pushes (the caller does, so no token enters the container).
+# DOCS_VERSION is the folder (main, 2.0.0), DOCS_ALIAS an alias for it (latest) and DOCS_TITLE its label in the version
+# switcher. DOCS_DEFAULT=1 also makes DOCS_ALIAS (or DOCS_VERSION) the page the site root redirects to. DOCS_BRANCH is
+# the branch mike commits to (tests rehearse on a throwaway one).
+DOCS_VERSION ?=
+DOCS_ALIAS   ?=
+DOCS_TITLE   ?=
+DOCS_DEFAULT ?=
+DOCS_BRANCH  ?= gh-pages
+DOCS         := $(COMPOSE) --profile docs run --build --rm -T docs
+
+docs: ## Build the documentation site into build/docs (strict: broken links and anchors fail)
+	$(DOCS) mkdocs build
+
+docs-serve: ## Preview the documentation site on http://localhost:8000 (rebuilds as you edit)
+	$(COMPOSE) --profile docs up --build docs-serve
+
+docs-a11y: docs ## axe, third-party request and focus checks of the built site, in the dark and light schemes (own compose project wpun-docs-a11y)
+	@./tests/e2e/docs/run.sh
+
+docs-deploy: ## Commit one version to the local gh-pages branch with mike, without pushing: make docs-deploy DOCS_VERSION=main [DOCS_ALIAS=latest] [DOCS_TITLE=...] [DOCS_DEFAULT=1]
+	@test -n "$(DOCS_VERSION)" || { echo 'Set DOCS_VERSION, e.g. make docs-deploy DOCS_VERSION=main' >&2; exit 1; }
+	$(DOCS) mike deploy --branch $(DOCS_BRANCH) $(if $(DOCS_TITLE),--title "$(DOCS_TITLE)") --update-aliases $(DOCS_VERSION) $(DOCS_ALIAS)
+	$(if $(DOCS_DEFAULT),$(DOCS) mike set-default --branch $(DOCS_BRANCH) $(or $(DOCS_ALIAS),$(DOCS_VERSION)))
 
 security: check-workflows secrets audit sast taint ## Run every security check
 
