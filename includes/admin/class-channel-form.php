@@ -450,7 +450,8 @@ class Channel_Form {
 			return;
 		}
 		?>
-		<div class="notice notice-error inline sc-wpun-form-errors" role="alert">
+		<div class="notice notice-error inline sc-wpun-form-errors" role="alert" tabindex="-1">
+			<h2><?php esc_html_e( 'There is a problem', 'wp-updates-notifier' ); ?></h2>
 			<p><?php esc_html_e( 'The channel was not saved. Please correct the following.', 'wp-updates-notifier' ); ?></p>
 			<ul>
 				<?php foreach ( $errors as $key => $message ) : ?>
@@ -469,7 +470,7 @@ class Channel_Form {
 	}
 
 	/**
-	 * The id of the control of an error key.
+	 * The id of the control an error key links to: the control itself, or the first input of a group of radio buttons or checkboxes.
 	 *
 	 * @param string                              $key    `label`, `enabled`, `routing.<name>` or `settings.<name>`.
 	 * @param array<string, array<string, mixed>> $fields The fields of the module.
@@ -481,16 +482,36 @@ class Channel_Form {
 			return 'sc_wpun_channel_label';
 		}
 		if ( 'enabled' === $key ) {
-			return 'sc_wpun_channel_enabled';
+			return $this->first_control_id( Channel::enabled_field(), 'sc_wpun_channel_enabled' );
 		}
 		if ( 0 === strpos( $key, 'routing.' ) ) {
-			return 'sc_wpun_channel_routing_' . substr( $key, 8 );
+			$name = substr( $key, 8 );
+
+			return $this->first_control_id( Routing::fields()[ $name ] ?? array(), 'sc_wpun_channel_routing_' . $name );
 		}
 		if ( 0 === strpos( $key, 'settings.' ) && isset( $fields[ substr( $key, 9 ) ] ) ) {
-			return 'sc_wpun_channel_settings_' . substr( $key, 9 );
+			$name = substr( $key, 9 );
+
+			return $this->first_control_id( $fields[ $name ], 'sc_wpun_channel_settings_' . $name );
 		}
 
 		return '';
+	}
+
+	/**
+	 * Where focus goes for a field: its id, or for a group of radio buttons or checkboxes the first input, as the fieldset takes no focus.
+	 *
+	 * A boolean shown as a checkbox is one control with the id itself; the other groups number their inputs `{id}_0`, `{id}_1` and so on.
+	 *
+	 * @param array<string, mixed> $schema Field schema.
+	 * @param string               $id     Id of the field.
+	 *
+	 * @return string
+	 */
+	private function first_control_id( array $schema, string $id ): string {
+		$single_checkbox = 'boolean' === Field_Types::canonical( $schema['type'] ?? null ) && 'checkbox' === Boolean_Field::normalise( $schema )['display'];
+
+		return $single_checkbox || $this->labels_one_control( $schema ) ? $id : $id . '_0';
 	}
 
 	/**

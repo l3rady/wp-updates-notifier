@@ -527,6 +527,104 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The summary has a heading, can take focus and is an alert.
+	 */
+	public function test_the_error_summary_markup() {
+		$this->post_email( array( 'settings' => array( 'to' => 'bad' ) ) );
+		sc_wpun()->channel_form()->process_save();
+
+		$summary = $this->edit_page()->query( '//div[contains(@class,"sc-wpun-form-errors")]' )->item( 0 );
+		$this->assertSame( 'alert', $summary->getAttribute( 'role' ) );
+		$this->assertSame( '-1', $summary->getAttribute( 'tabindex' ) );
+		$this->assertStringContainsString( 'notice-error', $summary->getAttribute( 'class' ) );
+		$first = $summary->firstChild;
+		while ( $first && XML_ELEMENT_NODE !== $first->nodeType ) {
+			$first = $first->nextSibling;
+		}
+		$this->assertSame( 'h2', $first->nodeName );
+		$this->assertSame( 'There is a problem', $first->textContent );
+	}
+
+	/**
+	 * A link reaches a control: the first input of a group, the field itself for a select, text or lone checkbox.
+	 */
+	public function test_error_links_reach_a_control() {
+		add_filter(
+			'sc_wpun_channel_fields',
+			static function ( $fields, $type ) {
+				if ( 'email' === $type ) {
+					$options = array(
+						'a' => 'A',
+						'b' => 'B',
+					);
+
+					$fields['pick_radio']  = array(
+						'type'    => 'enum',
+						'label'   => 'Radio',
+						'options' => $options,
+						'display' => 'radio',
+					);
+					$fields['pick_checks'] = array(
+						'type'     => 'enum',
+						'label'    => 'Checks',
+						'options'  => $options,
+						'multiple' => true,
+					);
+					$fields['pick_select'] = array(
+						'type'    => 'enum',
+						'label'   => 'Select',
+						'options' => $options,
+						'display' => 'select',
+					);
+					$fields['flag']        = array(
+						'type'  => 'boolean',
+						'label' => 'Flag',
+					);
+					$fields['flag_radio']  = array(
+						'type'    => 'boolean',
+						'label'   => 'Flag radio',
+						'display' => 'radio',
+					);
+				}
+
+				return $fields;
+			},
+			10,
+			2
+		);
+		$names = array( 'pick_radio', 'pick_checks', 'pick_select', 'flag', 'flag_radio', 'to' );
+		$keys  = array_map( static fn( $name ) => 'settings.' . $name, $names );
+		update_user_meta(
+			self::$admin_id,
+			'sc_wpun_channel_form',
+			array(
+				'site'   => get_current_blog_id(),
+				'time'   => time(),
+				'form'   => 'edit:email',
+				'values' => array(),
+				'errors' => array_combine( $keys, array_map( static fn( $name ) => $name . ' is wrong.', $names ) ),
+			)
+		);
+
+		$xpath = $this->edit_page();
+		foreach (
+			array(
+				'pick_radio'  => 'sc_wpun_channel_settings_pick_radio_0',
+				'pick_checks' => 'sc_wpun_channel_settings_pick_checks_0',
+				'pick_select' => 'sc_wpun_channel_settings_pick_select',
+				'flag'        => 'sc_wpun_channel_settings_flag',
+				'flag_radio'  => 'sc_wpun_channel_settings_flag_radio_0',
+				'to'          => 'sc_wpun_channel_settings_to',
+			) as $name => $id
+		) {
+			$link = $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//a[contains(.,"' . $name . ' is wrong.")]' );
+			$this->assertSame( 1, $link->length, $name );
+			$this->assertSame( '#' . $id, $link->item( 0 )->getAttribute( 'href' ), $name );
+			$this->assertSame( 1, $xpath->query( '//*[self::input or self::select or self::textarea][@id="' . $id . '"]' )->length, $name . ' has a control with that id.' );
+		}
+	}
+
+	/**
 	 * An error of a module that draws its own fields is listed as plain text: the form has no field of its own to link to.
 	 */
 	public function test_an_error_of_a_custom_render_is_not_linked() {
@@ -762,9 +860,11 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$xpath = $this->edit_page();
 		$this->assertSame( 'true', $xpath->query( '//input[@name="label"]' )->item( 0 )->getAttribute( 'aria-invalid' ) );
 		$this->assertSame( 4, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//li' )->length );
-		foreach ( array( 'sc_wpun_channel_label', 'sc_wpun_channel_enabled', 'sc_wpun_channel_routing_scope', 'sc_wpun_channel_settings_to' ) as $id ) {
+		foreach ( array( 'sc_wpun_channel_label', 'sc_wpun_channel_enabled', 'sc_wpun_channel_routing_scope_0', 'sc_wpun_channel_settings_to' ) as $id ) {
 			$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//a[@href="#' . $id . '"]' )->length, $id );
 		}
+		$this->assertSame( 1, $xpath->query( '//input[@id="sc_wpun_channel_routing_scope_0"]' )->length, 'The link reaches a control.' );
+		$this->assertSame( 1, $xpath->query( '//input[@id="sc_wpun_channel_enabled"]' )->length );
 		$this->assertSame( 'true', $xpath->query( '//fieldset[@id="sc_wpun_channel_routing_scope"]' )->item( 0 )->getAttribute( 'aria-invalid' ) );
 	}
 
