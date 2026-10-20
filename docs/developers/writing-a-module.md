@@ -90,7 +90,7 @@ The optional methods:
 | `get_api_constraint()` | empty: no check | Declare the API versions the channel needs, for example `'^1.0'`. The registry refuses the channel on a site whose API does not satisfy it. See "Declare the API version you need" below. |
 | `supports( $feature )` | false | Return true for `test_message` to get a "Send test message" button. |
 | `validate_settings( $settings, $stored )` | checks every field against its schema | Add checks that span several fields. Call `parent::validate_settings()` first. |
-| `render_settings( $instance )` | null: the form is drawn from the schema | Draw the fields yourself. Rarely needed. Your markup sits under the form's `<h3>Settings</h3>`, so start any headings at `<h4>` or use none. |
+| `render_settings( $instance )` | null: the form is drawn from the schema | Draw the fields yourself. Rarely needed, and you then take over the accessibility of the fields: see [Accessibility](#accessibility). |
 
 ### Declare the API version you need
 
@@ -299,6 +299,49 @@ You can run the plugin's own checks on your add-on:
 - **Coding standards.** Copy [`examples/wpun-example-channel/phpcs.xml.dist`](../../examples/wpun-example-channel/phpcs.xml.dist) and change the text domain and prefixes. It is the WordPress ruleset, including the escaping, nonce and sanitising sniffs, with the same PHP and WordPress versions as the plugin.
 - **Semgrep.** Run Semgrep CE with the plugin's rules on your code: `semgrep scan --config path/to/wp-updates-notifier/.semgrep/ --metrics=off your-addon/`. The rules ban `eval`, `unserialize`, `$_REQUEST` and unprepared `$wpdb` queries, and they require `wp_safe_remote_*` for HTTP. Your fixed API address may use `wp_remote_post()` with `// nosemgrep: wpun-outbound-http-safe-only -- <reason>`. The rules are GPL, like the plugin.
 
+## Accessibility
+
+The settings screen is checked against WCAG 2.2 AA, and a module is part of it.
+
+### Prefer schema fields
+
+Fields drawn from `get_fields()` get the accessible markup for free:
+
+- a label for each control, or a fieldset with a legend for a group of radio buttons or checkboxes;
+- the `description` tied to the control with `aria-describedby`;
+- "(required)" after the label of a required field, and `aria-required="true"` on its control (a group of checkboxes only has the text; a saved secret keeps the text but not the attribute);
+- on an error, `aria-invalid="true"`, the message under the field with a bold "Error:", and a summary at the top of the form with a link to each field. The link goes to the first control of a group of radio buttons or checkboxes;
+- a note on a saved secret ("A value is saved. Leave this empty to keep it, ..."), a clear checkbox named after the field, and a "Set by ..." note, tied to the control, for a value that comes from a constant or an environment variable.
+
+A page title that starts with "Error:" after a failed save and the headings are the plugin's job too. Use `render_settings()` only when no schema field can do it.
+
+### If you draw your own fields
+
+Your markup gets none of the above, so it has to do it:
+
+- Give every control a `<label for="...">`. For a group of radio buttons or checkboxes use a `<fieldset>` with a `<legend>` instead.
+- Tie help text to its control with `aria-describedby`.
+- Start headings at `<h4>`: your markup sits under the form's `<h3>Settings</h3>`.
+- Never carry meaning by colour alone: say "Error:" or "(required)" in text. Check that the text is readable in forced-colours mode.
+
+### Errors from custom markup
+
+Return errors from `validate_settings()` as a `WP_Error` keyed by field, as with schema fields (see [Validation](#validation)). The summary at the top of the form lists every message. It can only link to a control it knows, and with `render_settings()` it knows none, so the messages are listed **without a link**. Make your own controls show and announce the error: put the message next to the control, set `aria-invalid="true"` and point `aria-describedby` at the message.
+
+### Choosing a display
+
+- Use `checkboxes` rather than a `select` with `multiple` for a choice of several: a multiple select is hard to use with a keyboard and a screen reader.
+- Use radio buttons for a single choice of up to five options. The plugin does this by default and falls back to a select above five.
+
+### Labels and text
+
+- Labels are short, unique within the form and visible. Never use a placeholder as the label: it disappears when the user types.
+- In notification text avoid symbols such as arrows (read out as "right arrow" or not at all), and give a link a name that makes sense out of context, such as "Akismet changelog" rather than "Details". `Notification_Renderer` already writes "Akismet from version 5.6 to 5.7.2" and links named after the item; use it for the message, as the [example channel](../../examples/wpun-example-channel/) does.
+
+### Checking
+
+`make a11y` in the plugin repository runs axe and keyboard checks of the settings screen on a throwaway site, including a form with every field type. Also tab through your form and listen to it with a screen reader.
+
 ## Checklist
 
 - The header has `Requires Plugins: wp-updates-notifier` and `Requires WPUN API` with the constraint, and `boot()` checks `sc_wpun_api_satisfies( '^1.0' )` for code outside the channel.
@@ -308,6 +351,7 @@ You can run the plugin's own checks on your add-on:
 - `send()` always returns a `Delivery_Result` and never retries or sleeps.
 - HTTP uses `wp_safe_remote_post()` for user-supplied addresses, a short timeout and a status check.
 - 429 returns a failure with `Retry-After`.
+- Fields are schema fields where possible; custom markup has labels, described help text and its own error display (see [Accessibility](#accessibility)).
 - Long messages are summarised with "…and N more".
 - The payload goes through `filter_payload()`.
 - Only the public API is used: nothing tagged `@internal`, not `sc_wpun()`, and not the plugin's options directly.
