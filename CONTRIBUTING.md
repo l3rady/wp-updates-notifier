@@ -11,6 +11,15 @@ Thanks for helping. Everything runs in Docker, so the only things you need are
   PHP notices or `doing_it_wrong` messages. It also runs with a persistent
   object cache. For changes that save or read options, transients or channels,
   check them with the cache on and with `make site-setup OBJECT_CACHE=off`.
+- Changes to the settings screen must keep `make a11y` passing (about 40
+  seconds, Docker only; CI runs it on every pull request): axe scans of every
+  settings view for WCAG 2.2 A and AA, and keyboard checks of the Channels list
+  and a channel form, on a throwaway site that never touches `make up`. It lists
+  each violation with its rule, elements and help text; the report is in
+  `tests/e2e/reports/html/index.html` (the `a11y-report` artifact when CI fails).
+  Also check new markup by keyboard and with a screen reader. Playwright is
+  pinned by image digest and npm lockfile in `tests/e2e/`: keep the image tag
+  and `@playwright/test` at the same version.
 - Commits use [Conventional Commits](https://www.conventionalcommits.org/)
   (`fix(cron): …`, `feat!: …` for breaking changes). They decide the next
   version number, so write them with care. `make commits` checks the commits on

@@ -49,7 +49,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -200,6 +200,9 @@ taint: deps ## Psalm taint analysis from untrusted sources (plugin headers, opti
 
 dast: ## OWASP ZAP against a throwaway copy of the site (own compose project wpun-dast, never touches make up; fails on Medium/High alerts; slow)
 	@./tests/dast/run.sh
+
+a11y: ## axe and keyboard checks of the settings screen on a throwaway site (own compose project wpun-e2e, never touches make up)
+	@./tests/e2e/run.sh
 
 security: check-workflows secrets audit sast taint ## Run every security check
 

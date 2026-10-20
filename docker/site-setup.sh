@@ -34,16 +34,20 @@ fi
 
 # SITE_MODE=dast (tests/dast/compose.yml, `make dast`) sets up the site the scanner will attack: production-like, with
 # no debug output, no developer tools and no object cache, and only the pieces of the plugin the scan needs.
+# SITE_MODE=e2e (tests/e2e/compose.yml, `make a11y`) sets up the same, for the browser checks: debugging output and
+# developer tools such as Query Monitor would add markup the checks should not see.
 SITE_MODE="${SITE_MODE:-dev}"
 
-if [ "$SITE_MODE" = dast ]; then
+case "$SITE_MODE" in dast | e2e) throwaway=yes ;; *) throwaway=no ;; esac
+
+if [ "$throwaway" = yes ]; then
 	wp config set WP_ENVIRONMENT_TYPE production --type=constant --quiet
 	wp config set WP_DEBUG false --raw --type=constant --quiet
 	wp plugin is-active wp-updates-notifier || wp plugin activate wp-updates-notifier --quiet
 	wp plugin is-active wpun-field-showcase || wp plugin activate wpun-field-showcase --quiet
 fi
 
-if [ "$SITE_MODE" != dast ]; then
+if [ "$throwaway" = no ]; then
 	# Debugging (#175). Errors show on the page and go to wp-content/debug.log (`make site-log`).
 	wp config set WP_ENVIRONMENT_TYPE local --type=constant --quiet
 	wp config set WP_DEBUG true --raw --type=constant --quiet
@@ -109,17 +113,23 @@ seed_theme() { # <slug> <version>
 		wp theme install "$1" --version="$2" --force --quiet
 	fi
 }
-seed_plugin akismet 5.6 active
-seed_plugin classic-editor 1.6.7 inactive
-seed_plugin hello-dolly 1.6 inactive
-if ! wp plugin auto-updates status hello-dolly --enabled-only --field=name | grep -q hello-dolly; then
-	wp plugin auto-updates enable hello-dolly --quiet
+# SITE_MODE=e2e skips these downloads from WordPress.org: the checks do not depend on pending updates, and without
+# them the setup is faster and works offline apart from WordPress itself.
+if [ "$SITE_MODE" != e2e ]; then
+	seed_plugin akismet 5.6 active
+	seed_plugin classic-editor 1.6.7 inactive
+	seed_plugin hello-dolly 1.6 inactive
+	if ! wp plugin auto-updates status hello-dolly --enabled-only --field=name | grep -q hello-dolly; then
+		wp plugin auto-updates enable hello-dolly --quiet
+	fi
 fi
 wp plugin is-active hello || wp plugin activate hello --quiet
 wp plugin is-installed wpun-dummy && { wp plugin is-active wpun-dummy || wp plugin activate wpun-dummy --quiet; }
-seed_theme twentytwentyfour 1.3
-seed_theme twentytwentythree 1.5
-wp theme is-installed twentytwentyfive || wp theme install twentytwentyfive --quiet
-[ "$(wp option get stylesheet)" = twentytwentyfour ] || wp theme activate twentytwentyfour --quiet
+if [ "$SITE_MODE" != e2e ]; then
+	seed_theme twentytwentyfour 1.3
+	seed_theme twentytwentythree 1.5
+	wp theme is-installed twentytwentyfive || wp theme install twentytwentyfive --quiet
+	[ "$(wp option get stylesheet)" = twentytwentyfour ] || wp theme activate twentytwentyfour --quiet
+fi
 
 echo "Local site ready: $SITE_URL (admin / admin), mail in Mailpit on http://localhost:8025"

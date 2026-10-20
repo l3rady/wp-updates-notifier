@@ -40,6 +40,17 @@ updates:
     commit-message:
       prefix: ci
 
+  # The Playwright image (and the database) of the `make a11y` site, tests/e2e/compose.yml. Its tag must stay at the
+  # version of @playwright/test in tests/e2e/package.json: update them together.
+  - package-ecosystem: docker-compose
+    directory: /tests/e2e
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: ci
+
   - package-ecosystem: composer
     directory: /
     schedule:
@@ -74,6 +85,17 @@ updates:
   # commitlint for `make commits`, installed with npm ci from docker/commitlint/package-lock.json.
   - package-ecosystem: npm
     directory: /docker/commitlint
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope
+
+  # Playwright and axe for `make a11y`, installed with npm ci from tests/e2e/package-lock.json.
+  - package-ecosystem: npm
+    directory: /tests/e2e
     schedule:
       interval: weekly
     cooldown:

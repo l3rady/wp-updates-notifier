@@ -1,0 +1,14 @@
+{
+  "name": "wp-updates-notifier-e2e",
+  "description": "Browser checks for `make a11y`, installed with npm ci from package-lock.json inside the Playwright image (tests/e2e/compose.yml). Development only, never shipped. Keep @playwright/test and playwright-core (pinned so axe-core/playwright's peer range does not pull a newer one) at the version of the image tag there.",
+  "private": true,
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0",
+    "playwright-core": "1.63.0"
+  }
+}

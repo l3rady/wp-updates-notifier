@@ -1,0 +1,98 @@
+# The throwaway site `make a11y` checks (tests/e2e/specs). Always run as its own project
+# (`docker compose -p wpun-e2e -f tests/e2e/compose.yml`): its containers, network and volumes are named after the
+# project, so nothing here can touch the local site from `make up`. No port is published; the browser joins the
+# network and reaches WordPress at http://wordpress:8080.
+name: wpun-e2e
+
+x-site: &site
+  build:
+    context: ../..
+    dockerfile: docker/Dockerfile
+    target: site
+    args:
+      PHP_VERSION: ${PHP_VERSION:-8.3}
+  # The same image as the local site (docker-compose.yml), so it is built once and shared.
+  image: wp-updates-notifier:site-php${PHP_VERSION:-8.3}
+
+services:
+  db:
+    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: wordpress
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  wordpress:
+    <<: *site
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp:/var/www/html
+      - ../../docker/apache/ports.conf:/etc/apache2/ports.conf:ro
+      - ../../docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
+      - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
+      - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
+      - ../../docker/dev-plugins/wpun-dummy:/var/www/html/wp-content/plugins/wpun-dummy:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
+  # WP-CLI: installs and seeds the site with docker/site-setup.sh (SITE_MODE=e2e), then tests/e2e/seed.sh.
+  wp-cli:
+    <<: *site
+    user: "33:33"
+    working_dir: /var/www/html
+    depends_on:
+      - wordpress
+    volumes:
+      - wp:/var/www/html
+      - ../../docker/site-setup.sh:/usr/local/bin/wpun-site-setup:ro
+      - ./seed.sh:/usr/local/bin/wpun-e2e-seed:ro
+      - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
+      - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
+      - ../../docker/dev-plugins/wpun-dummy:/var/www/html/wp-content/plugins/wpun-dummy:ro
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_NAME: wordpress
+      SITE_MODE: e2e
+      SITE_URL: http://wordpress:8080
+    entrypoint: ["wp"]
+
+  # Playwright with axe (specs in ./specs), from the official image: its tag is the version of @playwright/test in
+  # package.json. Installs the packages with npm ci from package-lock.json, then runs the specs. Runs as the host user
+  # so node_modules and reports/ in this directory are yours. A browser inside the container, so it needs a PID 1 that
+  # reaps zombies (init) and the host's shared memory (ipc).
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /e2e
+    init: true
+    ipc: host
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    environment:
+      HOME: /tmp
+      E2E_BASE_URL: http://wordpress:8080
+    volumes:
+      - .:/e2e
+    command: ["sh", "-c", "npm ci --no-fund --no-audit && npx playwright test"]
+
+volumes:
+  wp:
