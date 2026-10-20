@@ -462,7 +462,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 			$node = $xp->query( $case[1] )->item( 0 );
 			$this->assertNotNull( $node, $html );
 			$this->assertSame( 'true', $node->getAttribute( 'aria-invalid' ), $html );
-			$this->assertSame( 'i-desc i-error', $node->getAttribute( 'aria-describedby' ), $html );
+			$this->assertSame( 'secret' === $case[0]['type'] ? 'i-saved i-desc i-error' : 'i-desc i-error', $node->getAttribute( 'aria-describedby' ), $html ); // A saved secret is also described by its own note.
 			$p = $xp->query( '//p[@class="sc-wpun-field-error"][@id="i-error"]' );
 			$this->assertSame( 1, $p->length );
 			$this->assertSame( 'Error: Needs <b>fixing</b>', $p->item( 0 )->textContent );

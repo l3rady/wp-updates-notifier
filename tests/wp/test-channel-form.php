@@ -964,6 +964,12 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertSame( '', $xpath->query( '//input[@name="settings[token]"]' )->item( 0 )->getAttribute( 'value' ) );
 		$this->assertSame( 1, $xpath->query( '//input[@type="checkbox"][@name="settings[token__clear]"]' )->length );
 
+		$token = $xpath->query( '//input[@name="settings[token]"]' )->item( 0 );
+		$this->assertFalse( $token->hasAttribute( 'placeholder' ) );
+		$this->assertStringContainsString( 'sc_wpun_channel_settings_token-saved', $token->getAttribute( 'aria-describedby' ) );
+		$this->assertStringStartsWith( 'A value is saved.', $this->text( $xpath, '//p[@id="sc_wpun_channel_settings_token-saved"][contains(@class,"description")]' ) );
+		$this->assertSame( 'Clear the saved value of Token', $this->text( $xpath, '//label[@for="sc_wpun_channel_settings_token__clear"]' ) );
+
 		$this->post_fixture( array(), 'edit', 'fixture' );
 		sc_wpun()->channel_form()->process_save();
 		$this->assertSame( self::SECRET, $this->raw( 'fixture' )['settings']['token'], 'Empty keeps it.' );
@@ -1257,6 +1263,52 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Two saved secrets in one form each have their own description and a clear checkbox named after the field; an unsaved one has neither.
+	 */
+	public function test_secrets_are_told_apart() {
+		add_filter(
+			'sc_wpun_channel_fields',
+			static function ( $fields, $type ) {
+				if ( 'fixture' === $type ) {
+					$fields['signing'] = array(
+						'type'  => 'secret',
+						'label' => 'Signing secret',
+					);
+					$fields['unused']  = array(
+						'type'  => 'secret',
+						'label' => 'Unused secret',
+					);
+				}
+
+				return $fields;
+			},
+			10,
+			2
+		);
+		$this->store_fixture( 'fixture', array( 'signing' => 'signing-SECRET-333' ) );
+
+		$xpath = $this->parse(
+			$this->html(
+				array(
+					'action' => 'edit',
+					'id'     => 'fixture',
+				)
+			)
+		);
+		$this->assertSame( 'Clear the saved value of Token', $this->text( $xpath, '//label[@for="sc_wpun_channel_settings_token__clear"]' ) );
+		$this->assertSame( 'Clear the saved value of Signing secret', $this->text( $xpath, '//label[@for="sc_wpun_channel_settings_signing__clear"]' ) );
+		$this->assertSame( 1, $xpath->query( '//input[@name="settings[token__clear]"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//input[@name="settings[signing__clear]"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//p[@id="sc_wpun_channel_settings_signing-saved"]' )->length );
+
+		$this->assertSame( 0, $xpath->query( '//p[@id="sc_wpun_channel_settings_unused-saved"]' )->length );
+		$this->assertSame( 0, $xpath->query( '//input[@name="settings[unused__clear]"]' )->length );
+		$unused = $xpath->query( '//input[@name="settings[unused]"]' )->item( 0 );
+		$this->assertFalse( $unused->hasAttribute( 'placeholder' ) );
+		$this->assertStringNotContainsString( '-saved', $unused->getAttribute( 'aria-describedby' ) );
+	}
+
+	/**
 	 * A secret supplied from outside is never output.
 	 */
 	public function test_an_external_secret_is_never_output() {
@@ -1276,6 +1328,8 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertSame( 'disabled', $token->getAttribute( 'disabled' ) );
 		$this->assertSame( '', $token->getAttribute( 'value' ) );
 		$this->assertSame( 0, $xpath->query( '//input[@name="settings[token__clear]"]' )->length );
+		$this->assertSame( 0, $xpath->query( '//p[@id="sc_wpun_channel_settings_token-saved"]' )->length );
+		$this->assertStringNotContainsString( 'sc_wpun_channel_settings_token-saved', $token->getAttribute( 'aria-describedby' ) );
 		$this->assertStringContainsString( 'Set by Test vault', $this->text( $xpath, '//body' ) );
 
 		$this->post_fixture(

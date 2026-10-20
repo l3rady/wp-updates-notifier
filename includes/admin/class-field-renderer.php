@@ -256,14 +256,21 @@ final class Field_Renderer {
 	 * @return string
 	 */
 	public static function secret( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Same signature as the other types.
-		$saved = is_scalar( $value ) && '' !== (string) $value;
-		$hint  = $saved && ! $disabled ? ' placeholder="' . esc_attr__( 'A value is saved. Leave empty to keep it.', 'wp-updates-notifier' ) . '"' : '';
-		$html  = '<input type="password" class="regular-text" autocomplete="off" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value=""' . $hint . self::common( $disabled, $described_by, $error ) . ' />';
+		$saved = is_scalar( $value ) && '' !== (string) $value && ! $disabled;
+		$label = isset( $field['label'] ) && is_string( $field['label'] ) ? $field['label'] : '';
+		if ( $saved ) {
+			$described_by = trim( $id . '-saved ' . $described_by );
+		}
+		$html = '<input type="password" class="regular-text" autocomplete="off" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value=""' . self::common( $disabled, $described_by, $error ) . ' />';
 
-		if ( $saved && ! $disabled ) {
+		if ( $saved ) {
 			$clear = ']' === substr( $name, -1 ) ? substr( $name, 0, -1 ) . '__clear]' : $name . '__clear';
-			$html .= '<br /><label for="' . esc_attr( $id . '__clear' ) . '"><input type="checkbox" id="' . esc_attr( $id . '__clear' ) . '" name="' . esc_attr( $clear ) . '" value="1" /> '
-				. esc_html__( 'Clear the saved value', 'wp-updates-notifier' ) . '</label>';
+			// The checkbox is named after the field, so several secrets in one form can be told apart.
+			// translators: %s: Label of the field, for example "Webhook URL".
+			$clear_text = '' === $label ? __( 'Clear the saved value', 'wp-updates-notifier' ) : sprintf( __( 'Clear the saved value of %s', 'wp-updates-notifier' ), $label );
+			$html      .= '<p class="description" id="' . esc_attr( $id . '-saved' ) . '">' . esc_html__( 'A value is saved. Leave this empty to keep it, or type a new value to replace it.', 'wp-updates-notifier' ) . '</p>'
+				. '<label for="' . esc_attr( $id . '__clear' ) . '"><input type="checkbox" id="' . esc_attr( $id . '__clear' ) . '" name="' . esc_attr( $clear ) . '" value="1" /> '
+				. esc_html( $clear_text ) . '</label>';
 		}
 
 		return $html;

@@ -393,7 +393,7 @@ class Test_Security_Secrets extends WPUN_Security_Test_Case {
 			)
 		);
 		$xpath = $this->parse( $page );
-		$this->assertSame( 1, $xpath->query( '//input[@name="settings[token]"][@type="password"][@value=""][contains(@placeholder,"saved")]' )->length, 'The token field is not a masked, empty password input.' );
+		$this->assertSame( 1, $xpath->query( '//input[@name="settings[token]"][@type="password"][@value=""][not(@placeholder)][contains(@aria-describedby,"sc_wpun_channel_settings_token-saved")]' )->length, 'The token field is not a masked, empty password input.' );
 		$this->assertSame( 0, $xpath->query( '//*[contains(@value,"SECRET")]' )->length );
 
 		$constant = $this->provide( 'constant' );
