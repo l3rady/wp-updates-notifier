@@ -363,6 +363,43 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	}
 
 	/**
+	 * An invalid value marks its own field and describes it with the message that says what to choose; the others stay clean.
+	 */
+	public function test_an_invalid_value_is_shown_on_its_field() {
+		$this->plugin()->sc_wpun_settings_validate(
+			array(
+				'frequency'      => 'every_second',
+				'notify_plugins' => 'sometimes',
+			)
+		);
+		get_settings_errors(); // The page title asks first.
+
+		ob_start();
+		$this->plugin()->settings_page();
+		$html = ob_get_clean();
+
+		$doc = new DOMDocument();
+		libxml_use_internal_errors( true );
+		$doc->loadHTML( $html );
+		libxml_clear_errors();
+		$xpath = new DOMXPath( $doc );
+
+		$freq = $xpath->query( '//*[@id="sc_wpun_settings_main_frequency"]' )->item( 0 );
+		$this->assertSame( 'true', $freq->getAttribute( 'aria-invalid' ) );
+		$this->assertSame( 'sc_wpun_settings_main_frequency-error', $freq->getAttribute( 'aria-describedby' ) );
+		$this->assertSame( 'Error: Choose how often to check for updates.', trim( $xpath->query( '//p[@id="sc_wpun_settings_main_frequency-error"]' )->item( 0 )->textContent ) );
+
+		$fieldset = $xpath->query( '//fieldset[@id="sc_wpun_settings_main_notify_plugins"]' )->item( 0 );
+		$this->assertSame( 'true', $fieldset->getAttribute( 'aria-invalid' ) );
+		$this->assertSame( 'Error: Choose whether to be told about plugin updates.', trim( $xpath->query( '//p[@id="sc_wpun_settings_main_notify_plugins-error"]' )->item( 0 )->textContent ) );
+
+		$this->assertSame( 2, $xpath->query( '//p[contains(@class,"sc-wpun-field-error")]' )->length );
+		$this->assertSame( 2, $xpath->query( '//*[@aria-invalid]' )->length );
+		$this->assertSame( 0, $xpath->query( '//fieldset[@id="sc_wpun_settings_main_notify_themes"][@aria-invalid]' )->length );
+		$this->assertStringContainsString( 'Choose how often to check for updates.', $html, 'Core still shows its notice.' );
+	}
+
+	/**
 	 * The email keys of the 1.x form are ignored: not saved to the instance, not forwarded, not kept in the option.
 	 */
 	public function test_the_old_email_keys_are_ignored() {

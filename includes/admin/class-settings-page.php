@@ -481,11 +481,11 @@ class Settings_Page {
 
 		// Validate main settings with their field types. A missing value keeps the stored one: a read-only setting is not submitted.
 		$messages = array(
-			'frequency'      => __( 'Invalid frequency entered', 'wp-updates-notifier' ),
-			'notify_core'    => __( 'Invalid WordPress updates value entered', 'wp-updates-notifier' ),
-			'notify_plugins' => __( 'Invalid plugin updates value entered', 'wp-updates-notifier' ),
-			'notify_themes'  => __( 'Invalid theme updates value entered', 'wp-updates-notifier' ),
-			'hide_updates'   => __( 'Invalid hide updates value entered', 'wp-updates-notifier' ),
+			'frequency'      => __( 'Choose how often to check for updates.', 'wp-updates-notifier' ),
+			'notify_core'    => __( 'Choose whether to be told about WordPress updates.', 'wp-updates-notifier' ),
+			'notify_plugins' => __( 'Choose whether to be told about plugin updates.', 'wp-updates-notifier' ),
+			'notify_themes'  => __( 'Choose whether to be told about theme updates.', 'wp-updates-notifier' ),
+			'hide_updates'   => __( 'Choose whether to hide the update notices.', 'wp-updates-notifier' ),
 		);
 		foreach ( $this->settings->schemas() as $name => $schema ) {
 			if ( ! array_key_exists( $name, $input ) ) {
@@ -495,7 +495,9 @@ class Settings_Page {
 			if ( $checked['ok'] ) {
 				$valid[ $name ] = $checked['value'];
 			} else {
-				add_settings_error( 'sc_wpun_settings_main_' . $name, 'sc_wpun_settings_main_' . $name . '_error', $messages[ $name ] ?? $name, 'error' );
+				// translators: %s: Label of the setting.
+				$fallback = sprintf( __( 'Choose a value for %s.', 'wp-updates-notifier' ), isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name );
+				add_settings_error( 'sc_wpun_settings_main_' . $name, 'sc_wpun_settings_main_' . $name . '_error', $messages[ $name ] ?? $fallback, 'error' );
 			}
 		}
 
@@ -584,7 +586,16 @@ class Settings_Page {
 			$extra[ $value ] = sprintf( __( '%s (no longer available)', 'wp-updates-notifier' ), $value );
 		}
 
-		echo Field_Renderer::field( $schemas[ $name ], Settings::OPT_FIELD . '[' . $name . ']', 'sc_wpun_settings_main_' . $name, $value, $this->is_external( $name ), '', $extra ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
+		// Core keeps the errors of the last save for this page load, whoever asked for them first.
+		$error = '';
+		foreach ( get_settings_errors( 'sc_wpun_settings_main_' . $name ) as $found ) {
+			if ( 'error' === $found['type'] ) {
+				$error = $found['message'];
+				break;
+			}
+		}
+
+		echo Field_Renderer::field( $schemas[ $name ], Settings::OPT_FIELD . '[' . $name . ']', 'sc_wpun_settings_main_' . $name, $value, $this->is_external( $name ), '', $extra, $error ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
 		if ( $unavailable ) {
 			?>
 			<p class="description sc-wpun-frequency-unavailable">

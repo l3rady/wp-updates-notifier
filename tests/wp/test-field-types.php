@@ -465,7 +465,8 @@ class Test_Field_Types extends WPUN_Test_Case {
 			$this->assertSame( 'i-desc i-error', $node->getAttribute( 'aria-describedby' ), $html );
 			$p = $xp->query( '//p[@class="sc-wpun-field-error"][@id="i-error"]' );
 			$this->assertSame( 1, $p->length );
-			$this->assertSame( 'Needs <b>fixing</b>', $p->item( 0 )->textContent );
+			$this->assertSame( 'Error: Needs <b>fixing</b>', $p->item( 0 )->textContent );
+			$this->assertSame( 1, $xp->query( '//p[@id="i-error"]/strong[text()="Error:"]' )->length );
 			$this->assertSame( 0, $xp->query( '//b' )->length );
 		}
 

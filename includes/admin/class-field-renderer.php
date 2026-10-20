@@ -134,7 +134,7 @@ final class Field_Renderer {
 		}
 
 		if ( '' !== $error ) {
-			$html .= '<p class="sc-wpun-field-error" id="' . esc_attr( $error_id ) . '">' . esc_html( $error ) . '</p>';
+			$html .= '<p class="sc-wpun-field-error" id="' . esc_attr( $error_id ) . '"><strong>' . esc_html__( 'Error:', 'wp-updates-notifier' ) . '</strong> ' . esc_html( $error ) . '</p>';
 		}
 
 		return $html;

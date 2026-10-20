@@ -830,7 +830,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'sc_wpun_channel_settings_to-error', $to->getAttribute( 'aria-describedby' ) );
 		$this->assertStringContainsString( 'sc_wpun_channel_settings_to-description', $to->getAttribute( 'aria-describedby' ) );
 		$this->assertSame( 'not-an-address', $to->getAttribute( 'value' ) );
-		$this->assertSame( 'One or more email addresses to send to are invalid.', $this->text( $xpath, '//p[@id="sc_wpun_channel_settings_to-error"]' ) );
+		$this->assertSame( 'Error: One or more email addresses to send to are invalid.', $this->text( $xpath, '//p[@id="sc_wpun_channel_settings_to-error"]' ) );
 
 		$summary = $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")][@role="alert"]//li/a[@href="#sc_wpun_channel_settings_to"]' );
 		$this->assertSame( 1, $summary->length );

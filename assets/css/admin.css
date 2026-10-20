@@ -37,3 +37,23 @@
 		flex: 0 1 100%;
 	}
 }
+
+/*
+ * The message under a field that failed validation. Core's darker error red, which keeps 4.5:1 contrast on the grey
+ * admin background too, and a bold "Error:" in the text, so it is not told apart by colour alone and shows in forced
+ * colours mode.
+ */
+.sc-wpun-field-error {
+	margin: 4px 0 0;
+	color: #b32d2e;
+}
+
+.sc-wpun-field-error strong {
+	font-weight: 600;
+}
+
+@media (forced-colors: active) {
+	.sc-wpun-field-error {
+		color: CanvasText;
+	}
+}
