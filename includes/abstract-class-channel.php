@@ -27,6 +27,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `description` (string): help text.
  * - `default` (mixed): value used when nothing is stored.
  * - `required` (bool): the field must have a value. A `false` boolean and a `0` number count as values.
+ *   The form also marks the field: "(required)" after its label (not for a boolean, which is always valid) and `aria-required="true"` on its
+ *   control. A custom field type's renderer gets the schema and can read `required` to do the same.
  * - `secret` (bool): the value is never shown again once saved, like a `secret`. Works for every type, including added ones, whose renderer then
  *   only gets `'1'` (a value is saved) or `''`.
  * - `show_external` (bool): for `text`, `textarea`, `url` and `email_list`, show the value on the edit screen when it comes from outside the

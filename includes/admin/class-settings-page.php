@@ -458,7 +458,9 @@ class Settings_Page {
 			if ( $this->is_select( $schema ) ) {
 				$args['label_for'] = $id;
 			}
-			add_settings_field( $id, isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name, array( $this, 'render_setting' ), 'wp-updates-notifier', 'sc_wpun_settings_main', $args );
+			// Core prints the title as it is, so the marker is added here.
+			$title = ( isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name ) . ( Field_Renderer::is_required( $schema ) ? Field_Renderer::required_marker() : '' );
+			add_settings_field( $id, $title, array( $this, 'render_setting' ), 'wp-updates-notifier', 'sc_wpun_settings_main', $args );
 		}
 	}
 

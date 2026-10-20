@@ -195,6 +195,17 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 	}
 
 	/**
+	 * No global setting is required, so no row of the General tab carries the marker.
+	 */
+	public function test_no_general_row_is_marked_required() {
+		$this->save_settings();
+		$xpath = $this->page();
+
+		$this->assertSame( 0, $xpath->query( '//th[contains(.,"(required)")]' )->length );
+		$this->assertSame( 0, $xpath->query( '//*[@aria-required]' )->length );
+	}
+
+	/**
 	 * The removed Automatic updates setting has no row on the page.
 	 */
 	public function test_there_is_no_automatic_updates_row() {

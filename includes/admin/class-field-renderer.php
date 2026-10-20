@@ -58,6 +58,7 @@ final class Field_Renderer {
 		$input_name = $multiple ? $name . '[]' : $name;
 		$disable    = $disabled ? ' disabled="disabled"' : '';
 		$describe   = ( '' !== $described_by ? ' aria-describedby="' . esc_attr( $described_by ) . '"' : '' ) . ( '' !== $error ? ' aria-invalid="true"' : '' );
+		$required   = self::is_required( $field );
 		$html       = '';
 
 		// Nothing chosen submits nothing at all, so a list says so with an empty value.
@@ -66,7 +67,7 @@ final class Field_Renderer {
 		}
 
 		if ( 'select' === $field['display'] ) {
-			$html .= '<select id="' . esc_attr( $id ) . '" name="' . esc_attr( $input_name ) . '"' . ( $multiple ? ' multiple="multiple"' : '' ) . $disable . $describe . '>';
+			$html .= '<select id="' . esc_attr( $id ) . '" name="' . esc_attr( $input_name ) . '"' . ( $multiple ? ' multiple="multiple"' : '' ) . $disable . $describe . ( $required ? ' aria-required="true"' : '' ) . '>';
 			foreach ( $options as $key => $label ) {
 				$html .= '<option value="' . esc_attr( $key ) . '"' . ( in_array( $key, $chosen, true ) ? ' selected="selected"' : '' ) . '>' . esc_html( $label ) . '</option>';
 			}
@@ -76,7 +77,9 @@ final class Field_Renderer {
 
 		$type   = $multiple ? 'checkbox' : 'radio';
 		$legend = isset( $field['label'] ) && is_string( $field['label'] ) ? $field['label'] : '';
-		$html  .= '<fieldset id="' . esc_attr( $id ) . '"' . $describe . '><legend class="screen-reader-text"><span>' . esc_html( $legend ) . '</span></legend>';
+		// A group of radio buttons can be required (`aria-required` is for a radio group, not a plain fieldset); a group of checkboxes has only the text.
+		$group = ! $multiple && $required ? ' role="radiogroup" aria-required="true"' : '';
+		$html .= '<fieldset id="' . esc_attr( $id ) . '"' . $group . $describe . '><legend class="screen-reader-text"><span>' . esc_html( $legend ) . ( $required ? self::required_marker() : '' ) . '</span></legend>';
 
 		$index = 0;
 		foreach ( $options as $key => $label ) {
@@ -213,7 +216,7 @@ final class Field_Renderer {
 			}
 		}
 
-		return '<input type="number" class="small-text" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( is_scalar( $value ) ? (string) $value : '' ) . '"' . $extra . self::common( $disabled, $described_by, $error ) . ' />';
+		return '<input type="number" class="small-text" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( is_scalar( $value ) ? (string) $value : '' ) . '"' . $extra . self::common( $disabled, $described_by, $error, self::is_required( $field ) ) . ' />';
 	}
 
 	/**
@@ -234,7 +237,7 @@ final class Field_Renderer {
 			return self::secret( $field, $name, $id, $value, $disabled, $described_by, $error );
 		}
 
-		return '<textarea class="large-text" rows="5" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '"' . self::common( $disabled, $described_by, $error ) . '>'
+		return '<textarea class="large-text" rows="5" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '"' . self::common( $disabled, $described_by, $error, self::is_required( $field ) ) . '>'
 			. esc_textarea( is_scalar( $value ) ? (string) $value : '' ) . '</textarea>';
 	}
 
@@ -256,12 +259,13 @@ final class Field_Renderer {
 	 * @return string
 	 */
 	public static function secret( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Same signature as the other types.
-		$saved = is_scalar( $value ) && '' !== (string) $value && ! $disabled;
-		$label = isset( $field['label'] ) && is_string( $field['label'] ) ? $field['label'] : '';
+		$has_value = is_scalar( $value ) && '' !== (string) $value;
+		$saved     = $has_value && ! $disabled;
+		$label     = isset( $field['label'] ) && is_string( $field['label'] ) ? $field['label'] : '';
 		if ( $saved ) {
 			$described_by = trim( $id . '-saved ' . $described_by );
 		}
-		$html = '<input type="password" class="regular-text" autocomplete="off" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value=""' . self::common( $disabled, $described_by, $error ) . ' />';
+		$html = '<input type="password" class="regular-text" autocomplete="off" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value=""' . self::common( $disabled, $described_by, $error, self::is_required( $field ) && ! $has_value ) . ' />';
 
 		if ( $saved ) {
 			$clear = ']' === substr( $name, -1 ) ? substr( $name, 0, -1 ) . '__clear]' : $name . '__clear';
@@ -296,7 +300,28 @@ final class Field_Renderer {
 			return self::secret( $field, $name, $id, $value, $disabled, $described_by, $error );
 		}
 
-		return '<input type="' . $type . '" class="' . $class_name . '" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( is_scalar( $value ) ? (string) $value : '' ) . '"' . self::common( $disabled, $described_by, $error ) . ' />';
+		return '<input type="' . $type . '" class="' . $class_name . '" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( is_scalar( $value ) ? (string) $value : '' ) . '"' . self::common( $disabled, $described_by, $error, self::is_required( $field ) ) . ' />';
+	}
+
+	/**
+	 * Whether a field is marked as required in the form: `required` is true, and it is not a boolean, which is always valid.
+	 *
+	 * @param array<string, mixed> $field Field schema.
+	 *
+	 * @return bool
+	 */
+	public static function is_required( array $field ): bool {
+		return true === ( $field['required'] ?? false ) && 'boolean' !== Field_Types::canonical( $field['type'] ?? null );
+	}
+
+	/**
+	 * The marker after the label of a required field, as core has it on its user screens.
+	 *
+	 * @return string Escaped markup, with a leading space.
+	 */
+	public static function required_marker(): string {
+		// translators: Shown after the label of a field that must be filled in.
+		return ' <span class="description">' . esc_html__( '(required)', 'wp-updates-notifier' ) . '</span>';
 	}
 
 	/**
@@ -305,11 +330,13 @@ final class Field_Renderer {
 	 * @param bool   $disabled     Whether disabled.
 	 * @param string $described_by Ids of the elements that describe the field.
 	 * @param string $error        Error message, if any.
+	 * @param bool   $required     Whether the field is required.
 	 *
 	 * @return string
 	 */
-	private static function common( bool $disabled, string $described_by, string $error ): string {
+	private static function common( bool $disabled, string $described_by, string $error, bool $required = false ): string {
 		return ( $disabled ? ' disabled="disabled"' : '' )
+			. ( $required ? ' aria-required="true"' : '' )
 			. ( '' !== $described_by ? ' aria-describedby="' . esc_attr( $described_by ) . '"' : '' )
 			. ( '' !== $error ? ' aria-invalid="true"' : '' );
 	}

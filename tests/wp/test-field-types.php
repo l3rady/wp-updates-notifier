@@ -428,6 +428,96 @@ class Test_Field_Types extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A required field is marked with the text and `aria-required`; an optional one is not.
+	 */
+	public function test_required_fields_are_marked() {
+		$options = array(
+			'a' => 'A',
+			'b' => 'B',
+		);
+		foreach (
+			array(
+				'text'     => array( array( 'type' => 'text' ), '//input' ),
+				'url'      => array( array( 'type' => 'url' ), '//input' ),
+				'email'    => array( array( 'type' => 'email_list' ), '//input' ),
+				'number'   => array( array( 'type' => 'number' ), '//input' ),
+				'textarea' => array( array( 'type' => 'textarea' ), '//textarea' ),
+				'select'   => array(
+					array(
+						'type'    => 'enum',
+						'options' => $options,
+						'display' => 'select',
+					),
+					'//select',
+				),
+			) as $name => $case
+		) {
+			$optional = $this->xpath( Field_Renderer::field( $case[0], 'n', 'i', '' ) );
+			$required = $this->xpath( Field_Renderer::field( $case[0] + array( 'required' => true ), 'n', 'i', '' ) );
+			$this->assertSame( 'true', $required->query( $case[1] )->item( 0 )->getAttribute( 'aria-required' ), $name );
+			$this->assertFalse( $optional->query( $case[1] )->item( 0 )->hasAttribute( 'aria-required' ), $name );
+			$this->assertSame( 0, $required->query( '//*[@required]' )->length, $name . ': no HTML required attribute.' );
+		}
+
+		$radio = array(
+			'type'     => 'enum',
+			'label'    => 'Pick',
+			'options'  => $options,
+			'display'  => 'radio',
+			'required' => true,
+		);
+		$xp    = $this->xpath( Field_Renderer::field( $radio, 'n', 'i', 'a' ) );
+		$group = $xp->query( '//fieldset[@id="i"]' )->item( 0 );
+		$this->assertSame( 'radiogroup', $group->getAttribute( 'role' ) );
+		$this->assertSame( 'true', $group->getAttribute( 'aria-required' ) );
+		$this->assertSame( 'Pick (required)', trim( $xp->query( '//legend' )->item( 0 )->textContent ) );
+		$this->assertSame( 1, $xp->query( '//legend//span[@class="description"][.="(required)"]' )->length );
+		$xp = $this->xpath( Field_Renderer::field( array_diff_key( $radio, array( 'required' => 1 ) ), 'n', 'i', 'a' ) );
+		$this->assertFalse( $xp->query( '//fieldset' )->item( 0 )->hasAttribute( 'role' ) );
+		$this->assertFalse( $xp->query( '//fieldset' )->item( 0 )->hasAttribute( 'aria-required' ) );
+		$this->assertSame( 'Pick', trim( $xp->query( '//legend' )->item( 0 )->textContent ) );
+
+		$checks = array(
+			'multiple' => true,
+			'display'  => 'checkboxes',
+		) + $radio;
+		$xp     = $this->xpath( Field_Renderer::field( $checks, 'n', 'i', array( 'a' ) ) );
+		$group  = $xp->query( '//fieldset[@id="i"]' )->item( 0 );
+		$this->assertFalse( $group->hasAttribute( 'aria-required' ), 'No role supports it on a checkbox group.' );
+		$this->assertFalse( $group->hasAttribute( 'role' ) );
+		$this->assertSame( 'Pick (required)', trim( $xp->query( '//legend' )->item( 0 )->textContent ) );
+
+		foreach ( array( 'checkbox', 'radio', 'select' ) as $display ) {
+			$html = Field_Renderer::field(
+				array(
+					'type'     => 'boolean',
+					'label'    => 'Flag',
+					'display'  => $display,
+					'required' => true,
+				),
+				'n',
+				'i',
+				true
+			);
+			$this->assertStringNotContainsString( 'required', $html, 'A boolean is always valid: ' . $display );
+		}
+	}
+
+	/**
+	 * A required secret that already has a value keeps the text but not `aria-required`: leaving it empty is valid.
+	 */
+	public function test_a_required_secret_with_a_saved_value() {
+		$field = array(
+			'type'     => 'secret',
+			'required' => true,
+		);
+
+		$this->assertSame( 'true', $this->xpath( Field_Renderer::field( $field, 'n', 'i', '' ) )->query( '//input[@type="password"]' )->item( 0 )->getAttribute( 'aria-required' ) );
+		$this->assertFalse( $this->xpath( Field_Renderer::field( $field, 'n', 'i', 'saved' ) )->query( '//input[@type="password"]' )->item( 0 )->hasAttribute( 'aria-required' ) );
+		$this->assertTrue( Field_Renderer::is_required( $field ) );
+	}
+
+	/**
 	 * Errors are drawn after the control and linked to it.
 	 */
 	public function test_render_error() {

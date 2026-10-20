@@ -128,6 +128,8 @@ public function get_fields(): array {
 
 The types are `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `boolean` and `enum` (with `checkbox` and `select` as aliases). The full list of keys (`default`, `required`, `secret`, `show_external`, `options`, `multiple`, `display`, `min`, `max`, `sanitize_callback`, `validate_callback` and more) is documented on the `WPUN\Channel` class in [`includes/abstract-class-channel.php`](../../includes/abstract-class-channel.php).
 
+A field with `'required' => true` is also marked in the form: "(required)" after its label (not for a `boolean`, which is always valid) and `aria-required="true"` on its control. For a group of radio buttons the fieldset gets `role="radiogroup"` to carry it; a group of checkboxes has only the text. A `secret` that already has a saved value keeps the text but not the attribute, as leaving it empty is valid. A custom field type registered with `sc_wpun_field_types` receives the schema in its `render` callable, so read `required` there and do the same.
+
 Every instance also has a label, an on/off switch and routing. The plugin adds these; don't put them in `get_fields()`.
 
 ### Validation

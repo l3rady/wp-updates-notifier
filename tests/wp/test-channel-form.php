@@ -945,6 +945,25 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertSame( 'From meta', $xpath->query( '//input[@name="label"]' )->item( 0 )->getAttribute( 'value' ) );
 	}
 
+	// Required fields.
+
+	/**
+	 * The label and the required module fields are marked in the row header; optional ones are not.
+	 */
+	public function test_required_fields_are_marked_in_the_form() {
+		$xpath = $this->edit_page();
+
+		$this->assertSame( 'Label (required)', $this->text( $xpath, '//th/label[@for="sc_wpun_channel_label"]' ) );
+		$this->assertSame( 1, $xpath->query( '//th/label[@for="sc_wpun_channel_label"]/span[@class="description"][.="(required)"]' )->length );
+		$this->assertSame( 'true', $xpath->query( '//input[@name="label"]' )->item( 0 )->getAttribute( 'aria-required' ) );
+		$this->assertSame( 'true', $xpath->query( '//input[@name="settings[to]"]' )->item( 0 )->getAttribute( 'aria-required' ) );
+		$this->assertStringContainsString( '(required)', $this->text( $xpath, '//th/label[@for="sc_wpun_channel_settings_to"]' ) );
+		$this->assertSame( 0, $xpath->query( '//input[@name="settings[from]"][@aria-required]' )->length );
+		$this->assertStringNotContainsString( '(required)', $this->text( $xpath, '//th/label[@for="sc_wpun_channel_settings_from"]' ) );
+		$this->assertSame( 0, $xpath->query( '//*[@required]' )->length );
+		$this->assertStringNotContainsString( '(required)', $this->text( $xpath, '//th[contains(.,"Enabled")]' ), 'A boolean is always valid.' );
+	}
+
 	// Secrets.
 
 	/**

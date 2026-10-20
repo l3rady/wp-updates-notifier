@@ -520,10 +520,12 @@ class Channel_Form {
 	 * @param string $title    Text of the row header, already escaped.
 	 * @param string $target      Id of the single control the header labels; empty if the control names itself.
 	 * @param string $controls Markup of the cell, already escaped.
+	 * @param bool   $required Whether to mark the field as required.
 	 *
 	 * @return void
 	 */
-	private function row( string $title, string $target, string $controls ): void {
+	private function row( string $title, string $target, string $controls, bool $required = false ): void {
+		$title .= $required ? Field_Renderer::required_marker() : '';
 		$this->put(
 			'<tr><th scope="row">' . ( '' === $target ? $title : '<label for="' . esc_attr( $target ) . '">' . $title . '</label>' ) . '</th><td>' . $controls . '</td></tr>'
 		);
@@ -616,7 +618,7 @@ class Channel_Form {
 				}
 
 				$label_schema = $this->label_schema();
-				$this->row( esc_html( (string) $label_schema['label'] ), 'sc_wpun_channel_label', $this->control( $label_schema, 'label', 'sc_wpun_channel_label', $label, $errors['label'] ?? '' ) );
+				$this->row( esc_html( (string) $label_schema['label'] ), 'sc_wpun_channel_label', $this->control( $label_schema, 'label', 'sc_wpun_channel_label', $label, $errors['label'] ?? '' ), Field_Renderer::is_required( $label_schema ) );
 
 				$enabled_schema = Channel::enabled_field();
 				$this->row( esc_html( (string) $enabled_schema['label'] ), '', $this->control( $enabled_schema, 'enabled', 'sc_wpun_channel_enabled', $enabled, $errors['enabled'] ?? '', $external ) );
@@ -659,7 +661,8 @@ class Channel_Form {
 					$this->row(
 						esc_html( isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name ),
 						$this->labels_one_control( $schema ) ? $id : '',
-						$this->control( $schema, 'routing[' . $name . ']', $id, $routing[ $name ] ?? '', $errors[ 'routing.' . $name ] ?? '' )
+						$this->control( $schema, 'routing[' . $name . ']', $id, $routing[ $name ] ?? '', $errors[ 'routing.' . $name ] ?? '' ),
+						Field_Renderer::is_required( $schema )
 					);
 				}
 				?>
@@ -743,7 +746,7 @@ class Channel_Form {
 					$external = $is_new ? null : $this->store->external_source( $form_inst->get_id(), $name );
 					$value    = array_key_exists( $name, $settings ) ? $settings[ $name ] : ( $schema['default'] ?? '' );
 					$title    = isset( $schema['label'] ) && is_string( $schema['label'] ) && '' !== $schema['label'] ? $schema['label'] : $name;
-					$this->row( esc_html( $title ), $this->labels_one_control( $schema ) ? $id : '', $this->control( $schema, 'settings[' . $name . ']', $id, $value, $errors[ 'settings.' . $name ] ?? '', $external ) );
+					$this->row( esc_html( $title ), $this->labels_one_control( $schema ) ? $id : '', $this->control( $schema, 'settings[' . $name . ']', $id, $value, $errors[ 'settings.' . $name ] ?? '', $external ), Field_Renderer::is_required( $schema ) );
 				}
 				?>
 			</tbody>
