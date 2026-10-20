@@ -91,8 +91,8 @@ class Check_Now {
 		<form class="sc-wpun-check-now" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>" />
 			<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( self::ACTION ) ); ?>" />
-			<button type="submit" class="button"><?php esc_html_e( 'Check for updates and notify now', 'wp-updates-notifier' ); ?></button>
-			<p class="description">
+			<button type="submit" class="button" aria-describedby="sc-wpun-check-now-description"><?php esc_html_e( 'Check for updates and notify now', 'wp-updates-notifier' ); ?></button>
+			<p class="description" id="sc-wpun-check-now-description">
 				<?php
 				echo wp_kses(
 					sprintf(

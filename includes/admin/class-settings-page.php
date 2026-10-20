@@ -536,14 +536,15 @@ class Settings_Page {
 	 * Say where an externally supplied setting comes from. Settings are not secrets, so the field shows the value.
 	 *
 	 * @param string $name Setting name.
+	 * @param string $id   Id for the note, which the control points to.
 	 *
 	 * @return void
 	 */
-	private function external_note( string $name ): void {
+	private function external_note( string $name, string $id ): void {
 		$source = $this->settings->external_source( $name );
 		if ( null !== $source ) {
 			// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
-			echo ' <span class="description sc-wpun-external">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $source ) ) . '</span>';
+			echo ' <span class="description sc-wpun-external" id="' . esc_attr( $id ) . '">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $source ) ) . '</span>';
 		}
 	}
 
@@ -595,15 +596,25 @@ class Settings_Page {
 			}
 		}
 
-		echo Field_Renderer::field( $schemas[ $name ], Settings::OPT_FIELD . '[' . $name . ']', 'sc_wpun_settings_main_' . $name, $value, $this->is_external( $name ), '', $extra, $error ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
+		// The notes drawn after the control describe it; the field adds the id of its error after these.
+		$id           = 'sc_wpun_settings_main_' . $name;
+		$described_by = array();
+		if ( $unavailable ) {
+			$described_by[] = $id . '-unavailable';
+		}
+		if ( $this->is_external( $name ) ) {
+			$described_by[] = $id . '-external';
+		}
+
+		echo Field_Renderer::field( $schemas[ $name ], Settings::OPT_FIELD . '[' . $name . ']', $id, $value, $this->is_external( $name ), implode( ' ', $described_by ), $extra, $error ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
 		if ( $unavailable ) {
 			?>
-			<p class="description sc-wpun-frequency-unavailable">
+			<p class="description sc-wpun-frequency-unavailable" id="<?php echo esc_attr( $id . '-unavailable' ); ?>">
 				<?php esc_html_e( 'The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it.', 'wp-updates-notifier' ); ?>
 			</p>
 			<?php
 		}
-		$this->external_note( $name );
+		$this->external_note( $name, $id . '-external' );
 	}
 
 	/**

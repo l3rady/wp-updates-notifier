@@ -186,7 +186,7 @@ class Slack_Notice {
 			<?php foreach ( explode( "\n\n", $this->message() ) as $paragraph ) : ?>
 				<p><?php echo esc_html( $paragraph ); ?></p>
 			<?php endforeach; ?>
-			<p><a href="<?php echo esc_url( $this->dismiss_url() ); ?>"><?php esc_html_e( 'Dismiss', 'wp-updates-notifier' ); ?></a></p>
+			<p><a href="<?php echo esc_url( $this->dismiss_url() ); ?>"><?php esc_html_e( 'Dismiss this notice', 'wp-updates-notifier' ); ?></a></p>
 		</div>
 		<?php
 	}

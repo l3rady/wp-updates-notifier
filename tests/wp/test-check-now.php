@@ -135,6 +135,8 @@ class Test_Check_Now extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'admin-post.php', $forms->item( 0 )->getAttribute( 'action' ) );
 		$this->assertSame( 'post', $forms->item( 0 )->getAttribute( 'method' ) );
 		$this->assertSame( 1, $xpath->query( './/button[@type="submit"]', $forms->item( 0 ) )->length );
+		$this->assertSame( 1, $xpath->query( './/button[@type="submit"][@aria-describedby="sc-wpun-check-now-description"]', $forms->item( 0 ) )->length );
+		$this->assertSame( 1, $xpath->query( './/p[@id="sc-wpun-check-now-description"]', $forms->item( 0 ) )->length );
 		$this->assertSame( 1, $xpath->query( './/input[@type="hidden"][@name="action"][@value="sc_wpun_check_now"]', $forms->item( 0 ) )->length );
 		$nonce = $xpath->query( './/input[@name="_wpnonce"]', $forms->item( 0 ) );
 		$this->assertSame( 1, $nonce->length );

@@ -11,6 +11,14 @@
 class Test_Settings_Screen extends WPUN_Test_Case {
 
 	/**
+	 * No settings errors left over from another test.
+	 */
+	public function set_up() {
+		parent::set_up();
+		unset( $GLOBALS['wp_settings_errors'] );
+	}
+
+	/**
 	 * Remove what tests added.
 	 */
 	public function tear_down() {
@@ -146,7 +154,8 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 		$this->assertTrue( $radios->item( 0 )->hasAttribute( 'checked' ) );
 		$this->assertSame( 1, $xpath->query( '//fieldset[@id="sc_wpun_settings_main_frequency"]//input[@checked]' )->length );
 		$this->assertSame( 1, $xpath->query( '//label[contains(.,"schedule_from_a_removed_plugin (no longer available)")]' )->length );
-		$this->assertSame( 1, $xpath->query( '//p[contains(@class,"sc-wpun-frequency-unavailable")]' )->length );
+		$this->assertSame( 1, $xpath->query( '//p[contains(@class,"sc-wpun-frequency-unavailable")][@id="sc_wpun_settings_main_frequency-unavailable"]' )->length );
+		$this->assertSame( 'sc_wpun_settings_main_frequency-unavailable', $xpath->query( '//fieldset[@id="sc_wpun_settings_main_frequency"]' )->item( 0 )->getAttribute( 'aria-describedby' ) );
 		$this->assertSame( 0, $xpath->query( '//select[@name="sc_wpun_settings[frequency]"]' )->length );
 	}
 
@@ -175,6 +184,14 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 		$this->assertSame( 0, $xpath->query( '//input[@name="sc_wpun_settings[hide_updates]"][@checked]' )->length );
 		$this->assertSame( 4, $xpath->query( '//input[@name="sc_wpun_settings[frequency]"][@disabled]' )->length );
 		$this->assertSame( 0, $xpath->query( '//input[@name="sc_wpun_settings[notify_plugins]"][@disabled]' )->length );
+
+		$box = $xpath->query( '//input[@type="checkbox"][@name="sc_wpun_settings[hide_updates]"]' )->item( 0 );
+		$this->assertSame( 'sc_wpun_settings_main_hide_updates-external', $box->getAttribute( 'aria-describedby' ) );
+		$this->assertSame( 1, $xpath->query( '//span[@id="sc_wpun_settings_main_hide_updates-external"][contains(@class,"sc-wpun-external")]' )->length );
+		$fieldset = $xpath->query( '//fieldset[@id="sc_wpun_settings_main_frequency"]' )->item( 0 );
+		$this->assertSame( 'sc_wpun_settings_main_frequency-external', $fieldset->getAttribute( 'aria-describedby' ) );
+		$this->assertSame( 1, $xpath->query( '//span[@id="sc_wpun_settings_main_frequency-external"]' )->length );
+		$this->assertSame( '', $xpath->query( '//fieldset[@id="sc_wpun_settings_main_notify_plugins"]' )->item( 0 )->getAttribute( 'aria-describedby' ) );
 	}
 
 	/**

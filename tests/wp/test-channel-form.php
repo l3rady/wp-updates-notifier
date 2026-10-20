@@ -1224,6 +1224,10 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertSame( 'disabled', $to->getAttribute( 'disabled' ) );
 		$this->assertSame( 'vault@example.org', $to->getAttribute( 'value' ) );
 		$this->assertSame( 'Set by Test vault', $this->text( $xpath, '//input[@name="settings[to]"]/following-sibling::span[contains(@class,"sc-wpun-external")]' ) );
+		$this->assertSame( 'sc_wpun_channel_settings_to-description sc_wpun_channel_settings_to-external', $to->getAttribute( 'aria-describedby' ) );
+		$this->assertSame( 1, $xpath->query( '//span[@id="sc_wpun_channel_settings_to-external"]' )->length );
+		$this->assertSame( 'sc_wpun_channel_enabled-external', $xpath->query( '//input[@name="enabled"][@type="checkbox"]' )->item( 0 )->getAttribute( 'aria-describedby' ) );
+		$this->assertSame( 1, $xpath->query( '//span[@id="sc_wpun_channel_enabled-external"]' )->length );
 		$this->assertSame( 'disabled', $xpath->query( '//input[@name="enabled"][@type="checkbox"]' )->item( 0 )->getAttribute( 'disabled' ) );
 		$this->assertSame( 1, $xpath->query( '//input[@name="enabled"][@type="checkbox"][@checked]' )->length, 'It shows the value in effect.' );
 		$this->assertSame( 2, $xpath->query( '//span[contains(@class,"sc-wpun-external")]' )->length, 'A note for the switch and one for the address.' );

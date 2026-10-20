@@ -304,6 +304,7 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 
 		$this->assertStringContainsString( 'sc-wpun-slack-notice', $html );
 		$this->assertStringContainsString( 'admin-post.php?action=sc_wpun_dismiss_slack_notice', $html );
+		$this->assertMatchesRegularExpression( '/<a href="[^"]*sc_wpun_dismiss_slack_notice[^"]*">Dismiss this notice<\/a>/', $html );
 		$this->assertSame( 1, has_action( 'admin_post_sc_wpun_dismiss_slack_notice', array( sc_wpun()->slack_notice(), 'handle_dismiss' ) ) ? 1 : 0 );
 		$this->assertFalse( has_action( 'admin_notices', array( sc_wpun()->slack_notice(), 'render' ) ) );
 

@@ -568,10 +568,12 @@ class Channel_Form {
 			// A value from outside the database may be a secret the schema forgot to flag: don't print it.
 			$value = '';
 		}
-		$html = Field_Renderer::field( $schema, $name, $id, $value, null !== $external, '' !== $description ? $id . '-description' : '', array(), $error );
+		// The field adds the id of its error after these.
+		$described_by = trim( ( '' !== $description ? $id . '-description' : '' ) . ( null !== $external ? ' ' . $id . '-external' : '' ) );
+		$html         = Field_Renderer::field( $schema, $name, $id, $value, null !== $external, $described_by, array(), $error );
 		if ( null !== $external ) {
 			// translators: %s: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__TO".
-			$html .= ' <span class="description sc-wpun-external">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';
+			$html .= ' <span class="description sc-wpun-external" id="' . esc_attr( $id . '-external' ) . '">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';
 		}
 		if ( '' !== $description ) {
 			$html .= '<p class="description" id="' . esc_attr( $id . '-description' ) . '">' . esc_html( $description ) . '</p>';
