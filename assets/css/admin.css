@@ -32,9 +32,15 @@
 }
 
 @media screen and (max-width: 782px) {
-	/* Core widens cells from the third on, as its tables start with a checkbox; this one does not. */
-	.sc-wpun-channels tr td {
+	/* Core widens and positions cells from the third on, as its tables start with a checkbox; this one does not, so from the second. */
+	.sc-wpun-channels tr td:nth-child(n+2) {
 		flex: 0 1 100%;
+		position: relative;
+	}
+
+	/* The primary cell is the row's heading: core's column name in front of the other cells would overprint the label. */
+	.wp-list-table.sc-wpun-channels tr:not(.inline-edit-row):not(.no-items) td.column-primary::before {
+		display: none;
 	}
 }
 

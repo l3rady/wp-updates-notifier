@@ -357,14 +357,14 @@ class Channels_Tab {
 		$external     = $this->store->external_source( $id, 'enabled' );
 		?>
 		<tr class="sc-wpun-channel" data-id="<?php echo esc_attr( $id ); ?>">
-			<th scope="row" class="column-primary has-row-actions sc-wpun-channel-label">
+			<td class="column-primary has-row-actions sc-wpun-channel-label" data-colname="<?php esc_attr_e( 'Label', 'wp-updates-notifier' ); ?>">
 				<strong><?php echo esc_html( $label ); ?></strong>
 				<?php if ( $code_defined ) : ?>
 					<span class="sc-wpun-code-defined description"><?php esc_html_e( 'Defined in code', 'wp-updates-notifier' ); ?></span>
 				<?php endif; ?>
 				<?php $this->render_row_actions( $instance, $channel, $code_defined, null !== $external ); ?>
 				<button type="button" class="toggle-row"><span class="screen-reader-text"><?php esc_html_e( 'Show more details', 'wp-updates-notifier' ); ?></span></button>
-			</th>
+			</td>
 			<td class="sc-wpun-channel-module" data-colname="<?php esc_attr_e( 'Module', 'wp-updates-notifier' ); ?>"><?php echo esc_html( null === $channel ? $instance->get_type() : $channel->get_label() ); ?></td>
 			<td class="sc-wpun-channel-enabled" data-colname="<?php esc_attr_e( 'Enabled', 'wp-updates-notifier' ); ?>">
 				<span class="sc-wpun-state"><?php echo esc_html( $instance->is_enabled() ? __( 'On', 'wp-updates-notifier' ) : __( 'Off', 'wp-updates-notifier' ) ); ?></span>

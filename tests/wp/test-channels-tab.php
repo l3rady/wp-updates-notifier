@@ -755,12 +755,26 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 
 		$this->assertSame( 1, $xpath->query( '//table[contains(@class,"wp-list-table")][contains(@class,"table-view-list")]' )->length );
 		$this->assertSame( 1, $xpath->query( '//thead//th[contains(@class,"column-primary")]' )->length );
-		$this->assertSame( 1, $xpath->query( '//tr[@data-id="email"]/th[@scope="row"][contains(@class,"column-primary")]//button[@type="button"][@class="toggle-row"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//tr[@data-id="email"]/td[contains(@class,"column-primary")][@data-colname="Label"]//button[@type="button"][@class="toggle-row"]' )->length );
 		$names = array();
 		foreach ( $xpath->query( '//tr[@data-id="email"]/td' ) as $td ) {
 			$names[] = $td->getAttribute( 'data-colname' );
 		}
-		$this->assertSame( array( 'Module', 'Enabled', 'Routing', 'Last delivery' ), $names );
+		$this->assertSame( array( 'Label', 'Module', 'Enabled', 'Routing', 'Last delivery' ), $names );
+	}
+
+	/**
+	 * The label cell is not a row header, so its actions are not read as the header of the other cells, and the actions still name the channel.
+	 */
+	public function test_the_label_cell_is_not_a_row_header() {
+		$xpath = $this->tab();
+
+		$this->assertSame( 0, $xpath->query( '//tbody//th' )->length );
+		$this->assertSame( 0, $xpath->query( '//*[@scope="row"]' )->length );
+		$cell = $xpath->query( '//tr[@data-id="email"]/td[contains(@class,"sc-wpun-channel-label")][contains(@class,"column-primary")][contains(@class,"has-row-actions")]' );
+		$this->assertSame( 1, $cell->length );
+		$this->assertSame( 1, $xpath->query( './strong[.="Email"]', $cell->item( 0 ) )->length );
+		$this->assertSame( 1, $xpath->query( './/*[@aria-label="Edit Email"]', $cell->item( 0 ) )->length );
 	}
 
 	/**
