@@ -240,6 +240,21 @@ services:
       - "127.0.0.1:8000:8000"
     command: ["mkdocs", "serve", "-a", "0.0.0.0:8000"]
 
+  # ----- Plugin artwork (`make assets`), profile "assets": not started by `make up` -----
+
+  # librsvg, Liberation Sans and oxipng: `make assets` renders the PNG exports from .wordpress-org/src. The repository
+  # is bind-mounted, the container runs as the host user.
+  assets:
+    profiles: [assets]
+    build: docker/assets
+    image: wp-updates-notifier:assets
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      HOME: /tmp
+
   # ----- Security checks (`make security`), profile "security": not started by `make up` -----
 
   # Lints .github/workflows/ (and runs shellcheck on the run: blocks): `make check-workflows`.

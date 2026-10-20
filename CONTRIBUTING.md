@@ -122,6 +122,20 @@ Docker like everything else. `mkdocs.yml` holds the navigation and the theme, an
   party) are pinned. Regenerate `requirements.txt` with the command at the top of
   `docker/docs/requirements.in`.
 
+## Plugin artwork
+
+The icon and the banner are SVG files in `.wordpress-org/src/`: `icon` and `banner` are the
+light versions for WordPress.org, the `-dark` ones are for the dark scheme of the
+documentation site, and `icon-small` is the simplified icon for 32px and below (the
+documentation site's logo and tab icon). Edit the SVG, then run `make assets`: it renders
+every PNG and copy in `.wordpress-org/` and `docs/assets/brand/` in Docker and optimises
+them losslessly, with the same bytes every run. Never edit an export by hand. Commit the
+sources and the exports together.
+
+The banner's text is set in Liberation Sans (metric-compatible with Arial), which the
+assets image installs, so it renders the same on every machine. Deploying the artwork to
+WordPress.org is a separate step.
+
 ## Releases
 
 Merging to `main` changes no version. [release-please](https://github.com/googleapis/release-please)

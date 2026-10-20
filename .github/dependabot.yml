@@ -81,6 +81,16 @@ updates:
     commit-message:
       prefix: build
 
+  # The base image of `make assets`.
+  - package-ecosystem: docker
+    directory: /docker/assets
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+
   - package-ecosystem: composer
     directory: /docker/psalm
     schedule:

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 772 250" width="772" height="250">
+<title>WP Updates Notifier: know when your WordPress site has updates waiting</title>
+<rect width="772" height="250" fill="#fdf6e3"/>
+<g fill="none" stroke="#eee8d5" stroke-width="14"><circle cx="136" cy="125" r="128"/><circle cx="136" cy="125" r="178"/><circle cx="136" cy="125" r="228"/></g>
+<g transform="translate(34 14) scale(0.85)"><circle cx="120" cy="42" r="14" fill="#073642"/><path d="M120 50C74 50 56 86 56 130V168L34 200H206L184 168V130C184 86 166 50 120 50Z" fill="#073642"/><path d="M94 210A26 26 0 0 0 146 210Z" fill="#073642"/><circle cx="190" cy="68" r="57" fill="#fdf6e3"/><circle cx="190" cy="68" r="46" fill="#1d7a73"/><path d="M190 38L219 71H203V98H177V71H161Z" fill="#fdf6e3"/></g>
+<g font-family="&apos;Liberation Sans&apos;, Arial, sans-serif">
+<text x="284" y="104" font-size="46" font-weight="700" fill="#073642">WP Updates Notifier</text>
+<text x="284" y="144" font-size="20" fill="#586e75">Know when your WordPress site has updates waiting.</text>
+<text x="284" y="186" font-size="17" font-weight="600" fill="#1d7a73">Free · Open source · Extensible · Accessible · Secure</text>
+</g>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<title>WP Updates Notifier</title>
+<rect width="256" height="256" rx="48" fill="#fdf6e3"/>
+<circle cx="120" cy="42" r="14" fill="#073642"/><path d="M120 50C74 50 56 86 56 130V168L34 200H206L184 168V130C184 86 166 50 120 50Z" fill="#073642"/><path d="M94 210A26 26 0 0 0 146 210Z" fill="#073642"/><circle cx="190" cy="68" r="57" fill="#fdf6e3"/><circle cx="190" cy="68" r="46" fill="#1d7a73"/><path d="M190 38L219 71H203V98H177V71H161Z" fill="#fdf6e3"/>
+</svg>
