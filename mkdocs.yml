@@ -36,6 +36,10 @@ theme:
   language: en
   # System fonts: nothing is loaded from Google.
   font: false
+  # The tab icon follows the system scheme (it is one SVG with a media query). The header logo is two images, one per
+  # scheme, from the logo partial in docker/docs/overrides: it follows the visitor's palette toggle.
+  favicon: assets/brand/favicon.svg
+  custom_dir: docker/docs/overrides
   features:
     - navigation.sections
     - navigation.indexes

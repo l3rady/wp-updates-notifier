@@ -6,7 +6,10 @@ hide:
   - toc
 ---
 
-# WP Updates Notifier
+![WP Updates Notifier: know when your WordPress site has updates waiting. Free, open source, extensible, accessible, secure.](assets/brand/banner.png#only-light){ .wpun-banner width="1544" height="500" }
+![WP Updates Notifier: know when your WordPress site has updates waiting. Free, open source, extensible, accessible, secure.](assets/brand/banner-dark.png#only-dark){ .wpun-banner width="1544" height="500" }
+
+# WP Updates Notifier { .wpun-visually-hidden }
 
 <p class="wpun-lead">A free, open source, extensible, developer-friendly, accessible and security-conscious update notifier for WordPress.</p>
 

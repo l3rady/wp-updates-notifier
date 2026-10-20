@@ -1,0 +1,11 @@
+{#-
+  Overrides Material's partials/logo.html (mkdocs-material 9.7.7): the header and the navigation drawer both include it.
+  The logo is two images, and docs/stylesheets/extra.css shows the one for the current palette. The link around it has
+  an aria-label, so the images have an empty alt.
+-#}
+{% if config.theme.logo %}
+  <img src="{{ config.theme.logo | url }}" alt="logo">
+{% else %}
+  <img class="wpun-logo wpun-logo--light" src="{{ 'assets/brand/logo.svg' | url }}" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="{{ 'assets/brand/logo-dark.svg' | url }}" alt="" width="24" height="24">
+{% endif %}
