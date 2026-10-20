@@ -106,7 +106,7 @@ When the channel is registered, the registry checks the constraint against `sc_w
 
 ## 3. Settings: the field schema
 
-`get_fields()` returns an array keyed by setting name. The plugin draws the form on the Channels tab, validates what is submitted, stores it and supplies it to `send()` through the instance. You write no form, nonce or saving code.
+`get_fields()` returns an array keyed by setting name. The plugin draws the form on the Channels tab, validates what is submitted, stores it and supplies it to `send()` through the instance. You write no form, security token or saving code.
 
 ```php
 public function get_fields(): array {
@@ -296,7 +296,7 @@ Return a `WP_Error` from the filter to test a failed connection.
 
 You can run the plugin's own checks on your add-on:
 
-- **Coding standards.** Copy [`examples/wpun-example-channel/phpcs.xml.dist`](https://github.com/l3rady/wp-updates-notifier/blob/main/examples/wpun-example-channel/phpcs.xml.dist) and change the text domain and prefixes. It is the WordPress ruleset, including the escaping, nonce and sanitising sniffs, with the same PHP and WordPress versions as the plugin.
+- **Coding standards.** Copy [`examples/wpun-example-channel/phpcs.xml.dist`](https://github.com/l3rady/wp-updates-notifier/blob/main/examples/wpun-example-channel/phpcs.xml.dist) and change the text domain and prefixes. It is the WordPress ruleset, including the escaping, security token and sanitising sniffs, with the same PHP and WordPress versions as the plugin.
 - **Semgrep.** Run Semgrep CE with the plugin's rules on your code: `semgrep scan --config path/to/wp-updates-notifier/.semgrep/ --metrics=off your-addon/`. The rules ban `eval`, `unserialize`, `$_REQUEST` and unprepared `$wpdb` queries, and they require `wp_safe_remote_*` for HTTP. Your fixed API address may use `wp_remote_post()` with `// nosemgrep: wpun-outbound-http-safe-only -- <reason>`. The rules are GPL, like the plugin.
 
 ## Accessibility

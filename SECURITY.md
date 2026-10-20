@@ -53,10 +53,10 @@ the reports go to the repository's code scanning alerts.
 - **Dependencies:** composer audit, OSV-Scanner and GitHub's dependency
   review. The plugin has no runtime dependencies.
 - **Static analysis:** WordPress Coding Standards, including its escaping,
-  nonce and sanitising sniffs (`make lint`), PHPStan (`make stan`), Semgrep with
+  security token and sanitising sniffs (`make lint`), PHPStan (`make stan`), Semgrep with
   the plugin's own rules (`make sast`), and Psalm's taint analysis (`make taint`).
 - **Security tests:** a PHPUnit group (`tests/wp/security/`). It runs every
-  admin-post handler against every role and every bad nonce. It also checks
+  admin-post handler against every role and every bad security token. It also checks
   that update data with markup is escaped in every output, that secrets never
   reach a page, notice or log, and that outbound requests refuse private
   addresses.

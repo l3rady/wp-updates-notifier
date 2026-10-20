@@ -12,7 +12,7 @@ request (`.github/workflows/`). The security tests are in `tests/wp/security/` (
 
 ## Scope and assumptions
 
-- **WordPress core is trusted.** That covers login, sessions, `current_user_can()`, nonces, `options.php`,
+- **WordPress core is trusted.** That covers login, sessions, `current_user_can()`, security tokens (`wp_verify_nonce()`), `options.php`,
   `wp_mail()`/PHPMailer, the HTTP API's `wp_safe_remote_*` checks and the cron runner. A flaw in core is out of scope.
 - **Administrators are trusted** with what an administrator can already do in WordPress. Here that means anyone with the
   settings capability: `manage_options` by default, or whatever the `sc_wpun_capability` filter returns. On multisite
@@ -50,7 +50,7 @@ flowchart LR
     mail["Mail (wp_mail)"]
 
     anon -- "admin-post.php, options.php" --> handlers
-    browser -- "POST + nonce" --> handlers
+    browser -- "POST + security token" --> handlers
     handlers --> db
     hdr -- "get_plugins(), wp_get_themes()" --> checker
     wporg -- "update_* site transients" --> checker
@@ -90,7 +90,7 @@ The trust boundaries are:
 All are registered in `Plugin::register_admin_hooks()` (`includes/class-plugin.php`), except the Slack notice dismiss,
 which `Plugin` registers next to the notice. There are no `admin_post_nopriv_*`, `wp_ajax_*` or REST routes.
 
-| Action | Handler | Nonce action | Method |
+| Action | Handler | Token action | Method |
 | --- | --- | --- | --- |
 | `sc_wpun_send_test` | `Channels_Tab::handle_test_send` | `sc_wpun_send_test_<id>` | POST |
 | `sc_wpun_channel_toggle` | `Channels_Tab::handle_toggle` | `sc_wpun_channel_toggle_<id>` | POST |
@@ -105,15 +105,15 @@ and the plugin registers none. The Semgrep rule `wpun-no-nopriv-hooks` (`make sa
 
 | STRIDE | Threat | Control | Proof |
 | --- | --- | --- | --- |
-| E | A user without the capability changes channels, sends messages or runs the check. | Each handler checks `current_user_can( Settings_Page::capability() )` first, and refuses with a 403 and no change. | `test-channels-tab.php` (`test_nonce_and_capability_are_enforced_for_every_action`), `test-channel-form.php` (`test_nonce_and_capability_are_required`, `test_refusals_change_nothing`, `test_the_handler_answers_403_when_refused`), `test-check-now.php` (`test_a_refused_request_runs_nothing`), `test-test-send.php`, `test-slack-notice.php`. `security/test-capability-matrix.php` (#220): discovers every `admin_post_*`/`wp_ajax_*` hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests: logged out, subscriber, editor, administrator without `manage_options`, and administrator with no, empty, other-action, other-channel or other-user nonce, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (`make dast`, #222). |
-| S/T | CSRF: another site makes an administrator's browser post the action. | A nonce per action. Row actions and the form bind it to the channel id (and the mode and type), so a nonce for one channel can't act on another. | The tests above. `security/test-capability-matrix.php` (#220) covers the wrong-action, other-channel and other-user nonces for every hook. |
+| E | A user without the capability changes channels, sends messages or runs the check. | Each handler checks `current_user_can( Settings_Page::capability() )` first, and refuses with a 403 and no change. | `test-channels-tab.php` (`test_nonce_and_capability_are_enforced_for_every_action`), `test-channel-form.php` (`test_nonce_and_capability_are_required`, `test_refusals_change_nothing`, `test_the_handler_answers_403_when_refused`), `test-check-now.php` (`test_a_refused_request_runs_nothing`), `test-test-send.php`, `test-slack-notice.php`. `security/test-capability-matrix.php` (#220): discovers every `admin_post_*`/`wp_ajax_*` hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests: logged out, subscriber, editor, administrator without `manage_options`, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (`make dast`, #222). |
+| S/T | CSRF: another site makes an administrator's browser post the action. | A security token per action. Row actions and the form bind it to the channel id (and the mode and type), so a token for one channel can't act on another. | The tests above. `security/test-capability-matrix.php` (#220) covers the wrong-action, other-channel and other-user tokens for every hook. |
 | T | Tampered `id`, `mode` or `type` reaches the store. | `sanitize_key( wp_unslash() )` and `is_string` checks. Unknown ids and types are refused, and code-defined and externally set instances have no row actions. | `test-channels-tab.php`, `test-channel-form.php`. |
 | T | Open redirect after the action. | Redirects use `wp_safe_redirect()` to the settings page. | WPCS `WordPress.Security.SafeRedirect` (`make lint`). #222 checks the redirect targets. |
 | R | An administrator denies changing a channel. | Not addressed. WordPress has no audit log, and the plugin doesn't add one. Accepted for 2.0.0. | n/a |
-| D | Repeated Check now or test sends flood a mail service. | Capability and nonce limit this to administrators, who are trusted. | As above. |
+| D | Repeated Check now or test sends flood a mail service. | Capability and security token limit this to administrators, who are trusted. | As above. |
 
 The dismiss link is a GET that changes state, but only the current user's own meta (`sc_wpun_dismissed_slack_notice`). It
-still needs the nonce and the capability.
+still needs the security token and the capability.
 
 ### 2. The settings screen
 
@@ -208,7 +208,7 @@ documented).
 ### 7. Cron and on-demand runs
 
 `sc_wpun_update_check` (WP-Cron) and `sc_wpun_run_check` (on demand, for example from WP-CLI) both run
-`Update_Checker`. Check now (1) calls the same code after its capability and nonce checks.
+`Update_Checker`. Check now (1) calls the same code after its capability and security token checks.
 
 | STRIDE | Threat | Control | Proof |
 | --- | --- | --- | --- |
