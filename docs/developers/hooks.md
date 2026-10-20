@@ -343,7 +343,7 @@ Filters the body of the email.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `$body` | `string` | Body: plain text, or HTML if the instance is set to HTML. |
+| `$body` | `string` | Body: plain text, or HTML if the instance is set to HTML. An HTML body is a fragment: it is wrapped in a document with the language, direction and title after this filter. |
 | `$notification` | `Notification` | The notification. |
 | `$instance` | `Channel_Instance` | The instance sending it. |
 

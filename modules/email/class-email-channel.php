@@ -237,11 +237,14 @@ class Email_Channel extends Channel {
 		 *
 		 * @since 1.4.3 Since 2.0.0 also receives the notification and the instance, and is not HTML-escaped.
 		 *
-		 * @param string           $body         Body: plain text, or HTML if the instance is set to HTML.
+		 * @param string           $body         Body: plain text, or HTML if the instance is set to HTML. An HTML body is a fragment: it is wrapped in a document with the language, direction and title after this filter.
 		 * @param Notification     $notification The notification.
 		 * @param Channel_Instance $instance     The instance sending it.
 		 */
 		$body = apply_filters( 'sc_wpun_email_content', $body, $notification, $instance );
+		if ( $is_html ) {
+			$body = $this->document( (string) $body, (string) $subject );
+		}
 
 		// No From is set unless asked for: the WordPress default is the address the host accepts mail from (#76).
 		$headers = array();
@@ -342,6 +345,26 @@ class Email_Channel extends Channel {
 			'message' => isset( $payload['message'] ) && is_string( $payload['message'] ) ? $payload['message'] : $message,
 			'headers' => $lines,
 		);
+	}
+
+	/**
+	 * Wrap an HTML body in a minimal document, so the language and direction of the message are declared.
+	 *
+	 * No styling: the content stays plain semantic HTML. The language is the locale in effect when the message is built.
+	 *
+	 * @param string $body    The HTML fragment.
+	 * @param string $subject The subject, used as the title.
+	 *
+	 * @return string
+	 */
+	private function document( string $body, string $subject ): string {
+		// The charset the mail goes out with: wp_mail() takes it from the site.
+		$charset = get_bloginfo( 'charset' );
+
+		return '<!DOCTYPE html>' . "\n"
+			. '<html lang="' . esc_attr( str_replace( '_', '-', determine_locale() ) ) . '" dir="' . ( is_rtl() ? 'rtl' : 'ltr' ) . '">' . "\n"
+			. '<head><meta charset="' . esc_attr( $charset ) . '"><title>' . esc_html( $subject ) . '</title></head>' . "\n"
+			. '<body>' . "\n" . $body . "\n</body>\n</html>\n";
 	}
 
 	/**

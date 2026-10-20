@@ -173,6 +173,65 @@ class Test_Email_Channel extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The HTML body is a document that declares its language, direction, charset and title, for notifications and the test message.
+	 */
+	public function test_the_html_body_is_a_document() {
+		foreach ( array( false, true ) as $is_test ) {
+			reset_phpmailer_instance();
+			$this->channel->send( $this->notification( array( 'is_test' => $is_test ) ), $this->instance( array( 'format' => 'html' ) ) );
+			$body = $this->sent_mail()->body;
+
+			$this->assertStringStartsWith( '<!DOCTYPE html>', $body );
+			$this->assertStringContainsString( '<html lang="en-US" dir="ltr">', $body );
+			$this->assertStringContainsString( '<meta charset="' . get_bloginfo( 'charset' ) . '">', $body );
+			$this->assertStringContainsString( '<title>WP Updates Notifier: ' . ( $is_test ? 'test message' : 'updates available' ) . ' for Bob &amp; Sons&#039; Shop</title>', $body );
+			$this->assertSame( 1, substr_count( $body, '<body>' ) );
+			$this->assertMatchesRegularExpression( '#<body>\s*<p>.*</p>\s*</body>\s*</html>\s*$#s', $body );
+		}
+	}
+
+	/**
+	 * A right-to-left locale sets the direction and its language.
+	 */
+	public function test_the_document_follows_the_locale_direction() {
+		global $wp_locale;
+		$direction                 = $wp_locale->text_direction;
+		$locale                    = static fn() => 'ar';
+		add_filter( 'locale', $locale );
+		$wp_locale->text_direction = 'rtl';
+
+		try {
+			$this->channel->send( $this->notification(), $this->instance( array( 'format' => 'html' ) ) );
+			$body = $this->sent_mail()->body;
+		} finally {
+			$wp_locale->text_direction = $direction;
+			remove_filter( 'locale', $locale );
+		}
+
+		$this->assertStringContainsString( '<html lang="ar" dir="rtl">', $body );
+	}
+
+	/**
+	 * A subject with markup characters is escaped in the title, and the plain text body is not a document.
+	 */
+	public function test_the_title_is_escaped_and_plain_text_is_unchanged() {
+		$filter = static fn() => 'Fix <b> & more';
+		add_filter( 'sc_wpun_email_subject', $filter );
+		$this->channel->send( $this->notification(), $this->instance( array( 'format' => 'html' ) ) );
+		$html = $this->sent_mail()->body;
+
+		reset_phpmailer_instance();
+		$this->channel->send( $this->notification(), $this->instance() );
+		$plain = $this->sent_mail()->body;
+		remove_filter( 'sc_wpun_email_subject', $filter );
+
+		$this->assertStringContainsString( '<title>Fix &lt;b&gt; &amp; more</title>', $html );
+		$this->assertStringNotContainsString( '<b>', $html );
+		$this->assertStringNotContainsString( '<!DOCTYPE', $plain );
+		$this->assertStringNotContainsString( '<html', $plain );
+	}
+
+	/**
 	 * A site-wide HTML content type does not change a plain text email, and is left in place afterwards.
 	 */
 	public function test_a_global_html_filter_does_not_change_the_plain_format() {
