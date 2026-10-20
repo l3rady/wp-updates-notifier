@@ -1,6 +1,17 @@
 # Every ecosystem waits 14 days after a release before proposing it (cooldown): a compromised release is
 # usually found and pulled within days. Security updates for Dependabot alerts are not delayed.
 version: 2
+
+# The Playwright image (tests/e2e/compose.yml) ships the browsers of exactly one Playwright version, so it must move
+# with @playwright/test in tests/e2e/package.json. Separate PRs for the two could never pass the a11y job (#265), so
+# the tests/e2e image and npm updates come together in one PR.
+multi-ecosystem-groups:
+  e2e:
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+
 updates:
   - package-ecosystem: github-actions
     directory: /
@@ -40,16 +51,14 @@ updates:
     commit-message:
       prefix: ci
 
-  # The Playwright image (and the database) of the `make a11y` site, tests/e2e/compose.yml. Its tag must stay at the
-  # version of @playwright/test in tests/e2e/package.json: update them together.
+  # The Playwright image (and the database) of the `make a11y` site, tests/e2e/compose.yml. In the e2e group, with
+  # the npm packages below.
   - package-ecosystem: docker-compose
     directory: /tests/e2e
-    schedule:
-      interval: weekly
+    multi-ecosystem-group: e2e
+    patterns: ["*"]
     cooldown:
       default-days: 14
-    commit-message:
-      prefix: ci
 
   - package-ecosystem: composer
     directory: /
@@ -93,13 +102,10 @@ updates:
       prefix: build
       include: scope
 
-  # Playwright and axe for `make a11y`, installed with npm ci from tests/e2e/package-lock.json.
+  # Playwright and axe for `make a11y`, installed with npm ci from tests/e2e/package-lock.json. In the e2e group.
   - package-ecosystem: npm
     directory: /tests/e2e
-    schedule:
-      interval: weekly
+    multi-ecosystem-group: e2e
+    patterns: ["*"]
     cooldown:
       default-days: 14
-    commit-message:
-      prefix: build
-      include: scope
