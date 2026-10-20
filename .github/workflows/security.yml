@@ -137,8 +137,11 @@ jobs:
             Unlicense, CC0-1.0, 0BSD, Zlib
           # Development tools that run in their own images and are never shipped or linked into the plugin:
           # jsonmapper (OSL-3.0) comes with Psalm in docker/psalm, and argparse (Python-2.0, GPL-compatible) with
-          # commitlint in docker/commitlint.
-          allow-dependencies-licenses: pkg:composer/netresearch/jsonmapper, pkg:npm/argparse
+          # commitlint in docker/commitlint. In docker/docs (the documentation site): watchdog (Apache-2.0 AND
+          # Python-2.0, both GPL-compatible) with MkDocs, and robust-predicates (public domain AND Unlicense) with
+          # Mermaid.
+          allow-dependencies-licenses: >-
+            pkg:composer/netresearch/jsonmapper, pkg:npm/argparse, pkg:pypi/watchdog, pkg:npm/robust-predicates
 
   # Trivy over docker/ and the image CI builds. It only reports (exit code 0): the base image's findings are
   # fixed by a new base image, not by this repository. Not on pull requests, it needs no gate there.

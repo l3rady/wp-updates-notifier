@@ -1,0 +1,10 @@
+# OSV-Scanner exceptions for docker/docs/package-lock.json (`make audit-osv`). Each one names the advisory, why it
+# does not apply and when to look again; it lapses on that date and the audit fails until it is fixed or renewed.
+
+# KaTeX before 0.18.2 can treat a polluted Object.prototype as renderer options. It comes with Mermaid 11, which
+# Material for MkDocs 9.7 is built against (Mermaid 12 moves to KaTeX 0.18). Exploiting it needs attacker-controlled
+# maths and a separate prototype-pollution bug on the page; the site renders only diagrams written in this repository.
+[[IgnoredVulns]]
+id = "GHSA-238p-pmpm-9mq7"
+ignoreUntil = 2027-01-20
+reason = "Needs attacker-controlled KaTeX input and prototype pollution; the docs site renders only its own diagrams. Revisit when Material supports Mermaid 12."
