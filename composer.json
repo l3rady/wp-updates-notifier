@@ -10,7 +10,7 @@
         "email",
         "slack"
     ],
-    "homepage": "https://github.com/l3rady/wp-updates-notifier",
+    "homepage": "https://wpun.cariss.dev/",
     "license": "GPL-2.0-or-later",
     "authors": [
         {
@@ -19,6 +19,7 @@
         }
     ],
     "support": {
+        "docs": "https://wpun.cariss.dev/",
         "issues": "https://github.com/l3rady/wp-updates-notifier/issues",
         "source": "https://github.com/l3rady/wp-updates-notifier",
         "security": "https://github.com/l3rady/wp-updates-notifier/blob/main/SECURITY.md"

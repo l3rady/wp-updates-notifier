@@ -15,6 +15,8 @@ Get an email when your WordPress site has core, plugin or theme updates waiting.
 
 Monitors your WordPress installation for core, plugin and theme updates and emails you when they are available. This plugin is ideal if you don't login to your WordPress admin regularly or you support a client's website.
 
+The documentation is at [wpun.cariss.dev](https://wpun.cariss.dev/).
+
 *Features*
 
 - Set the interval of how often to check for updates; hourly, twice daily or daily.
@@ -33,7 +35,7 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 - Allows you to set the 'from address'.
 - Allows you to set multiple 'to addresses'.
 - Makes use of the Settings API.
-- A number of available hooks and filters for advanced users, and an API for add-ons to add notification channels. See the [developer guide](https://github.com/l3rady/wp-updates-notifier/tree/main/docs/developers).
+- A number of available hooks and filters for advanced users, and an API for add-ons to add notification channels. See the [developer guide](https://wpun.cariss.dev/latest/developers/).
 - Active support and development.
 
 *Languages*

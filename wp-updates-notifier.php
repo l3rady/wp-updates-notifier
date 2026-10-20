@@ -12,7 +12,7 @@
 
 /*
  * Plugin Name: WP Updates Notifier
- * Plugin URI: https://github.com/l3rady/wp-updates-notifier
+ * Plugin URI: https://wpun.cariss.dev/
  * Description: Sends an email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates.
  * x-release-please-start-version
  * Version: 1.6.0

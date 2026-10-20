@@ -9,6 +9,8 @@
 
 Tells you by email when your WordPress site has core, plugin or theme updates waiting, so you know without logging in. Useful for sites you rarely visit and for sites you look after for clients.
 
+The plugin's website, with the documentation, is at **<https://wpun.cariss.dev>**.
+
 - Checks on a schedule (hourly, twice daily, daily or weekly) and tells you about each new version once.
 - Core, plugin and theme updates, optionally only for active plugins and themes.
 - Email to one or more addresses.
@@ -39,7 +41,7 @@ Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Changes are l
 
 ## Extending the plugin
 
-Add-ons can add notification channels, item types, routing rules and configuration sources through a public, versioned API. Start with the [developer guide](docs/developers/README.md) and the [example add-on](examples/wpun-example-channel/).
+Add-ons can add notification channels, item types, routing rules and configuration sources through a public, versioned API. Start with the [developer guide](https://wpun.cariss.dev/main/developers/) and the [example add-on](examples/wpun-example-channel/).
 
 ## Development
 
