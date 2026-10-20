@@ -177,3 +177,52 @@
 	outline: 2px solid var(--md-accent-fg-color);
 	outline-offset: 1px;
 }
+
+/* Home page (docs/index.md). */
+.md-typeset .wpun-lead {
+	font-size: 1.25em;
+	line-height: 1.5;
+	color: var(--md-default-fg-color);
+}
+
+/* The developer's photo beside the text, stacked on narrow screens. */
+.md-typeset .wpun-author {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.5rem;
+	align-items: flex-start;
+}
+
+.md-typeset .wpun-author > div {
+	flex: 1 1 20rem;
+}
+
+.md-typeset .wpun-author h3 {
+	margin-top: 0;
+}
+
+.md-typeset .wpun-author__avatar {
+	flex: none;
+	border-radius: 50%;
+}
+
+/* Wallet addresses are long unbroken strings: let them wrap on a phone rather than scroll the page. */
+.md-typeset .wpun-address {
+	word-break: break-all;
+}
+
+/* Buttons. Material draws them in the primary colour, which here is the header's (base02 / base2) and nearly
+   disappears on the page. They use the link colour instead: outlined, or filled for the primary button and on hover,
+   with the page background as the text colour. The link colour passes 4.5:1 against the page in both schemes. */
+.md-typeset .md-button {
+	color: var(--md-typeset-a-color);
+	border-color: var(--md-typeset-a-color);
+}
+
+.md-typeset .md-button--primary,
+.md-typeset .md-button:hover,
+.md-typeset .md-button:focus-visible {
+	color: var(--md-default-bg-color);
+	background-color: var(--md-typeset-a-color);
+	border-color: var(--md-typeset-a-color);
+}

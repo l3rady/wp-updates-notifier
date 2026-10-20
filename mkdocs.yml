@@ -89,6 +89,11 @@ plugins:
 markdown_extensions:
   - admonition
   - attr_list
+  # Cards and the icons on the home page. The icons are inline SVG from the theme, nothing is fetched.
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - tables
   - toc:
       permalink: true
