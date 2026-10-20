@@ -65,7 +65,7 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 	 * @return int
 	 */
 	private function shown( $text ) {
-		return substr_count( $text, '→' );
+		return substr_count( $text, ' from version ' );
 	}
 
 	/**
@@ -105,7 +105,7 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 		$this->assertStringNotContainsString( "\n…and 7 more", str_replace( "\n\n…and", '', $markdown ), 'Not directly under the list.' );
 
 		$html = $this->render( 'html', $this->notification( 10 ), 0, 3 );
-		$this->assertStringContainsString( "</ul>\n<p>…and 7 more</p>\n<p>Please visit ", $html );
+		$this->assertStringContainsString( "</ul>\n<p>…and 7 more</p>\n<p><a href=\"https://example.org/wp-admin/update-core.php\">Go to the Updates screen to update.</a></p>", $html );
 	}
 
 	/**
@@ -159,7 +159,7 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 			$this->assertSame( 0, $this->shown( $text ), $format );
 			$this->assertStringContainsString( 'There are updates available for My Site', $text, $format );
 			$this->assertStringContainsString( '…and 4 more', $text, $format );
-			$this->assertStringContainsString( 'Please visit', $text, $format );
+			$this->assertStringContainsString( 'html' === $format ? 'Go to the Updates screen to update.' : 'Please visit', $text, $format );
 		}
 	}
 

@@ -193,10 +193,10 @@ class Test_Routing extends WPUN_Test_Case {
 
 		$bodies = $this->run_check();
 
-		$this->assertStringContainsString( 'WP Updates Notifier: ', $bodies['everything@example.org'] );
+		$this->assertStringContainsString( 'WP Updates Notifier from version ', $bodies['everything@example.org'] );
 		$this->assertStringContainsString( 'Hello Dolly', $bodies['everything@example.org'] );
 		$this->assertStringContainsString( 'Hello Dolly', $bodies['active@example.org'] );
-		$this->assertStringNotContainsString( 'WP Updates Notifier: ', $bodies['active@example.org'] );
+		$this->assertStringNotContainsString( 'WP Updates Notifier from version ', $bodies['active@example.org'] );
 	}
 
 	/**
@@ -213,7 +213,7 @@ class Test_Routing extends WPUN_Test_Case {
 
 		$bodies = $this->run_check();
 
-		$this->assertStringContainsString( 'WP Updates Notifier: ', $bodies['active@example.org'] );
+		$this->assertStringContainsString( 'WP Updates Notifier from version ', $bodies['active@example.org'] );
 	}
 
 	/**

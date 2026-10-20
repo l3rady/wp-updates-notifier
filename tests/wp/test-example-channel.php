@@ -277,8 +277,8 @@ class Test_Example_Channel extends WPUN_Test_Case {
 		$this->assertSame( 'application/json', $request['args']['headers']['Content-Type'] );
 		$payload = $this->sent_payload();
 		$this->assertSame( 'Updates', $payload['username'] );
-		$this->assertStringContainsString( 'Plugin 1: 1.0 → 2.0', $payload['text'] );
-		$this->assertStringContainsString( 'Plugin 2: 1.0 → 2.0', $payload['text'] );
+		$this->assertStringContainsString( 'Plugin 1 from version 1.0 to 2.0', $payload['text'] );
+		$this->assertStringContainsString( 'Plugin 2 from version 1.0 to 2.0', $payload['text'] );
 	}
 
 	/**
@@ -470,8 +470,8 @@ class Test_Example_Channel extends WPUN_Test_Case {
 
 		$this->assertTrue( $result->is_success() );
 		$text = $this->sent_payload()['text'];
-		$this->assertStringContainsString( 'Plugin ' . Example_Channel::MAX_ITEMS . ':', $text );
-		$this->assertStringNotContainsString( 'Plugin ' . ( Example_Channel::MAX_ITEMS + 1 ) . ':', $text );
+		$this->assertStringContainsString( 'Plugin ' . Example_Channel::MAX_ITEMS . ' from', $text );
+		$this->assertStringNotContainsString( 'Plugin ' . ( Example_Channel::MAX_ITEMS + 1 ) . ' from', $text );
 		$this->assertStringContainsString( '…and 7 more', $text );
 		$this->assertMatchesRegularExpression( '/…and 7 more\n\nPlease visit [^\n]+ to update\.$/D', $text, 'The line sits before the closing line.' );
 	}
@@ -488,8 +488,8 @@ class Test_Example_Channel extends WPUN_Test_Case {
 		$this->assertLessThanOrEqual( Example_Channel::MAX_LENGTH, mb_strlen( $text ) );
 		$this->assertMatchesRegularExpression( '/…and (\d+) more\n\nPlease visit [^\n]+$/D', $text );
 		preg_match( '/…and (\d+) more\n\nPlease visit [^\n]+$/D', $text, $m );
-		$this->assertSame( 40, substr_count( $text, ': 1.0 → 2.0' ) + (int) $m[1], 'Every update is either listed or counted.' );
-		$this->assertGreaterThan( 0, substr_count( $text, ': 1.0 → 2.0' ) );
+		$this->assertSame( 40, substr_count( $text, ' from version 1.0 to 2.0' ) + (int) $m[1], 'Every update is either listed or counted.' );
+		$this->assertGreaterThan( 0, substr_count( $text, ' from version 1.0 to 2.0' ) );
 	}
 
 	/**

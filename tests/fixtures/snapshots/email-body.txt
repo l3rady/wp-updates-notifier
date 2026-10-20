@@ -1,19 +1,19 @@
 There are updates available for {{site_name}} ({{home_url}})
 
-WordPress: {{wp_version}} → 99.0.0
+WordPress from version {{wp_version}} to 99.0.0
 
-Hello Dolly: 1.7.2 → 2.0.0
+Hello Dolly from version 1.7.2 to 2.0.0
   Details: https://wordpress.org/plugins/hello-dolly/
   Changelog: https://wordpress.org/plugins/hello-dolly/#developers
   Compatibility with WordPress {{wp_major_minor}}: not tested yet (tested up to 5.0)
   Warning: this version needs PHP 99.0; the site runs PHP {{php_version}}.
   Warning: this version needs WordPress 99.0; the site runs WordPress {{wp_version}}.
 
-WP Updates Notifier: {{own_version}} → 4.5.6
+WP Updates Notifier from version {{own_version}} to 4.5.6
   Details: https://example.com/premium-plugin/
   Compatibility with WordPress {{wp_major_minor}}: unknown
 
-{{theme_name}}: {{theme_version}} → 3.1.0
+{{theme_name}} from version {{theme_version}} to 3.1.0
   Details: https://example.com/themes/default/
 
 Please visit {{admin_update_url}} to update.

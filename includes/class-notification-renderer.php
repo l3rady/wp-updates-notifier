@@ -197,7 +197,7 @@ final class Notification_Renderer {
 
 		foreach ( $notification->get_items() as $item ) {
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
-			$lines[] = sprintf( __( '%1$s: %2$s → %3$s', 'wp-updates-notifier' ), $item->get_name(), $item->get_current_version(), $item->get_new_version() );
+			$lines[] = sprintf( __( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), $item->get_name(), $item->get_current_version(), $item->get_new_version() );
 			foreach ( $item->get_links() as $label => $url ) {
 				$lines[] = '  ' . self::link_label( (string) $label ) . ': ' . $url;
 			}
@@ -259,10 +259,10 @@ final class Notification_Renderer {
 
 		foreach ( $notification->get_items() as $item ) {
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
-			$lines[] = '- ' . sprintf( __( '%1$s: %2$s → %3$s', 'wp-updates-notifier' ), '**' . self::escape_markdown( $item->get_name() ) . '**', self::escape_markdown( $item->get_current_version() ), self::escape_markdown( $item->get_new_version() ) );
+			$lines[] = '- ' . sprintf( __( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), '**' . self::escape_markdown( $item->get_name() ) . '**', self::escape_markdown( $item->get_current_version() ), self::escape_markdown( $item->get_new_version() ) );
 			foreach ( $item->get_links() as $label => $url ) {
 				$link_url = self::markdown_url( $url );
-				$text     = self::escape_markdown( self::link_label( (string) $label ) );
+				$text     = self::escape_markdown( self::item_link_label( (string) $label, $item->get_name() ) );
 				$lines[]  = '  - ' . ( '' === $link_url ? $text : '[' . $text . '](' . $link_url . ')' );
 			}
 			foreach ( $item->get_notes() as $note ) {
@@ -301,11 +301,11 @@ final class Notification_Renderer {
 		foreach ( $notification->get_items() as $item ) {
 			$html .= '<li>';
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
-			$html .= sprintf( esc_html__( '%1$s: %2$s → %3$s', 'wp-updates-notifier' ), '<strong>' . esc_html( $item->get_name() ) . '</strong>', esc_html( $item->get_current_version() ), esc_html( $item->get_new_version() ) );
+			$html .= sprintf( esc_html__( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), '<strong>' . esc_html( $item->get_name() ) . '</strong>', esc_html( $item->get_current_version() ), esc_html( $item->get_new_version() ) );
 
 			$details = '';
 			foreach ( $item->get_links() as $label => $url ) {
-				$details .= '<li><a href="' . esc_url( $url ) . '">' . esc_html( self::link_label( (string) $label ) ) . '</a></li>';
+				$details .= '<li><a href="' . esc_url( $url ) . '">' . esc_html( self::item_link_label( (string) $label, $item->get_name() ) ) . '</a></li>';
 			}
 			foreach ( $item->get_notes() as $note ) {
 				$details .= '<li>' . esc_html( $note ) . '</li>';
@@ -321,8 +321,8 @@ final class Notification_Renderer {
 		if ( $hidden > 0 ) {
 			$html .= '<p>' . esc_html( self::more_text( $hidden, $full ) ) . "</p>\n";
 		}
-		// translators: %s: Address of the WordPress updates screen.
-		$html .= '<p>' . sprintf( esc_html__( 'Please visit %s to update.', 'wp-updates-notifier' ), '<a href="' . esc_url( $notification->get_updates_url() ) . '">' . esc_html( $notification->get_updates_url() ) . '</a>' ) . '</p>';
+		// The link says where it goes, not the address: a screen reader would spell the URL out.
+		$html .= '<p><a href="' . esc_url( $notification->get_updates_url() ) . '">' . esc_html__( 'Go to the Updates screen to update.', 'wp-updates-notifier' ) . '</a></p>';
 
 		return $html;
 	}
@@ -342,6 +342,27 @@ final class Notification_Renderer {
 				return __( 'Changelog', 'wp-updates-notifier' );
 			default:
 				return ucfirst( str_replace( '_', ' ', $label ) );
+		}
+	}
+
+	/**
+	 * The text of a link that names the item it is about, for Markdown and HTML, where links are listed out of context.
+	 *
+	 * @param string $label Label of the link, for example "details".
+	 * @param string $name  Name of the plugin, theme or WordPress the link is about.
+	 *
+	 * @return string
+	 */
+	private static function item_link_label( string $label, string $name ): string {
+		switch ( $label ) {
+			case 'details':
+				// translators: %s: Name of the plugin, theme or WordPress.
+				return sprintf( __( '%s details', 'wp-updates-notifier' ), $name );
+			case 'changelog':
+				// translators: %s: Name of the plugin, theme or WordPress.
+				return sprintf( __( '%s changelog', 'wp-updates-notifier' ), $name );
+			default:
+				return $name . ' ' . self::link_label( $label );
 		}
 	}
 

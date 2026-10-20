@@ -152,7 +152,7 @@ class Test_Email_Channel extends WPUN_Test_Case {
 
 		$sent = $this->sent_mail();
 		$this->assertStringContainsString( "Bob & Sons' Shop", $sent->body );
-		$this->assertStringContainsString( 'Hello & <Dolly>: 1.0', $sent->body );
+		$this->assertStringContainsString( 'Hello & <Dolly> from version 1.0', $sent->body );
 		$this->assertStringNotContainsString( '&amp;', $sent->body );
 		$this->assertStringNotContainsString( '&#039;', $sent->body );
 		$this->assertSame( "WP Updates Notifier: updates available for Bob & Sons' Shop", $sent->subject );

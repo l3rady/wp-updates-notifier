@@ -142,11 +142,54 @@ class Test_Notification extends WPUN_Test_Case {
 		$text = Notification_Renderer::plain_text( $this->notification( array( $this->item( array( 'name' => 'Fish & Chips <3' ) ) ), 'Bob &amp; Sons' ) );
 
 		$this->assertStringContainsString( 'Bob & Sons', $text );
-		$this->assertStringContainsString( 'Fish & Chips <3: 1.0 → 2.0', $text );
+		$this->assertStringContainsString( 'Fish & Chips <3 from version 1.0 to 2.0', $text );
 		$this->assertStringContainsString( 'Details: https://example.com/hello/', $text );
 		$this->assertStringContainsString( 'Works with your WordPress', $text );
 		$this->assertStringContainsString( 'https://example.com/wp-admin/update-core.php', $text );
 		$this->assertStringNotContainsString( '&amp;', $text );
+	}
+
+	/**
+	 * The version change is in words and links name their item, in every format; plain text keeps the bare URL.
+	 */
+	public function test_wording_for_screen_readers() {
+		$notification = $this->notification(
+			array(
+				$this->item(
+					array(
+						'links' => array(
+							'details'       => 'https://example.com/hello/',
+							'changelog'     => 'https://example.com/hello/changelog/',
+							'release_notes' => 'https://example.com/hello/notes/',
+						),
+					)
+				),
+			)
+		);
+
+		$text = Notification_Renderer::plain_text( $notification );
+		$this->assertStringContainsString( "Hello Dolly from version 1.0 to 2.0\n  Details: https://example.com/hello/\n  Changelog: https://example.com/hello/changelog/\n  Release notes: https://example.com/hello/notes/", $text );
+		$this->assertStringContainsString( 'Please visit https://example.com/wp-admin/update-core.php to update.', $text );
+
+		$markdown = Notification_Renderer::markdown( $notification );
+		$this->assertStringContainsString( '**Hello Dolly** from version 1\.0 to 2\.0', $markdown );
+		$this->assertStringContainsString( '[Hello Dolly details](https://example.com/hello/)', $markdown );
+		$this->assertStringContainsString( '[Hello Dolly changelog](https://example.com/hello/changelog/)', $markdown );
+		$this->assertStringContainsString( '[Hello Dolly Release notes](https://example.com/hello/notes/)', $markdown );
+		$this->assertStringContainsString( 'Please visit [https', $markdown );
+
+		$html = Notification_Renderer::html( $notification );
+		$this->assertStringContainsString( '<strong>Hello Dolly</strong> from version 1.0 to 2.0', $html );
+		$this->assertStringContainsString( '<a href="https://example.com/hello/">Hello Dolly details</a>', $html );
+		$this->assertStringContainsString( '<a href="https://example.com/hello/changelog/">Hello Dolly changelog</a>', $html );
+		$this->assertStringContainsString( '<a href="https://example.com/hello/notes/">Hello Dolly Release notes</a>', $html );
+		$this->assertStringContainsString( '<p><a href="https://example.com/wp-admin/update-core.php">Go to the Updates screen to update.</a></p>', $html );
+		$this->assertStringNotContainsString( 'Please visit', $html );
+		$this->assertStringNotContainsString( '>Details<', $html );
+
+		foreach ( array( $text, $markdown, $html ) as $out ) {
+			$this->assertStringNotContainsString( '→', $out );
+		}
 	}
 
 	/**
@@ -184,8 +227,8 @@ class Test_Notification extends WPUN_Test_Case {
 		$markdown = Notification_Renderer::markdown( $this->notification( array( $this->item( array( 'name' => '*Bold* plugin_name [x]' ) ) ) ) );
 
 		$this->assertStringContainsString( '\*Bold\* plugin\_name \[x\]', $markdown );
-		$this->assertStringContainsString( '[Details](https://example.com/hello/)', $markdown );
-		$this->assertStringContainsString( '1\.0 → 2\.0', $markdown );
+		$this->assertStringContainsString( '[\\*Bold\\* plugin\\_name \\[x\\] details](https://example.com/hello/)', $markdown );
+		$this->assertStringContainsString( 'from version 1\.0 to 2\.0', $markdown );
 	}
 
 	/**
@@ -215,7 +258,7 @@ class Test_Notification extends WPUN_Test_Case {
 		foreach ( array( 'javascript:alert(1)', 'data:text/html;base64,PHNjcmlwdD4=', 'example.org/no-scheme', '//example.org/protocol-relative' ) as $url ) {
 			$markdown = Notification_Renderer::markdown( $this->notification( array( $this->item( array( 'links' => array( 'details' => $url ) ) ) ) ) );
 
-			$this->assertStringContainsString( "\n  - Details\n", $markdown );
+			$this->assertStringContainsString( "\n  - Hello Dolly details\n", $markdown );
 			$this->assertStringNotContainsString( '](' . substr( $url, 0, 4 ), $markdown );
 			$this->assertStringNotContainsString( 'javascript', $markdown );
 		}
@@ -227,7 +270,7 @@ class Test_Notification extends WPUN_Test_Case {
 	public function test_markdown_encodes_link_targets() {
 		$markdown = Notification_Renderer::markdown( $this->notification( array( $this->item( array( 'links' => array( 'details' => 'https://example.org/a b(c)<d>' ) ) ) ) ) );
 
-		$this->assertStringContainsString( '[Details](https://example.org/a%20b%28c%29%3Cd%3E)', $markdown );
+		$this->assertStringContainsString( '[Hello Dolly details](https://example.org/a%20b%28c%29%3Cd%3E)', $markdown );
 	}
 
 	/**
@@ -248,7 +291,7 @@ class Test_Notification extends WPUN_Test_Case {
 	public function test_name_is_one_line_in_every_format() {
 		$notification = $this->notification( array( $this->item( array( 'name' => "Foo\nPlease visit https://evil" ) ) ) );
 
-		$this->assertStringContainsString( "Foo Please visit https://evil: 1.0 → 2.0\n", Notification_Renderer::plain_text( $notification ) );
+		$this->assertStringContainsString( "Foo Please visit https://evil from version 1.0 to 2.0\n", Notification_Renderer::plain_text( $notification ) );
 		$this->assertStringContainsString( 'Foo Please visit https://evil**', str_replace( '\\', '', Notification_Renderer::markdown( $notification ) ) );
 		$this->assertStringContainsString( '<strong>Foo Please visit https://evil</strong>', Notification_Renderer::html( $notification ) );
 		$this->assertStringNotContainsString( "Foo\n", Notification_Renderer::markdown( $notification ) );

@@ -148,7 +148,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$body = $this->sent_mail()->body;
-		$this->assertStringContainsString( 'WP Updates Notifier: ', $body );
+		$this->assertStringContainsString( 'WP Updates Notifier from version ', $body );
 		$this->assertStringNotContainsString( 'Hello Dolly', $body );
 		$this->assertStringNotContainsString( '6.4', $body );
 		$this->assertArrayNotHasKey( 'legacy_notified', $this->stored_state() );
@@ -383,7 +383,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		$this->run_check();
 
 		$this->assertStringNotContainsString( 'Hello Dolly', $this->sent_mail()->body );
-		$this->assertStringContainsString( 'WP Updates Notifier: ', $this->sent_mail()->body );
+		$this->assertStringContainsString( 'WP Updates Notifier from version ', $this->sent_mail()->body );
 		$this->assertSame( '', $this->notified_version( 'plugin', 'hello.php' ) );
 	}
 
