@@ -1,0 +1,105 @@
+name: docs
+
+# The documentation site, https://wpun.cariss.dev: MkDocs Material, versioned with mike on the gh-pages branch, which
+# GitHub Pages serves. Every pull request and push builds it strictly (a broken link or anchor fails) and runs the
+# accessibility checks. A push to main then deploys it as the version `main`; a published release deploys it as its
+# version (2.0.0) and moves the `latest` alias, which the site root opens, to it. Older versions stay as they were
+# published: changing one is a deliberate run of this workflow by hand on its tag.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  # Published by the release job in release-please.yml with the release app's token, so this event fires.
+  release:
+    types:
+      - published
+  # Deploy again by hand: run it on main, or on a release tag (v2.0.0) to redeploy that version, e.g. after a
+  # cancelled or failed run.
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  # Strict build, then axe in the dark and light schemes, no third-party requests, visible focus (make docs-a11y).
+  docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the site and check its accessibility
+        run: make docs-a11y
+      - name: Keep the report
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docs-a11y-report
+          path: tests/e2e/reports/docs/
+          retention-days: 14
+
+  # mike commits the version to a local gh-pages branch inside the docs container, which gets no token; the runner
+  # pushes it. One deploy at a time, as each one adds a commit on top of gh-pages. A newer pending deploy replaces an
+  # older pending one: for main that is the newer commit anyway; a release deploy lost that way is run again by hand.
+  deploy:
+    needs: docs
+    if: >-
+      github.event_name == 'push'
+      || github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'release' && !github.event.release.prerelease)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Push to gh-pages.
+    concurrency:
+      group: docs-gh-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # main is the development version. A release tag v2.0.0 is the version 2.0.0, and takes the `latest` alias.
+      - name: Work out the version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          case "$REF_TYPE/$REF_NAME" in
+            branch/main) echo "DOCS_VERSION=main" >> "$GITHUB_ENV" ;;
+            tag/v[0-9]*) echo "DOCS_VERSION=${REF_NAME#v}" >> "$GITHUB_ENV" ;;
+            *) echo "Deploys run on main or a v* release tag, not $REF_TYPE $REF_NAME." >&2; exit 1 ;;
+          esac
+
+      - name: Fetch gh-pages
+        run: git fetch --no-tags origin +gh-pages:gh-pages
+
+      # Until the first release there is no `latest`, so the site root opens main. A release makes `latest` the
+      # default, and later pushes to main leave it there. Only the repository's latest release takes `latest`: an
+      # older version redeployed by hand keeps its folder and nothing else.
+      - name: Commit the version with mike
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$DOCS_VERSION" = main ]; then
+            default=1
+            if git show gh-pages:versions.json 2> /dev/null \
+              | jq -e 'any(.[]; .aliases | index("latest"))' > /dev/null; then
+              default=
+            fi
+            make docs-deploy DOCS_VERSION=main DOCS_TITLE="main (development)" DOCS_DEFAULT="$default"
+          elif [ "$REF_NAME" = "$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)" ]; then
+            make docs-deploy DOCS_VERSION="$DOCS_VERSION" DOCS_ALIAS=latest DOCS_TITLE="$DOCS_VERSION" DOCS_DEFAULT=1
+          else
+            make docs-deploy DOCS_VERSION="$DOCS_VERSION" DOCS_TITLE="$DOCS_VERSION"
+          fi
+          git log --oneline -3 gh-pages
+
+      - name: Push gh-pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w 0)"
+          git -c http.extraheader="AUTHORIZATION: basic $auth" push origin gh-pages

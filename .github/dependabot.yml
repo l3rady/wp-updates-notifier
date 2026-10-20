@@ -109,3 +109,39 @@ updates:
     patterns: ["*"]
     cooldown:
       default-days: 14
+
+  # The documentation site (make docs): its image, MkDocs, Material and mike from docker/docs/requirements.txt (with
+  # hashes, compiled from requirements.in), and the self-hosted Mermaid from docker/docs/package-lock.json.
+  - package-ecosystem: docker
+    directory: /docker/docs
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+
+  - package-ecosystem: pip
+    directory: /docker/docs
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope
+
+  - package-ecosystem: npm
+    directory: /docker/docs
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope
+    # Material for MkDocs is built against one Mermaid major (it names it in its unpkg fallback). Move Mermaid to a
+    # new major together with Material, never ahead of it.
+    ignore:
+      - dependency-name: mermaid
+        update-types: ["version-update:semver-major"]
