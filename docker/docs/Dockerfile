@@ -6,7 +6,7 @@
 # docker-compose.yml), as .dockerignore leaves out the Markdown files.
 
 # Mermaid, installed from the lockfile. Its single-file build is copied into the final image.
-FROM node:24-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5 AS mermaid
+FROM node:26-slim@sha256:36793bcbb160a6a16cede1e62b93f84e26b78a972a8a4c0b879c1c12f22761ec AS mermaid
 WORKDIR /opt/mermaid
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts --no-fund --no-audit
