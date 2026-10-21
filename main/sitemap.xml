@@ -2,38 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://wpun.cariss.dev/main/</loc>
-         <lastmod>2026-10-20</lastmod>
+         <lastmod>2026-10-21</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/main/developers/</loc>
-         <lastmod>2026-10-20</lastmod>
+         <lastmod>2026-10-21</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/main/developers/architecture/</loc>
-         <lastmod>2026-10-20</lastmod>
+         <lastmod>2026-10-21</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/main/developers/configuration-sources/</loc>
-         <lastmod>2026-10-20</lastmod>
+         <lastmod>2026-10-21</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/main/developers/hooks/</loc>
-         <lastmod>2026-10-20</lastmod>
+         <lastmod>2026-10-21</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/main/developers/item-types-and-routing/</loc>
-         <lastmod>2026-10-20</lastmod>
+         <lastmod>2026-10-21</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/main/developers/stability/</loc>
-         <lastmod>2026-10-20</lastmod>
+         <lastmod>2026-10-21</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/main/developers/writing-a-module/</loc>
-         <lastmod>2026-10-20</lastmod>
+         <lastmod>2026-10-21</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/main/security/threat-model/</loc>
-         <lastmod>2026-10-20</lastmod>
+         <lastmod>2026-10-21</lastmod>
     </url>
 </urlset>
