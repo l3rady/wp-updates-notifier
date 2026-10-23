@@ -29,4 +29,6 @@ exclude = [
   '^https://wpun\.cariss\.dev/(users|developers|decisions|security)(/|$)',
   # LinkedIn answers every automated request with 999, whatever the page.
   '^https://www\.linkedin\.com/',
+  # gnu.org times out from GitHub's runners, though the licence page is fine (#295).
+  '^https://www\.gnu\.org/',
 ]
