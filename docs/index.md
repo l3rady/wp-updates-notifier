@@ -16,6 +16,7 @@ hide:
 WP Updates Notifier checks your site on a schedule and emails you when WordPress core, a plugin or a theme has an update waiting, so you know without logging in. It is made for sites you rarely visit and for sites you look after for clients.
 
 [Install from WordPress.org](https://wordpress.org/plugins/wp-updates-notifier/){ .md-button .md-button--primary }
+[Read the user guide](users/README.md){ .md-button }
 [Read the developer guide](developers/README.md){ .md-button }
 [View the code on GitHub](https://github.com/l3rady/wp-updates-notifier){ .md-button }
 
@@ -87,6 +88,7 @@ Then open **Settings → Updates Notifier** to choose where notifications go.
 
 ## Where to go next
 
+- [User guide](users/README.md): set up channels, choose what to be told about, and fix common problems.
 - [Developer guide](developers/README.md): how the plugin fits together and how to extend it.
 - [Architecture](developers/architecture.md): one update check from start to finish.
 - [Hook reference](developers/hooks.md): every action and filter.

@@ -20,6 +20,14 @@ validation:
 # The generated hook reference stays under docs/developers/ (bin/hook-docs.php writes it), README.md is the section index.
 nav:
   - Home: index.md
+  - Users:
+      - users/README.md
+      - Getting started: users/getting-started.md
+      - Settings: users/settings.md
+      - Channels: users/channels.md
+      - How notifications work: users/how-notifications-work.md
+      - Settings in code: users/settings-in-code.md
+      - Troubleshooting: users/troubleshooting.md
   - Developers:
       - developers/README.md
       - Architecture: developers/architecture.md
