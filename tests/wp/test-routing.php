@@ -97,18 +97,20 @@ class Test_Routing extends WPUN_Test_Case {
 	public function test_normalise() {
 		$this->assertSame(
 			array(
-				'types' => array(),
-				'scope' => 'all',
-				'core'  => 'all',
+				'types'  => array(),
+				'scope'  => 'all',
+				'core'   => 'all',
+				'remind' => 'never',
 			),
 			Routing::normalise( array() )
 		);
 		$this->assertSame(
 			array(
-				'types' => array( 'core', 'plugin' ),
-				'scope' => 'all',
-				'core'  => 'all',
-				'addon' => array( 'x' => 1 ),
+				'types'  => array( 'core', 'plugin' ),
+				'scope'  => 'all',
+				'core'   => 'all',
+				'addon'  => array( 'x' => 1 ),
+				'remind' => 'never',
 			),
 			Routing::normalise(
 				array(

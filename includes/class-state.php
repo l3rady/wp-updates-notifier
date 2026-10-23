@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @phpstan-type Generic_Notified array<string, array<string, string>>
  * @phpstan-type Legacy_Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
  * @phpstan-type Last_Result array{success: bool, message: string, time: int}
- * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, last_result?: Last_Result, retry_at?: int}
+ * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, last_result?: Last_Result, retry_at?: int, last_reminder?: int}
  * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified}
  */
 class State {
@@ -89,6 +89,9 @@ class State {
 			if ( isset( $entry['retry_at'] ) && is_numeric( $entry['retry_at'] ) && (int) $entry['retry_at'] > 0 ) {
 				$clean['retry_at'] = (int) $entry['retry_at'];
 			}
+			if ( isset( $entry['last_reminder'] ) && is_numeric( $entry['last_reminder'] ) && (int) $entry['last_reminder'] > 0 ) {
+				$clean['last_reminder'] = (int) $entry['last_reminder'];
+			}
 			$channels[ (string) $id ] = $clean;
 		}
 
@@ -130,16 +133,18 @@ class State {
 	 * Make the next update check record what is pending for an instance as notified, without sending it.
 	 *
 	 * For an instance added or re-enabled when the site owner chose not to send the updates that are already waiting.
+	 * Its reminder interval starts again at that check.
 	 *
 	 * @param string $id Instance id.
 	 *
 	 * @return void
 	 */
 	public function skip_pending( string $id ): void {
-		$state                    = $this->get();
-		$entry                    = $state['channels'][ $id ] ?? array();
-		$entry['notified']        = array();
-		$entry['skip_pending']    = true;
+		$state                 = $this->get();
+		$entry                 = $state['channels'][ $id ] ?? array();
+		$entry['notified']     = array();
+		$entry['skip_pending'] = true;
+		unset( $entry['last_reminder'] ); // The skip run starts the reminder interval afresh, so skipped updates are not reminded about at once.
 		$state['channels'][ $id ] = $entry;
 		$this->save( $state );
 	}

@@ -22,6 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   `active` flag is true. Applies on top of the global "active only" settings. Default `all`.
  * - `core` (`all`|`major`): for `core` items. `major` keeps only updates that change major.minor.
  *   Default `all`.
+ * - `remind` (`never`|`daily`|`weekly`): repeat every update of the instance that is still waiting,
+ *   in one message, at that interval until it is installed. New updates are always sent at once.
+ *   Default `never`.
  *
  * Other keys are kept and ignored, so add-ons can store their own rules.
  *
@@ -34,7 +37,7 @@ final class Routing {
 	 *
 	 * @since 2.0.0
 	 *
-	 * @return array<string, array<string, mixed>> Keyed `scope`, `core` and `types`.
+	 * @return array<string, array<string, mixed>> Keyed `scope`, `core`, `remind` and `types`.
 	 */
 	public static function fields(): array {
 		return self::choice_fields() + array(
@@ -51,13 +54,13 @@ final class Routing {
 	}
 
 	/**
-	 * The `scope` and `core` fields, which need no look at the registered item types.
+	 * The `scope`, `core` and `remind` fields, which need no look at the registered item types.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
 	private static function choice_fields(): array {
 		return array(
-			'scope' => array(
+			'scope'  => array(
 				'type'        => 'enum',
 				'label'       => __( 'Plugins and themes', 'wp-updates-notifier' ),
 				'description' => __( 'Applies after the plugin and theme settings on the General tab.', 'wp-updates-notifier' ),
@@ -68,7 +71,7 @@ final class Routing {
 				'default'     => 'all',
 				'display'     => 'radio',
 			),
-			'core'  => array(
+			'core'   => array(
 				'type'        => 'enum',
 				'label'       => __( 'WordPress updates', 'wp-updates-notifier' ),
 				'description' => __( 'Applies after the WordPress updates setting on the General tab.', 'wp-updates-notifier' ),
@@ -77,6 +80,18 @@ final class Routing {
 					'major' => __( 'Only major releases', 'wp-updates-notifier' ),
 				),
 				'default'     => 'all',
+				'display'     => 'radio',
+			),
+			'remind' => array(
+				'type'        => 'enum',
+				'label'       => __( 'Reminders', 'wp-updates-notifier' ),
+				'description' => __( 'Repeat every update that is still waiting, in one message, until it is installed. New updates are still sent at once.', 'wp-updates-notifier' ),
+				'options'     => array(
+					'never'  => __( 'Never', 'wp-updates-notifier' ),
+					'daily'  => __( 'Daily', 'wp-updates-notifier' ),
+					'weekly' => __( 'Weekly', 'wp-updates-notifier' ),
+				),
+				'default'     => 'never',
 				'display'     => 'radio',
 			),
 		);
@@ -89,7 +104,7 @@ final class Routing {
 	 *
 	 * @param array<mixed> $routing Stored routing.
 	 *
-	 * @return array<mixed> With `types` (string[]), `scope` and `core`.
+	 * @return array<mixed> With `types` (string[]), `scope`, `core` and `remind`.
 	 */
 	public static function normalise( array $routing ): array {
 		// Types stay as stored, even ones nobody registers any more: dropping the type of a deactivated add-on
@@ -103,10 +118,11 @@ final class Routing {
 			}
 		}
 
-		$fields           = self::choice_fields();
-		$routing['types'] = $types;
-		$routing['scope'] = Enum_Field::sanitize( $routing['scope'] ?? null, $fields['scope'] )['value'];
-		$routing['core']  = Enum_Field::sanitize( $routing['core'] ?? null, $fields['core'] )['value'];
+		$fields            = self::choice_fields();
+		$routing['types']  = $types;
+		$routing['scope']  = Enum_Field::sanitize( $routing['scope'] ?? null, $fields['scope'] )['value'];
+		$routing['core']   = Enum_Field::sanitize( $routing['core'] ?? null, $fields['core'] )['value'];
+		$routing['remind'] = Enum_Field::sanitize( $routing['remind'] ?? null, $fields['remind'] )['value'];
 
 		return $routing;
 	}

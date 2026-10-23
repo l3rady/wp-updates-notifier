@@ -102,6 +102,12 @@ class Update_Checker {
 	 * What was delivered is remembered per instance, so an instance that failed is tried again
 	 * on the next run without the others sending twice.
 	 *
+	 * An instance with reminders on (the `remind` routing key) also gets one message, marked as a
+	 * reminder, with everything still waiting for it once its interval has passed since the last
+	 * reminder. The interval starts when something first waits for the instance, and stops when
+	 * nothing does. A due reminder replaces the message of new items of that run; new items
+	 * between reminders are sent at once as usual. A failed reminder does not restart the interval.
+	 *
 	 * @param string $source What started the check, kept in the notification context.
 	 *
 	 * @return void
@@ -239,16 +245,30 @@ class Update_Checker {
 			if ( ( $channels[ $id ]['retry_at'] ?? 0 ) > time() ) {
 				continue; // Told to wait (Retry-After): nothing is sent or recorded, its items go out on the first check after, and a pending skip waits.
 			}
-			$entry = $channels[ $id ] ?? array(
+			$entry    = $channels[ $id ] ?? array(
 				'notified'     => array(),
 				'skip_pending' => false,
 			); // No entry: no history, so everything waiting is new to it.
+			$original = $entry;
 
+			// Everything waiting that this instance receives, and the part of it that is new to it.
+			$pending      = $this->items_for_instance( $instance, $notification->get_items() );
 			$for_instance = array();
-			foreach ( $this->items_for_instance( $instance, $notification->get_items() ) as $item ) {
+			foreach ( $pending as $item ) {
 				if ( ( $entry['notified'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version() ) {
 					$for_instance[] = $item;
 				}
+			}
+
+			// The reminder clock runs while the instance wants reminders and something is waiting for it.
+			$interval = $this->reminder_interval( Routing::normalise( $instance->get_routing() )['remind'] );
+			$due      = false;
+			if ( 0 === $interval || array() === $pending ) {
+				unset( $entry['last_reminder'] );
+			} elseif ( ! isset( $entry['last_reminder'] ) ) {
+				$entry['last_reminder'] = time(); // Starts now: the first reminder comes one interval after items start waiting.
+			} else {
+				$due = ! $entry['skip_pending'] && $this->reminder_is_due( $entry['last_reminder'], $interval, $options );
 			}
 
 			if ( $entry['skip_pending'] ) {
@@ -257,14 +277,32 @@ class Update_Checker {
 				}
 				$entry['skip_pending'] = false;
 				$entry['notified']     = $this->record( $entry['notified'], $for_instance );
+			} elseif ( $due ) {
+				// One message with everything waiting, new items included, instead of a second message.
+				$reminder                  = new Notification(
+					$notification->get_site_name(),
+					$notification->get_site_url(),
+					$notification->get_updates_url(),
+					$pending,
+					array(
+						'is_reminder' => true,
+						'source'      => $notification->get_source(),
+					)
+				);
+				$result                    = $this->dispatcher->send_one( $reminder, $instance );
+				$this->last_results[ $id ] = $result;
+				if ( $result->is_success() ) {
+					$entry['notified']      = $this->record( $entry['notified'], $pending );
+					$entry['last_reminder'] = time();
+				}
 			} elseif ( array() !== $for_instance ) {
 				$result                    = $this->dispatcher->send_one( $this->last_notification->with_items( $for_instance ), $instance );
 				$this->last_results[ $id ] = $result;
 				if ( $result->is_success() ) {
 					$entry['notified'] = $this->record( $entry['notified'], $for_instance );
 				}
-			} else {
-				continue;
+			} elseif ( $entry === $original ) {
+				continue; // Nothing new and the clock did not change.
 			}
 
 			$channels[ $id ] = $entry;
@@ -426,6 +464,45 @@ class Update_Checker {
 				static fn( Notification_Item $item ): bool => Routing::should_receive( $item, $instance )
 			)
 		);
+	}
+
+	/**
+	 * The seconds between reminders for a `remind` routing value.
+	 *
+	 * @param mixed $remind The normalised `remind` routing value: never, daily or weekly.
+	 *
+	 * @return int 0 for never.
+	 */
+	private function reminder_interval( $remind ): int {
+		if ( 'daily' === $remind ) {
+			return DAY_IN_SECONDS;
+		}
+
+		return 'weekly' === $remind ? WEEK_IN_SECONDS : 0;
+	}
+
+	/**
+	 * Whether a reminder is due, a little early if the interval is not reached yet.
+	 *
+	 * WP-Cron only runs when the site gets a visit, so a check is often late, and the next one is
+	 * scheduled from the planned time, not the actual one. With a strict comparison a daily reminder
+	 * on a daily check would then be a few minutes short at the next run and wait a whole extra
+	 * cycle. So a reminder is due when the time since the last one is within half of the check
+	 * frequency's interval of the reminder interval. The tolerance is never more than half the
+	 * reminder interval, so with checks less often than reminders (weekly checks, daily reminders)
+	 * every check sends one, but a "Check now" soon after a reminder does not send another.
+	 *
+	 * @param int                  $last_reminder When the last reminder was sent, or the clock started.
+	 * @param int                  $interval      Seconds between reminders.
+	 * @param array<string, mixed> $options       The settings, for the check frequency.
+	 *
+	 * @return bool
+	 */
+	private function reminder_is_due( int $last_reminder, int $interval, array $options ): bool {
+		$frequency = is_string( $options['frequency'] ?? null ) ? $options['frequency'] : '';
+		$tolerance = (int) min( ( Frequencies::all()[ $frequency ]['interval'] ?? 0 ) / 2, $interval / 2 );
+
+		return time() - $last_reminder >= $interval - $tolerance;
 	}
 
 	/**

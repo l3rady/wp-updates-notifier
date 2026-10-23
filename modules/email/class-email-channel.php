@@ -207,9 +207,14 @@ class Email_Channel extends Channel {
 			$body = sprintf( __( 'This is a test message from WP Updates Notifier for %1$s (%2$s). Update notifications for this site will be sent to this address.', 'wp-updates-notifier' ), $site, $notification->get_site_url() );
 			$body = $is_html ? '<p>' . esc_html( $body ) . '</p>' : $body;
 		} else {
-			// translators: %s: Site name.
-			$subject = sprintf( __( 'WP Updates Notifier: updates available for %s', 'wp-updates-notifier' ), $site );
-			$body    = $is_html ? Notification_Renderer::html( $notification ) : Notification_Renderer::plain_text( $notification );
+			if ( $notification->is_reminder() ) {
+				// translators: %s: Site name.
+				$subject = sprintf( __( 'WP Updates Notifier: reminder of updates waiting for %s', 'wp-updates-notifier' ), $site );
+			} else {
+				// translators: %s: Site name.
+				$subject = sprintf( __( 'WP Updates Notifier: updates available for %s', 'wp-updates-notifier' ), $site );
+			}
+			$body = $is_html ? Notification_Renderer::html( $notification ) : Notification_Renderer::plain_text( $notification );
 		}
 
 		$prefix = $this->text( $settings, 'subject_prefix' );

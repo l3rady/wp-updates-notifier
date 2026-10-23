@@ -181,6 +181,23 @@ final class Notification_Renderer {
 	}
 
 	/**
+	 * The opening line, as a format with the site name and address, for a reminder or a new update.
+	 *
+	 * @param Notification $notification The notification.
+	 *
+	 * @return string A sprintf() format with %1$s (site name) and %2$s (site address).
+	 */
+	private static function intro( Notification $notification ): string {
+		if ( $notification->is_reminder() ) {
+			// translators: 1: Site name. 2: Site address.
+			return __( 'Reminder: these updates are still waiting for %1$s (%2$s)', 'wp-updates-notifier' );
+		}
+
+		// translators: 1: Site name. 2: Site address.
+		return __( 'There are updates available for %1$s (%2$s)', 'wp-updates-notifier' );
+	}
+
+	/**
 	 * Render plain text.
 	 *
 	 * @param Notification $notification The notification with the items to show.
@@ -192,8 +209,7 @@ final class Notification_Renderer {
 	private static function render_plain_text( Notification $notification, int $hidden, Notification $full ): string {
 		$site = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
 
-		// translators: 1: Site name. 2: Site address.
-		$lines = array( sprintf( __( 'There are updates available for %1$s (%2$s)', 'wp-updates-notifier' ), $site, $notification->get_site_url() ), '' );
+		$lines = array( sprintf( self::intro( $notification ), $site, $notification->get_site_url() ), '' );
 
 		foreach ( $notification->get_items() as $item ) {
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
@@ -254,8 +270,7 @@ final class Notification_Renderer {
 	private static function render_markdown( Notification $notification, int $hidden, Notification $full ): string {
 		$site = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
 
-		// translators: 1: Site name. 2: Site address.
-		$lines = array( '**' . sprintf( __( 'There are updates available for %1$s (%2$s)', 'wp-updates-notifier' ), self::escape_markdown( $site ), self::escape_markdown( $notification->get_site_url() ) ) . '**', '' );
+		$lines = array( '**' . sprintf( self::intro( $notification ), self::escape_markdown( $site ), self::escape_markdown( $notification->get_site_url() ) ) . '**', '' );
 
 		foreach ( $notification->get_items() as $item ) {
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
@@ -295,8 +310,7 @@ final class Notification_Renderer {
 	private static function render_html( Notification $notification, int $hidden, Notification $full ): string {
 		$site = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
 
-		// translators: 1: Site name. 2: Site address.
-		$html = '<p>' . esc_html( sprintf( __( 'There are updates available for %1$s (%2$s)', 'wp-updates-notifier' ), $site, $notification->get_site_url() ) ) . "</p>\n<ul>\n";
+		$html = '<p>' . esc_html( sprintf( self::intro( $notification ), $site, $notification->get_site_url() ) ) . "</p>\n<ul>\n";
 
 		foreach ( $notification->get_items() as $item ) {
 			$html .= '<li>';

@@ -525,7 +525,13 @@ class Channels_Tab {
 			$parts[] = $fields['scope']['label'] . ': ' . $fields['scope']['options']['active'];
 		}
 
-		return array() === $parts ? __( 'All updates', 'wp-updates-notifier' ) : implode( ' · ', $parts );
+		$summary = array() === $parts ? __( 'All updates', 'wp-updates-notifier' ) : implode( ' · ', $parts );
+
+		if ( 'never' !== $routing['remind'] && isset( $fields['remind']['options'][ $routing['remind'] ] ) ) {
+			$summary .= ' · ' . $fields['remind']['label'] . ': ' . $fields['remind']['options'][ $routing['remind'] ];
+		}
+
+		return $summary;
 	}
 
 	/**

@@ -528,7 +528,7 @@ class Test_Enum_Field extends WPUN_Test_Case {
 	public function test_routing_fields() {
 		$fields = WPUN\Routing::fields();
 
-		$this->assertSame( array( 'scope', 'core', 'types' ), array_keys( $fields ) );
+		$this->assertSame( array( 'scope', 'core', 'remind', 'types' ), array_keys( $fields ) );
 		$this->assertSame( array( 'all', 'active' ), array_keys( $fields['scope']['options'] ) );
 		$this->assertSame( array( 'all', 'major' ), array_keys( $fields['core']['options'] ) );
 		$this->assertSame( 'all', $fields['core']['default'] );
