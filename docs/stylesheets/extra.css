@@ -269,3 +269,9 @@
 [data-md-color-scheme="solarized-dark"] .md-typeset .wpun-banner[src$="#only-dark"] {
 	display: block;
 }
+
+/* Admonition titles sit on a 10% tint of their type's colour, where base01 is only 4.49:1: use base02 (about 10:1). */
+[data-md-color-scheme="solarized-light"] .md-typeset .admonition-title,
+[data-md-color-scheme="solarized-light"] .md-typeset summary {
+	color: #073642;
+}
