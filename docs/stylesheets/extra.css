@@ -275,3 +275,9 @@
 [data-md-color-scheme="solarized-light"] .md-typeset summary {
 	color: #073642;
 }
+
+/* Navigation links are 18px tall in Material. Once the sidebar is long enough to scroll, axe finds them closer than
+   24px to their neighbours (WCAG 2.5.8 target size), so give every link a 24px minimum height. */
+.md-nav__link {
+	min-height: 24px;
+}
