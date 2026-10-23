@@ -28,6 +28,23 @@ nav:
       - Configuration sources: developers/configuration-sources.md
       - Hook reference: developers/hooks.md
       - Stability and deprecation: developers/stability.md
+  - Decisions:
+      - decisions/README.md
+      - 0001 Licence: decisions/0001-licence-gpl-2-or-later.md
+      - 0002 PHP and WordPress minimums: decisions/0002-php-7-4-and-wordpress-6-7-minimums.md
+      - 0003 Main file rename: decisions/0003-rename-main-file-without-a-migration-stub.md
+      - 0004 Module API and dogfooding: decisions/0004-public-module-api-and-dogfooding.md
+      - 0005 Separate options: decisions/0005-settings-state-and-channels-in-separate-options.md
+      - 0006 Slack dropped: decisions/0006-drop-slack-in-2-0-0-and-keep-its-settings.md
+      - 0007 Configuration sources: decisions/0007-settings-and-secrets-from-outside-the-database.md
+      - 0008 Single sites only: decisions/0008-single-sites-only-in-2-0-0.md
+      - 0009 No update check lock: decisions/0009-no-lock-against-overlapping-update-checks.md
+      - 0010 WordPress update emails: decisions/0010-leave-wordpress-auto-update-emails-alone.md
+      - 0011 Accessibility: decisions/0011-accessibility-wcag-2-2-aa-without-javascript.md
+      - 0012 Security tooling: decisions/0012-security-tooling-is-free-deterministic-and-scripted.md
+      - 0013 Verifiable releases: decisions/0013-verifiable-release-artefacts.md
+      - 0014 Documentation site: decisions/0014-documentation-site-on-a-custom-subdomain.md
+      - 0015 Commits and history: decisions/0015-conventional-commits-and-linear-history.md
   - Security:
       - Threat model: security/threat-model.md
 

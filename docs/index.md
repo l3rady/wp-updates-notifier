@@ -90,6 +90,7 @@ Then open **Settings → Updates Notifier** to choose where notifications go.
 - [Developer guide](developers/README.md): how the plugin fits together and how to extend it.
 - [Architecture](developers/architecture.md): one update check from start to finish.
 - [Hook reference](developers/hooks.md): every action and filter.
+- [Decision records](decisions/README.md): why the plugin is built the way it is.
 - [Threat model](security/threat-model.md): what the plugin trusts and how each threat is handled.
 - [Changelog](https://github.com/l3rady/wp-updates-notifier/blob/main/CHANGELOG.md): what changed in each release.
 
