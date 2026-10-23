@@ -151,7 +151,10 @@ updates:
       prefix: build
       include: scope
     # Material for MkDocs is built against one Mermaid major (it names it in its unpkg fallback). Move Mermaid to a
-    # new major together with Material, never ahead of it.
+    # new major together with Material, never ahead of it. Mermaid 11 needs katex ^0.16, so a newer katex would drag
+    # Mermaid to 12 (#287): lift both ignores together.
     ignore:
       - dependency-name: mermaid
         update-types: ["version-update:semver-major"]
+      - dependency-name: katex
+        versions: [">=0.17"]
