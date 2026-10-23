@@ -31,6 +31,7 @@ nav:
   - Developers:
       - developers/README.md
       - Architecture: developers/architecture.md
+      - Tests and checks: developers/testing.md
       - Writing a module: developers/writing-a-module.md
       - Item types and routing: developers/item-types-and-routing.md
       - Configuration sources: developers/configuration-sources.md
@@ -114,6 +115,11 @@ extra:
 
 plugins:
   - search
+  # Every version's canonical link points at the same page under the `latest` alias, which search engines should
+  # index, instead of an unversioned address the versioned site does not have. Material draws the version selector.
+  - mike:
+      canonical_version: latest
+      version_selector: false
 
 markdown_extensions:
   - admonition
