@@ -17,12 +17,16 @@ on:
   # Deploy again by hand: run it on main, or on a release tag (v2.0.0) to redeploy that version, e.g. after a
   # cancelled or failed run.
   workflow_dispatch:
+  # Links to other sites break without a change here, so the links job runs every Monday as well.
+  schedule:
+    - cron: '23 5 * * 1'
 
 permissions: {}
 
 jobs:
   # Strict build, then axe in the dark and light schemes, no third-party requests, visible focus (make docs-a11y).
   docs:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -39,6 +43,23 @@ jobs:
           name: docs-a11y-report
           path: tests/e2e/reports/docs/
           retention-days: 14
+
+  # Links to other sites in the built site, README.md, readme.txt and CONTRIBUTING.md (make docs-links, lychee). The
+  # strict build already checks the internal ones. The workflow's token only stops github.com from rate limiting the
+  # many links to it; the job can read the repository and nothing else. Not on a release or a manual deploy.
+  links:
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the links
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make docs-links
 
   # mike commits the version to a local gh-pages branch inside the docs container, which gets no token; the runner
   # pushes it. One deploy at a time, as each one adds a commit on top of gh-pages. A newer pending deploy replaces an

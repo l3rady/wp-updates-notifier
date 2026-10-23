@@ -104,9 +104,18 @@ Docker like everything else. `mkdocs.yml` holds the navigation and the theme, an
   or a broken anchor fails it.
 - `make docs-serve` previews it on <http://localhost:8000> and rebuilds as you edit.
 - `make docs-a11y` runs axe (WCAG 2.2 A and AA), a no-third-party-requests check and
-  keyboard focus checks on every built page, in the dark and the light scheme
+  keyboard focus checks on every built page, in the dark and the light scheme, and
+  that every Mermaid diagram parses (a syntax error fails it with Mermaid's message)
   (about 30 seconds; the reports are in `tests/e2e/reports/docs/`). A colour change
   in `extra.css` must keep it passing. Do not disable a rule to make it pass.
+- `make docs-links` checks the links to other sites in the built site, `README.md`,
+  `readme.txt` and `CONTRIBUTING.md` with [lychee](https://lychee.cli.rs/) (needs only
+  Docker; it builds the site first). CI runs it on every pull request and push, and
+  every Monday, as links break without a change here. Fix a broken link rather than
+  excluding it. `docker/docs/lychee.toml` holds the retries, accepts a 429 (a rate limit)
+  and lists the few exclusions, each with its reason. Set `GITHUB_TOKEN` in your
+  environment to avoid GitHub's rate limit on the many github.com links; the token is
+  passed to the container and never printed.
 - Link to other pages with relative `.md` paths. A link to code outside `docs/` must be
   an absolute GitHub URL (`https://github.com/l3rady/wp-updates-notifier/blob/main/<path>`,
   or `tree/main/<path>` for a directory), as those files are not part of the site.

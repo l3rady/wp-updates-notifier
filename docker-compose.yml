@@ -232,6 +232,18 @@ services:
       GIT_COMMITTER_NAME: ${DOCS_GIT_NAME:-github-actions[bot]}
       GIT_COMMITTER_EMAIL: ${DOCS_GIT_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}
 
+  # Checks the links of the built site and of the README, readme.txt and CONTRIBUTING.md: `make docs-links`. Pinned
+  # by tag and digest like the security tools, so Dependabot proposes the updates. Reads the repository, writes
+  # nothing. GITHUB_TOKEN (set only when the caller has one) stops github.com from rate limiting the many links to it.
+  lychee:
+    profiles: [docs]
+    image: lycheeverse/lychee:0.24.2@sha256:e2d19e57cf6ab037026f20b8e449a1f30d9d7f81eef4194763aab2eab20bd28d
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+    environment:
+      GITHUB_TOKEN:
+
   # Live preview, http://localhost:8000: `make docs-serve`.
   docs-serve:
     extends: docs

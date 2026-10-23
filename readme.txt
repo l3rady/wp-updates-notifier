@@ -41,7 +41,7 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 *Languages*
 
 - French by [Christophe Catarina](http://www.ordilibre.com/) - *Added 03 July 2013*
-- German by [Alexander Pfabel](http://alexander.pfabel.de/) - *Added 02 October 2012*
+- German by Alexander Pfabel - *Added 02 October 2012*
 
 == Installation ==
 

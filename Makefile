@@ -49,7 +49,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-deploy assets up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -227,6 +227,11 @@ docs-serve: ## Preview the documentation site on http://localhost:8000 (rebuilds
 
 docs-a11y: docs ## axe, third-party request and focus checks of the built site, in the dark and light schemes (own compose project wpun-docs-a11y)
 	@./tests/e2e/docs/run.sh
+
+# lychee reads docker/docs/lychee.toml (exclusions, retries, accepted statuses). GITHUB_TOKEN is passed on only when set,
+# and never printed: without it github.com answers 429 after a few dozen links.
+docs-links: docs ## Check the external links of the built site, README.md, readme.txt and CONTRIBUTING.md with lychee (GITHUB_TOKEN avoids GitHub's rate limit)
+	$(COMPOSE) --profile docs run --rm -T lychee --config docker/docs/lychee.toml --no-progress build/docs README.md readme.txt CONTRIBUTING.md
 
 docs-deploy: ## Commit one version to the local gh-pages branch with mike, without pushing: make docs-deploy DOCS_VERSION=main [DOCS_ALIAS=latest] [DOCS_TITLE=...] [DOCS_DEFAULT=1]
 	@test -n "$(DOCS_VERSION)" || { echo 'Set DOCS_VERSION, e.g. make docs-deploy DOCS_VERSION=main' >&2; exit 1; }
