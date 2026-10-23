@@ -15,17 +15,17 @@ ARG PHP_VERSION=8.3
 FROM php:7.4-cli@sha256:620a6b9f4d4feef2210026172570465e9d0c1de79766418d3affd09190a7fda5 AS php-7.4
 FROM php:8.0-cli@sha256:0569e384b9064c04dec55dc6e41be41b494a878dfbb6577a7d76bd50cfd5bc00 AS php-8.0
 FROM php:8.1-cli@sha256:76e563191d1ade120313a8736df24154d21da5155c0756f147c0b01bd19d9087 AS php-8.1
-FROM php:8.2-cli@sha256:118ef4fb1db5e866fb604f2f260da81f819a0a1eac87a4083f9194f48e00beee AS php-8.2
-FROM php:8.3-cli@sha256:aafe21201943a8a6e497ddfb471e2ce68ada76adede38c7d61fede8918b24319 AS php-8.3
-FROM php:8.4-cli@sha256:1d2cf2b7d715b5b3aa959f0150ccbcc7b71e0181b637e443abf40a7fb56bf79a AS php-8.4
-FROM php:8.5-cli@sha256:01a109229f4465bc9ef042d9198f09a4d9da7775a825dbd8572dcdbd8756c4d3 AS php-8.5
+FROM php:8.2-cli@sha256:2d72ff4b0cfe82e22f01f15223bc4ab4c825d318cb2e3275554cd32299a5ea50 AS php-8.2
+FROM php:8.3-cli@sha256:60a100afa8efd88c0f556ce60e891c9bb8b1e8bca15721e4db07eca4fa79c07a AS php-8.3
+FROM php:8.4-cli@sha256:40638d9d5ec50bbf20205a06c733fff5839fc13b0a7c8e10e455b49da2a13068 AS php-8.4
+FROM php:8.5-cli@sha256:d5e3f03b94966fd65df52b9819c6dde463003b5a32d032698290a0b37b53bb37 AS php-8.5
 FROM wordpress:php7.4@sha256:7e46cf3373751b6d62b7a0fc3a7d6686f641a34a2a0eb18947da5375c55fd009 AS wordpress-php-7.4
 FROM wordpress:php8.0@sha256:824689613b4e7b027d0d36f264a53a159d6c7adcf5250539e56efe2940651e19 AS wordpress-php-8.0
 FROM wordpress:php8.1@sha256:f73396626d2f1b89d4c556917c15f55cfcc6b5f80595205516e490f0f04015e4 AS wordpress-php-8.1
-FROM wordpress:php8.2@sha256:7cb0b86fdd78760c741db2fde3ed7a10084029164009e2c41b09de32f54607e8 AS wordpress-php-8.2
-FROM wordpress:php8.3@sha256:81a34254acaa6ff3b9a67268c2745e9a041c4094cbe5ccd35b75ed3bbdc033b5 AS wordpress-php-8.3
-FROM wordpress:php8.4@sha256:309307430abf80009378a63a79df73554a6449b700fac59a991b4959e6dda8ca AS wordpress-php-8.4
-FROM wordpress:php8.5@sha256:c12bed9c5af9d76261221c2af3a6216a074dd80b4fc2459588b3cbf2dd8e1798 AS wordpress-php-8.5
+FROM wordpress:php8.2@sha256:7b713d74182855022c853fa70c1101cddf1a13d0f891233871294d8a5ce9aa44 AS wordpress-php-8.2
+FROM wordpress:php8.3@sha256:d42f63cb89ad0eab272c4b393164e63830d0df270009907919f7dcce52b1a20b AS wordpress-php-8.3
+FROM wordpress:php8.4@sha256:edbfa4a140f7c5950435f5737538ad83d25af4661b74b990d7ec1eff3bec99a8 AS wordpress-php-8.4
+FROM wordpress:php8.5@sha256:ce31904fa1e51b73543fa2e35cc8f1747589b2abf48dc747b422749b88b77e9e AS wordpress-php-8.5
 
 # ---------------------------------------------------------------------------
 # base: PHP + mysqli (WordPress needs it) + Composer
