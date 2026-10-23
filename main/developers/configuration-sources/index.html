@@ -542,6 +542,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#hiding-the-about-tab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hiding the About tab
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#writing-a-source" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -786,6 +797,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#hiding-the-about-tab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hiding the About tab
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#writing-a-source" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -857,6 +879,22 @@
 </ul>
 <h2 id="on-the-settings-screen">On the settings screen<a class="headerlink" href="#on-the-settings-screen" title="Permanent link">&para;</a></h2>
 <p>A value supplied from outside is read-only on the settings screen, which names where it came from ("Set by ..."). The screen never prints the value of a secret field, nor of a text-type field (<code>text</code>, <code>textarea</code>, <code>url</code>, <code>email_list</code>), unless that field sets <code>'show_external' =&gt; true</code>. The built-in email channel does this for its recipients, From address, Reply-To and subject prefix. Booleans, numbers and enum choices are shown. Duplicating an instance doesn't copy secrets that came from outside the database. Reports and Site Health name the source of a rejected value, never the value.</p>
+<h2 id="hiding-the-about-tab">Hiding the About tab<a class="headerlink" href="#hiding-the-about-tab" title="Permanent link">&para;</a></h2>
+<p>The About tab of the settings screen (links to the documentation, support and the author) is shown unless you hide it. The <code>show_about</code> setting is code only: it has no field on the settings screen, it is never saved to the database, and a value posted from the form is ignored. Supply it like any other setting, with <code>SC_WPUN_SETTING_SHOW_ABOUT</code>; it takes the same boolean values as other on/off settings, and a value that is not valid is reported and the default (shown) is used.</p>
+<div class="highlight"><pre><span></span><code><span class="x">// wp-config.php</span>
+<span class="x">define( 'SC_WPUN_SETTING_SHOW_ABOUT', false );</span>
+</code></pre></div>
+<p>Or from a plugin, with the <code>sc_wpun_config_value</code> filter:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_config_value',</span>
+<span class="x">    function ( $value, $context ) {</span>
+<span class="x">        return 'show_about' === $context-&gt;get_setting() ? false : $value;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<p>If you hide the tab, please consider a donation or a review in return.</p>
 <h2 id="writing-a-source">Writing a source<a class="headerlink" href="#writing-a-source" title="Permanent link">&para;</a></h2>
 <p>Implement <code>WPUN\Config_Source</code> and add an instance with <code>sc_wpun_config_sources</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="x">class My_Vault_Source implements \WPUN\Config_Source {</span>
