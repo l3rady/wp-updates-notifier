@@ -79,7 +79,7 @@ The trust boundaries are:
 | Channel secrets (webhook URLs, tokens) | `sc_wpun_channels`, or constants and env vars | They let someone post into the site owner's chat or services. |
 | Recipient lists, From and Reply-To | `sc_wpun_channels` | Changing them redirects or spoofs the site's mail. |
 | Settings and schedule | `sc_wpun_settings`, cron event `sc_wpun_update_check` | Silencing them hides the updates a site needs. |
-| Delivery state | `sc_wpun_state` | It holds what was already notified, `last_result` and `retry_at`. |
+| Delivery state | `sc_wpun_state` | It holds what was already notified, `last_result`, `retry_at` and `last_reminder`. |
 | The site's update inventory | Sent in notifications | It shows which outdated, possibly vulnerable, plugins a site runs. |
 | The release zip | GitHub release, WordPress.org SVN | A tampered build reaches every site that updates. |
 

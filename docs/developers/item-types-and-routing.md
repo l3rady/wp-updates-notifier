@@ -57,17 +57,18 @@ Only `Notification_Item` objects survive the filter. The constructor throws an `
 
 ## 3. Route it
 
-Each instance's routing is an array kept in `Channel_Instance::get_routing()`. `WPUN\Routing` knows three keys:
+Each instance's routing is an array kept in `Channel_Instance::get_routing()`. `WPUN\Routing` knows four keys:
 
 | Key | Values | Meaning |
 | --- | --- | --- |
 | `types` | list of item types | The types the instance receives. Empty or missing means every type, including yours. |
 | `scope` | `all`, `active` | For `plugin` and `theme` items: `active` keeps only items whose `active` flag is true. |
 | `core` | `all`, `major` | For `core` items: `major` keeps only updates that change the major.minor version. |
+| `remind` | `never`, `daily`, `weekly` | Repeat all updates the instance receives that are still waiting, in one message, at that interval. New updates are still sent at once. Missing or invalid means `never`. |
 
-Site owners choose these on the instance's form. Other keys are stored and ignored by the plugin, so instances defined in code (the `SC_WPUN_CHANNELS` constant or the `sc_wpun_channels` filter) can carry rules of your own.
+Site owners choose these on the instance's form. `Routing::normalise()` fills in the defaults (`all`, `all`, `never`). `remind` does not decide which items an instance receives, so `should_receive()` ignores it. The update check reads it to decide when to send a reminder: see the Reminders paragraph of the [architecture](architecture.md). Other keys are stored and ignored by the plugin, so instances defined in code (the `SC_WPUN_CHANNELS` constant or the `sc_wpun_channels` filter) can carry rules of your own.
 
-For anything the three keys cannot express, use the `sc_wpun_channel_should_receive_item` filter. It runs after the instance's own rules, so it can block an item they let through or let through one they blocked:
+For anything the keys cannot express, use the `sc_wpun_channel_should_receive_item` filter. It runs after the instance's own rules, so it can block an item they let through or let through one they blocked:
 
 ```php
 add_filter(

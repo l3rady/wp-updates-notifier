@@ -13,6 +13,25 @@ A check sends one message to each channel, listing everything that is new to tha
 
 Updates that a channel does not receive because of its [routing](channels.md#choose-what-each-channel-receives) are not reported to it, and they do not count as sent.
 
+## Reminders
+
+A channel can repeat the updates you have not installed yet. Set **Reminders** to **Daily** or **Weekly** in the channel's [routing](channels.md#reminders). The default is **Never**.
+
+- The reminder is one message listing all updates still waiting for that channel, not only the ones that were reported before. It is marked as a reminder (see below).
+- New updates are not held back. They are sent at once, as a normal message.
+- If a new update is found in the same check as a reminder that is due, you get one message: the reminder, with the new update in it. You never get two.
+- The first reminder comes one interval after something starts waiting for the channel. When nothing is waiting, the interval is cleared. The next update to wait starts it again.
+- A failed reminder does not restart the interval. The channel tries again at the next check.
+- A channel that is switched off, or is waiting because of `Retry-After`, gets no reminder. If you added or switched on a channel and chose not to send what was already waiting, that check sends no reminder, but the interval starts, so you are reminded about those updates later.
+
+Reminders are decided at each check, so they can not come more often than the [frequency to check](settings.md#frequency-to-check). A reminder may go out up to half a check interval early, but never more than half its own interval early. This is because WP-Cron often runs a little late, and a strict rule would then skip a whole cycle. For example:
+
+- A daily check and daily reminders: each daily check sends a reminder.
+- Hourly checks and daily reminders: a reminder goes about a day after the last one, up to half an hour early.
+- Weekly checks and daily reminders: a reminder goes on every check.
+
+**Check for updates and notify now**, and `sc_wpun_run_check`, work out reminders too.
+
 ## What a message contains
 
 An email says:
@@ -24,6 +43,8 @@ An email says:
 - The address of your site's **Dashboard → Updates** screen, with a request to visit it to update. In HTML format this is a link, "Go to the Updates screen to update."
 
 The subject is "WP Updates Notifier: updates available for" followed by your site name, with the channel's subject prefix first if it has one.
+
+A reminder has the same contents, but its first line is "Reminder: these updates are still waiting for" followed by your site name and its address, and its subject is "WP Updates Notifier: reminder of updates waiting for" followed by your site name.
 
 The site address in the message is your site's home address, the **Site Address (URL)** under **Settings → General**. If it is wrong, see [Why does a message show the wrong address?](troubleshooting.md#why-does-a-message-show-the-wrong-address).
 

@@ -63,8 +63,21 @@ Each channel has a **Routing** section. Use it to send some kinds of update to s
 - **Item types**: tick **WordPress**, **Plugins** or **Themes** to receive only those. Tick nothing to receive every type, including any that an add-on adds later.
 - **Plugins and themes**: **All**, or **Only active ones**.
 - **WordPress updates**: **All**, or **Only major releases**.
+- **Reminders**: **Never** (the default), **Daily** or **Weekly**. See [Reminders](#reminders).
 
-Routing works on top of the [General settings](settings.md). Those decide what the plugin looks at, and routing then narrows what each channel gets. If **Notify about plugin updates?** is **No**, no channel can receive plugin updates. If it is **Yes, but only active plugins**, choosing **All** here still gives you only the active ones. The form adds a reminder under an option when a General setting limits it.
+Routing works on top of the [General settings](settings.md). Those decide what the plugin looks at, and routing then narrows what each channel gets. If **Notify about plugin updates?** is **No**, no channel can receive plugin updates. If it is **Yes, but only active plugins**, choosing **All** here still gives you only the active ones. The form adds a note under an option when a General setting limits it.
+
+### Reminders
+
+By default a channel is told about each update once. Set **Reminders** to **Daily** or **Weekly** to be reminded about updates you have not installed yet.
+
+- A reminder is one message that lists every update still waiting for that channel. It is marked as a reminder: the email subject is "WP Updates Notifier: reminder of updates waiting for" followed by your site name, and the first line says "Reminder: these updates are still waiting for" followed by your site name and its address.
+- A new update is still sent at once, as usual. If a new update turns up in the same check as a reminder that is due, you get one message, the reminder, with the new update in it.
+- The first reminder comes one interval after an update starts waiting for the channel. Reminders stop when nothing is waiting any more.
+- Each channel has its own setting, so you can, for example, remind only one address each week.
+- The **Routing** column shows it, for example "Reminders: Weekly".
+
+Reminders are worked out at each check, so they can not come more often than your [frequency to check](settings.md#frequency-to-check). See [How notifications work](how-notifications-work.md#reminders).
 
 ## The email options
 

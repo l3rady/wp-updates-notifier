@@ -130,7 +130,15 @@ The types are `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `bool
 
 A field with `'required' => true` is also marked in the form: "(required)" after its label (not for a `boolean`, which is always valid) and `aria-required="true"` on its control. For a group of radio buttons the fieldset gets `role="radiogroup"` to carry it; a group of checkboxes has only the text. A `secret` that already has a saved value keeps the text but not the attribute, as leaving it empty is valid. A custom field type registered with `sc_wpun_field_types` receives the schema in its `render` callable, so read `required` there and do the same.
 
-Every instance also has a label, an on/off switch and routing. The plugin adds these; don't put them in `get_fields()`.
+Every instance also has a label, an on/off switch and routing (including the choice of reminders, see below). The plugin adds these; don't put them in `get_fields()`.
+
+### Reminders
+
+A site owner can ask for reminders of updates that are still waiting (the `remind` routing key). Your `send()` then receives a `Notification` whose `is_reminder()` is true. It lists every update that is still waiting for the instance, so most of its items were delivered before.
+
+- Don't drop an item because you have sent it already. If your channel de-duplicates by item, skip that check when `is_reminder()` is true.
+- The built-in renderers only change the first line. If you build your own message, say that it is a reminder, for example in the title.
+- In every other way a reminder is a normal notification. `is_test()` is false.
 
 ### Validation
 

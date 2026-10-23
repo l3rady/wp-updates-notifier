@@ -37,3 +37,4 @@ The date is when the decision was made, not when the record was written.
 | [0013](0013-verifiable-release-artefacts.md) | Make releases verifiable | Accepted | 2026-10-19 |
 | [0014](0014-documentation-site-on-a-custom-subdomain.md) | Publish the documentation at wpun.cariss.dev with MkDocs Material and mike | Accepted | 2026-10-20 |
 | [0015](0015-conventional-commits-and-linear-history.md) | Conventional Commits and a linear history | Accepted | 2026-10-13 |
+| [0016](0016-pending-update-reminders-per-channel.md) | Remind about pending updates, per channel | Accepted | 2026-10-23 |

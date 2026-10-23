@@ -11,6 +11,17 @@ Check these in turn:
 5. **Has the check run?** **Last checked** on the **General** tab says when. If it is old, see the next entry.
 6. **Is the data old?** See [Why is the update data hours old?](#why-is-the-update-data-hours-old).
 
+## Why did no reminder arrive?
+
+Reminders are optional and per channel. Check these in turn:
+
+1. **Is it on?** Edit the channel. **Reminders** must be **Daily** or **Weekly**, not **Never**.
+2. **Is anything waiting?** A channel is reminded only about updates it receives that are still waiting. Check the channel's **Routing** column, and the **General** tab settings. If routing leaves nothing for the channel, there is nothing to remind it about.
+3. **Has the first interval passed?** The first reminder comes one interval after an update starts waiting for the channel, not at once. A new update is sent at once as a normal message.
+4. **How often do you check?** Reminders are decided at each check, so a weekly check can not remind you daily. See [Reminders](how-notifications-work.md#reminders).
+5. **Is the channel switched on and free to send?** A channel that is switched off, or was told by a service to wait (**Rate limited, next try after** under **Last delivery**), gets no reminder until it is on and the wait is over.
+6. **Did the last send fail?** **Last delivery** shows the reason. A failed reminder is tried again at the next check.
+
 ## Emails only arrive after someone visits the site
 
 The schedule is run by WP-Cron. WP-Cron is not a real clock. WordPress only looks for due tasks when a page is requested, so on a site that few people visit, a check due at 03:00 can wait until someone arrives at 09:00. A forum user put it as "I only receive emails after someone has logged in".

@@ -31,7 +31,16 @@ flowchart TD
 
 **Routing.** Each instance receives only the items its routing allows: which item types, all or only active plugins and themes, and all or only major WordPress releases. The `sc_wpun_channel_should_receive_item` filter adds rules of your own.
 
-**Delivery state.** The plugin remembers, per instance, which version of each item it has told that instance about. An instance is sent only what is new to it. If a send fails, nothing is recorded for that instance, so the same items go out again on the next run, while the instances that succeeded are not sent them twice.
+**Delivery state.** The plugin remembers, per instance, which version of each item it has told that instance about, and when it last sent a reminder. An instance is sent only what is new to it. If a send fails, nothing is recorded for that instance, so the same items go out again on the next run, while the instances that succeeded are not sent them twice.
+
+**Reminders.** The `remind` routing key (`never`, `daily` or `weekly`) turns on reminders for an instance. The state of an instance has a `last_reminder` (a unix time) in `sc_wpun_state`, under `channels[id]`:
+
+- While `remind` is not `never` and the instance receives at least one waiting item, the clock runs. The first check that sees this sets `last_reminder` to now and sends no reminder, so the first one comes one interval later. When `remind` is `never` or nothing is waiting, `last_reminder` is removed.
+- A reminder is due when `now - last_reminder` is at least the interval minus a tolerance. The tolerance is half the interval of the site's check frequency, capped at half the reminder interval, so a late WP-Cron run does not skip a cycle.
+- When it is due, the check sends one `Notification` with `is_reminder()` true and every waiting item the instance receives, even those that are new in this run. On success all of them are recorded as notified and `last_reminder` is set to now. On failure neither changes, so the next check tries again.
+- Between reminders, new items are sent as a normal message and the clock is untouched. A skip run (see `State::skip_pending()`) sends no reminder but starts the clock. An instance that is off or deferred by `retry_at` is not touched. A test send never goes through the clock.
+
+There is no separate cron event. Reminders can not be more frequent than the check frequency.
 
 **Dispatcher.** The dispatcher calls your channel's `send()` for one instance and turns whatever happens into a `WPUN\Delivery_Result`. It catches exceptions, so a broken add-on cannot stop the other channels. An instance whose channel is not registered fails as unavailable, with the reason if the module was refused for its API version. `sc_wpun_pre_send` can short-circuit a send. `sc_wpun_notification_sent` and `sc_wpun_notification_failed` fire after each one, and `sc_wpun_after_dispatch` after all of them.
 

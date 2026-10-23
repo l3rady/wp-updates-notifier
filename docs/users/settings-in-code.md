@@ -82,6 +82,8 @@ define(
 );
 ```
 
+`routing` holds the same choices as the channel form: `types`, `scope`, `core` and `remind`. For example, `"routing":{"remind":"weekly"}` sends a weekly reminder of updates still waiting. `remind` is `never` (the default), `daily` or `weekly`. See [Reminders](channels.md#reminders).
+
 These channels show **Defined in code** on the **Channels** tab. You can send a test through them but not edit, duplicate, disable or delete them there. A channel in code replaces a saved one with the same id.
 
 ## If a value is not valid

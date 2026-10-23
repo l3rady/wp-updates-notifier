@@ -23,6 +23,7 @@ The documentation is at [wpun.cariss.dev](https://wpun.cariss.dev/).
 - Sets WordPress to check for updates more often meaning you get to know about updates sooner.
 - Get emailed about core, plugin and theme updates.
 - Chose if you want to be notified about active only themes and plugins updates.
+- Optional daily or weekly reminders, per channel, about updates you haven't installed yet.
 - Remove upgrade nag message to non-admin users.
 - For advanced users there are a number of filters and actions you can use. More coming soon.
 
