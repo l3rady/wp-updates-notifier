@@ -100,4 +100,32 @@
          <loc>https://wpun.cariss.dev/main/security/threat-model/</loc>
          <lastmod>2026-10-23</lastmod>
     </url>
+    <url>
+         <loc>https://wpun.cariss.dev/main/users/</loc>
+         <lastmod>2026-10-23</lastmod>
+    </url>
+    <url>
+         <loc>https://wpun.cariss.dev/main/users/channels/</loc>
+         <lastmod>2026-10-23</lastmod>
+    </url>
+    <url>
+         <loc>https://wpun.cariss.dev/main/users/getting-started/</loc>
+         <lastmod>2026-10-23</lastmod>
+    </url>
+    <url>
+         <loc>https://wpun.cariss.dev/main/users/how-notifications-work/</loc>
+         <lastmod>2026-10-23</lastmod>
+    </url>
+    <url>
+         <loc>https://wpun.cariss.dev/main/users/settings-in-code/</loc>
+         <lastmod>2026-10-23</lastmod>
+    </url>
+    <url>
+         <loc>https://wpun.cariss.dev/main/users/settings/</loc>
+         <lastmod>2026-10-23</lastmod>
+    </url>
+    <url>
+         <loc>https://wpun.cariss.dev/main/users/troubleshooting/</loc>
+         <lastmod>2026-10-23</lastmod>
+    </url>
 </urlset>
