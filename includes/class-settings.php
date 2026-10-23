@@ -288,6 +288,18 @@ class Settings {
 	}
 
 	/**
+	 * Whether the About tab is shown. A code-only setting: it is never stored, only supplied from outside the database.
+	 *
+	 * @return bool
+	 */
+	public function show_about(): bool {
+		$schema = $this->schemas()['show_about'];
+		$value  = $this->config->resolve_typed( Config_Context::setting( 'show_about' ), $schema );
+
+		return null === $value ? (bool) $schema['default'] : (bool) $value->get_value();
+	}
+
+	/**
 	 * The source of a setting that is supplied from outside the database.
 	 *
 	 * @param string $name Setting name, for example `frequency`.
@@ -308,6 +320,10 @@ class Settings {
 	 * The field schema of each global setting, which is also what it accepts when supplied from outside the database.
 	 *
 	 * The settings screen is drawn from these. Schemas use the field types of channel fields (see Channel).
+	 *
+	 * A schema with `'storage' => false` is a code-only setting: it is read only through the configuration path
+	 * (constant, environment variable, source or filter), never stored, never given a field on the settings screen,
+	 * and a posted value is ignored. When nothing supplies a value, its `default` applies.
 	 *
 	 * @since 2.0.0
 	 *
@@ -335,6 +351,12 @@ class Settings {
 					'on' => __( 'Hide the WordPress update notice from users who cannot update WordPress', 'wp-updates-notifier' ),
 				),
 				'default' => true,
+			),
+			'show_about'     => array(
+				'type'    => 'boolean',
+				'label'   => __( 'About tab', 'wp-updates-notifier' ),
+				'default' => true,
+				'storage' => false,
 			),
 		);
 	}

@@ -60,6 +60,7 @@ final class Config_Report {
 	private function problems(): array {
 		// Resolving is lazy and problems are found while doing it.
 		$this->settings->get();
+		$this->settings->show_about();
 		$this->store->all();
 
 		return $this->config->problems();

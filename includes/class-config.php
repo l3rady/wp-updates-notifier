@@ -152,7 +152,11 @@ final class Config {
 			if ( $cast['ok'] ) {
 				$result = new Config_Value( $cast['value'], $raw->get_source(), $raw->get_key() );
 			} else {
-				$this->add_problem( $raw->get_key(), $raw->get_source(), __( 'The value is not valid for this setting, so the saved one is used.', 'wp-updates-notifier' ) );
+				// A setting with no storage has no saved value to fall back to.
+				$message = isset( $field['storage'] ) && false === $field['storage']
+					? __( 'The value is not valid for this setting, so the default is used.', 'wp-updates-notifier' )
+					: __( 'The value is not valid for this setting, so the saved one is used.', 'wp-updates-notifier' );
+				$this->add_problem( $raw->get_key(), $raw->get_source(), $message );
 			}
 		}
 

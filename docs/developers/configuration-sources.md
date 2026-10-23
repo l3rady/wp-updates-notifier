@@ -38,6 +38,30 @@ Sources return scalars: a string, bool, int or float. The plugin casts the value
 
 A value supplied from outside is read-only on the settings screen, which names where it came from ("Set by ..."). The screen never prints the value of a secret field, nor of a text-type field (`text`, `textarea`, `url`, `email_list`), unless that field sets `'show_external' => true`. The built-in email channel does this for its recipients, From address, Reply-To and subject prefix. Booleans, numbers and enum choices are shown. Duplicating an instance doesn't copy secrets that came from outside the database. Reports and Site Health name the source of a rejected value, never the value.
 
+## Hiding the About tab
+
+The About tab of the settings screen (links to the documentation, support and the author) is shown unless you hide it. The `show_about` setting is code only: it has no field on the settings screen, it is never saved to the database, and a value posted from the form is ignored. Supply it like any other setting, with `SC_WPUN_SETTING_SHOW_ABOUT`; it takes the same boolean values as other on/off settings, and a value that is not valid is reported and the default (shown) is used.
+
+```php
+// wp-config.php
+define( 'SC_WPUN_SETTING_SHOW_ABOUT', false );
+```
+
+Or from a plugin, with the `sc_wpun_config_value` filter:
+
+```php
+add_filter(
+	'sc_wpun_config_value',
+	function ( $value, $context ) {
+		return 'show_about' === $context->get_setting() ? false : $value;
+	},
+	10,
+	2
+);
+```
+
+If you hide the tab, please consider a donation or a review in return.
+
 ## Writing a source
 
 Implement `WPUN\Config_Source` and add an instance with `sc_wpun_config_sources`:

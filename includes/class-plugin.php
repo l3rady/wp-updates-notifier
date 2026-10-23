@@ -7,6 +7,7 @@
 
 namespace WPUN;
 
+use WPUN\Admin\About_Tab;
 use WPUN\Admin\Channel_Form;
 use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Check_Now;
@@ -117,6 +118,13 @@ class Plugin {
 	private $channels_tab = null;
 
 	/**
+	 * The About tab.
+	 *
+	 * @var About_Tab|null
+	 */
+	private $about_tab = null;
+
+	/**
 	 * The Check now button.
 	 *
 	 * @var Check_Now|null
@@ -160,6 +168,17 @@ class Plugin {
 		$this->channels_tab ??= new Channels_Tab( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->channel_form() );
 
 		return $this->channels_tab;
+	}
+
+	/**
+	 * The About tab, built on first use: front-end requests never need it.
+	 *
+	 * @return About_Tab
+	 */
+	public function about_tab(): About_Tab {
+		$this->about_tab ??= new About_Tab();
+
+		return $this->about_tab;
 	}
 
 	/**
@@ -328,7 +347,7 @@ class Plugin {
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
-		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now() );
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab() );
 
 		return $this->settings_page;
 	}

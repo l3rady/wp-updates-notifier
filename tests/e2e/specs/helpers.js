@@ -3,10 +3,12 @@ const AxeBuilder = require( '@axe-core/playwright' ).default;
 
 const SETTINGS = '/wp-admin/options-general.php?page=wp-updates-notifier';
 const CHANNELS = `${ SETTINGS }&tab=channels`;
+const ABOUT = `${ SETTINGS }&tab=about`;
 
 // Every view the axe scan covers. The ids are the channels tests/e2e/seed.sh creates.
 const VIEWS = [
 	[ 'General tab', SETTINGS ],
+	[ 'About tab', ABOUT ],
 	[ 'Channels list', CHANNELS ],
 	[ 'Module picker', `${ CHANNELS }&action=add` ],
 	[ 'New Email form', `${ CHANNELS }&action=new&type=email` ],
@@ -41,4 +43,4 @@ function watchConsole( page ) {
 	return errors;
 }
 
-module.exports = { SETTINGS, CHANNELS, VIEWS, TAGS, scan, describe, watchConsole };
+module.exports = { SETTINGS, CHANNELS, ABOUT, VIEWS, TAGS, scan, describe, watchConsole };

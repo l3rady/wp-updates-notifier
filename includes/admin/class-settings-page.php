@@ -92,6 +92,13 @@ class Settings_Page {
 	private $check_now;
 
 	/**
+	 * The About tab.
+	 *
+	 * @var About_Tab
+	 */
+	private $about_tab;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings          $settings  Settings.
@@ -103,8 +110,9 @@ class Settings_Page {
 	 * @param Channels_Tab      $channels_tab The Channels tab.
 	 * @param Notices           $notices Notices about what an admin action did.
 	 * @param Check_Now         $check_now The Check now button.
+	 * @param About_Tab         $about_tab The About tab.
 	 */
-	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now ) {
+	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab ) {
 		$this->settings          = $settings;
 		$this->state             = $state;
 		$this->notifier          = $notifier;
@@ -114,6 +122,7 @@ class Settings_Page {
 		$this->channels_tab      = $channels_tab;
 		$this->notices           = $notices;
 		$this->check_now         = $check_now;
+		$this->about_tab         = $about_tab;
 	}
 
 	/**
@@ -250,13 +259,17 @@ class Settings_Page {
 	}
 
 	/**
-	 * Hook the General and Channels tabs to their drawing, so the tab list includes them.
+	 * Hook the General, Channels and About tabs to their drawing, so the tab list includes them.
+	 * The About tab is hooked only while the `show_about` setting allows it.
 	 *
 	 * @return void
 	 */
 	private function add_tab_actions(): void {
 		add_action( 'sc_wpun_settings_tab_general', array( $this, 'render_general_tab' ) );
 		add_action( 'sc_wpun_settings_tab_channels', array( $this->channels_tab, 'render' ) );
+		if ( $this->settings->show_about() ) {
+			add_action( 'sc_wpun_settings_tab_about', array( $this->about_tab, 'render' ) );
+		}
 	}
 
 	/**
@@ -272,7 +285,7 @@ class Settings_Page {
 	 * The tabs of the settings screen, as slug => label.
 	 *
 	 * A tab is listed only if something draws it, so a built-in tab nothing hooks stays hidden.
-	 * The General tab is always first.
+	 * The General tab is always first and the About tab always last.
 	 *
 	 * @return array<string, string>
 	 */
@@ -280,6 +293,7 @@ class Settings_Page {
 		$defaults = array(
 			'general'  => __( 'General', 'wp-updates-notifier' ),
 			'channels' => __( 'Channels', 'wp-updates-notifier' ),
+			'about'    => __( 'About', 'wp-updates-notifier' ),
 		);
 
 		/**
@@ -296,7 +310,7 @@ class Settings_Page {
 		 *
 		 * @since 2.0.0
 		 *
-		 * @param array<string, string> $tabs Tab labels keyed by slug. Default `general` and `channels`.
+		 * @param array<string, string> $tabs Tab labels keyed by slug. Default `general`, `channels` and `about`. The About tab is always moved last, and is hidden by the `show_about` setting (code only).
 		 */
 		$filtered = apply_filters( 'sc_wpun_settings_tabs', $defaults );
 
@@ -318,6 +332,13 @@ class Settings_Page {
 			if ( 'general' !== $slug && has_action( "sc_wpun_settings_tab_{$slug}" ) ) {
 				$visible[ $slug ] = $label;
 			}
+		}
+
+		// About is always last, even after add-ons appended their own tabs.
+		if ( isset( $visible['about'] ) ) {
+			$about = $visible['about'];
+			unset( $visible['about'] );
+			$visible['about'] = $about;
 		}
 
 		return $visible;
@@ -469,6 +490,9 @@ class Settings_Page {
 		// Make settings main section.
 		add_settings_section( 'sc_wpun_settings_main', __( 'Settings', 'wp-updates-notifier' ), null, 'wp-updates-notifier' );  // @phpstan-ignore argument.type (Core accepts no callback: the sections have no intro text.)
 		foreach ( $this->settings->schemas() as $name => $schema ) {
+			if ( false === ( $schema['storage'] ?? true ) ) {
+				continue; // Code-only settings have no field.
+			}
 			$id   = 'sc_wpun_settings_main_' . $name;
 			$args = array( 'name' => $name );
 			// A checkbox has its own label and radios have a legend, so only a select is labelled by the row title.
@@ -507,8 +531,8 @@ class Settings_Page {
 			'hide_updates'   => __( 'Choose whether to hide the update notices.', 'wp-updates-notifier' ),
 		);
 		foreach ( $this->settings->schemas() as $name => $schema ) {
-			if ( ! array_key_exists( $name, $input ) ) {
-				continue;
+			if ( ! array_key_exists( $name, $input ) || false === ( $schema['storage'] ?? true ) ) {
+				continue; // Not submitted, or code-only: a posted value is never written.
 			}
 			$checked = Boolean_Field::is_boolean( $schema ) ? Boolean_Field::sanitize( $input[ $name ], $schema ) : Enum_Field::sanitize( $input[ $name ], $schema );
 			if ( $checked['ok'] ) {

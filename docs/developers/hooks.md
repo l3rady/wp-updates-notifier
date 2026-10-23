@@ -961,7 +961,7 @@ add_action( 'sc_wpun_settings_tab_mine', fn() => print '<p>Hello</p>' );
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `$tabs` | `array<string, string>` | Tab labels keyed by slug. Default `general` and `channels`. |
+| `$tabs` | `array<string, string>` | Tab labels keyed by slug. Default `general`, `channels` and `about`. The About tab is always moved last, and is hidden by the `show_about` setting (code only). |
 
 Fired in `includes/admin/class-settings-page.php`.
 
