@@ -12,7 +12,7 @@ Releases are automated, and the version number and changelog have to come from s
 - `make commits` checks the commits on a branch, and CI runs it on every pull request.
 - **History is linear.** Branches rebase onto `main`, and `main` is never merged into a branch.
 - Pull requests land as their own commits, not squashed, so the commit messages that decide the version are the ones on `main`.
-- Commits are signed. Since 2026-10-19 the maintainer merges a pull request by rebasing it onto `main` and fast-forwarding `main` locally, so the signed commits land unchanged. GitHub's rebase and squash buttons write new, unsigned commits, and branch protection requires signed commits.
+- Commits are signed. Since 2026-10-19 the maintainer merges a pull request by rebasing it onto `main` and fast-forwarding `main` locally, so the signed commits land unchanged. GitHub's rebase and squash buttons rewrite the commits, so the maintainer's own signatures would not reach `main`.
 
 See `CONTRIBUTING.md`.
 
