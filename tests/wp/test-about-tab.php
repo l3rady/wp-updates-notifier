@@ -122,8 +122,8 @@ class Test_About_Tab extends WPUN_Test_Case {
 
 		$links = About_Tab::links();
 		$this->assertSame( Plugin::SITE_URL, $links['documentation'], 'The site root.' );
-		$this->assertSame( Plugin::SITE_URL . '#support-the-project', $links['donate_other'] );
-		$this->assertMatchesRegularExpression( '/^## Support the project$/m', $home, 'The fragment of the other ways to give.' );
+		$this->assertSame( Plugin::SITE_URL . '#support-the-project', $links['donate'] );
+		$this->assertMatchesRegularExpression( '/^## Support the project$/m', $home, 'The fragment of the donate link.' );
 
 		foreach ( $links as $slug => $url ) {
 			if ( str_starts_with( $url, Plugin::SITE_URL ) ) {
@@ -131,6 +131,20 @@ class Test_About_Tab extends WPUN_Test_Case {
 			}
 			$this->assertStringContainsString( $url, $home, $slug );
 		}
+	}
+
+	/**
+	 * The readme's Donate link and the plugin header's Author URI point at the same sections of the documentation home page.
+	 */
+	public function test_readme_and_header_link_the_documentation_home_page() {
+		$root   = dirname( __DIR__, 2 );
+		$home   = (string) file_get_contents( $root . '/docs/index.md' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file.
+		$readme = get_file_data( $root . '/readme.txt', array( 'donate' => 'Donate link' ) );
+		$header = get_file_data( SC_WPUN_FILE, array( 'author_uri' => 'Author URI' ) );
+
+		$this->assertSame( About_Tab::links()['donate'], $readme['donate'] );
+		$this->assertSame( Plugin::SITE_URL . '#about-the-developer', $header['author_uri'] );
+		$this->assertMatchesRegularExpression( '/^## About the developer$/m', $home, 'The fragment of the Author URI.' );
 	}
 
 	/**

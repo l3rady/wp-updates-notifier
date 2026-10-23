@@ -20,7 +20,7 @@
  * Requires at least: 6.7
  * Requires PHP: 7.4
  * Author: Scott Cariss
- * Author URI: https://scott.cariss.dev/
+ * Author URI: https://wpun.cariss.dev/#about-the-developer
  * Text Domain: wp-updates-notifier
  * Domain Path: /languages
  * License: GPL-2.0-or-later

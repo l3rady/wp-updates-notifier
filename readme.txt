@@ -1,6 +1,6 @@
 === WP Updates Notifier ===
 Contributors: l3rady, alleyinteractive
-Donate link: https://scott.cariss.dev/donate
+Donate link: https://wpun.cariss.dev/#support-the-project
 Tags: updates, notifications, email, monitor
 Requires at least: 6.7
 Tested up to: 7.1

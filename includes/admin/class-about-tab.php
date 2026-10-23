@@ -36,8 +36,7 @@ class About_Tab {
 			'support'         => 'https://wordpress.org/support/plugin/wp-updates-notifier/',
 			'issues'          => 'https://github.com/l3rady/wp-updates-notifier/issues',
 			'security'        => 'https://github.com/l3rady/wp-updates-notifier/blob/main/SECURITY.md',
-			'donate'          => 'https://paypal.me/scottcariss',
-			'donate_other'    => Plugin::SITE_URL . '#support-the-project',
+			'donate'          => Plugin::SITE_URL . '#support-the-project',
 			'author_github'   => 'https://github.com/l3rady',
 			'author_linkedin' => 'https://www.linkedin.com/in/scott-cariss',
 		);
@@ -109,10 +108,7 @@ class About_Tab {
 
 			<h2><?php esc_html_e( 'Donate', 'wp-updates-notifier' ); ?></h2>
 			<p><?php esc_html_e( 'WP Updates Notifier is free. If it saves you time and you would like to say thanks, a donation helps keep it maintained.', 'wp-updates-notifier' ); ?></p>
-			<ul>
-				<li><?php echo wp_kses( $this->link( 'donate', __( 'Donate with PayPal', 'wp-updates-notifier' ) ), $allowed ); ?></li>
-				<li><?php echo wp_kses( $this->link( 'donate_other', __( 'Other ways to give', 'wp-updates-notifier' ) ), $allowed ); ?></li>
-			</ul>
+			<p><?php echo wp_kses( $this->link( 'donate', __( 'Ways to donate', 'wp-updates-notifier' ) ), $allowed ); ?></p>
 
 			<h2><?php esc_html_e( 'About the developer', 'wp-updates-notifier' ); ?></h2>
 			<p><strong><?php esc_html_e( 'Scott Cariss', 'wp-updates-notifier' ); ?></strong></p>
