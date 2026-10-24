@@ -270,9 +270,12 @@ final class Field_Renderer {
 		if ( $saved ) {
 			$clear = ']' === substr( $name, -1 ) ? substr( $name, 0, -1 ) . '__clear]' : $name . '__clear';
 			// The checkbox is named after the field, so several secrets in one form can be told apart.
-			// translators: %s: Label of the field, for example "Webhook URL".
-			$clear_text = '' === $label ? __( 'Clear the saved value', 'wp-updates-notifier' ) : sprintf( __( 'Clear the saved value of %s', 'wp-updates-notifier' ), $label );
-			$html      .= '<p class="description" id="' . esc_attr( $id . '-saved' ) . '">' . esc_html__( 'A value is saved. Leave this empty to keep it, or type a new value to replace it.', 'wp-updates-notifier' ) . '</p>'
+			$clear_text = __( 'Clear the saved value', 'wp-updates-notifier' );
+			if ( '' !== $label ) {
+				// translators: %s: Label of the field, for example "Webhook URL".
+				$clear_text = sprintf( __( 'Clear the saved value of %s', 'wp-updates-notifier' ), $label );
+			}
+			$html .= '<p class="description" id="' . esc_attr( $id . '-saved' ) . '">' . esc_html__( 'A value is saved. Leave this empty to keep it, or type a new value to replace it.', 'wp-updates-notifier' ) . '</p>'
 				. '<label for="' . esc_attr( $id . '__clear' ) . '"><input type="checkbox" id="' . esc_attr( $id . '__clear' ) . '" name="' . esc_attr( $clear ) . '" value="1" /> '
 				. esc_html( $clear_text ) . '</label>';
 		}

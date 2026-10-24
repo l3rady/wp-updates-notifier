@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-24T09:38:21+00:00\n"
+"POT-Creation-Date: 2026-10-24T12:57:06+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-updates-notifier\n"
@@ -176,7 +176,7 @@ msgstr ""
 
 #: includes/admin/class-channel-form.php:188
 #: includes/admin/class-channel-form.php:433
-#: includes/admin/class-channels-tab.php:488
+#: includes/admin/class-channels-tab.php:492
 msgid "Cancel"
 msgstr ""
 
@@ -208,14 +208,14 @@ msgstr ""
 #: includes/admin/class-channel-form.php:313
 #: includes/admin/class-channel-form.php:919
 #: includes/admin/class-channel-form.php:930
-#: includes/admin/class-channels-tab.php:574
+#: includes/admin/class-channels-tab.php:578
 msgid "There is no such channel."
 msgstr ""
 
 #. translators: %s: Label of the channel.
 #: includes/admin/class-channel-form.php:309
 #: includes/admin/class-channel-form.php:924
-#: includes/admin/class-channels-tab.php:776
+#: includes/admin/class-channels-tab.php:780
 #, php-format
 msgid "%s is defined in code and cannot be changed here."
 msgstr ""
@@ -333,7 +333,7 @@ msgid "%s saved."
 msgstr ""
 
 #: includes/admin/class-channel-form.php:1108
-#: includes/admin/class-channels-tab.php:828
+#: includes/admin/class-channels-tab.php:832
 #: includes/admin/class-check-now.php:212
 #: includes/class-slack-notice.php:219
 msgid "You are not allowed to do that."
@@ -408,146 +408,142 @@ msgstr ""
 
 #. translators: %s: Label of the channel.
 #: includes/admin/class-channels-tab.php:409
-msgid "Send test"
-msgstr ""
-
-#. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:409
 #, php-format
 msgid "Send test to %s"
 msgstr ""
 
-#. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:413
-msgid "Duplicate"
+#: includes/admin/class-channels-tab.php:410
+msgid "Send test"
 msgstr ""
 
 #. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:413
+#: includes/admin/class-channels-tab.php:414
 #, php-format
 msgid "Duplicate %s"
 msgstr ""
 
-#. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:417
-msgid "Disable"
+#: includes/admin/class-channels-tab.php:415
+msgid "Duplicate"
 msgstr ""
 
 #. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:417
+#: includes/admin/class-channels-tab.php:419
 #, php-format
 msgid "Disable %s"
 msgstr ""
 
-#. translators: %s: Label of the channel.
 #: includes/admin/class-channels-tab.php:420
-msgid "Enable"
+msgid "Disable"
 msgstr ""
 
 #. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:420
+#: includes/admin/class-channels-tab.php:423
 #, php-format
 msgid "Enable %s"
 msgstr ""
 
-#. translators: %s: Label of the channel.
 #: includes/admin/class-channels-tab.php:424
+msgid "Enable"
+msgstr ""
+
+#. translators: %s: Label of the channel.
+#: includes/admin/class-channels-tab.php:428
 #, php-format
 msgid "Delete %s"
 msgstr ""
 
-#: includes/admin/class-channels-tab.php:425
-#: includes/admin/class-channels-tab.php:487
+#: includes/admin/class-channels-tab.php:429
+#: includes/admin/class-channels-tab.php:491
 msgid "Delete"
 msgstr ""
 
 #. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:480
+#: includes/admin/class-channels-tab.php:484
 #, php-format
 msgid "Delete the channel %s? Its settings and delivery history are removed. This cannot be undone."
 msgstr ""
 
-#: includes/admin/class-channels-tab.php:516
+#: includes/admin/class-channels-tab.php:520
 msgid "No known item types"
 msgstr ""
 
-#: includes/admin/class-channels-tab.php:528
+#: includes/admin/class-channels-tab.php:532
 msgid "All updates"
 msgstr ""
 
-#: includes/admin/class-channels-tab.php:549
+#: includes/admin/class-channels-tab.php:553
 #: includes/class-routing.php:90
 msgid "Never"
 msgstr ""
 
 #. translators: %s: Date and time of the delivery.
-#: includes/admin/class-channels-tab.php:555
+#: includes/admin/class-channels-tab.php:559
 #, php-format
 msgid "Sent %s"
 msgstr ""
 
 #. translators: 1: Date and time of the delivery. 2: Why it failed.
-#: includes/admin/class-channels-tab.php:559
+#: includes/admin/class-channels-tab.php:563
 #, php-format
 msgid "Failed %1$s: %2$s"
 msgstr ""
 
 #. translators: %s: Date and time the channel will be tried again.
-#: includes/admin/class-channels-tab.php:562
+#: includes/admin/class-channels-tab.php:566
 #, php-format
 msgid "Rate limited, next try after %s"
 msgstr ""
 
 #. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:617
+#: includes/admin/class-channels-tab.php:621
 #, php-format
 msgid "%s cannot send a test message."
 msgstr ""
 
 #. translators: %s: Name of the channel.
-#: includes/admin/class-channels-tab.php:635
+#: includes/admin/class-channels-tab.php:639
 #, php-format
 msgid "Test message sent through %s."
 msgstr ""
 
 #. translators: 1: Name of the channel. 2: Why it failed.
-#: includes/admin/class-channels-tab.php:638
+#: includes/admin/class-channels-tab.php:642
 #, php-format
 msgid "The test message could not be sent through %1$s: %2$s"
 msgstr ""
 
 #. translators: 1: Label of the channel. 2: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
-#: includes/admin/class-channels-tab.php:663
+#: includes/admin/class-channels-tab.php:667
 #, php-format
 msgid "%1$s cannot be switched here: set by %2$s."
 msgstr ""
 
 #. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:680
+#: includes/admin/class-channels-tab.php:684
 #, php-format
 msgid "%s enabled."
 msgstr ""
 
 #. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:682
+#: includes/admin/class-channels-tab.php:686
 #, php-format
 msgid "%s disabled."
 msgstr ""
 
 #. translators: %s: Label of the channel that is copied.
-#: includes/admin/class-channels-tab.php:723
+#: includes/admin/class-channels-tab.php:727
 #, php-format
 msgid "%s (copy)"
 msgstr ""
 
 #. translators: %s: Label of the new channel.
-#: includes/admin/class-channels-tab.php:730
+#: includes/admin/class-channels-tab.php:734
 #, php-format
 msgid "Channel duplicated as %s."
 msgstr ""
 
 #. translators: %s: Label of the channel.
-#: includes/admin/class-channels-tab.php:753
+#: includes/admin/class-channels-tab.php:757
 #, php-format
 msgid "%s deleted."
 msgstr ""
@@ -602,23 +598,22 @@ msgstr[1] ""
 msgid "Error:"
 msgstr ""
 
-#. translators: %s: Label of the field, for example "Webhook URL".
-#: includes/admin/class-field-renderer.php:274
+#: includes/admin/class-field-renderer.php:273
 msgid "Clear the saved value"
 msgstr ""
 
 #. translators: %s: Label of the field, for example "Webhook URL".
-#: includes/admin/class-field-renderer.php:274
+#: includes/admin/class-field-renderer.php:276
 #, php-format
 msgid "Clear the saved value of %s"
 msgstr ""
 
-#: includes/admin/class-field-renderer.php:275
+#: includes/admin/class-field-renderer.php:278
 msgid "A value is saved. Leave this empty to keep it, or type a new value to replace it."
 msgstr ""
 
 #. translators: Shown after the label of a field that must be filled in.
-#: includes/admin/class-field-renderer.php:324
+#: includes/admin/class-field-renderer.php:327
 msgid "(required)"
 msgstr ""
 

@@ -406,18 +406,22 @@ class Channels_Tab {
 		}
 		if ( null !== $channel && $channel->supports( 'test_message' ) ) {
 			// translators: %s: Label of the channel.
-			$items['sc-wpun-test'] = $this->action_form( self::TEST_ACTION, $id, __( 'Send test', 'wp-updates-notifier' ), sprintf( __( 'Send test to %s', 'wp-updates-notifier' ), $label ) );
+			$action_name           = sprintf( __( 'Send test to %s', 'wp-updates-notifier' ), $label );
+			$items['sc-wpun-test'] = $this->action_form( self::TEST_ACTION, $id, __( 'Send test', 'wp-updates-notifier' ), $action_name );
 		}
 		if ( ! $code_defined ) {
 			// translators: %s: Label of the channel.
-			$items['sc-wpun-duplicate'] = $this->action_form( self::DUPLICATE_ACTION, $id, __( 'Duplicate', 'wp-updates-notifier' ), sprintf( __( 'Duplicate %s', 'wp-updates-notifier' ), $label ) );
+			$action_name                = sprintf( __( 'Duplicate %s', 'wp-updates-notifier' ), $label );
+			$items['sc-wpun-duplicate'] = $this->action_form( self::DUPLICATE_ACTION, $id, __( 'Duplicate', 'wp-updates-notifier' ), $action_name );
 			if ( ! $external_flag ) {
 				if ( $instance->is_enabled() ) {
 					// translators: %s: Label of the channel.
-					$items['sc-wpun-toggle'] = $this->action_form( self::TOGGLE_ACTION, $id, __( 'Disable', 'wp-updates-notifier' ), sprintf( __( 'Disable %s', 'wp-updates-notifier' ), $label ) );
+					$action_name             = sprintf( __( 'Disable %s', 'wp-updates-notifier' ), $label );
+					$items['sc-wpun-toggle'] = $this->action_form( self::TOGGLE_ACTION, $id, __( 'Disable', 'wp-updates-notifier' ), $action_name );
 				} else {
 					// translators: %s: Label of the channel.
-					$items['sc-wpun-toggle'] = $this->action_form( self::TOGGLE_ACTION, $id, __( 'Enable', 'wp-updates-notifier' ), sprintf( __( 'Enable %s', 'wp-updates-notifier' ), $label ) );
+					$action_name             = sprintf( __( 'Enable %s', 'wp-updates-notifier' ), $label );
+					$items['sc-wpun-toggle'] = $this->action_form( self::TOGGLE_ACTION, $id, __( 'Enable', 'wp-updates-notifier' ), $action_name );
 				}
 			}
 			// translators: %s: Label of the channel.
