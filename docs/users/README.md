@@ -10,3 +10,4 @@ WP Updates Notifier checks your site on a schedule and tells you when WordPress,
 - [Troubleshooting](troubleshooting.md): no emails, old data, a system cron, deliverability, a wrong address in a message and more.
 
 If you write code, the [developer guide](../developers/README.md) covers extending the plugin.
+
