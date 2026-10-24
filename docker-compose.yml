@@ -283,7 +283,7 @@ services:
   # set (zizmor refuses an empty token), so the gh CLI's own login on the host is left alone.
   zizmor:
     profiles: [security]
-    image: ghcr.io/zizmorcore/zizmor:1.30.1@sha256:a2eb396d886c053073405c7a980f2139ba2248ec172243cfa3841e57196e8101
+    image: ghcr.io/zizmorcore/zizmor:1.31.1@sha256:42d409dbb851d4c5d35a058cf042b828bea1e3f2884378c526eb0974780e18d9
     working_dir: /app
     volumes:
       - .:/app:ro
@@ -306,7 +306,7 @@ services:
   # Known vulnerabilities in the lockfiles: `make audit` (composer.lock; docker/Dockerfile's global npm install has no lockfile).
   osv-scanner:
     profiles: [security]
-    image: ghcr.io/google/osv-scanner:v2.6.0@sha256:afd838850ac1a0fcc15ff4a041dc9ba11123c3f0d2666217a5f0fcf9222b55fa
+    image: ghcr.io/google/osv-scanner:v2.7.0@sha256:4f3b7e2c64b9d38a5febc5a7e4a3dfef1d1362f726dea7a2ef4762b46469fcd0
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /app
     volumes:
@@ -331,7 +331,7 @@ services:
   # Static analysis with the plugin's own rules in .semgrep/: `make sast`. No network needed.
   semgrep:
     profiles: [security]
-    image: semgrep/semgrep:1.179.0@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b
+    image: semgrep/semgrep:1.180.0@sha256:529ee8a277ec8adc5b534d7c74eea0a47e9de21d62852b6ba7ac6ba9566845c3
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /src
     volumes:
