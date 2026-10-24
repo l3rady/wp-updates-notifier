@@ -15,7 +15,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 plugin="$root"
 pot="$plugin/languages/wp-updates-notifier.pot"
 # The one list of what is not scanned for strings.
-exclude="tests,docker,examples,bin,vendor,node_modules,build,docs,site,.semgrep"
+exclude="tests,docker,examples,bin,vendor,node_modules,build,docs,site,.semgrep,languages"
 
 HOME="${TMPDIR:-/tmp}"
 export HOME

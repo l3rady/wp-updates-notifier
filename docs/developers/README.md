@@ -9,6 +9,7 @@ WP Updates Notifier 2.0.0 and later can be extended by other plugins: new notifi
 - [Hook reference](hooks.md): every action and filter, generated from the code.
 - [Stability and deprecation](stability.md): what is public, how it changes, and how an add-on checks the API version with a version constraint.
 - [Tests and checks](testing.md): the test layers, what each one catches, and the `make` target and CI job for each.
+- [Translations](translations.md): the bundled locales, how the files are made and checked, and what to do when a string changes.
 - [Decision records](../decisions/README.md): why the plugin is built the way it is, such as the licence, the minimum versions, the module system and what was dropped.
 - [Threat model](../security/threat-model.md): what the plugin trusts, its entry points, and the control and test for each. The security rules for add-ons are in [Writing a module](writing-a-module.md#secrets) (secrets, HTTP, and running the plugin's checks on your code).
 

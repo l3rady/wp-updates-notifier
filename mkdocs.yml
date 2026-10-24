@@ -32,6 +32,7 @@ nav:
       - developers/README.md
       - Architecture: developers/architecture.md
       - Tests and checks: developers/testing.md
+      - Translations: developers/translations.md
       - Writing a module: developers/writing-a-module.md
       - Item types and routing: developers/item-types-and-routing.md
       - Configuration sources: developers/configuration-sources.md

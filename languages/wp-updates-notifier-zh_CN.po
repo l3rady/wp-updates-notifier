@@ -1,0 +1,1024 @@
+# Machine translation (AI), not yet reviewed by a native speaker.
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Updates Notifier\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-updates-notifier\n"
+"Last-Translator: Machine translation\n"
+"Language-Team: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-01-01 00:00+0000\n"
+"PO-Revision-Date: 2026-01-01 00:00+0000\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Domain: wp-updates-notifier\n"
+"X-Machine-Translation: yes\n"
+
+#. Plugin Name of the plugin
+msgid "WP Updates Notifier"
+msgstr "WP Updates Notifier"
+
+#. Plugin URI of the plugin
+msgid "https://wpun.cariss.dev/"
+msgstr "https://wpun.cariss.dev/"
+
+#. Description of the plugin
+msgid "Sends an email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates."
+msgstr "当您的 WordPress 站点有可用更新时发送电子邮件通知您。可通知核心、插件和主题更新。"
+
+#. Author of the plugin
+msgid "Scott Cariss"
+msgstr "Scott Cariss"
+
+#. Author URI of the plugin
+msgid "https://wpun.cariss.dev/#about-the-developer"
+msgstr "https://wpun.cariss.dev/#about-the-developer"
+
+msgid "Enabled"
+msgstr "已启用"
+
+msgid "Send notifications through this channel"
+msgstr "通过此渠道发送通知"
+
+#. translators: Hidden accessibility text.
+msgid "(external link)"
+msgstr "（外部链接）"
+
+msgid "About the plugin"
+msgstr "关于此插件"
+
+msgid "WP Updates Notifier checks your site for WordPress core, plugin and theme updates and tells you about each new version once. It is free and open source, with no tracking and no account to sign up for."
+msgstr "WP Updates Notifier 会检查您站点的 WordPress 核心、插件和主题更新，并对每个新版本只通知您一次。它免费且开源，没有跟踪，也无需注册账户。"
+
+msgid "Documentation"
+msgstr "文档"
+
+#. translators: %s: Link to the GitHub issues.
+msgid "GitHub"
+msgstr "GitHub"
+
+msgid "WordPress.org"
+msgstr "WordPress.org"
+
+msgid "Help and bugs"
+msgstr "帮助与错误报告"
+
+#. translators: %s: Link to the WordPress.org support forum.
+#, php-format
+msgid "Questions: ask in the %s."
+msgstr "有疑问：请在%s中提问。"
+
+#. translators: %s: Link to the WordPress.org support forum.
+msgid "support forum"
+msgstr "支持论坛"
+
+#. translators: %s: Link to the GitHub issues.
+#, php-format
+msgid "Bugs and ideas: open an issue on %s."
+msgstr "错误与建议：请在 %s 上提交 issue。"
+
+#. translators: %s: Link to the security policy.
+#, php-format
+msgid "Security problems: please report them privately, as the %s explains."
+msgstr "安全问题：请按照%s中的说明私下报告。"
+
+#. translators: %s: Link to the security policy.
+msgid "security policy"
+msgstr "安全策略"
+
+msgid "Leave a review"
+msgstr "撰写评价"
+
+#. translators: %s: Link to write a review on WordPress.org.
+#, php-format
+msgid "Like it? %s. It helps other people find the plugin."
+msgstr "喜欢吗？%s。这能帮助其他人找到此插件。"
+
+#. translators: %s: Link to write a review on WordPress.org.
+msgid "Leave a review on WordPress.org"
+msgstr "在 WordPress.org 上撰写评价"
+
+msgid "Donate"
+msgstr "捐赠"
+
+msgid "WP Updates Notifier is free. If it saves you time and you would like to say thanks, a donation helps keep it maintained."
+msgstr "WP Updates Notifier 是免费的。如果它为您节省了时间，而您想表示感谢，捐赠可以帮助它持续得到维护。"
+
+msgid "Ways to donate"
+msgstr "捐赠方式"
+
+msgid "About the developer"
+msgstr "关于开发者"
+
+msgid "I have been a software engineer for over 20 years and I am now a Lead Platform Engineer, building the platforms other engineers ship on. I first released WP Updates Notifier on WordPress.org in 2011, and it now runs on around 30,000 sites."
+msgstr "我从事软件工程师工作已超过 20 年，现在是一名首席平台工程师，负责构建供其他工程师发布产品的平台。我于 2011 年首次在 WordPress.org 上发布 WP Updates Notifier，如今它已在约 30,000 个站点上运行。"
+
+msgid "Scott Cariss on GitHub"
+msgstr "Scott Cariss 的 GitHub"
+
+msgid "Scott Cariss on LinkedIn"
+msgstr "Scott Cariss 的 LinkedIn"
+
+msgid "For power users"
+msgstr "高级用户"
+
+msgid "You can hide this tab with a line in wp-config.php:"
+msgstr "您可以在 wp-config.php 中添加一行来隐藏此选项卡："
+
+msgid "The setting is never stored and has no field on the settings screen. An environment variable, a configuration source or the sc_wpun_config_value filter can set it too. If you hide the tab, please consider a donation or a review in return."
+msgstr "此设置不会被保存，设置页面上也没有对应的字段。也可以通过环境变量、配置源或 sc_wpun_config_value 过滤器进行设置。如果您隐藏了此选项卡，请考虑以捐赠或评价作为回报。"
+
+msgid "No channel modules are available."
+msgstr "没有可用的渠道模块。"
+
+msgid "Choose where the update notifications are to be sent."
+msgstr "选择更新通知的发送目标。"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Add channel"
+msgstr "添加渠道"
+
+#. translators: %s: Name of the channel module, for example "Email".
+#, php-format
+msgid "Add %s channel"
+msgstr "添加%s渠道"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Edit %s"
+msgstr "编辑%s"
+
+msgid "There is no such channel module."
+msgstr "不存在此渠道模块。"
+
+msgid "There is no such channel."
+msgstr "不存在此渠道。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s is defined in code and cannot be changed here."
+msgstr "%s 在代码中定义，无法在此处更改。"
+
+msgid "Save channel"
+msgstr "保存渠道"
+
+msgid "There is a problem"
+msgstr "出现问题"
+
+msgid "The channel was not saved. Please correct the following."
+msgstr "渠道未保存。请更正以下问题。"
+
+#. translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
+#, php-format
+msgid "Set by %s"
+msgstr "由%s设置"
+
+msgid "Channel"
+msgstr "渠道"
+
+msgid "ID"
+msgstr "ID"
+
+msgid "The id is made from the label when the channel is saved and cannot be changed afterwards."
+msgstr "ID 在保存渠道时根据标签生成，之后无法更改。"
+
+#. translators: %s: Start of the names of the constants, for example "SC_WPUN_CHANNEL_EMAIL__".
+#, php-format
+msgid "Constants for this channel start with %s"
+msgstr "此渠道的常量以 %s 开头"
+
+msgid "Updates already waiting"
+msgstr "已有的待处理更新"
+
+msgid "Don't send the updates that are already waiting"
+msgstr "不发送已在等待中的更新"
+
+msgid "Only updates that appear after the channel is switched on are sent. Applies when the channel is saved switched on."
+msgstr "仅发送渠道开启后出现的更新。在以开启状态保存渠道时生效。"
+
+msgid "Routing"
+msgstr "路由"
+
+msgid "On the General tab, plugins are not checked."
+msgstr "在“常规”选项卡中，未设置检查插件。"
+
+#. translators: "All" and "Only active ones" are routing choices on this form: use the same translations as for those choices.
+msgid "On the General tab, only active plugins are checked, so \"All\" here acts like \"Only active ones\" for plugins."
+msgstr "在“常规”选项卡中仅检查已启用的插件，因此对于插件而言，此处的“全部”等同于“仅已启用的”。"
+
+msgid "On the General tab, themes are not checked."
+msgstr "在“常规”选项卡中，未设置检查主题。"
+
+#. translators: "All" and "Only active ones" are routing choices on this form: use the same translations as for those choices.
+msgid "On the General tab, only active themes are checked, so \"All\" here acts like \"Only active ones\" for themes."
+msgstr "在“常规”选项卡中仅检查已启用的主题，因此对于主题而言，此处的“全部”等同于“仅已启用的”。"
+
+msgid "On the General tab, WordPress updates are not checked."
+msgstr "在“常规”选项卡中，未设置检查 WordPress 更新。"
+
+msgid "On the General tab, only major releases are checked."
+msgstr "在“常规”选项卡中，仅检查主要版本。"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Label"
+msgstr "标签"
+
+msgid "The settings are not valid."
+msgstr "设置无效。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s added."
+msgstr "已添加%s。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s saved."
+msgstr "已保存%s。"
+
+msgid "You are not allowed to do that."
+msgstr "您无权执行此操作。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Delete %s?"
+msgstr "删除%s？"
+
+msgid "Channels"
+msgstr "渠道"
+
+msgid "No channels are set up yet. A channel is where the update notifications are sent, for example an email address."
+msgstr "尚未设置任何渠道。渠道是更新通知的发送目标，例如一个电子邮件地址。"
+
+msgid "Module"
+msgstr "模块"
+
+msgid "Last delivery"
+msgstr "上次发送"
+
+msgid "Unavailable channels"
+msgstr "不可用的渠道"
+
+msgid "These channels belong to modules that need a newer version of WP Updates Notifier. Nothing is sent through them and their settings are kept."
+msgstr "这些渠道所属的模块需要更新版本的 WP Updates Notifier。不会通过它们发送任何内容，其设置将被保留。"
+
+msgid "Status"
+msgstr "状态"
+
+#. translators: %s: Why the module is not available.
+#, php-format
+msgid "Unavailable: %s"
+msgstr "不可用：%s"
+
+msgid "Defined in code"
+msgstr "在代码中定义"
+
+msgid "Show more details"
+msgstr "显示更多详情"
+
+msgid "On"
+msgstr "开"
+
+msgid "Off"
+msgstr "关"
+
+msgid "Edit"
+msgstr "编辑"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Send test to %s"
+msgstr "向%s发送测试"
+
+msgid "Send test"
+msgstr "发送测试"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Duplicate %s"
+msgstr "复制%s"
+
+msgid "Duplicate"
+msgstr "复制"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Disable %s"
+msgstr "禁用%s"
+
+msgid "Disable"
+msgstr "禁用"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Enable %s"
+msgstr "启用%s"
+
+msgid "Enable"
+msgstr "启用"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Delete %s"
+msgstr "删除%s"
+
+msgid "Delete"
+msgstr "删除"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Delete the channel %s? Its settings and delivery history are removed. This cannot be undone."
+msgstr "删除渠道%s？其设置和发送记录将被移除。此操作无法撤销。"
+
+msgid "No known item types"
+msgstr "没有已知的项目类型"
+
+msgid "All updates"
+msgstr "所有更新"
+
+msgid "Never"
+msgstr "从未"
+
+#. translators: %s: Date and time of the delivery.
+#, php-format
+msgid "Sent %s"
+msgstr "已于 %s 发送"
+
+#. translators: 1: Date and time of the delivery. 2: Why it failed.
+#, php-format
+msgid "Failed %1$s: %2$s"
+msgstr "于 %1$s 失败：%2$s"
+
+#. translators: %s: Date and time the channel will be tried again.
+#, php-format
+msgid "Rate limited, next try after %s"
+msgstr "已被限速，将在 %s 后重试"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s cannot send a test message."
+msgstr "%s无法发送测试消息。"
+
+#. translators: %s: Name of the channel.
+#, php-format
+msgid "Test message sent through %s."
+msgstr "已通过%s发送测试消息。"
+
+#. translators: 1: Name of the channel. 2: Why it failed.
+#, php-format
+msgid "The test message could not be sent through %1$s: %2$s"
+msgstr "无法通过%1$s发送测试消息：%2$s"
+
+#. translators: 1: Label of the channel. 2: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
+#, php-format
+msgid "%1$s cannot be switched here: set by %2$s."
+msgstr "无法在此处切换%1$s：由%2$s设置。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s enabled."
+msgstr "已启用%s。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s disabled."
+msgstr "已禁用%s。"
+
+#. translators: %s: Label of the channel that is copied.
+#, php-format
+msgid "%s (copy)"
+msgstr "%s（副本）"
+
+#. translators: %s: Label of the new channel.
+#, php-format
+msgid "Channel duplicated as %s."
+msgstr "已将渠道复制为%s。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s deleted."
+msgstr "已删除%s。"
+
+msgid "Check for updates and notify now"
+msgstr "立即检查更新并通知"
+
+#. translators: %s: Link to the Channels tab, with the text "Channels tab".
+#, php-format
+msgid "Only updates that were not notified yet are sent. To try a channel, send a test message from the %s."
+msgstr "仅发送尚未通知过的更新。要试用某个渠道，请在%s中发送测试消息。"
+
+msgid "Channels tab"
+msgstr "“渠道”选项卡"
+
+msgid "Checked just now. Nothing was sent because no channel is enabled."
+msgstr "刚刚已检查。由于没有启用任何渠道，未发送任何内容。"
+
+msgid "Checked just now. Nothing new to send."
+msgstr "刚刚已检查。没有新内容需要发送。"
+
+#. translators: %d: Number of channels the update was sent to.
+#, php-format
+msgid "Checked just now. Sent to %d channel."
+msgid_plural "Checked just now. Sent to %d channels."
+msgstr[0] "刚刚已检查。已发送至 %d 个渠道。"
+
+#. translators: 1: Number of channels that failed. 2: The channels and why each failed.
+#, php-format
+msgid "Checked just now. %1$d channel failed: %2$s"
+msgid_plural "Checked just now. %1$d channels failed: %2$s"
+msgstr[0] "刚刚已检查。%1$d 个渠道发送失败：%2$s"
+
+#. translators: 1: Number of channels the update was sent to. 2: Number of channels that failed. 3: The channels that failed and why.
+#, php-format
+msgid "Checked just now. Sent to %1$d channel; %2$d failed: %3$s"
+msgid_plural "Checked just now. Sent to %1$d channels; %2$d failed: %3$s"
+msgstr[0] "刚刚已检查。已发送至 %1$d 个渠道；%2$d 个失败：%3$s"
+
+msgid "Error:"
+msgstr "错误："
+
+msgid "Clear the saved value"
+msgstr "清除已保存的值"
+
+#. translators: %s: Label of the field, for example "Webhook URL".
+#, php-format
+msgid "Clear the saved value of %s"
+msgstr "清除%s已保存的值"
+
+msgid "A value is saved. Leave this empty to keep it, or type a new value to replace it."
+msgstr "已保存一个值。留空则保留该值，输入新值则将其替换。"
+
+#. translators: Shown after the label of a field that must be filled in.
+msgid "(required)"
+msgstr "（必填）"
+
+#. translators: %s: the API requirement an add-on declared, as written in its plugin header.
+#, php-format
+msgid "This add-on's WP Updates Notifier API requirement (%s) could not be read."
+msgstr "无法读取此附加组件的 WP Updates Notifier API 要求（%s）。"
+
+#. translators: 1: the API version an add-on needs, as a constraint such as ^2.0. 2: the API version of this site, such as 1.0.0.
+#, php-format
+msgid "This add-on needs the WP Updates Notifier API %1$s. This site has %2$s. Update WP Updates Notifier."
+msgstr "此附加组件需要 WP Updates Notifier API %1$s。此站点的版本为 %2$s。请更新 WP Updates Notifier。"
+
+msgid "Updates Notifier"
+msgstr "Updates Notifier"
+
+#. translators: 1: Name of the view, for example "Channels". 2: Title of the screen and site.
+#, php-format
+msgid "%1$s &lsaquo; %2$s"
+msgstr "%1$s &lsaquo; %2$s"
+
+#. translators: %s: Page title.
+#, php-format
+msgid "Error: %s"
+msgstr "错误：%s"
+
+msgid "General"
+msgstr "常规"
+
+msgid "About"
+msgstr "关于"
+
+msgid "Sorry, you are not allowed to access this page."
+msgstr "抱歉，您不能访问此页面。"
+
+msgid "Settings sections"
+msgstr "设置分区"
+
+msgid "Last checked: never"
+msgstr "上次检查：从未"
+
+#. translators: %s: Date and time of the last check.
+#, php-format
+msgid "Last checked: %s"
+msgstr "上次检查：%s"
+
+msgid "Next check: not scheduled. Save the settings to schedule it."
+msgstr "下次检查：未计划。保存设置以安排检查。"
+
+#. translators: %s: Date and time of the next check.
+#, php-format
+msgid "Next check: %s"
+msgstr "下次检查：%s"
+
+msgid "Save settings"
+msgstr "保存设置"
+
+#. translators: 1: Date. 2: Time.
+#, php-format
+msgid "%1$s at %2$s"
+msgstr "%1$s %2$s"
+
+msgid "Choose how often to check for updates."
+msgstr "选择检查更新的频率。"
+
+msgid "Choose whether to be told about WordPress updates."
+msgstr "选择是否接收 WordPress 更新通知。"
+
+msgid "Choose whether to be told about plugin updates."
+msgstr "选择是否接收插件更新通知。"
+
+msgid "Choose whether to be told about theme updates."
+msgstr "选择是否接收主题更新通知。"
+
+msgid "Choose whether to hide the update notices."
+msgstr "选择是否隐藏更新提示。"
+
+#. translators: %s: Label of the setting.
+#, php-format
+msgid "Choose a value for %s."
+msgstr "请为%s选择一个值。"
+
+msgid "This is a test message from WP Updates Notifier."
+msgstr "这是一条来自 WP Updates Notifier 的测试消息。"
+
+#. translators: %s: Name of the saved schedule.
+#, php-format
+msgid "%s (no longer available)"
+msgstr "%s（已不可用）"
+
+msgid "The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it."
+msgstr "已保存的频率在此站点上已不可用，因此检查将按上次计划的间隔运行。请选择一个频率并保存以进行更改。"
+
+#. translators: 1: The display asked for. 2: The display used instead.
+#, php-format
+msgid "The display \"%1$s\" cannot show an on or off value, so \"%2$s\" is used."
+msgstr "显示方式“%1$s”无法显示开/关值，因此改用“%2$s”。"
+
+msgid "Yes"
+msgstr "是"
+
+msgid "No"
+msgstr "否"
+
+msgid "A channel type may only contain lower case letters, digits and underscores."
+msgstr "渠道类型只能包含小写字母、数字和下划线。"
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "A channel of type \"%s\" is already registered."
+msgstr "类型为“%s”的渠道已注册。"
+
+#. translators: 1: The API version constraint the module needs, 2: The API version of this site.
+#, php-format
+msgid "Needs WP Updates Notifier API %1$s; this site has %2$s. Update WP Updates Notifier."
+msgstr "需要 WP Updates Notifier API %1$s；此站点的版本为 %2$s。请更新 WP Updates Notifier。"
+
+#. translators: %s: The API version constraint the module declared.
+#, php-format
+msgid "Its API requirement \"%s\" could not be read."
+msgstr "无法读取其 API 要求“%s”。"
+
+msgid "An instance defined in code cannot be saved."
+msgstr "在代码中定义的实例无法保存。"
+
+msgid "An instance defined in code cannot be deleted."
+msgstr "在代码中定义的实例无法删除。"
+
+#. translators: 1: Channel type. 2: Field name.
+#, php-format
+msgid "The field \"%2$s\" of the \"%1$s\" channel cannot be supplied from outside the database: the name \"enabled\" is reserved, and names may only contain a-z, 0-9 and single underscores."
+msgstr "“%1$s”渠道的字段“%2$s”无法从数据库外部提供：名称“enabled”为保留名称，且名称只能包含 a-z、0-9 和单个下划线。"
+
+msgid "The value is not valid for this channel."
+msgstr "该值对此渠道无效。"
+
+#. translators: %s: Class name of an exception.
+#, php-format
+msgid "The value could not be checked: %s was thrown."
+msgstr "无法检查该值：抛出了 %s。"
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s". Keep SC_WPUN_CHANNELS as is.
+msgid "constant SC_WPUN_CHANNELS"
+msgstr "常量 SC_WPUN_CHANNELS"
+
+msgid "The constant must be a JSON string."
+msgstr "该常量必须是 JSON 字符串。"
+
+msgid "The value must be a JSON string."
+msgstr "该值必须是 JSON 字符串。"
+
+msgid "The JSON must be a list of channels."
+msgstr "该 JSON 必须是渠道列表。"
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s". Keep sc_wpun_channels as is.
+msgid "the sc_wpun_channels filter"
+msgstr "sc_wpun_channels 过滤器"
+
+#. translators: %d: Position of the entry in the list, starting at 1.
+#, php-format
+msgid "Channel %d repeats the id of an earlier channel and was skipped."
+msgstr "渠道 %d 与之前的渠道 ID 重复，已跳过。"
+
+#. translators: %d: Position of the entry in the list, starting at 1.
+#, php-format
+msgid "Channel %d is not valid and was skipped."
+msgstr "渠道 %d 无效，已跳过。"
+
+msgid "Some configuration values supplied from outside the database are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed."
+msgstr "从数据库外部提供的部分配置值无效。无效的设置将回退为已保存的值；含有无效值的渠道在修复前不会发送。"
+
+msgid "WP Updates Notifier cannot use some configuration values"
+msgstr "WP Updates Notifier 无法使用部分配置值"
+
+msgid "Some values supplied by constants, environment variables or other sources are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed."
+msgstr "由常量、环境变量或其他来源提供的部分值无效。无效的设置将回退为已保存的值；含有无效值的渠道在修复前不会发送。"
+
+msgid "Review the notification settings"
+msgstr "检查通知设置"
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s". Keep sc_wpun_config_value as is.
+msgid "the sc_wpun_config_value filter"
+msgstr "sc_wpun_config_value 过滤器"
+
+msgid "The value is not valid for this setting, so the default is used."
+msgstr "该值对此设置无效，因此使用默认值。"
+
+msgid "The value is not valid for this setting, so the saved one is used."
+msgstr "该值对此设置无效，因此使用已保存的值。"
+
+msgid "The value is not valid for this field."
+msgstr "该值对此字段无效。"
+
+msgid "The value is not a recognised on or off value (1, true, yes, on, 0, false, no, off), so environment variables are not read."
+msgstr "该值不是可识别的开/关值（1, true, yes, on, 0, false, no, off），因此不会读取环境变量。"
+
+msgid "Every entry must implement WPUN\\Config_Source."
+msgstr "每个条目都必须实现 WPUN\\Config_Source。"
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s".
+msgid "a configuration source"
+msgstr "配置源"
+
+#. translators: %s: Name of a PHP constant. Describes where a configuration value comes from; shown in "Set by %s".
+#, php-format
+msgid "constant %s"
+msgstr "常量 %s"
+
+msgid "This channel is switched off."
+msgstr "此渠道已关闭。"
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "The \"%s\" channel did not return a Delivery_Result."
+msgstr "“%s”渠道未返回 Delivery_Result。"
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "The \"%s\" channel failed with an error."
+msgstr "“%s”渠道因错误而失败。"
+
+#. translators: %s: Names of the constants or environment variables that are not valid.
+#, php-format
+msgid "The channel is misconfigured: %s is not valid."
+msgstr "渠道配置有误：%s 无效。"
+
+#. translators: 1: Channel type, 2: Why the module was refused.
+#, php-format
+msgid "The \"%1$s\" channel is not available: %2$s"
+msgstr "“%1$s”渠道不可用：%2$s"
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "The \"%s\" channel is not available."
+msgstr "“%s”渠道不可用。"
+
+#. translators: 1: The display asked for. 2: The display used instead.
+#, php-format
+msgid "The display \"%1$s\" cannot show several choices, so \"%2$s\" is used."
+msgstr "显示方式“%1$s”无法显示多个选项，因此改用“%2$s”。"
+
+#. translators: 1: The display asked for. 2: The display used instead.
+#, php-format
+msgid "The display \"%1$s\" cannot show a single choice, so \"%2$s\" is used."
+msgstr "显示方式“%1$s”无法显示单个选项，因此改用“%2$s”。"
+
+#. translators: %s: Name of an environment variable. Describes where a configuration value comes from; shown in "Set by %s".
+#, php-format
+msgid "environment variable %s"
+msgstr "环境变量 %s"
+
+#. translators: %s: Field type.
+#, php-format
+msgid "The field type \"%s\" must be an array with a callable \"render\" and a callable \"sanitize\", so it is ignored."
+msgstr "字段类型“%s”必须是包含可调用的“render”和“sanitize”的数组，因此已被忽略。"
+
+#. translators: %s: Field type.
+#, php-format
+msgid "No field type \"%s\" is registered, so the field is ignored. Register it with the sc_wpun_field_types filter."
+msgstr "未注册字段类型“%s”，因此该字段已被忽略。请使用 sc_wpun_field_types 过滤器注册。"
+
+msgid "Enter a full web address that starts with http:// or https://."
+msgstr "请输入以 http:// 或 https:// 开头的完整网址。"
+
+msgid "One or more email addresses are not valid."
+msgstr "一个或多个电子邮件地址无效。"
+
+msgid "Enter a whole number."
+msgstr "请输入整数。"
+
+#. translators: %d: Smallest value.
+#, php-format
+msgid "Enter a number that is at least %d."
+msgstr "请输入不小于 %d 的数字。"
+
+#. translators: %d: Largest value.
+#, php-format
+msgid "Enter a number that is at most %d."
+msgstr "请输入不大于 %d 的数字。"
+
+#. translators: %s: Name of the field.
+#, php-format
+msgid "The choice for \"%s\" is not valid."
+msgstr "“%s”的选择无效。"
+
+#. translators: %s: Label of the field.
+#, php-format
+msgid "%s is required."
+msgstr "%s为必填项。"
+
+#. translators: %s: Name of the field.
+#, php-format
+msgid "The value for \"%s\" is not valid."
+msgstr "“%s”的值无效。"
+
+msgid "WordPress"
+msgstr "WordPress"
+
+msgid "Plugins"
+msgstr "插件"
+
+msgid "Themes"
+msgstr "主题"
+
+#. translators: %d: Number of updates that are not listed in the message.
+#, php-format
+msgid "…and %d more"
+msgid_plural "…and %d more"
+msgstr[0] "…以及另外 %d 项"
+
+#. translators: 1: Site name. 2: Site address.
+#, php-format
+msgid "Reminder: these updates are still waiting for %1$s (%2$s)"
+msgstr "提醒：%1$s（%2$s）仍有以下更新待处理"
+
+#. translators: 1: Site name. 2: Site address.
+#, php-format
+msgid "There are updates available for %1$s (%2$s)"
+msgstr "%1$s（%2$s）有可用更新"
+
+#. translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
+#, php-format
+msgid "%1$s from version %2$s to %3$s"
+msgstr "%1$s 从版本 %2$s 更新到 %3$s"
+
+#. translators: %s: Address of the WordPress updates screen.
+#, php-format
+msgid "Please visit %s to update."
+msgstr "请访问 %s 进行更新。"
+
+msgid "Go to the Updates screen to update."
+msgstr "请前往“更新”页面进行更新。"
+
+msgid "Details"
+msgstr "详情"
+
+msgid "Changelog"
+msgstr "更新日志"
+
+#. translators: %s: Name of the plugin, theme or WordPress.
+#, php-format
+msgid "%s details"
+msgstr "%s 详情"
+
+#. translators: %s: Name of the plugin, theme or WordPress.
+#, php-format
+msgid "%s changelog"
+msgstr "%s 更新日志"
+
+#. translators: %s: Site name.
+#, php-format
+msgid "WP Updates Notifier: updates available for %s"
+msgstr "WP Updates Notifier：%s 有可用更新"
+
+msgid "Some notification modules need a newer version of WP Updates Notifier and are switched off. Their settings have been kept."
+msgstr "部分通知模块需要更新版本的 WP Updates Notifier，已被关闭。其设置已保留。"
+
+msgid "Some WP Updates Notifier modules need a newer version"
+msgstr "部分 WP Updates Notifier 模块需要更新的版本"
+
+msgid "Some notification modules need a newer version of WP Updates Notifier than this site has, so they are switched off. Their settings have been kept."
+msgstr "部分通知模块需要比此站点更新的 WP Updates Notifier 版本，因此已被关闭。其设置已保留。"
+
+msgid "Update WP Updates Notifier"
+msgstr "更新 WP Updates Notifier"
+
+msgid "Item types"
+msgstr "项目类型"
+
+msgid "Leave every box unticked to receive all types, including ones added later."
+msgstr "不勾选任何复选框即可接收所有类型，包括以后添加的类型。"
+
+msgid "Plugins and themes"
+msgstr "插件和主题"
+
+msgid "Applies after the plugin and theme settings on the General tab."
+msgstr "在“常规”选项卡中的插件和主题设置之后应用。"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Only active ones"
+msgstr "仅已启用的"
+
+msgid "WordPress updates"
+msgstr "WordPress 更新"
+
+msgid "Applies after the WordPress updates setting on the General tab."
+msgstr "在“常规”选项卡中的 WordPress 更新设置之后应用。"
+
+msgid "Only major releases"
+msgstr "仅主要版本"
+
+msgid "Reminders"
+msgstr "提醒"
+
+msgid "Repeat every update that is still waiting, in one message, until it is installed. New updates are still sent at once."
+msgstr "将所有仍待处理的更新合并在一条消息中重复提醒，直到安装为止。新的更新仍会立即发送。"
+
+msgid "Daily"
+msgstr "每天"
+
+msgid "Weekly"
+msgstr "每周"
+
+msgid "Frequency to check"
+msgstr "检查频率"
+
+msgid "Update notice"
+msgstr "更新提示"
+
+msgid "Hide the WordPress update notice from users who cannot update WordPress"
+msgstr "对无法更新 WordPress 的用户隐藏 WordPress 更新提示"
+
+msgid "About tab"
+msgstr "“关于”选项卡"
+
+msgid "Notify about WordPress updates?"
+msgstr "是否通知 WordPress 更新？"
+
+msgid "Yes, but only major releases"
+msgstr "是，但仅限主要版本"
+
+msgid "Notify about plugin updates?"
+msgstr "是否通知插件更新？"
+
+msgid "Notify about theme updates?"
+msgstr "是否通知主题更新？"
+
+msgid "Yes, but only active plugins"
+msgstr "是，但仅限已启用的插件"
+
+msgid "Yes, but only active themes"
+msgstr "是，但仅限已启用的主题"
+
+msgid "Email notifications continue as before."
+msgstr "电子邮件通知将照常继续。"
+
+#. translators: %s: URL of the settings page.
+#, php-format
+msgid "Email notifications are switched off, so this site currently sends no update notifications. You can turn them on at %s"
+msgstr "电子邮件通知已关闭，因此此站点目前不会发送任何更新通知。您可以在 %s 开启"
+
+msgid "Slack notifications are not supported in this version of WP Updates Notifier. Your Slack settings have been kept."
+msgstr "此版本的 WP Updates Notifier 不支持 Slack 通知。您的 Slack 设置已保留。"
+
+msgid "New notification channels and features are coming in future releases."
+msgstr "新的通知渠道和功能将在未来版本中推出。"
+
+msgid "WP Updates Notifier: Slack notifications are no longer supported"
+msgstr "WP Updates Notifier：不再支持 Slack 通知"
+
+msgid "Slack notifications are no longer supported"
+msgstr "不再支持 Slack 通知"
+
+msgid "Dismiss this notice"
+msgstr "忽略此通知"
+
+msgid "Slack notifications are no longer supported by WP Updates Notifier"
+msgstr "WP Updates Notifier 不再支持 Slack 通知"
+
+msgid "Slack notifications are not supported in this version of WP Updates Notifier, so none are sent. Your Slack settings have been kept."
+msgstr "此版本的 WP Updates Notifier 不支持 Slack 通知，因此不会发送。您的 Slack 设置已保留。"
+
+msgid "The filter must return a WPUN\\Notification."
+msgstr "过滤器必须返回 WPUN\\Notification。"
+
+#. translators: %s: WordPress version of the site, for example 6.5.
+#, php-format
+msgid "Compatibility with WordPress %s: unknown"
+msgstr "与 WordPress %s 的兼容性：未知"
+
+#. translators: %s: WordPress version of the site, for example 6.5.
+#, php-format
+msgid "Compatibility with WordPress %s: tested by its author"
+msgstr "与 WordPress %s 的兼容性：已由作者测试"
+
+#. translators: 1: WordPress version of the site. 2: Latest WordPress version the plugin was tested with.
+#, php-format
+msgid "Compatibility with WordPress %1$s: not tested yet (tested up to %2$s)"
+msgstr "与 WordPress %1$s 的兼容性：尚未测试（已测试至 %2$s）"
+
+#. translators: 1: PHP version the update needs. 2: PHP version of the site.
+#, php-format
+msgid "Warning: this version needs PHP %1$s; the site runs PHP %2$s."
+msgstr "警告：此版本需要 PHP %1$s；此站点运行的是 PHP %2$s。"
+
+#. translators: 1: WordPress version the update needs. 2: WordPress version of the site.
+#, php-format
+msgid "Warning: this version needs WordPress %1$s; the site runs WordPress %2$s."
+msgstr "警告：此版本需要 WordPress %1$s；此站点运行的是 WordPress %2$s。"
+
+#. translators: %s: the version.
+#, php-format
+msgid "The version \"%s\" could not be read. Use one to three numbers, such as \"1.2.0\"."
+msgstr "无法读取版本“%s”。请使用一到三个数字，例如“1.2.0”。"
+
+#. translators: %s: the version constraint.
+#, php-format
+msgid "The version constraint \"%s\" could not be read. Use Composer syntax, such as \"^1.0\" or \">=1.0 <2.0\"."
+msgstr "无法读取版本约束“%s”。请使用 Composer 语法，例如“^1.0”或“>=1.0 <2.0”。"
+
+msgid "Email"
+msgstr "电子邮件"
+
+msgid "Sends the notification to one or more email addresses."
+msgstr "将通知发送到一个或多个电子邮件地址。"
+
+msgid "Send to"
+msgstr "发送至"
+
+msgid "Separate multiple email addresses with a comma (,)."
+msgstr "多个电子邮件地址请用英文逗号（,）分隔。"
+
+msgid "From address"
+msgstr "发件人地址"
+
+msgid "Leave empty to use the WordPress default. Only set an address at a domain this site is allowed to send mail for."
+msgstr "留空则使用 WordPress 默认值。请仅设置此站点有权代为发送邮件的域名下的地址。"
+
+msgid "Reply-To address"
+msgstr "回复（Reply-To）地址"
+
+msgid "Format"
+msgstr "格式"
+
+msgid "Plain text"
+msgstr "纯文本"
+
+msgid "HTML"
+msgstr "HTML"
+
+msgid "Subject prefix"
+msgstr "邮件主题前缀"
+
+msgid "One or more email addresses to send to are invalid."
+msgstr "一个或多个收件电子邮件地址无效。"
+
+msgid "Enter at least one valid email address to send to."
+msgstr "请输入至少一个有效的收件电子邮件地址。"
+
+msgid "The email address is invalid."
+msgstr "该电子邮件地址无效。"
+
+msgid "The format must be plain text or HTML."
+msgstr "格式必须为纯文本或 HTML。"
+
+msgid "No email address to send to is set."
+msgstr "未设置收件电子邮件地址。"
+
+#. translators: %s: Site name.
+#, php-format
+msgid "WP Updates Notifier: test message for %s"
+msgstr "WP Updates Notifier：%s 的测试消息"
+
+#. translators: 1: Site name. 2: Site address.
+#, php-format
+msgid "This is a test message from WP Updates Notifier for %1$s (%2$s). Update notifications for this site will be sent to this address."
+msgstr "这是一条来自 WP Updates Notifier、发给 %1$s（%2$s）的测试消息。此站点的更新通知将发送到此地址。"
+
+#. translators: %s: Site name.
+#, php-format
+msgid "WP Updates Notifier: reminder of updates waiting for %s"
+msgstr "WP Updates Notifier：%s 的待处理更新提醒"
+
+msgid "WordPress could not send the email."
+msgstr "WordPress 无法发送电子邮件。"

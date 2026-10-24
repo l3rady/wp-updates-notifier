@@ -1,260 +1,1028 @@
+# Machine translation (AI), not yet reviewed by a native speaker.
+# This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Updates Notifier v1.3.1\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: \n"
-"PO-Revision-Date: 2012-09-29 20:18:52+0000\n"
-"Last-Translator: \n"
-"Language-Team: \n"
+"Project-Id-Version: WP Updates Notifier\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-updates-notifier\n"
+"Last-Translator: Machine translation\n"
+"Language-Team: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-01-01 00:00+0000\n"
+"PO-Revision-Date: 2026-01-01 00:00+0000\n"
+"Language: de_DE\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Poedit-Language: \n"
-"X-Poedit-Country: \n"
-"X-Poedit-SourceCharset: utf-8\n"
-"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;\n"
-"X-Poedit-Basepath: \n"
-"X-Poedit-Bookmarks: \n"
-"X-Poedit-SearchPath-0: .\n"
-"X-Textdomain-Support: yes"
+"X-Domain: wp-updates-notifier\n"
+"X-Machine-Translation: yes\n"
 
-#. translators: plugin header field 'Name'
-#: class-sc-wp-updates-notifier.php:0
-#: class-sc-wp-updates-notifier.php:367
-#: class-sc-wp-updates-notifier.php:400
-#@ wp-updates-notifier
+#. Plugin Name of the plugin
 msgid "WP Updates Notifier"
-msgstr "Aktualisierungsalarm"
+msgstr "WP Updates Notifier"
 
-#. translators: plugin header field 'PluginURI'
-#: class-sc-wp-updates-notifier.php:0
-#@ wp-updates-notifier
-msgid "http://l3rady.com/projects/wp-updates-notifier/"
-msgstr ""
+#. Plugin URI of the plugin
+msgid "https://wpun.cariss.dev/"
+msgstr "https://wpun.cariss.dev/"
 
-#. translators: plugin header field 'Description'
-#: class-sc-wp-updates-notifier.php:0
-#@ wp-updates-notifier
-msgid "Sends email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates."
-msgstr "Sendet E-Mails, um Sie zu benachrichtigen, wenn es irgendwelche Aktualisierungen für Ihre WordPress-Website gibt. Kann über Aktualisierungen für WordPress, Plugins und Themes benachrichtigen."
+#. Description of the plugin
+msgid "Sends an email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates."
+msgstr "Sendet dir eine E-Mail, wenn es Aktualisierungen für deine WordPress-Website gibt. Kann über Aktualisierungen von Core, Plugins und Themes benachrichtigen."
 
-#. translators: plugin header field 'Author'
-#: class-sc-wp-updates-notifier.php:0
-#@ wp-updates-notifier
+#. Author of the plugin
 msgid "Scott Cariss"
-msgstr ""
+msgstr "Scott Cariss"
 
-#. translators: plugin header field 'AuthorURI'
-#: class-sc-wp-updates-notifier.php:0
-#@ wp-updates-notifier
-msgid "http://l3rady.com/"
-msgstr ""
+#. Author URI of the plugin
+msgid "https://wpun.cariss.dev/#about-the-developer"
+msgstr "https://wpun.cariss.dev/#about-the-developer"
 
-#: class-sc-wp-updates-notifier.php:159
-#: class-sc-wp-updates-notifier.php:414
-#@ wp-updates-notifier
+msgid "Enabled"
+msgstr "Aktiviert"
+
+msgid "Send notifications through this channel"
+msgstr "Benachrichtigungen über diesen Kanal senden"
+
+#. translators: Hidden accessibility text.
+msgid "(external link)"
+msgstr "(externer Link)"
+
+msgid "About the plugin"
+msgstr "Über das Plugin"
+
+msgid "WP Updates Notifier checks your site for WordPress core, plugin and theme updates and tells you about each new version once. It is free and open source, with no tracking and no account to sign up for."
+msgstr "WP Updates Notifier prüft deine Website auf Aktualisierungen für den WordPress-Core, Plugins und Themes und informiert dich einmal über jede neue Version. Es ist kostenlos und Open Source, ohne Tracking und ohne Konto, für das du dich registrieren musst."
+
+msgid "Documentation"
+msgstr "Dokumentation"
+
+#. translators: %s: Link to the GitHub issues.
+msgid "GitHub"
+msgstr "GitHub"
+
+msgid "WordPress.org"
+msgstr "WordPress.org"
+
+msgid "Help and bugs"
+msgstr "Hilfe und Fehler"
+
+#. translators: %s: Link to the WordPress.org support forum.
+#, php-format
+msgid "Questions: ask in the %s."
+msgstr "Fragen: Stelle sie im %s."
+
+#. translators: %s: Link to the WordPress.org support forum.
+msgid "support forum"
+msgstr "Support-Forum"
+
+#. translators: %s: Link to the GitHub issues.
+#, php-format
+msgid "Bugs and ideas: open an issue on %s."
+msgstr "Fehler und Ideen: Eröffne ein Issue auf %s."
+
+#. translators: %s: Link to the security policy.
+#, php-format
+msgid "Security problems: please report them privately, as the %s explains."
+msgstr "Sicherheitsprobleme: Bitte melde sie vertraulich, wie in der %s beschrieben."
+
+#. translators: %s: Link to the security policy.
+msgid "security policy"
+msgstr "Sicherheitsrichtlinie"
+
+msgid "Leave a review"
+msgstr "Bewertung schreiben"
+
+#. translators: %s: Link to write a review on WordPress.org.
+#, php-format
+msgid "Like it? %s. It helps other people find the plugin."
+msgstr "Gefällt es dir? %s. Das hilft anderen, das Plugin zu finden."
+
+#. translators: %s: Link to write a review on WordPress.org.
+msgid "Leave a review on WordPress.org"
+msgstr "Schreib eine Bewertung auf WordPress.org"
+
+msgid "Donate"
+msgstr "Spenden"
+
+msgid "WP Updates Notifier is free. If it saves you time and you would like to say thanks, a donation helps keep it maintained."
+msgstr "WP Updates Notifier ist kostenlos. Wenn es dir Zeit spart und du dich bedanken möchtest, hilft eine Spende dabei, es weiter zu pflegen."
+
+msgid "Ways to donate"
+msgstr "Möglichkeiten zu spenden"
+
+msgid "About the developer"
+msgstr "Über den Entwickler"
+
+msgid "I have been a software engineer for over 20 years and I am now a Lead Platform Engineer, building the platforms other engineers ship on. I first released WP Updates Notifier on WordPress.org in 2011, and it now runs on around 30,000 sites."
+msgstr "Ich bin seit über 20 Jahren Softwareentwickler und heute Lead Platform Engineer: Ich baue die Plattformen, auf denen andere Entwickler ihre Software ausliefern. WP Updates Notifier habe ich 2011 zum ersten Mal auf WordPress.org veröffentlicht, und heute läuft es auf rund 30.000 Websites."
+
+msgid "Scott Cariss on GitHub"
+msgstr "Scott Cariss auf GitHub"
+
+msgid "Scott Cariss on LinkedIn"
+msgstr "Scott Cariss auf LinkedIn"
+
+msgid "For power users"
+msgstr "Für Power-User"
+
+msgid "You can hide this tab with a line in wp-config.php:"
+msgstr "Du kannst diesen Tab mit einer Zeile in der wp-config.php ausblenden:"
+
+msgid "The setting is never stored and has no field on the settings screen. An environment variable, a configuration source or the sc_wpun_config_value filter can set it too. If you hide the tab, please consider a donation or a review in return."
+msgstr "Die Einstellung wird nie gespeichert und hat kein Feld auf der Einstellungsseite. Sie kann auch über eine Umgebungsvariable, eine Konfigurationsquelle oder den Filter sc_wpun_config_value gesetzt werden. Wenn du den Tab ausblendest, denk bitte im Gegenzug über eine Spende oder eine Bewertung nach."
+
+msgid "No channel modules are available."
+msgstr "Es sind keine Kanal-Module verfügbar."
+
+msgid "Choose where the update notifications are to be sent."
+msgstr "Wähle aus, wohin die Benachrichtigungen über Aktualisierungen gesendet werden sollen."
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Add channel"
+msgstr "Kanal hinzufügen"
+
+#. translators: %s: Name of the channel module, for example "Email".
+#, php-format
+msgid "Add %s channel"
+msgstr "%s-Kanal hinzufügen"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Edit %s"
+msgstr "%s bearbeiten"
+
+msgid "There is no such channel module."
+msgstr "Dieses Kanal-Modul gibt es nicht."
+
+msgid "There is no such channel."
+msgstr "Diesen Kanal gibt es nicht."
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s is defined in code and cannot be changed here."
+msgstr "%s ist im Code definiert und kann hier nicht geändert werden."
+
+msgid "Save channel"
+msgstr "Kanal speichern"
+
+msgid "There is a problem"
+msgstr "Es gibt ein Problem"
+
+msgid "The channel was not saved. Please correct the following."
+msgstr "Der Kanal wurde nicht gespeichert. Bitte korrigiere Folgendes."
+
+#. translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
+#, php-format
+msgid "Set by %s"
+msgstr "Festgelegt durch %s"
+
+msgid "Channel"
+msgstr "Kanal"
+
+msgid "ID"
+msgstr "ID"
+
+msgid "The id is made from the label when the channel is saved and cannot be changed afterwards."
+msgstr "Die ID wird beim Speichern des Kanals aus der Bezeichnung erzeugt und kann danach nicht mehr geändert werden."
+
+#. translators: %s: Start of the names of the constants, for example "SC_WPUN_CHANNEL_EMAIL__".
+#, php-format
+msgid "Constants for this channel start with %s"
+msgstr "Konstanten für diesen Kanal beginnen mit %s"
+
+msgid "Updates already waiting"
+msgstr "Bereits ausstehende Aktualisierungen"
+
+msgid "Don't send the updates that are already waiting"
+msgstr "Bereits ausstehende Aktualisierungen nicht senden"
+
+msgid "Only updates that appear after the channel is switched on are sent. Applies when the channel is saved switched on."
+msgstr "Es werden nur Aktualisierungen gesendet, die nach dem Einschalten des Kanals erscheinen. Gilt, wenn der Kanal eingeschaltet gespeichert wird."
+
+msgid "Routing"
+msgstr "Routing"
+
+msgid "On the General tab, plugins are not checked."
+msgstr "Im Tab „Allgemein“ ist festgelegt, dass Plugins nicht geprüft werden."
+
+#. translators: "All" and "Only active ones" are routing choices on this form: use the same translations as for those choices.
+msgid "On the General tab, only active plugins are checked, so \"All\" here acts like \"Only active ones\" for plugins."
+msgstr "Im Tab „Allgemein“ ist festgelegt, dass nur aktive Plugins geprüft werden, daher wirkt „Alle“ hier für Plugins wie „Nur aktive“."
+
+msgid "On the General tab, themes are not checked."
+msgstr "Im Tab „Allgemein“ ist festgelegt, dass Themes nicht geprüft werden."
+
+#. translators: "All" and "Only active ones" are routing choices on this form: use the same translations as for those choices.
+msgid "On the General tab, only active themes are checked, so \"All\" here acts like \"Only active ones\" for themes."
+msgstr "Im Tab „Allgemein“ ist festgelegt, dass nur aktive Themes geprüft werden, daher wirkt „Alle“ hier für Themes wie „Nur aktive“."
+
+msgid "On the General tab, WordPress updates are not checked."
+msgstr "Im Tab „Allgemein“ ist festgelegt, dass WordPress-Aktualisierungen nicht geprüft werden."
+
+msgid "On the General tab, only major releases are checked."
+msgstr "Im Tab „Allgemein“ ist festgelegt, dass nur Hauptversionen geprüft werden."
+
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: class-sc-wp-updates-notifier.php:187
-#@ wp-updates-notifier
-msgid "There are updates available for your WordPress site:"
-msgstr "Es sind Aktualisierungen für Ihre WordPress-Webseite verfügbar:"
+msgid "Label"
+msgstr "Bezeichnung"
 
-#: class-sc-wp-updates-notifier.php:188
+msgid "The settings are not valid."
+msgstr "Die Einstellungen sind ungültig."
+
+#. translators: %s: Label of the channel.
 #, php-format
-#@ wp-updates-notifier
-msgid "Please visit %s to update."
-msgstr "Bitte besuche %s um zu updaten."
+msgid "%s added."
+msgstr "%s hinzugefügt."
 
-#: class-sc-wp-updates-notifier.php:209
+#. translators: %s: Label of the channel.
 #, php-format
-#@ wp-updates-notifier
-msgid "WP-Core: WordPress is out of date. Please update from version %s to %s"
-msgstr "WordPress: WordPress ist veraltet. Bitte update von Version %s auf %s"
+msgid "%s saved."
+msgstr "%s gespeichert."
 
-#: class-sc-wp-updates-notifier.php:247
+msgid "You are not allowed to do that."
+msgstr "Dazu bist du nicht berechtigt."
+
+#. translators: %s: Label of the channel.
 #, php-format
-#@ wp-updates-notifier
-msgid "Plugin: %s is out of date. Please update from version %s to %s"
-msgstr "Plugin: %s ist veraltet. Bitte aktualisiere von Version %s auf %s"
+msgid "Delete %s?"
+msgstr "%s löschen?"
 
-#: class-sc-wp-updates-notifier.php:248
+msgid "Channels"
+msgstr "Kanäle"
+
+msgid "No channels are set up yet. A channel is where the update notifications are sent, for example an email address."
+msgstr "Es sind noch keine Kanäle eingerichtet. Ein Kanal ist das Ziel, an das die Benachrichtigungen über Aktualisierungen gesendet werden, zum Beispiel eine E-Mail-Adresse."
+
+msgid "Module"
+msgstr "Modul"
+
+msgid "Last delivery"
+msgstr "Letzte Zustellung"
+
+msgid "Unavailable channels"
+msgstr "Nicht verfügbare Kanäle"
+
+msgid "These channels belong to modules that need a newer version of WP Updates Notifier. Nothing is sent through them and their settings are kept."
+msgstr "Diese Kanäle gehören zu Modulen, die eine neuere Version von WP Updates Notifier benötigen. Über sie wird nichts gesendet, und ihre Einstellungen bleiben erhalten."
+
+msgid "Status"
+msgstr "Status"
+
+#. translators: %s: Why the module is not available.
 #, php-format
-#@ wp-updates-notifier
-msgid "Details: %s"
-msgstr "Details: %s"
+msgid "Unavailable: %s"
+msgstr "Nicht verfügbar: %s"
 
-#: class-sc-wp-updates-notifier.php:249
+msgid "Defined in code"
+msgstr "Im Code definiert"
+
+msgid "Show more details"
+msgstr "Weitere Details anzeigen"
+
+msgid "On"
+msgstr "An"
+
+msgid "Off"
+msgstr "Aus"
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#. translators: %s: Label of the channel.
 #, php-format
-#@ wp-updates-notifier
-msgid "Changelog: %s%s"
-msgstr "Änderungen: %s%s"
+msgid "Send test to %s"
+msgstr "Test an %s senden"
 
-#: class-sc-wp-updates-notifier.php:251
+msgid "Send test"
+msgstr "Test senden"
+
+#. translators: %s: Label of the channel.
 #, php-format
-#@ default
-msgid "Compatibility with WordPress %1$s: 100%% (according to its author)"
-msgstr ""
+msgid "Duplicate %s"
+msgstr "%s duplizieren"
 
-#: class-sc-wp-updates-notifier.php:254
+msgid "Duplicate"
+msgstr "Duplizieren"
+
+#. translators: %s: Label of the channel.
 #, php-format
-#@ default
-msgid "Compatibility with WordPress %1$s: %2$d%% (%3$d \"works\" votes out of %4$d total)"
-msgstr ""
+msgid "Disable %s"
+msgstr "%s deaktivieren"
 
-#: class-sc-wp-updates-notifier.php:256
+msgid "Disable"
+msgstr "Deaktivieren"
+
+#. translators: %s: Label of the channel.
 #, php-format
-#@ default
-msgid "Compatibility with WordPress %1$s: Unknown"
-msgstr ""
+msgid "Enable %s"
+msgstr "%s aktivieren"
 
-#: class-sc-wp-updates-notifier.php:258
+msgid "Enable"
+msgstr "Aktivieren"
+
+#. translators: %s: Label of the channel.
 #, php-format
-#@ wp-updates-notifier
-msgid "Compatibility: %s"
-msgstr "Kompatibilität: %s"
+msgid "Delete %s"
+msgstr "%s löschen"
 
-#: class-sc-wp-updates-notifier.php:295
+msgid "Delete"
+msgstr "Löschen"
+
+#. translators: %s: Label of the channel.
 #, php-format
-#@ wp-updates-notifier
-msgid "Theme: %s is out of date. Please update from version %s to %s"
-msgstr "Theme: %s ist veraltet. Bitte aktualisiere von Version %s auf %s"
+msgid "Delete the channel %s? Its settings and delivery history are removed. This cannot be undone."
+msgstr "Den Kanal %s löschen? Seine Einstellungen und sein Zustellverlauf werden entfernt. Dies kann nicht rückgängig gemacht werden."
 
-#: class-sc-wp-updates-notifier.php:357
+msgid "No known item types"
+msgstr "Keine bekannten Elementtypen"
+
+msgid "All updates"
+msgstr "Alle Aktualisierungen"
+
+msgid "Never"
+msgstr "Nie"
+
+#. translators: %s: Date and time of the delivery.
 #, php-format
-#@ wp-updates-notifier
-msgid "WP Updates Notifier: Updates Available @ %s"
-msgstr "WP Updates Notifier: Aktualisierungen stehen bereit @ %s"
+msgid "Sent %s"
+msgstr "Gesendet: %s"
 
-#: class-sc-wp-updates-notifier.php:406
-#@ wp-updates-notifier
+#. translators: 1: Date and time of the delivery. 2: Why it failed.
+#, php-format
+msgid "Failed %1$s: %2$s"
+msgstr "Fehlgeschlagen (%1$s): %2$s"
+
+#. translators: %s: Date and time the channel will be tried again.
+#, php-format
+msgid "Rate limited, next try after %s"
+msgstr "Rate-Limit erreicht, nächster Versuch nach %s"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s cannot send a test message."
+msgstr "%s kann keine Testnachricht senden."
+
+#. translators: %s: Name of the channel.
+#, php-format
+msgid "Test message sent through %s."
+msgstr "Testnachricht über %s gesendet."
+
+#. translators: 1: Name of the channel. 2: Why it failed.
+#, php-format
+msgid "The test message could not be sent through %1$s: %2$s"
+msgstr "Die Testnachricht konnte nicht über %1$s gesendet werden: %2$s"
+
+#. translators: 1: Label of the channel. 2: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
+#, php-format
+msgid "%1$s cannot be switched here: set by %2$s."
+msgstr "%1$s kann hier nicht umgeschaltet werden: festgelegt durch %2$s."
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s enabled."
+msgstr "%s aktiviert."
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s disabled."
+msgstr "%s deaktiviert."
+
+#. translators: %s: Label of the channel that is copied.
+#, php-format
+msgid "%s (copy)"
+msgstr "%s (Kopie)"
+
+#. translators: %s: Label of the new channel.
+#, php-format
+msgid "Channel duplicated as %s."
+msgstr "Kanal als %s dupliziert."
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s deleted."
+msgstr "%s gelöscht."
+
+msgid "Check for updates and notify now"
+msgstr "Jetzt nach Aktualisierungen suchen und benachrichtigen"
+
+#. translators: %s: Link to the Channels tab, with the text "Channels tab".
+#, php-format
+msgid "Only updates that were not notified yet are sent. To try a channel, send a test message from the %s."
+msgstr "Es werden nur Aktualisierungen gesendet, über die noch nicht benachrichtigt wurde. Um einen Kanal auszuprobieren, sende eine Testnachricht im %s."
+
+msgid "Channels tab"
+msgstr "Tab „Kanäle“"
+
+msgid "Checked just now. Nothing was sent because no channel is enabled."
+msgstr "Gerade geprüft. Es wurde nichts gesendet, da kein Kanal aktiviert ist."
+
+msgid "Checked just now. Nothing new to send."
+msgstr "Gerade geprüft. Es gibt nichts Neues zu senden."
+
+#. translators: %d: Number of channels the update was sent to.
+#, php-format
+msgid "Checked just now. Sent to %d channel."
+msgid_plural "Checked just now. Sent to %d channels."
+msgstr[0] "Gerade geprüft. An %d Kanal gesendet."
+msgstr[1] "Gerade geprüft. An %d Kanäle gesendet."
+
+#. translators: 1: Number of channels that failed. 2: The channels and why each failed.
+#, php-format
+msgid "Checked just now. %1$d channel failed: %2$s"
+msgid_plural "Checked just now. %1$d channels failed: %2$s"
+msgstr[0] "Gerade geprüft. %1$d Kanal fehlgeschlagen: %2$s"
+msgstr[1] "Gerade geprüft. %1$d Kanäle fehlgeschlagen: %2$s"
+
+#. translators: 1: Number of channels the update was sent to. 2: Number of channels that failed. 3: The channels that failed and why.
+#, php-format
+msgid "Checked just now. Sent to %1$d channel; %2$d failed: %3$s"
+msgid_plural "Checked just now. Sent to %1$d channels; %2$d failed: %3$s"
+msgstr[0] "Gerade geprüft. An %1$d Kanal gesendet; %2$d fehlgeschlagen: %3$s"
+msgstr[1] "Gerade geprüft. An %1$d Kanäle gesendet; %2$d fehlgeschlagen: %3$s"
+
+msgid "Error:"
+msgstr "Fehler:"
+
+msgid "Clear the saved value"
+msgstr "Gespeicherten Wert löschen"
+
+#. translators: %s: Label of the field, for example "Webhook URL".
+#, php-format
+msgid "Clear the saved value of %s"
+msgstr "Gespeicherten Wert von %s löschen"
+
+msgid "A value is saved. Leave this empty to keep it, or type a new value to replace it."
+msgstr "Es ist ein Wert gespeichert. Lass das Feld leer, um ihn zu behalten, oder gib einen neuen Wert ein, um ihn zu ersetzen."
+
+#. translators: Shown after the label of a field that must be filled in.
+msgid "(required)"
+msgstr "(erforderlich)"
+
+#. translators: %s: the API requirement an add-on declared, as written in its plugin header.
+#, php-format
+msgid "This add-on's WP Updates Notifier API requirement (%s) could not be read."
+msgstr "Die Anforderung dieses Add-ons an die API von WP Updates Notifier (%s) konnte nicht gelesen werden."
+
+#. translators: 1: the API version an add-on needs, as a constraint such as ^2.0. 2: the API version of this site, such as 1.0.0.
+#, php-format
+msgid "This add-on needs the WP Updates Notifier API %1$s. This site has %2$s. Update WP Updates Notifier."
+msgstr "Dieses Add-on benötigt die API %1$s von WP Updates Notifier. Diese Website hat %2$s. Aktualisiere WP Updates Notifier."
+
+msgid "Updates Notifier"
+msgstr "Updates Notifier"
+
+#. translators: 1: Name of the view, for example "Channels". 2: Title of the screen and site.
+#, php-format
+msgid "%1$s &lsaquo; %2$s"
+msgstr "%1$s &lsaquo; %2$s"
+
+#. translators: %s: Page title.
+#, php-format
+msgid "Error: %s"
+msgstr "Fehler: %s"
+
+msgid "General"
+msgstr "Allgemein"
+
+msgid "About"
+msgstr "Über"
+
+msgid "Sorry, you are not allowed to access this page."
+msgstr "Du hast leider keine Berechtigung, auf diese Seite zuzugreifen."
+
+msgid "Settings sections"
+msgstr "Einstellungsbereiche"
+
+msgid "Last checked: never"
+msgstr "Zuletzt geprüft: nie"
+
+#. translators: %s: Date and time of the last check.
+#, php-format
+msgid "Last checked: %s"
+msgstr "Zuletzt geprüft: %s"
+
+msgid "Next check: not scheduled. Save the settings to schedule it."
+msgstr "Nächste Prüfung: nicht geplant. Speichere die Einstellungen, um sie zu planen."
+
+#. translators: %s: Date and time of the next check.
+#, php-format
+msgid "Next check: %s"
+msgstr "Nächste Prüfung: %s"
+
 msgid "Save settings"
 msgstr "Einstellungen speichern"
 
-#: class-sc-wp-updates-notifier.php:407
-#@ wp-updates-notifier
-msgid "Save settings with test email"
-msgstr "Einstellungen speichern und Test-E-Mail versenden"
+#. translators: 1: Date. 2: Time.
+#, php-format
+msgid "%1$s at %2$s"
+msgstr "%1$s um %2$s"
 
-#: class-sc-wp-updates-notifier.php:415
-#@ wp-updates-notifier
-msgid "Frequency to check"
-msgstr "Check-Häufigkeit"
+msgid "Choose how often to check for updates."
+msgstr "Wähle aus, wie oft nach Aktualisierungen gesucht werden soll."
 
-#: class-sc-wp-updates-notifier.php:416
-#@ wp-updates-notifier
-msgid "Notify email to"
-msgstr "Benachrichtigungs-E-Mail an"
+msgid "Choose whether to be told about WordPress updates."
+msgstr "Wähle aus, ob du über WordPress-Aktualisierungen informiert werden möchtest."
 
-#: class-sc-wp-updates-notifier.php:417
-#@ wp-updates-notifier
-msgid "Notify email from"
-msgstr "Benachrichtigungs-E-Mail-Absender"
+msgid "Choose whether to be told about plugin updates."
+msgstr "Wähle aus, ob du über Plugin-Aktualisierungen informiert werden möchtest."
 
-#: class-sc-wp-updates-notifier.php:418
-#@ wp-updates-notifier
-msgid "Notify about plugin updates?"
-msgstr "Über Plugin-Aktualisierungen benachrichtigen?"
+msgid "Choose whether to be told about theme updates."
+msgstr "Wähle aus, ob du über Theme-Aktualisierungen informiert werden möchtest."
 
-#: class-sc-wp-updates-notifier.php:419
-#@ wp-updates-notifier
-msgid "Notify about theme updates?"
-msgstr "Über Theme-Aktualisierungen benachrichtigen?"
+msgid "Choose whether to hide the update notices."
+msgstr "Wähle aus, ob die Aktualisierungshinweise ausgeblendet werden sollen."
 
-#: class-sc-wp-updates-notifier.php:420
-#@ wp-updates-notifier
-msgid "Hide core WP update nag from non-admin users?"
-msgstr "WordPress-Aktualisierungen vor Nicht-Admins verstecken?"
+#. translators: %s: Label of the setting.
+#, php-format
+msgid "Choose a value for %s."
+msgstr "Wähle einen Wert für %s."
 
-#: class-sc-wp-updates-notifier.php:429
-#@ wp-updates-notifier
-msgid "Invalid frequency entered"
-msgstr "Ungültige Häufigkeit eingegeben"
-
-#: class-sc-wp-updates-notifier.php:439
-#@ wp-updates-notifier
-msgid "One or more email to addresses are invalid"
-msgstr "Eine oder mehrere E-Mail-Adressen sind ungültig"
-
-#: class-sc-wp-updates-notifier.php:449
-#@ wp-updates-notifier
-msgid "No email to address entered"
-msgstr "Keine E-Mail-Adresse eingegeben"
-
-#: class-sc-wp-updates-notifier.php:456
-#@ wp-updates-notifier
-msgid "Invalid email from entered"
-msgstr "Ungültige Absender-E-Mail-Adresse eingegeben"
-
-#: class-sc-wp-updates-notifier.php:463
-#@ wp-updates-notifier
-msgid "Invalid plugin updates value entered"
-msgstr "Ungültiger Wert für Plugin-Updates eingegeben"
-
-#: class-sc-wp-updates-notifier.php:470
-#@ wp-updates-notifier
-msgid "Invalid theme updates value entered"
-msgstr "Ungültiger Wert für Theme-Updates eingegeben"
-
-#: class-sc-wp-updates-notifier.php:477
-#@ wp-updates-notifier
-msgid "Invalid hide updates value entered"
-msgstr "Ungültiger Wert für \\\"Updates verstecken\\\" eingegeben"
-
-#: class-sc-wp-updates-notifier.php:488
-#@ wp-updates-notifier
 msgid "This is a test message from WP Updates Notifier."
-msgstr "Dies ist eine Test-Nachricht von WP Updates Notifier."
+msgstr "Dies ist eine Testnachricht von WP Updates Notifier."
 
-#: class-sc-wp-updates-notifier.php:496
-#@ wp-updates-notifier
-msgid "Hourly"
-msgstr "Stündlich"
+#. translators: %s: Name of the saved schedule.
+#, php-format
+msgid "%s (no longer available)"
+msgstr "%s (nicht mehr verfügbar)"
 
-#: class-sc-wp-updates-notifier.php:497
-#@ wp-updates-notifier
-msgid "Twice Daily"
-msgstr "Zweimal täglich"
+msgid "The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it."
+msgstr "Die gespeicherte Häufigkeit ist auf dieser Website nicht mehr verfügbar, daher laufen die Prüfungen in dem Intervall, mit dem sie zuletzt geplant wurden. Wähle eine Häufigkeit und speichere, um das zu ändern."
 
-#: class-sc-wp-updates-notifier.php:498
-#@ wp-updates-notifier
-msgid "Daily"
-msgstr "Täglich"
+#. translators: 1: The display asked for. 2: The display used instead.
+#, php-format
+msgid "The display \"%1$s\" cannot show an on or off value, so \"%2$s\" is used."
+msgstr "Die Darstellung „%1$s“ kann keinen An/Aus-Wert anzeigen, daher wird „%2$s“ verwendet."
 
-#: class-sc-wp-updates-notifier.php:504
-#@ wp-updates-notifier
-msgid "Separate multiple email address with a comma (,)"
-msgstr "Trenne mehrere E-Mail-Adressen durch Komma (,)"
-
-#: class-sc-wp-updates-notifier.php:513
-#: class-sc-wp-updates-notifier.php:521
-#: class-sc-wp-updates-notifier.php:531
-#@ wp-updates-notifier
-msgid "No"
-msgstr "Nein"
-
-#: class-sc-wp-updates-notifier.php:514
-#: class-sc-wp-updates-notifier.php:522
-#: class-sc-wp-updates-notifier.php:530
-#@ wp-updates-notifier
 msgid "Yes"
 msgstr "Ja"
 
-#: class-sc-wp-updates-notifier.php:515
-#@ wp-updates-notifier
-msgid "Yes but only active plugins"
+msgid "No"
+msgstr "Nein"
+
+msgid "A channel type may only contain lower case letters, digits and underscores."
+msgstr "Ein Kanaltyp darf nur Kleinbuchstaben, Ziffern und Unterstriche enthalten."
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "A channel of type \"%s\" is already registered."
+msgstr "Ein Kanal vom Typ „%s“ ist bereits registriert."
+
+#. translators: 1: The API version constraint the module needs, 2: The API version of this site.
+#, php-format
+msgid "Needs WP Updates Notifier API %1$s; this site has %2$s. Update WP Updates Notifier."
+msgstr "Benötigt die API %1$s von WP Updates Notifier; diese Website hat %2$s. Aktualisiere WP Updates Notifier."
+
+#. translators: %s: The API version constraint the module declared.
+#, php-format
+msgid "Its API requirement \"%s\" could not be read."
+msgstr "Seine API-Anforderung „%s“ konnte nicht gelesen werden."
+
+msgid "An instance defined in code cannot be saved."
+msgstr "Eine im Code definierte Instanz kann nicht gespeichert werden."
+
+msgid "An instance defined in code cannot be deleted."
+msgstr "Eine im Code definierte Instanz kann nicht gelöscht werden."
+
+#. translators: 1: Channel type. 2: Field name.
+#, php-format
+msgid "The field \"%2$s\" of the \"%1$s\" channel cannot be supplied from outside the database: the name \"enabled\" is reserved, and names may only contain a-z, 0-9 and single underscores."
+msgstr "Das Feld „%2$s“ des Kanals „%1$s“ kann nicht von außerhalb der Datenbank bereitgestellt werden: Der Name „enabled“ ist reserviert, und Namen dürfen nur a-z, 0-9 und einzelne Unterstriche enthalten."
+
+msgid "The value is not valid for this channel."
+msgstr "Der Wert ist für diesen Kanal ungültig."
+
+#. translators: %s: Class name of an exception.
+#, php-format
+msgid "The value could not be checked: %s was thrown."
+msgstr "Der Wert konnte nicht geprüft werden: %s wurde ausgelöst."
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s". Keep SC_WPUN_CHANNELS as is.
+msgid "constant SC_WPUN_CHANNELS"
+msgstr "die Konstante SC_WPUN_CHANNELS"
+
+msgid "The constant must be a JSON string."
+msgstr "Die Konstante muss ein JSON-String sein."
+
+msgid "The value must be a JSON string."
+msgstr "Der Wert muss ein JSON-String sein."
+
+msgid "The JSON must be a list of channels."
+msgstr "Das JSON muss eine Liste von Kanälen sein."
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s". Keep sc_wpun_channels as is.
+msgid "the sc_wpun_channels filter"
+msgstr "den Filter sc_wpun_channels"
+
+#. translators: %d: Position of the entry in the list, starting at 1.
+#, php-format
+msgid "Channel %d repeats the id of an earlier channel and was skipped."
+msgstr "Kanal %d wiederholt die ID eines früheren Kanals und wurde übersprungen."
+
+#. translators: %d: Position of the entry in the list, starting at 1.
+#, php-format
+msgid "Channel %d is not valid and was skipped."
+msgstr "Kanal %d ist ungültig und wurde übersprungen."
+
+msgid "Some configuration values supplied from outside the database are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed."
+msgstr "Einige Konfigurationswerte, die von außerhalb der Datenbank kommen, sind ungültig. Für ungültige Einstellungen wird der gespeicherte Wert verwendet; ein Kanal mit einem ungültigen Wert sendet nichts, bis der Wert korrigiert ist."
+
+msgid "WP Updates Notifier cannot use some configuration values"
+msgstr "WP Updates Notifier kann einige Konfigurationswerte nicht verwenden"
+
+msgid "Some values supplied by constants, environment variables or other sources are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed."
+msgstr "Einige Werte aus Konstanten, Umgebungsvariablen oder anderen Quellen sind ungültig. Für ungültige Einstellungen wird der gespeicherte Wert verwendet; ein Kanal mit einem ungültigen Wert sendet nichts, bis der Wert korrigiert ist."
+
+msgid "Review the notification settings"
+msgstr "Benachrichtigungseinstellungen überprüfen"
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s". Keep sc_wpun_config_value as is.
+msgid "the sc_wpun_config_value filter"
+msgstr "den Filter sc_wpun_config_value"
+
+msgid "The value is not valid for this setting, so the default is used."
+msgstr "Der Wert ist für diese Einstellung ungültig, daher wird der Standardwert verwendet."
+
+msgid "The value is not valid for this setting, so the saved one is used."
+msgstr "Der Wert ist für diese Einstellung ungültig, daher wird der gespeicherte Wert verwendet."
+
+msgid "The value is not valid for this field."
+msgstr "Der Wert ist für dieses Feld ungültig."
+
+msgid "The value is not a recognised on or off value (1, true, yes, on, 0, false, no, off), so environment variables are not read."
+msgstr "Der Wert ist kein gültiger An/Aus-Wert (1, true, yes, on, 0, false, no, off), daher werden Umgebungsvariablen nicht gelesen."
+
+msgid "Every entry must implement WPUN\\Config_Source."
+msgstr "Jeder Eintrag muss WPUN\\Config_Source implementieren."
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s".
+msgid "a configuration source"
+msgstr "eine Konfigurationsquelle"
+
+#. translators: %s: Name of a PHP constant. Describes where a configuration value comes from; shown in "Set by %s".
+#, php-format
+msgid "constant %s"
+msgstr "die Konstante %s"
+
+msgid "This channel is switched off."
+msgstr "Dieser Kanal ist ausgeschaltet."
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "The \"%s\" channel did not return a Delivery_Result."
+msgstr "Der Kanal „%s“ hat kein Delivery_Result zurückgegeben."
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "The \"%s\" channel failed with an error."
+msgstr "Der Kanal „%s“ ist mit einem Fehler fehlgeschlagen."
+
+#. translators: %s: Names of the constants or environment variables that are not valid.
+#, php-format
+msgid "The channel is misconfigured: %s is not valid."
+msgstr "Der Kanal ist falsch konfiguriert: %s ist ungültig."
+
+#. translators: 1: Channel type, 2: Why the module was refused.
+#, php-format
+msgid "The \"%1$s\" channel is not available: %2$s"
+msgstr "Der Kanal „%1$s“ ist nicht verfügbar: %2$s"
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "The \"%s\" channel is not available."
+msgstr "Der Kanal „%s“ ist nicht verfügbar."
+
+#. translators: 1: The display asked for. 2: The display used instead.
+#, php-format
+msgid "The display \"%1$s\" cannot show several choices, so \"%2$s\" is used."
+msgstr "Die Darstellung „%1$s“ kann keine Mehrfachauswahl anzeigen, daher wird „%2$s“ verwendet."
+
+#. translators: 1: The display asked for. 2: The display used instead.
+#, php-format
+msgid "The display \"%1$s\" cannot show a single choice, so \"%2$s\" is used."
+msgstr "Die Darstellung „%1$s“ kann keine Einzelauswahl anzeigen, daher wird „%2$s“ verwendet."
+
+#. translators: %s: Name of an environment variable. Describes where a configuration value comes from; shown in "Set by %s".
+#, php-format
+msgid "environment variable %s"
+msgstr "die Umgebungsvariable %s"
+
+#. translators: %s: Field type.
+#, php-format
+msgid "The field type \"%s\" must be an array with a callable \"render\" and a callable \"sanitize\", so it is ignored."
+msgstr "Der Feldtyp „%s“ muss ein Array mit einem aufrufbaren „render“ und einem aufrufbaren „sanitize“ sein, daher wird er ignoriert."
+
+#. translators: %s: Field type.
+#, php-format
+msgid "No field type \"%s\" is registered, so the field is ignored. Register it with the sc_wpun_field_types filter."
+msgstr "Es ist kein Feldtyp „%s“ registriert, daher wird das Feld ignoriert. Registriere ihn mit dem Filter sc_wpun_field_types."
+
+msgid "Enter a full web address that starts with http:// or https://."
+msgstr "Gib eine vollständige Webadresse ein, die mit http:// oder https:// beginnt."
+
+msgid "One or more email addresses are not valid."
+msgstr "Eine oder mehrere E-Mail-Adressen sind ungültig."
+
+msgid "Enter a whole number."
+msgstr "Gib eine ganze Zahl ein."
+
+#. translators: %d: Smallest value.
+#, php-format
+msgid "Enter a number that is at least %d."
+msgstr "Gib eine Zahl ein, die mindestens %d ist."
+
+#. translators: %d: Largest value.
+#, php-format
+msgid "Enter a number that is at most %d."
+msgstr "Gib eine Zahl ein, die höchstens %d ist."
+
+#. translators: %s: Name of the field.
+#, php-format
+msgid "The choice for \"%s\" is not valid."
+msgstr "Die Auswahl für „%s“ ist ungültig."
+
+#. translators: %s: Label of the field.
+#, php-format
+msgid "%s is required."
+msgstr "%s ist erforderlich."
+
+#. translators: %s: Name of the field.
+#, php-format
+msgid "The value for \"%s\" is not valid."
+msgstr "Der Wert für „%s“ ist ungültig."
+
+msgid "WordPress"
+msgstr "WordPress"
+
+msgid "Plugins"
+msgstr "Plugins"
+
+msgid "Themes"
+msgstr "Themes"
+
+#. translators: %d: Number of updates that are not listed in the message.
+#, php-format
+msgid "…and %d more"
+msgid_plural "…and %d more"
+msgstr[0] "…und %d weitere"
+msgstr[1] "…und %d weitere"
+
+#. translators: 1: Site name. 2: Site address.
+#, php-format
+msgid "Reminder: these updates are still waiting for %1$s (%2$s)"
+msgstr "Erinnerung: Diese Aktualisierungen stehen für %1$s (%2$s) noch aus"
+
+#. translators: 1: Site name. 2: Site address.
+#, php-format
+msgid "There are updates available for %1$s (%2$s)"
+msgstr "Für %1$s (%2$s) sind Aktualisierungen verfügbar"
+
+#. translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
+#, php-format
+msgid "%1$s from version %2$s to %3$s"
+msgstr "%1$s von Version %2$s auf %3$s"
+
+#. translators: %s: Address of the WordPress updates screen.
+#, php-format
+msgid "Please visit %s to update."
+msgstr "Besuche bitte %s, um zu aktualisieren."
+
+msgid "Go to the Updates screen to update."
+msgstr "Gehe zur Seite „Aktualisierungen“, um zu aktualisieren."
+
+msgid "Details"
+msgstr "Details"
+
+msgid "Changelog"
+msgstr "Änderungsprotokoll"
+
+#. translators: %s: Name of the plugin, theme or WordPress.
+#, php-format
+msgid "%s details"
+msgstr "Details zu %s"
+
+#. translators: %s: Name of the plugin, theme or WordPress.
+#, php-format
+msgid "%s changelog"
+msgstr "Änderungsprotokoll von %s"
+
+#. translators: %s: Site name.
+#, php-format
+msgid "WP Updates Notifier: updates available for %s"
+msgstr "WP Updates Notifier: Aktualisierungen für %s verfügbar"
+
+msgid "Some notification modules need a newer version of WP Updates Notifier and are switched off. Their settings have been kept."
+msgstr "Einige Benachrichtigungsmodule benötigen eine neuere Version von WP Updates Notifier und sind ausgeschaltet. Ihre Einstellungen bleiben erhalten."
+
+msgid "Some WP Updates Notifier modules need a newer version"
+msgstr "Einige Module von WP Updates Notifier benötigen eine neuere Version"
+
+msgid "Some notification modules need a newer version of WP Updates Notifier than this site has, so they are switched off. Their settings have been kept."
+msgstr "Einige Benachrichtigungsmodule benötigen eine neuere Version von WP Updates Notifier, als diese Website hat, daher sind sie ausgeschaltet. Ihre Einstellungen bleiben erhalten."
+
+msgid "Update WP Updates Notifier"
+msgstr "WP Updates Notifier aktualisieren"
+
+msgid "Item types"
+msgstr "Elementtypen"
+
+msgid "Leave every box unticked to receive all types, including ones added later."
+msgstr "Lass alle Kästchen leer, um alle Typen zu erhalten, auch später hinzugefügte."
+
+msgid "Plugins and themes"
+msgstr "Plugins und Themes"
+
+msgid "Applies after the plugin and theme settings on the General tab."
+msgstr "Wird nach den Plugin- und Theme-Einstellungen im Tab „Allgemein“ angewendet."
+
+msgid "All"
+msgstr "Alle"
+
+msgid "Only active ones"
+msgstr "Nur aktive"
+
+msgid "WordPress updates"
+msgstr "WordPress-Aktualisierungen"
+
+msgid "Applies after the WordPress updates setting on the General tab."
+msgstr "Wird nach der Einstellung für WordPress-Aktualisierungen im Tab „Allgemein“ angewendet."
+
+msgid "Only major releases"
+msgstr "Nur Hauptversionen"
+
+msgid "Reminders"
+msgstr "Erinnerungen"
+
+msgid "Repeat every update that is still waiting, in one message, until it is installed. New updates are still sent at once."
+msgstr "Alle noch ausstehenden Aktualisierungen in einer gemeinsamen Nachricht wiederholen, bis sie installiert sind. Neue Aktualisierungen werden weiterhin sofort gesendet."
+
+msgid "Daily"
+msgstr "Täglich"
+
+msgid "Weekly"
+msgstr "Wöchentlich"
+
+msgid "Frequency to check"
+msgstr "Prüfhäufigkeit"
+
+msgid "Update notice"
+msgstr "Aktualisierungshinweis"
+
+msgid "Hide the WordPress update notice from users who cannot update WordPress"
+msgstr "Den WordPress-Aktualisierungshinweis für Benutzer ausblenden, die WordPress nicht aktualisieren können"
+
+msgid "About tab"
+msgstr "Tab „Über“"
+
+msgid "Notify about WordPress updates?"
+msgstr "Über WordPress-Aktualisierungen benachrichtigen?"
+
+msgid "Yes, but only major releases"
+msgstr "Ja, aber nur Hauptversionen"
+
+msgid "Notify about plugin updates?"
+msgstr "Über Plugin-Aktualisierungen benachrichtigen?"
+
+msgid "Notify about theme updates?"
+msgstr "Über Theme-Aktualisierungen benachrichtigen?"
+
+msgid "Yes, but only active plugins"
 msgstr "Ja, aber nur aktive Plugins"
 
-#: class-sc-wp-updates-notifier.php:523
-#@ wp-updates-notifier
-msgid "Yes but only active themes"
-msgstr "Ja, aber nur aktives Theme"
+msgid "Yes, but only active themes"
+msgstr "Ja, aber nur aktive Themes"
 
-#. translators: plugin header field 'Version'
-#: class-sc-wp-updates-notifier.php:0
-#@ wp-updates-notifier
-msgid "1.3.1"
-msgstr ""
+msgid "Email notifications continue as before."
+msgstr "E-Mail-Benachrichtigungen funktionieren weiter wie bisher."
 
+#. translators: %s: URL of the settings page.
+#, php-format
+msgid "Email notifications are switched off, so this site currently sends no update notifications. You can turn them on at %s"
+msgstr "E-Mail-Benachrichtigungen sind ausgeschaltet, daher sendet diese Website derzeit keine Benachrichtigungen über Aktualisierungen. Du kannst sie hier einschalten: %s"
+
+msgid "Slack notifications are not supported in this version of WP Updates Notifier. Your Slack settings have been kept."
+msgstr "Slack-Benachrichtigungen werden in dieser Version von WP Updates Notifier nicht unterstützt. Deine Slack-Einstellungen bleiben erhalten."
+
+msgid "New notification channels and features are coming in future releases."
+msgstr "Neue Benachrichtigungskanäle und Funktionen folgen in kommenden Versionen."
+
+msgid "WP Updates Notifier: Slack notifications are no longer supported"
+msgstr "WP Updates Notifier: Slack-Benachrichtigungen werden nicht mehr unterstützt"
+
+msgid "Slack notifications are no longer supported"
+msgstr "Slack-Benachrichtigungen werden nicht mehr unterstützt"
+
+msgid "Dismiss this notice"
+msgstr "Diesen Hinweis ausblenden"
+
+msgid "Slack notifications are no longer supported by WP Updates Notifier"
+msgstr "Slack-Benachrichtigungen werden von WP Updates Notifier nicht mehr unterstützt"
+
+msgid "Slack notifications are not supported in this version of WP Updates Notifier, so none are sent. Your Slack settings have been kept."
+msgstr "Slack-Benachrichtigungen werden in dieser Version von WP Updates Notifier nicht unterstützt, daher werden keine gesendet. Deine Slack-Einstellungen bleiben erhalten."
+
+msgid "The filter must return a WPUN\\Notification."
+msgstr "Der Filter muss eine WPUN\\Notification zurückgeben."
+
+#. translators: %s: WordPress version of the site, for example 6.5.
+#, php-format
+msgid "Compatibility with WordPress %s: unknown"
+msgstr "Kompatibilität mit WordPress %s: unbekannt"
+
+#. translators: %s: WordPress version of the site, for example 6.5.
+#, php-format
+msgid "Compatibility with WordPress %s: tested by its author"
+msgstr "Kompatibilität mit WordPress %s: vom Autor getestet"
+
+#. translators: 1: WordPress version of the site. 2: Latest WordPress version the plugin was tested with.
+#, php-format
+msgid "Compatibility with WordPress %1$s: not tested yet (tested up to %2$s)"
+msgstr "Kompatibilität mit WordPress %1$s: noch nicht getestet (getestet bis %2$s)"
+
+#. translators: 1: PHP version the update needs. 2: PHP version of the site.
+#, php-format
+msgid "Warning: this version needs PHP %1$s; the site runs PHP %2$s."
+msgstr "Warnung: Diese Version benötigt PHP %1$s; auf der Website läuft PHP %2$s."
+
+#. translators: 1: WordPress version the update needs. 2: WordPress version of the site.
+#, php-format
+msgid "Warning: this version needs WordPress %1$s; the site runs WordPress %2$s."
+msgstr "Warnung: Diese Version benötigt WordPress %1$s; auf der Website läuft WordPress %2$s."
+
+#. translators: %s: the version.
+#, php-format
+msgid "The version \"%s\" could not be read. Use one to three numbers, such as \"1.2.0\"."
+msgstr "Die Version „%s“ konnte nicht gelesen werden. Verwende eine bis drei Zahlen, zum Beispiel „1.2.0“."
+
+#. translators: %s: the version constraint.
+#, php-format
+msgid "The version constraint \"%s\" could not be read. Use Composer syntax, such as \"^1.0\" or \">=1.0 <2.0\"."
+msgstr "Die Versionsbedingung „%s“ konnte nicht gelesen werden. Verwende die Composer-Syntax, zum Beispiel „^1.0“ oder „>=1.0 <2.0“."
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "Sends the notification to one or more email addresses."
+msgstr "Sendet die Benachrichtigung an eine oder mehrere E-Mail-Adressen."
+
+msgid "Send to"
+msgstr "Senden an"
+
+msgid "Separate multiple email addresses with a comma (,)."
+msgstr "Trenne mehrere E-Mail-Adressen mit einem Komma (,)."
+
+msgid "From address"
+msgstr "Absenderadresse"
+
+msgid "Leave empty to use the WordPress default. Only set an address at a domain this site is allowed to send mail for."
+msgstr "Leer lassen, um die WordPress-Standardadresse zu verwenden. Gib nur eine Adresse mit einer Domain an, für die diese Website E-Mails versenden darf."
+
+msgid "Reply-To address"
+msgstr "Antwortadresse (Reply-To)"
+
+msgid "Format"
+msgstr "Format"
+
+msgid "Plain text"
+msgstr "Nur Text"
+
+msgid "HTML"
+msgstr "HTML"
+
+msgid "Subject prefix"
+msgstr "Betreff-Präfix"
+
+msgid "One or more email addresses to send to are invalid."
+msgstr "Eine oder mehrere Empfängeradressen sind ungültig."
+
+msgid "Enter at least one valid email address to send to."
+msgstr "Gib mindestens eine gültige E-Mail-Adresse als Empfänger ein."
+
+msgid "The email address is invalid."
+msgstr "Die E-Mail-Adresse ist ungültig."
+
+msgid "The format must be plain text or HTML."
+msgstr "Das Format muss „Nur Text“ oder HTML sein."
+
+msgid "No email address to send to is set."
+msgstr "Es ist keine Empfängeradresse festgelegt."
+
+#. translators: %s: Site name.
+#, php-format
+msgid "WP Updates Notifier: test message for %s"
+msgstr "WP Updates Notifier: Testnachricht für %s"
+
+#. translators: 1: Site name. 2: Site address.
+#, php-format
+msgid "This is a test message from WP Updates Notifier for %1$s (%2$s). Update notifications for this site will be sent to this address."
+msgstr "Dies ist eine Testnachricht von WP Updates Notifier für %1$s (%2$s). Benachrichtigungen über Aktualisierungen für diese Website werden an diese Adresse gesendet."
+
+#. translators: %s: Site name.
+#, php-format
+msgid "WP Updates Notifier: reminder of updates waiting for %s"
+msgstr "WP Updates Notifier: Erinnerung an ausstehende Aktualisierungen für %s"
+
+msgid "WordPress could not send the email."
+msgstr "WordPress konnte die E-Mail nicht senden."

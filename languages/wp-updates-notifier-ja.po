@@ -1,205 +1,1024 @@
-# Copyright (C) 2013 WP Updates Notifier
-# This file is distributed under the same license as the WP Updates Notifier package.
+# Machine translation (AI), not yet reviewed by a native speaker.
+# This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Updates Notifier 1.4\n"
-"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-updates-notifier\n"
-"POT-Creation-Date: 2013-11-27 15:09:57+00:00\n"
+"Project-Id-Version: WP Updates Notifier\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-updates-notifier\n"
+"Last-Translator: Machine translation\n"
+"Language-Team: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2013-11-28 00:36+0900\n"
-"Last-Translator: cat <cat@midx.jp>\n"
-"Language-Team: Japanese\n"
+"POT-Creation-Date: 2026-01-01 00:00+0000\n"
+"PO-Revision-Date: 2026-01-01 00:00+0000\n"
 "Language: ja\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Domain: wp-updates-notifier\n"
+"X-Machine-Translation: yes\n"
 
-#: class-sc-wp-updates-notifier.php:194 class-sc-wp-updates-notifier.php:551
-msgid "Settings"
-msgstr "設定"
-
-#: class-sc-wp-updates-notifier.php:224
-msgid "There are updates available for your WordPress site:"
-msgstr "お使いの WordPress に更新があります:"
-
-#: class-sc-wp-updates-notifier.php:225
-msgid "Please visit %s to update."
-msgstr "更新するには %s を開いてください。"
-
-#: class-sc-wp-updates-notifier.php:250
-msgid "WP-Core: WordPress is out of date. Please update from version %s to %s"
-msgstr "WP 本体: WordPress に新しいバージョンがあります。バージョン %s から %s へ更新してください"
-
-#: class-sc-wp-updates-notifier.php:292
-msgid "Plugin: %s is out of date. Please update from version %s to %s"
-msgstr "プラグイン: %s に新しいバージョンがあります。バージョン %s から %s へ更新してください"
-
-#: class-sc-wp-updates-notifier.php:293
-msgid "Details: %s"
-msgstr "説明: %s"
-
-#: class-sc-wp-updates-notifier.php:294
-msgid "Changelog: %s%s"
-msgstr "更新履歴: %s%s"
-
-#: class-sc-wp-updates-notifier.php:303
-msgid "Compatibility with WordPress %1$s: Unknown"
-msgstr "WordPress %1$s との互換性: 不明"
-
-#: class-sc-wp-updates-notifier.php:305
-msgid "Compatibility: %s"
-msgstr "互換性: %s"
-
-#: class-sc-wp-updates-notifier.php:344
-msgid "Theme: %s is out of date. Please update from version %s to %s"
-msgstr "テーマ: に新しいバージョンがあります。バージョン %s から %s へ更新してください"
-
-#: class-sc-wp-updates-notifier.php:410
-msgid "WP Updates Notifier: Updates Available @ %s"
-msgstr "WP Updates Notifier: %s に更新があります"
-
-#. #-#-#-#-#  wp-updates-notifier.pot (WP Updates Notifier 1.4)  #-#-#-#-#
-#. Plugin Name of the plugin/theme
-#: class-sc-wp-updates-notifier.php:426
+#. Plugin Name of the plugin
 msgid "WP Updates Notifier"
 msgstr "WP Updates Notifier"
 
-#: class-sc-wp-updates-notifier.php:515
-msgid "Updates Notifier"
-msgstr "更新通知"
+#. Plugin URI of the plugin
+msgid "https://wpun.cariss.dev/"
+msgstr "https://wpun.cariss.dev/"
 
-#: class-sc-wp-updates-notifier.php:521
-msgid "Never"
-msgstr "なし"
+#. Description of the plugin
+msgid "Sends an email to notify you if there are any updates for your WordPress site. Can notify about core, plugin and theme updates."
+msgstr "WordPress サイトに更新があるとメールでお知らせします。コア、プラグイン、テーマの更新を通知できます。"
 
-#: class-sc-wp-updates-notifier.php:525
-msgid "%1s @ %2s"
-msgstr "%1s %2s"
-
-#: class-sc-wp-updates-notifier.php:531
-msgid "Last scanned: %s"
-msgstr "最終チェック日時: %s"
-
-#: class-sc-wp-updates-notifier.php:542
-msgid "Save settings"
-msgstr "変更を保存"
-
-#: class-sc-wp-updates-notifier.php:543
-msgid "Save settings with test email"
-msgstr "変更を保存してテストメールを送信"
-
-#: class-sc-wp-updates-notifier.php:552
-msgid "Cron Method"
-msgstr "Cron ツール"
-
-#: class-sc-wp-updates-notifier.php:553
-msgid "Frequency to check"
-msgstr "更新チェックの頻度"
-
-#: class-sc-wp-updates-notifier.php:554
-msgid "Notify email to"
-msgstr "更新情報の通知先"
-
-#: class-sc-wp-updates-notifier.php:555
-msgid "Notify email from"
-msgstr "更新通知の送信元"
-
-#: class-sc-wp-updates-notifier.php:556
-msgid "Notify about plugin updates?"
-msgstr "プラグインの更新を通知しますか？"
-
-#: class-sc-wp-updates-notifier.php:557
-msgid "Notify about theme updates?"
-msgstr "テーマの更新を通知しますか？"
-
-#: class-sc-wp-updates-notifier.php:558
-msgid "Hide core WP update nag from non-admin users?"
-msgstr "WP 本体が表示する更新通知を、管理者以外のユーザーから隠しますか？"
-
-#: class-sc-wp-updates-notifier.php:568
-msgid "Invalid cron method selected"
-msgstr "Cron ツールの入力値が正しくありません"
-
-#: class-sc-wp-updates-notifier.php:579
-msgid "Invalid frequency entered"
-msgstr "更新チェックの頻度の形式が正しくありません"
-
-#: class-sc-wp-updates-notifier.php:589
-msgid "One or more email to addresses are invalid"
-msgstr "通知先メールアドレスの形式が正しくありません"
-
-#: class-sc-wp-updates-notifier.php:600
-msgid "No email to address entered"
-msgstr "通知先を入力してください"
-
-#: class-sc-wp-updates-notifier.php:608
-msgid "Invalid email from entered"
-msgstr "送信元メールアドレスの形式が正しくありません"
-
-#: class-sc-wp-updates-notifier.php:616
-msgid "Invalid plugin updates value entered"
-msgstr "プラグインの更新通知の入力値が正しくありません"
-
-#: class-sc-wp-updates-notifier.php:624
-msgid "Invalid theme updates value entered"
-msgstr "テーマの更新通知の入力値が正しくありません"
-
-#: class-sc-wp-updates-notifier.php:632
-msgid "Invalid hide updates value entered"
-msgstr "本体からの更新通知を隠すかどうかの入力値が正しくありません"
-
-#: class-sc-wp-updates-notifier.php:644
-msgid "This is a test message from WP Updates Notifier."
-msgstr "WP Updates Notifier からのテストメールです。"
-
-#: class-sc-wp-updates-notifier.php:655
-msgid "WordPress Cron"
-msgstr "WordPress Cron"
-
-#: class-sc-wp-updates-notifier.php:656
-msgid "Other Cron"
-msgstr "その他の Cron"
-
-#: class-sc-wp-updates-notifier.php:660
-msgid "Cron Command: "
-msgstr "Cron コマンド: "
-
-#: class-sc-wp-updates-notifier.php:681
-msgid "Separate multiple email address with a comma (,)"
-msgstr "複数送信の場合はメールアドレスを半角コンマで区切る"
-
-#: class-sc-wp-updates-notifier.php:693 class-sc-wp-updates-notifier.php:705
-#: class-sc-wp-updates-notifier.php:719
-msgid "No"
-msgstr "いいえ"
-
-#: class-sc-wp-updates-notifier.php:695 class-sc-wp-updates-notifier.php:707
-#: class-sc-wp-updates-notifier.php:718
-msgid "Yes"
-msgstr "はい"
-
-#: class-sc-wp-updates-notifier.php:697
-msgid "Yes but only active plugins"
-msgstr "有効化されているプラグインのみ"
-
-#: class-sc-wp-updates-notifier.php:709
-msgid "Yes but only active themes"
-msgstr "使用中のテーマのみ"
-
-#. Plugin URI of the plugin/theme
-msgid "http://l3rady.com/projects/wp-updates-notifier/"
-msgstr "http://l3rady.com/projects/wp-updates-notifier/"
-
-#. Description of the plugin/theme
-msgid ""
-"Sends email to notify you if there are any updates for your WordPress site. "
-"Can notify about core, plugin and theme updates."
-msgstr "お使いの WordPress に利用可能な更新が見つかった際にメールでお知らせします。本体だけでなく、テーマやプラグインの更新にも対応しています。"
-
-#. Author of the plugin/theme
+#. Author of the plugin
 msgid "Scott Cariss"
 msgstr "Scott Cariss"
 
-#. Author URI of the plugin/theme
-msgid "http://l3rady.com/"
-msgstr "http://l3rady.com/"
+#. Author URI of the plugin
+msgid "https://wpun.cariss.dev/#about-the-developer"
+msgstr "https://wpun.cariss.dev/#about-the-developer"
+
+msgid "Enabled"
+msgstr "有効"
+
+msgid "Send notifications through this channel"
+msgstr "このチャンネルで通知を送信"
+
+#. translators: Hidden accessibility text.
+msgid "(external link)"
+msgstr "(外部リンク)"
+
+msgid "About the plugin"
+msgstr "プラグインについて"
+
+msgid "WP Updates Notifier checks your site for WordPress core, plugin and theme updates and tells you about each new version once. It is free and open source, with no tracking and no account to sign up for."
+msgstr "WP Updates Notifier はサイトの WordPress コア、プラグイン、テーマの更新を確認し、新しいバージョンごとに一度だけお知らせします。無料のオープンソースで、トラッキングもアカウント登録もありません。"
+
+msgid "Documentation"
+msgstr "ドキュメンテーション"
+
+#. translators: %s: Link to the GitHub issues.
+msgid "GitHub"
+msgstr "GitHub"
+
+msgid "WordPress.org"
+msgstr "WordPress.org"
+
+msgid "Help and bugs"
+msgstr "ヘルプと不具合"
+
+#. translators: %s: Link to the WordPress.org support forum.
+#, php-format
+msgid "Questions: ask in the %s."
+msgstr "質問: %sでお尋ねください。"
+
+#. translators: %s: Link to the WordPress.org support forum.
+msgid "support forum"
+msgstr "サポートフォーラム"
+
+#. translators: %s: Link to the GitHub issues.
+#, php-format
+msgid "Bugs and ideas: open an issue on %s."
+msgstr "不具合やアイデア: %s で issue を作成してください。"
+
+#. translators: %s: Link to the security policy.
+#, php-format
+msgid "Security problems: please report them privately, as the %s explains."
+msgstr "セキュリティの問題: %sの説明に従って非公開で報告してください。"
+
+#. translators: %s: Link to the security policy.
+msgid "security policy"
+msgstr "セキュリティポリシー"
+
+msgid "Leave a review"
+msgstr "レビューを書く"
+
+#. translators: %s: Link to write a review on WordPress.org.
+#, php-format
+msgid "Like it? %s. It helps other people find the plugin."
+msgstr "気に入りましたか ? %s。ほかの人がこのプラグインを見つける助けになります。"
+
+#. translators: %s: Link to write a review on WordPress.org.
+msgid "Leave a review on WordPress.org"
+msgstr "WordPress.org でレビューを書く"
+
+msgid "Donate"
+msgstr "寄付"
+
+msgid "WP Updates Notifier is free. If it saves you time and you would like to say thanks, a donation helps keep it maintained."
+msgstr "WP Updates Notifier は無料です。時間の節約に役立ち、感謝の気持ちを伝えたい場合は、寄付がメンテナンスの継続を支えます。"
+
+msgid "Ways to donate"
+msgstr "寄付の方法"
+
+msgid "About the developer"
+msgstr "開発者について"
+
+msgid "I have been a software engineer for over 20 years and I am now a Lead Platform Engineer, building the platforms other engineers ship on. I first released WP Updates Notifier on WordPress.org in 2011, and it now runs on around 30,000 sites."
+msgstr "私は20年以上ソフトウェアエンジニアとして働いており、現在はリードプラットフォームエンジニアとして、ほかのエンジニアがリリースに使うプラットフォームを構築しています。2011年に WordPress.org で WP Updates Notifier を初めて公開し、現在では約30,000のサイトで使われています。"
+
+msgid "Scott Cariss on GitHub"
+msgstr "GitHub の Scott Cariss"
+
+msgid "Scott Cariss on LinkedIn"
+msgstr "LinkedIn の Scott Cariss"
+
+msgid "For power users"
+msgstr "パワーユーザー向け"
+
+msgid "You can hide this tab with a line in wp-config.php:"
+msgstr "wp-config.php に次の1行を追加すると、このタブを非表示にできます:"
+
+msgid "The setting is never stored and has no field on the settings screen. An environment variable, a configuration source or the sc_wpun_config_value filter can set it too. If you hide the tab, please consider a donation or a review in return."
+msgstr "この設定は保存されず、設定画面にも項目はありません。環境変数、設定ソース、sc_wpun_config_value フィルターでも設定できます。タブを非表示にする場合は、お礼として寄付やレビューをご検討ください。"
+
+msgid "No channel modules are available."
+msgstr "利用できるチャンネルモジュールがありません。"
+
+msgid "Choose where the update notifications are to be sent."
+msgstr "更新通知の送信先を選択してください。"
+
+msgid "Cancel"
+msgstr "キャンセル"
+
+msgid "Add channel"
+msgstr "チャンネルを追加"
+
+#. translators: %s: Name of the channel module, for example "Email".
+#, php-format
+msgid "Add %s channel"
+msgstr "%s チャンネルを追加"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Edit %s"
+msgstr "%s を編集"
+
+msgid "There is no such channel module."
+msgstr "そのようなチャンネルモジュールはありません。"
+
+msgid "There is no such channel."
+msgstr "そのようなチャンネルはありません。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s is defined in code and cannot be changed here."
+msgstr "%s はコードで定義されているため、ここでは変更できません。"
+
+msgid "Save channel"
+msgstr "チャンネルを保存"
+
+msgid "There is a problem"
+msgstr "問題があります"
+
+msgid "The channel was not saved. Please correct the following."
+msgstr "チャンネルは保存されませんでした。次の点を修正してください。"
+
+#. translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
+#, php-format
+msgid "Set by %s"
+msgstr "%s で設定"
+
+msgid "Channel"
+msgstr "チャンネル"
+
+msgid "ID"
+msgstr "ID"
+
+msgid "The id is made from the label when the channel is saved and cannot be changed afterwards."
+msgstr "ID はチャンネルの保存時にラベルから作成され、後から変更することはできません。"
+
+#. translators: %s: Start of the names of the constants, for example "SC_WPUN_CHANNEL_EMAIL__".
+#, php-format
+msgid "Constants for this channel start with %s"
+msgstr "このチャンネルの定数は %s で始まります"
+
+msgid "Updates already waiting"
+msgstr "保留中の更新"
+
+msgid "Don't send the updates that are already waiting"
+msgstr "すでに保留中の更新は送信しない"
+
+msgid "Only updates that appear after the channel is switched on are sent. Applies when the channel is saved switched on."
+msgstr "チャンネルをオンにした後に見つかった更新のみを送信します。チャンネルをオンの状態で保存したときに適用されます。"
+
+msgid "Routing"
+msgstr "ルーティング"
+
+msgid "On the General tab, plugins are not checked."
+msgstr "「一般」タブで、プラグインは確認しない設定になっています。"
+
+#. translators: "All" and "Only active ones" are routing choices on this form: use the same translations as for those choices.
+msgid "On the General tab, only active plugins are checked, so \"All\" here acts like \"Only active ones\" for plugins."
+msgstr "「一般」タブで有効なプラグインのみを確認する設定になっているため、プラグインについてはここでの「すべて」は「有効なもののみ」と同じ動作になります。"
+
+msgid "On the General tab, themes are not checked."
+msgstr "「一般」タブで、テーマは確認しない設定になっています。"
+
+#. translators: "All" and "Only active ones" are routing choices on this form: use the same translations as for those choices.
+msgid "On the General tab, only active themes are checked, so \"All\" here acts like \"Only active ones\" for themes."
+msgstr "「一般」タブで有効なテーマのみを確認する設定になっているため、テーマについてはここでの「すべて」は「有効なもののみ」と同じ動作になります。"
+
+msgid "On the General tab, WordPress updates are not checked."
+msgstr "「一般」タブで、WordPress の更新は確認しない設定になっています。"
+
+msgid "On the General tab, only major releases are checked."
+msgstr "「一般」タブで、メジャーリリースのみを確認する設定になっています。"
+
+msgid "Settings"
+msgstr "設定"
+
+msgid "Label"
+msgstr "ラベル"
+
+msgid "The settings are not valid."
+msgstr "設定が無効です。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s added."
+msgstr "%s を追加しました。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s saved."
+msgstr "%s を保存しました。"
+
+msgid "You are not allowed to do that."
+msgstr "この操作を行う権限がありません。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Delete %s?"
+msgstr "%s を削除しますか ?"
+
+msgid "Channels"
+msgstr "チャンネル"
+
+msgid "No channels are set up yet. A channel is where the update notifications are sent, for example an email address."
+msgstr "チャンネルはまだ設定されていません。チャンネルとは、メールアドレスなどの更新通知の送信先です。"
+
+msgid "Module"
+msgstr "モジュール"
+
+msgid "Last delivery"
+msgstr "最終配信"
+
+msgid "Unavailable channels"
+msgstr "利用できないチャンネル"
+
+msgid "These channels belong to modules that need a newer version of WP Updates Notifier. Nothing is sent through them and their settings are kept."
+msgstr "これらのチャンネルは、より新しいバージョンの WP Updates Notifier を必要とするモジュールに属しています。これらのチャンネルからは何も送信されませんが、設定は保持されます。"
+
+msgid "Status"
+msgstr "ステータス"
+
+#. translators: %s: Why the module is not available.
+#, php-format
+msgid "Unavailable: %s"
+msgstr "利用不可: %s"
+
+msgid "Defined in code"
+msgstr "コードで定義"
+
+msgid "Show more details"
+msgstr "詳細を表示"
+
+msgid "On"
+msgstr "オン"
+
+msgid "Off"
+msgstr "オフ"
+
+msgid "Edit"
+msgstr "編集"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Send test to %s"
+msgstr "%s へテスト送信"
+
+msgid "Send test"
+msgstr "テスト送信"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Duplicate %s"
+msgstr "%s を複製"
+
+msgid "Duplicate"
+msgstr "複製"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Disable %s"
+msgstr "%s を無効化"
+
+msgid "Disable"
+msgstr "無効化"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Enable %s"
+msgstr "%s を有効化"
+
+msgid "Enable"
+msgstr "有効化"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Delete %s"
+msgstr "%s を削除"
+
+msgid "Delete"
+msgstr "削除"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "Delete the channel %s? Its settings and delivery history are removed. This cannot be undone."
+msgstr "チャンネル %s を削除しますか ? 設定と配信履歴も削除されます。この操作は取り消せません。"
+
+msgid "No known item types"
+msgstr "既知の項目タイプがありません"
+
+msgid "All updates"
+msgstr "すべての更新"
+
+msgid "Never"
+msgstr "なし"
+
+#. translators: %s: Date and time of the delivery.
+#, php-format
+msgid "Sent %s"
+msgstr "%s に送信"
+
+#. translators: 1: Date and time of the delivery. 2: Why it failed.
+#, php-format
+msgid "Failed %1$s: %2$s"
+msgstr "%1$s に失敗: %2$s"
+
+#. translators: %s: Date and time the channel will be tried again.
+#, php-format
+msgid "Rate limited, next try after %s"
+msgstr "レート制限中。次回の試行は %s 以降"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s cannot send a test message."
+msgstr "%s はテストメッセージを送信できません。"
+
+#. translators: %s: Name of the channel.
+#, php-format
+msgid "Test message sent through %s."
+msgstr "%s でテストメッセージを送信しました。"
+
+#. translators: 1: Name of the channel. 2: Why it failed.
+#, php-format
+msgid "The test message could not be sent through %1$s: %2$s"
+msgstr "%1$s でテストメッセージを送信できませんでした: %2$s"
+
+#. translators: 1: Label of the channel. 2: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
+#, php-format
+msgid "%1$s cannot be switched here: set by %2$s."
+msgstr "%1$s はここでは切り替えられません: %2$s で設定されています。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s enabled."
+msgstr "%s を有効化しました。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s disabled."
+msgstr "%s を無効化しました。"
+
+#. translators: %s: Label of the channel that is copied.
+#, php-format
+msgid "%s (copy)"
+msgstr "%s (コピー)"
+
+#. translators: %s: Label of the new channel.
+#, php-format
+msgid "Channel duplicated as %s."
+msgstr "チャンネルを %s として複製しました。"
+
+#. translators: %s: Label of the channel.
+#, php-format
+msgid "%s deleted."
+msgstr "%s を削除しました。"
+
+msgid "Check for updates and notify now"
+msgstr "今すぐ更新を確認して通知"
+
+#. translators: %s: Link to the Channels tab, with the text "Channels tab".
+#, php-format
+msgid "Only updates that were not notified yet are sent. To try a channel, send a test message from the %s."
+msgstr "まだ通知されていない更新のみを送信します。チャンネルを試すには、%sからテストメッセージを送信してください。"
+
+msgid "Channels tab"
+msgstr "「チャンネル」タブ"
+
+msgid "Checked just now. Nothing was sent because no channel is enabled."
+msgstr "確認しました。有効なチャンネルがないため、何も送信されませんでした。"
+
+msgid "Checked just now. Nothing new to send."
+msgstr "確認しました。新しく送信するものはありません。"
+
+#. translators: %d: Number of channels the update was sent to.
+#, php-format
+msgid "Checked just now. Sent to %d channel."
+msgid_plural "Checked just now. Sent to %d channels."
+msgstr[0] "確認しました。%d件のチャンネルに送信しました。"
+
+#. translators: 1: Number of channels that failed. 2: The channels and why each failed.
+#, php-format
+msgid "Checked just now. %1$d channel failed: %2$s"
+msgid_plural "Checked just now. %1$d channels failed: %2$s"
+msgstr[0] "確認しました。%1$d件のチャンネルで失敗しました: %2$s"
+
+#. translators: 1: Number of channels the update was sent to. 2: Number of channels that failed. 3: The channels that failed and why.
+#, php-format
+msgid "Checked just now. Sent to %1$d channel; %2$d failed: %3$s"
+msgid_plural "Checked just now. Sent to %1$d channels; %2$d failed: %3$s"
+msgstr[0] "確認しました。%1$d件のチャンネルに送信し、%2$d件で失敗しました: %3$s"
+
+msgid "Error:"
+msgstr "エラー:"
+
+msgid "Clear the saved value"
+msgstr "保存された値を消去"
+
+#. translators: %s: Label of the field, for example "Webhook URL".
+#, php-format
+msgid "Clear the saved value of %s"
+msgstr "%s の保存された値を消去"
+
+msgid "A value is saved. Leave this empty to keep it, or type a new value to replace it."
+msgstr "値が保存されています。そのままにする場合は空欄のままにし、置き換える場合は新しい値を入力してください。"
+
+#. translators: Shown after the label of a field that must be filled in.
+msgid "(required)"
+msgstr "(必須)"
+
+#. translators: %s: the API requirement an add-on declared, as written in its plugin header.
+#, php-format
+msgid "This add-on's WP Updates Notifier API requirement (%s) could not be read."
+msgstr "このアドオンの WP Updates Notifier API 要件 (%s) を読み取れませんでした。"
+
+#. translators: 1: the API version an add-on needs, as a constraint such as ^2.0. 2: the API version of this site, such as 1.0.0.
+#, php-format
+msgid "This add-on needs the WP Updates Notifier API %1$s. This site has %2$s. Update WP Updates Notifier."
+msgstr "このアドオンには WP Updates Notifier API %1$s が必要です。このサイトは %2$s です。WP Updates Notifier を更新してください。"
+
+msgid "Updates Notifier"
+msgstr "Updates Notifier"
+
+#. translators: 1: Name of the view, for example "Channels". 2: Title of the screen and site.
+#, php-format
+msgid "%1$s &lsaquo; %2$s"
+msgstr "%1$s &lsaquo; %2$s"
+
+#. translators: %s: Page title.
+#, php-format
+msgid "Error: %s"
+msgstr "エラー: %s"
+
+msgid "General"
+msgstr "一般"
+
+msgid "About"
+msgstr "概要"
+
+msgid "Sorry, you are not allowed to access this page."
+msgstr "このページにアクセスする権限がありません。"
+
+msgid "Settings sections"
+msgstr "設定セクション"
+
+msgid "Last checked: never"
+msgstr "最終確認: なし"
+
+#. translators: %s: Date and time of the last check.
+#, php-format
+msgid "Last checked: %s"
+msgstr "最終確認: %s"
+
+msgid "Next check: not scheduled. Save the settings to schedule it."
+msgstr "次回の確認: 予定なし。設定を保存すると予定されます。"
+
+#. translators: %s: Date and time of the next check.
+#, php-format
+msgid "Next check: %s"
+msgstr "次回の確認: %s"
+
+msgid "Save settings"
+msgstr "設定を保存"
+
+#. translators: 1: Date. 2: Time.
+#, php-format
+msgid "%1$s at %2$s"
+msgstr "%1$s %2$s"
+
+msgid "Choose how often to check for updates."
+msgstr "更新を確認する頻度を選択してください。"
+
+msgid "Choose whether to be told about WordPress updates."
+msgstr "WordPress の更新を通知するかどうかを選択してください。"
+
+msgid "Choose whether to be told about plugin updates."
+msgstr "プラグインの更新を通知するかどうかを選択してください。"
+
+msgid "Choose whether to be told about theme updates."
+msgstr "テーマの更新を通知するかどうかを選択してください。"
+
+msgid "Choose whether to hide the update notices."
+msgstr "更新の通知を非表示にするかどうかを選択してください。"
+
+#. translators: %s: Label of the setting.
+#, php-format
+msgid "Choose a value for %s."
+msgstr "%s の値を選択してください。"
+
+msgid "This is a test message from WP Updates Notifier."
+msgstr "これは WP Updates Notifier からのテストメッセージです。"
+
+#. translators: %s: Name of the saved schedule.
+#, php-format
+msgid "%s (no longer available)"
+msgstr "%s (利用できなくなりました)"
+
+msgid "The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it."
+msgstr "保存されている頻度はこのサイトでは利用できなくなったため、最後に予定された間隔で確認が実行されます。変更するには頻度を選択して保存してください。"
+
+#. translators: 1: The display asked for. 2: The display used instead.
+#, php-format
+msgid "The display \"%1$s\" cannot show an on or off value, so \"%2$s\" is used."
+msgstr "表示形式「%1$s」ではオン・オフの値を表示できないため、「%2$s」を使用します。"
+
+msgid "Yes"
+msgstr "はい"
+
+msgid "No"
+msgstr "いいえ"
+
+msgid "A channel type may only contain lower case letters, digits and underscores."
+msgstr "チャンネルタイプには英小文字、数字、アンダースコアのみ使用できます。"
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "A channel of type \"%s\" is already registered."
+msgstr "タイプ「%s」のチャンネルはすでに登録されています。"
+
+#. translators: 1: The API version constraint the module needs, 2: The API version of this site.
+#, php-format
+msgid "Needs WP Updates Notifier API %1$s; this site has %2$s. Update WP Updates Notifier."
+msgstr "WP Updates Notifier API %1$s が必要です。このサイトは %2$s です。WP Updates Notifier を更新してください。"
+
+#. translators: %s: The API version constraint the module declared.
+#, php-format
+msgid "Its API requirement \"%s\" could not be read."
+msgstr "API 要件「%s」を読み取れませんでした。"
+
+msgid "An instance defined in code cannot be saved."
+msgstr "コードで定義されたインスタンスは保存できません。"
+
+msgid "An instance defined in code cannot be deleted."
+msgstr "コードで定義されたインスタンスは削除できません。"
+
+#. translators: 1: Channel type. 2: Field name.
+#, php-format
+msgid "The field \"%2$s\" of the \"%1$s\" channel cannot be supplied from outside the database: the name \"enabled\" is reserved, and names may only contain a-z, 0-9 and single underscores."
+msgstr "「%1$s」チャンネルのフィールド「%2$s」はデータベース外から指定できません。名前「enabled」は予約済みで、名前には a-z、0-9 と単独のアンダースコアのみ使用できます。"
+
+msgid "The value is not valid for this channel."
+msgstr "この値はこのチャンネルでは無効です。"
+
+#. translators: %s: Class name of an exception.
+#, php-format
+msgid "The value could not be checked: %s was thrown."
+msgstr "値を確認できませんでした: %s がスローされました。"
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s". Keep SC_WPUN_CHANNELS as is.
+msgid "constant SC_WPUN_CHANNELS"
+msgstr "定数 SC_WPUN_CHANNELS"
+
+msgid "The constant must be a JSON string."
+msgstr "定数は JSON 文字列である必要があります。"
+
+msgid "The value must be a JSON string."
+msgstr "値は JSON 文字列である必要があります。"
+
+msgid "The JSON must be a list of channels."
+msgstr "JSON はチャンネルのリストである必要があります。"
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s". Keep sc_wpun_channels as is.
+msgid "the sc_wpun_channels filter"
+msgstr "sc_wpun_channels フィルター"
+
+#. translators: %d: Position of the entry in the list, starting at 1.
+#, php-format
+msgid "Channel %d repeats the id of an earlier channel and was skipped."
+msgstr "チャンネル %d は前のチャンネルと ID が重複しているため、スキップされました。"
+
+#. translators: %d: Position of the entry in the list, starting at 1.
+#, php-format
+msgid "Channel %d is not valid and was skipped."
+msgstr "チャンネル %d は無効なため、スキップされました。"
+
+msgid "Some configuration values supplied from outside the database are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed."
+msgstr "データベース外から指定された設定値の一部が無効です。無効な設定には保存済みの値が使われます。無効な値を含むチャンネルは、修正されるまで送信しません。"
+
+msgid "WP Updates Notifier cannot use some configuration values"
+msgstr "WP Updates Notifier が一部の設定値を使用できません"
+
+msgid "Some values supplied by constants, environment variables or other sources are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed."
+msgstr "定数、環境変数、その他のソースから指定された値の一部が無効です。無効な設定には保存済みの値が使われます。無効な値を含むチャンネルは、修正されるまで送信しません。"
+
+msgid "Review the notification settings"
+msgstr "通知設定を確認"
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s". Keep sc_wpun_config_value as is.
+msgid "the sc_wpun_config_value filter"
+msgstr "sc_wpun_config_value フィルター"
+
+msgid "The value is not valid for this setting, so the default is used."
+msgstr "この値はこの設定では無効なため、デフォルト値を使用します。"
+
+msgid "The value is not valid for this setting, so the saved one is used."
+msgstr "この値はこの設定では無効なため、保存済みの値を使用します。"
+
+msgid "The value is not valid for this field."
+msgstr "この値はこのフィールドでは無効です。"
+
+msgid "The value is not a recognised on or off value (1, true, yes, on, 0, false, no, off), so environment variables are not read."
+msgstr "この値はオン・オフの値 (1, true, yes, on, 0, false, no, off) として認識できないため、環境変数は読み込まれません。"
+
+msgid "Every entry must implement WPUN\\Config_Source."
+msgstr "すべてのエントリーは WPUN\\Config_Source を実装している必要があります。"
+
+#. translators: Describes where a configuration value comes from; shown in "Set by %s".
+msgid "a configuration source"
+msgstr "設定ソース"
+
+#. translators: %s: Name of a PHP constant. Describes where a configuration value comes from; shown in "Set by %s".
+#, php-format
+msgid "constant %s"
+msgstr "定数 %s"
+
+msgid "This channel is switched off."
+msgstr "このチャンネルはオフになっています。"
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "The \"%s\" channel did not return a Delivery_Result."
+msgstr "「%s」チャンネルが Delivery_Result を返しませんでした。"
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "The \"%s\" channel failed with an error."
+msgstr "「%s」チャンネルがエラーで失敗しました。"
+
+#. translators: %s: Names of the constants or environment variables that are not valid.
+#, php-format
+msgid "The channel is misconfigured: %s is not valid."
+msgstr "チャンネルの設定が正しくありません: %s が無効です。"
+
+#. translators: 1: Channel type, 2: Why the module was refused.
+#, php-format
+msgid "The \"%1$s\" channel is not available: %2$s"
+msgstr "「%1$s」チャンネルは利用できません: %2$s"
+
+#. translators: %s: Channel type.
+#, php-format
+msgid "The \"%s\" channel is not available."
+msgstr "「%s」チャンネルは利用できません。"
+
+#. translators: 1: The display asked for. 2: The display used instead.
+#, php-format
+msgid "The display \"%1$s\" cannot show several choices, so \"%2$s\" is used."
+msgstr "表示形式「%1$s」では複数の選択肢を表示できないため、「%2$s」を使用します。"
+
+#. translators: 1: The display asked for. 2: The display used instead.
+#, php-format
+msgid "The display \"%1$s\" cannot show a single choice, so \"%2$s\" is used."
+msgstr "表示形式「%1$s」では単一の選択肢を表示できないため、「%2$s」を使用します。"
+
+#. translators: %s: Name of an environment variable. Describes where a configuration value comes from; shown in "Set by %s".
+#, php-format
+msgid "environment variable %s"
+msgstr "環境変数 %s"
+
+#. translators: %s: Field type.
+#, php-format
+msgid "The field type \"%s\" must be an array with a callable \"render\" and a callable \"sanitize\", so it is ignored."
+msgstr "フィールドタイプ「%s」は呼び出し可能な「render」と「sanitize」を持つ配列である必要があるため、無視されます。"
+
+#. translators: %s: Field type.
+#, php-format
+msgid "No field type \"%s\" is registered, so the field is ignored. Register it with the sc_wpun_field_types filter."
+msgstr "フィールドタイプ「%s」が登録されていないため、このフィールドは無視されます。sc_wpun_field_types フィルターで登録してください。"
+
+msgid "Enter a full web address that starts with http:// or https://."
+msgstr "http:// または https:// で始まる完全なウェブアドレスを入力してください。"
+
+msgid "One or more email addresses are not valid."
+msgstr "無効なメールアドレスがあります。"
+
+msgid "Enter a whole number."
+msgstr "整数を入力してください。"
+
+#. translators: %d: Smallest value.
+#, php-format
+msgid "Enter a number that is at least %d."
+msgstr "%d 以上の数値を入力してください。"
+
+#. translators: %d: Largest value.
+#, php-format
+msgid "Enter a number that is at most %d."
+msgstr "%d 以下の数値を入力してください。"
+
+#. translators: %s: Name of the field.
+#, php-format
+msgid "The choice for \"%s\" is not valid."
+msgstr "「%s」の選択が無効です。"
+
+#. translators: %s: Label of the field.
+#, php-format
+msgid "%s is required."
+msgstr "%s は必須です。"
+
+#. translators: %s: Name of the field.
+#, php-format
+msgid "The value for \"%s\" is not valid."
+msgstr "「%s」の値が無効です。"
+
+msgid "WordPress"
+msgstr "WordPress"
+
+msgid "Plugins"
+msgstr "プラグイン"
+
+msgid "Themes"
+msgstr "テーマ"
+
+#. translators: %d: Number of updates that are not listed in the message.
+#, php-format
+msgid "…and %d more"
+msgid_plural "…and %d more"
+msgstr[0] "…ほか%d件"
+
+#. translators: 1: Site name. 2: Site address.
+#, php-format
+msgid "Reminder: these updates are still waiting for %1$s (%2$s)"
+msgstr "リマインダー: %1$s (%2$s) で次の更新がまだ保留中です"
+
+#. translators: 1: Site name. 2: Site address.
+#, php-format
+msgid "There are updates available for %1$s (%2$s)"
+msgstr "%1$s (%2$s) で利用可能な更新があります"
+
+#. translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
+#, php-format
+msgid "%1$s from version %2$s to %3$s"
+msgstr "%1$s をバージョン %2$s から %3$s へ"
+
+#. translators: %s: Address of the WordPress updates screen.
+#, php-format
+msgid "Please visit %s to update."
+msgstr "更新するには %s にアクセスしてください。"
+
+msgid "Go to the Updates screen to update."
+msgstr "更新するには「更新」画面に移動してください。"
+
+msgid "Details"
+msgstr "詳細"
+
+msgid "Changelog"
+msgstr "変更履歴"
+
+#. translators: %s: Name of the plugin, theme or WordPress.
+#, php-format
+msgid "%s details"
+msgstr "%s の詳細"
+
+#. translators: %s: Name of the plugin, theme or WordPress.
+#, php-format
+msgid "%s changelog"
+msgstr "%s の変更履歴"
+
+#. translators: %s: Site name.
+#, php-format
+msgid "WP Updates Notifier: updates available for %s"
+msgstr "WP Updates Notifier: %s で利用可能な更新"
+
+msgid "Some notification modules need a newer version of WP Updates Notifier and are switched off. Their settings have been kept."
+msgstr "一部の通知モジュールはより新しいバージョンの WP Updates Notifier を必要とするため、オフになっています。設定は保持されています。"
+
+msgid "Some WP Updates Notifier modules need a newer version"
+msgstr "一部の WP Updates Notifier モジュールには新しいバージョンが必要です"
+
+msgid "Some notification modules need a newer version of WP Updates Notifier than this site has, so they are switched off. Their settings have been kept."
+msgstr "一部の通知モジュールはこのサイトよりも新しいバージョンの WP Updates Notifier を必要とするため、オフになっています。設定は保持されています。"
+
+msgid "Update WP Updates Notifier"
+msgstr "WP Updates Notifier を更新"
+
+msgid "Item types"
+msgstr "項目タイプ"
+
+msgid "Leave every box unticked to receive all types, including ones added later."
+msgstr "後から追加されるものを含めすべてのタイプを受け取るには、すべてのチェックを外したままにしてください。"
+
+msgid "Plugins and themes"
+msgstr "プラグインとテーマ"
+
+msgid "Applies after the plugin and theme settings on the General tab."
+msgstr "「一般」タブのプラグインとテーマの設定の後に適用されます。"
+
+msgid "All"
+msgstr "すべて"
+
+msgid "Only active ones"
+msgstr "有効なもののみ"
+
+msgid "WordPress updates"
+msgstr "WordPress の更新"
+
+msgid "Applies after the WordPress updates setting on the General tab."
+msgstr "「一般」タブの WordPress の更新の設定の後に適用されます。"
+
+msgid "Only major releases"
+msgstr "メジャーリリースのみ"
+
+msgid "Reminders"
+msgstr "リマインダー"
+
+msgid "Repeat every update that is still waiting, in one message, until it is installed. New updates are still sent at once."
+msgstr "保留中の更新を、インストールされるまで1通のメッセージにまとめて繰り返し通知します。新しい更新はこれまでどおりすぐに送信されます。"
+
+msgid "Daily"
+msgstr "毎日"
+
+msgid "Weekly"
+msgstr "毎週"
+
+msgid "Frequency to check"
+msgstr "確認の頻度"
+
+msgid "Update notice"
+msgstr "更新の通知"
+
+msgid "Hide the WordPress update notice from users who cannot update WordPress"
+msgstr "WordPress を更新できないユーザーには WordPress の更新の通知を非表示にする"
+
+msgid "About tab"
+msgstr "「概要」タブ"
+
+msgid "Notify about WordPress updates?"
+msgstr "WordPress の更新を通知しますか ?"
+
+msgid "Yes, but only major releases"
+msgstr "はい、ただしメジャーリリースのみ"
+
+msgid "Notify about plugin updates?"
+msgstr "プラグインの更新を通知しますか ?"
+
+msgid "Notify about theme updates?"
+msgstr "テーマの更新を通知しますか ?"
+
+msgid "Yes, but only active plugins"
+msgstr "はい、ただし有効なプラグインのみ"
+
+msgid "Yes, but only active themes"
+msgstr "はい、ただし有効なテーマのみ"
+
+msgid "Email notifications continue as before."
+msgstr "メール通知はこれまでどおり継続されます。"
+
+#. translators: %s: URL of the settings page.
+#, php-format
+msgid "Email notifications are switched off, so this site currently sends no update notifications. You can turn them on at %s"
+msgstr "メール通知がオフになっているため、このサイトは現在更新通知を送信していません。%s でオンにできます"
+
+msgid "Slack notifications are not supported in this version of WP Updates Notifier. Your Slack settings have been kept."
+msgstr "このバージョンの WP Updates Notifier では Slack 通知はサポートされていません。Slack の設定は保持されています。"
+
+msgid "New notification channels and features are coming in future releases."
+msgstr "今後のリリースで新しい通知チャンネルや機能が追加される予定です。"
+
+msgid "WP Updates Notifier: Slack notifications are no longer supported"
+msgstr "WP Updates Notifier: Slack 通知はサポートされなくなりました"
+
+msgid "Slack notifications are no longer supported"
+msgstr "Slack 通知はサポートされなくなりました"
+
+msgid "Dismiss this notice"
+msgstr "この通知を非表示にする"
+
+msgid "Slack notifications are no longer supported by WP Updates Notifier"
+msgstr "WP Updates Notifier は Slack 通知をサポートしなくなりました"
+
+msgid "Slack notifications are not supported in this version of WP Updates Notifier, so none are sent. Your Slack settings have been kept."
+msgstr "このバージョンの WP Updates Notifier では Slack 通知はサポートされていないため、送信されません。Slack の設定は保持されています。"
+
+msgid "The filter must return a WPUN\\Notification."
+msgstr "フィルターは WPUN\\Notification を返す必要があります。"
+
+#. translators: %s: WordPress version of the site, for example 6.5.
+#, php-format
+msgid "Compatibility with WordPress %s: unknown"
+msgstr "WordPress %s との互換性: 不明"
+
+#. translators: %s: WordPress version of the site, for example 6.5.
+#, php-format
+msgid "Compatibility with WordPress %s: tested by its author"
+msgstr "WordPress %s との互換性: 作者によるテスト済み"
+
+#. translators: 1: WordPress version of the site. 2: Latest WordPress version the plugin was tested with.
+#, php-format
+msgid "Compatibility with WordPress %1$s: not tested yet (tested up to %2$s)"
+msgstr "WordPress %1$s との互換性: 未テスト (%2$s までテスト済み)"
+
+#. translators: 1: PHP version the update needs. 2: PHP version of the site.
+#, php-format
+msgid "Warning: this version needs PHP %1$s; the site runs PHP %2$s."
+msgstr "警告: このバージョンには PHP %1$s が必要です。サイトの PHP は %2$s です。"
+
+#. translators: 1: WordPress version the update needs. 2: WordPress version of the site.
+#, php-format
+msgid "Warning: this version needs WordPress %1$s; the site runs WordPress %2$s."
+msgstr "警告: このバージョンには WordPress %1$s が必要です。サイトの WordPress は %2$s です。"
+
+#. translators: %s: the version.
+#, php-format
+msgid "The version \"%s\" could not be read. Use one to three numbers, such as \"1.2.0\"."
+msgstr "バージョン「%s」を読み取れませんでした。「1.2.0」のように1～3個の数字を使用してください。"
+
+#. translators: %s: the version constraint.
+#, php-format
+msgid "The version constraint \"%s\" could not be read. Use Composer syntax, such as \"^1.0\" or \">=1.0 <2.0\"."
+msgstr "バージョン制約「%s」を読み取れませんでした。「^1.0」や「>=1.0 <2.0」のような Composer の構文を使用してください。"
+
+msgid "Email"
+msgstr "メール"
+
+msgid "Sends the notification to one or more email addresses."
+msgstr "1つ以上のメールアドレスに通知を送信します。"
+
+msgid "Send to"
+msgstr "送信先"
+
+msgid "Separate multiple email addresses with a comma (,)."
+msgstr "複数のメールアドレスはカンマ (,) で区切ってください。"
+
+msgid "From address"
+msgstr "送信元アドレス"
+
+msgid "Leave empty to use the WordPress default. Only set an address at a domain this site is allowed to send mail for."
+msgstr "WordPress のデフォルトを使用するには空欄のままにしてください。このサイトがメールを送信することを許可されたドメインのアドレスのみを設定してください。"
+
+msgid "Reply-To address"
+msgstr "返信先 (Reply-To) アドレス"
+
+msgid "Format"
+msgstr "形式"
+
+msgid "Plain text"
+msgstr "プレーンテキスト"
+
+msgid "HTML"
+msgstr "HTML"
+
+msgid "Subject prefix"
+msgstr "件名の接頭辞"
+
+msgid "One or more email addresses to send to are invalid."
+msgstr "送信先のメールアドレスに無効なものがあります。"
+
+msgid "Enter at least one valid email address to send to."
+msgstr "有効な送信先メールアドレスを1つ以上入力してください。"
+
+msgid "The email address is invalid."
+msgstr "メールアドレスが無効です。"
+
+msgid "The format must be plain text or HTML."
+msgstr "形式はプレーンテキストまたは HTML である必要があります。"
+
+msgid "No email address to send to is set."
+msgstr "送信先のメールアドレスが設定されていません。"
+
+#. translators: %s: Site name.
+#, php-format
+msgid "WP Updates Notifier: test message for %s"
+msgstr "WP Updates Notifier: %s のテストメッセージ"
+
+#. translators: 1: Site name. 2: Site address.
+#, php-format
+msgid "This is a test message from WP Updates Notifier for %1$s (%2$s). Update notifications for this site will be sent to this address."
+msgstr "これは WP Updates Notifier から %1$s (%2$s) へのテストメッセージです。このサイトの更新通知はこのアドレスに送信されます。"
+
+#. translators: %s: Site name.
+#, php-format
+msgid "WP Updates Notifier: reminder of updates waiting for %s"
+msgstr "WP Updates Notifier: %s の保留中の更新のリマインダー"
+
+msgid "WordPress could not send the email."
+msgstr "WordPress はメールを送信できませんでした。"

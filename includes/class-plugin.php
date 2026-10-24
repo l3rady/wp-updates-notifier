@@ -243,9 +243,17 @@ class Plugin {
 	private $rejected_channels;
 
 	/**
+	 * Bundled translations.
+	 *
+	 * @var Translations
+	 */
+	private $translations;
+
+	/**
 	 * Build the components. Nothing is hooked until register() runs.
 	 */
 	public function __construct() {
+		$this->translations      = new Translations();
 		$this->state             = new State();
 		$this->config            = new Config();
 		$this->channels          = new Channel_Registry();
@@ -442,8 +450,8 @@ class Plugin {
 
 		// Check settings are up to date.
 		$this->settings->maybe_upgrade();
-		// Internationalization.
-		load_plugin_textdomain( 'wp-updates-notifier', false, dirname( plugin_basename( SC_WPUN_FILE ) ) . '/languages/' );
+		// Internationalization: the bundled translations load just in time, with a language pack's strings first.
+		$this->translations->register();
 		// Add Actions.
 		add_action( 'switch_blog', array( $this->config, 'flush' ) ); // Values are resolved per site.
 		add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
