@@ -1730,7 +1730,7 @@
         lint["make lint&lt;br&gt;coding standards"]
         stan["make stan&lt;br&gt;types"]
         rector["make rector&lt;br&gt;PHP 7.4 syntax"]
-        api["make check-public-api&lt;br&gt;make check-hooks&lt;br&gt;public API, hook docs"]
+        api["make check-public-api&lt;br&gt;make check-hooks&lt;br&gt;make check-pot&lt;br&gt;public API, hook docs, translation template"]
     end
     subgraph wp["WordPress tests (PHP 7.4 to 8.5)"]
         suite["make test-wp&lt;br&gt;make test-wp-ms&lt;br&gt;behaviour"]
@@ -1770,7 +1770,8 @@
 <p><strong>Covers.</strong> What other code depends on. The contract tests pin the names and behaviour that existing sites and add-ons use: option names, hook names, the public classes. The extension API tests load a fixture add-on that uses every extension point (channels, item types, routing, configuration sources, the API version check) and the example channel from <code>examples/</code>, so the documented way to extend the plugin is exercised as an add-on author would use it. Changing one of these tests needs an upgrade path and a changelog entry.</p>
 <p><strong>Lives in.</strong> <code>tests/wp/test-contract.php</code>, <code>tests/wp/test-extension-api.php</code> and <code>tests/wp/test-example-channel.php</code>. The fixture add-on is in <code>tests/fixtures/plugins/wpun-test-addon/</code>.</p>
 <p>Two checks guard the same boundary without WordPress. <code>make check-public-api</code> fails if a module, the example channel or the fixture add-on uses anything that is not public API. <code>make check-hooks</code> fails if a hook the plugin fires has no doc block with <code>@since</code>, or if the <a href="../hooks/">hook reference</a> is stale (<code>make hook-docs</code> rewrites it). Both have their own tests in <code>tests/bin/</code>, which the targets run first, so a checker that stopped finding problems would fail too.</p>
-<p><strong>CI.</strong> The tests run in the <code>wordpress</code> jobs. The two checks run in the <code>phpcs</code> job of <code>lint.yml</code>.</p>
+<p><code>make check-pot</code> guards the translation template the same way: it fails if <code>languages/wp-updates-notifier.pot</code> is stale (<code>make pot</code> rewrites it) or if WP-CLI warns about a string. It ignores the header and line numbers, so a version bump or moved code does not fail it.</p>
+<p><strong>CI.</strong> The tests run in the <code>wordpress</code> jobs. The checks run in the <code>phpcs</code> job of <code>lint.yml</code>.</p>
 <h2 id="static-analysis">Static analysis<a class="headerlink" href="#static-analysis" title="Permanent link">&para;</a></h2>
 <p><strong>Covers.</strong> Mistakes found without running the code.</p>
 <ul>

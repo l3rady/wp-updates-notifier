@@ -4018,7 +4018,7 @@ it is listed only while something is hooked here. Output inside the screen's wra
 <p>Filters the tabs of the settings screen.</p>
 <p>A tab is shown only if something is hooked on <code>sc_wpun_settings_tab_{$tab}</code> to draw it. Entries
 whose slug is not a string equal to its <code>sanitize_key()</code> form, or whose label is not a string,
-are ignored. The General tab can not be removed.</p>
+are ignored. The General tab cannot be removed.</p>
 <p>Example, add a tab:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter( 'sc_wpun_settings_tabs', fn( $tabs ) =&gt; $tabs + array( 'mine' =&gt; 'Mine' ) );</span>
 <span class="x">add_action( 'sc_wpun_settings_tab_mine', fn() =&gt; print '&lt;p&gt;Hello&lt;/p&gt;' );</span>
