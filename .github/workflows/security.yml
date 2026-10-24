@@ -25,6 +25,30 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Which jobs can this change affect? bin/ci-changes.sh maps the changed files to jobs (the table in that script is
+  # the map). On a pull request the jobs the diff cannot affect skip; every other event, the Release PR, a shared file
+  # and any file the map does not know run everything.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      jobs: ${{ steps.map.outputs.jobs }}
+      full: ${{ steps.map.outputs.full }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The pull request's merge commit and its first parent, the base branch, which the diff is taken against.
+          fetch-depth: 2
+      - name: Map the changed files to jobs
+        id: map
+        env:
+          CI_EVENT: ${{ github.event_name }}
+          CI_HEAD_REF: ${{ github.head_ref }}
+        run: sh bin/ci-changes.sh HEAD^1 HEAD
+
   # The workflows themselves: actionlint (with shellcheck on the run: blocks) and zizmor.
   workflows:
     runs-on: ubuntu-latest
@@ -103,6 +127,8 @@ jobs:
 
   # Known vulnerabilities and abandoned packages in the locked dependencies: composer audit and OSV-Scanner.
   dependencies:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.jobs), 'dependencies')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -125,7 +151,8 @@ jobs:
   # What a pull request adds to the dependency graph: no new known vulnerabilities, and only licences that
   # fit a GPL-2.0-or-later plugin. The dependencies are development tools and are not shipped in the zip.
   dependency-review:
-    if: github.event_name == 'pull_request'
+    needs: changes
+    if: github.event_name == 'pull_request' && contains(fromJSON(needs.changes.outputs.jobs), 'dependency-review')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -165,6 +192,8 @@ jobs:
   # Semgrep with the plugin's own rules in .semgrep/ (CodeQL does not read PHP), plus the check that every
   # suppression carries a reason and every PHP file has its guard.
   sast:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.jobs), 'sast')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -188,6 +217,8 @@ jobs:
   # sink (output, mail body, outbound URL, SQL) without an escape. Taint findings only; PHPStan does the type checks.
   # Runs from docker/psalm, as Psalm 6 needs PHP 8.1+. psalm-baseline.xml may only shrink.
   taint:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.jobs), 'taint')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -205,3 +236,25 @@ jobs:
         with:
           sarif_file: security-reports/psalm.sarif
           category: psalm
+
+  # The only check this workflow requires: it fails unless every job above passed or was skipped. A job the changes
+  # job skipped counts as passed, which a required check on the job itself would not. Add every new job to `needs`
+  # (tests/bin/test-ci-changes.sh checks it).
+  security-gate:
+    if: always()
+    needs: [changes, workflows, secrets, dependencies, dependency-review, images, sast, taint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check the results of the jobs
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          failed="$(printf '%s' "$NEEDS" | jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | "\(.key): \(.value.result)"')"
+          if [ -n "$failed" ]; then
+            echo "These jobs did not pass:" >&2
+            echo "$failed" >&2
+            exit 1
+          fi
+          echo "Every job passed or was skipped."

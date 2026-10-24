@@ -15,7 +15,34 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Which jobs can this change affect? bin/ci-changes.sh maps the changed files to jobs (the table in that script is
+  # the map). On a pull request the jobs the diff cannot affect skip; every other event, the Release PR, a shared file
+  # and any file the map does not know run everything.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      jobs: ${{ steps.map.outputs.jobs }}
+      full: ${{ steps.map.outputs.full }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The pull request's merge commit and its first parent, the base branch, which the diff is taken against.
+          fetch-depth: 2
+      - name: Map the changed files to jobs
+        id: map
+        env:
+          CI_EVENT: ${{ github.event_name }}
+          CI_HEAD_REF: ${{ github.head_ref }}
+        run: sh bin/ci-changes.sh HEAD^1 HEAD
+
+  # Lint, hook documentation, translations and public API checks, all through the PHP image.
   phpcs:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.jobs), 'phpcs')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -30,3 +57,25 @@ jobs:
         run: make check-translations
       - name: Check add-ons and modules use only the public API
         run: make check-public-api
+
+  # The only check this workflow requires: it fails unless every job above passed or was skipped. A job the changes
+  # job skipped counts as passed, which a required check on the job itself would not. Add every new job to `needs`
+  # (tests/bin/test-ci-changes.sh checks it).
+  lint-gate:
+    if: always()
+    needs: [changes, phpcs]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check the results of the jobs
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          failed="$(printf '%s' "$NEEDS" | jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | "\(.key): \(.value.result)"')"
+          if [ -n "$failed" ]; then
+            echo "These jobs did not pass:" >&2
+            echo "$failed" >&2
+            exit 1
+          fi
+          echo "Every job passed or was skipped."

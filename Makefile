@@ -25,6 +25,10 @@ COMMITS_TO   ?= HEAD
 ZIZMOR_FORMAT ?= plain
 ZIZMOR_OUT    ?=
 
+# The pull request `make ci-changes` looks at: the changes on this branch since it left BASE, up to HEAD.
+BASE ?= origin/main
+HEAD ?= HEAD
+
 # gitleaks: SECRETS_LOG_OPTS limits the history scan (a pull request: base..head); SECRETS_SARIF=1 also writes
 # SARIF reports to security-reports/ for code scanning. Values are always redacted.
 SECRETS_LOG_OPTS ?=
@@ -49,7 +53,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -159,6 +163,13 @@ matrix: ## Smoke test on every PHP version in MATRIX
 check-workflows: ## Audit .github/workflows/ with actionlint (and shellcheck) and zizmor (fails on findings)
 	$(COMPOSE) --profile security run --rm -T actionlint
 	$(MAKE) --no-print-directory zizmor
+
+# Runs in the PHP image, which has git, sh and awk, so nothing is installed on the host.
+ci-changes: ## Show which CI jobs a pull request would run: the changes since BASE (default origin/main) up to HEAD (default HEAD)
+	$(COMPOSE) run --build --rm php sh -c 'sh bin/ci-changes.sh "$$(git merge-base $(BASE) $(HEAD))" $(HEAD)'
+
+test-ci-changes: ## Test the map of changed files to CI jobs, and that it agrees with the workflows and their gate jobs
+	$(COMPOSE) run --build --rm php sh tests/bin/test-ci-changes.sh
 
 zizmor: ## Audit .github/workflows/ with zizmor only (GITHUB_PUBLIC_TOKEN enables online audits; ZIZMOR_FORMAT=sarif ZIZMOR_OUT=file)
 	$(COMPOSE) --profile security run --rm -T $${GITHUB_PUBLIC_TOKEN:+-e GH_TOKEN=$$GITHUB_PUBLIC_TOKEN} zizmor --format $(ZIZMOR_FORMAT) .github/workflows/$(if $(ZIZMOR_OUT), > $(ZIZMOR_OUT))

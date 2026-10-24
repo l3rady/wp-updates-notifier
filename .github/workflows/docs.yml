@@ -30,9 +30,34 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Which jobs can this change affect? bin/ci-changes.sh maps the changed files to jobs (the table in that script is
+  # the map). On a pull request the jobs the diff cannot affect skip; every other event, the Release PR, a shared file
+  # and any file the map does not know run everything.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      jobs: ${{ steps.map.outputs.jobs }}
+      full: ${{ steps.map.outputs.full }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The pull request's merge commit and its first parent, the base branch, which the diff is taken against.
+          fetch-depth: 2
+      - name: Map the changed files to jobs
+        id: map
+        env:
+          CI_EVENT: ${{ github.event_name }}
+          CI_HEAD_REF: ${{ github.head_ref }}
+        run: sh bin/ci-changes.sh HEAD^1 HEAD
+
   # Strict build, then axe in the dark and light schemes, no third-party requests, visible focus (make docs-a11y).
   docs:
-    if: github.event_name != 'schedule'
+    needs: changes
+    if: github.event_name != 'schedule' && contains(fromJSON(needs.changes.outputs.jobs), 'docs')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -55,7 +80,10 @@ jobs:
   # strict build already checks the internal ones. The workflow's token only stops github.com from rate limiting the
   # many links to it; the job can read the repository and nothing else. Not on a release or a manual deploy.
   links:
-    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'schedule'
+    needs: changes
+    if: >-
+      (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'schedule')
+      && contains(fromJSON(needs.changes.outputs.jobs), 'links')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -133,3 +161,25 @@ jobs:
         run: |
           auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w 0)"
           git -c http.extraheader="AUTHORIZATION: basic $auth" push origin gh-pages
+
+  # The only check this workflow requires: it fails unless every job above passed or was skipped. A job the changes
+  # job skipped counts as passed, which a required check on the job itself would not. Add every new job to `needs`
+  # (tests/bin/test-ci-changes.sh checks it).
+  docs-gate:
+    if: always()
+    needs: [changes, docs, links, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check the results of the jobs
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          failed="$(printf '%s' "$NEEDS" | jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | "\(.key): \(.value.result)"')"
+          if [ -n "$failed" ]; then
+            echo "These jobs did not pass:" >&2
+            echo "$failed" >&2
+            exit 1
+          fi
+          echo "Every job passed or was skipped."

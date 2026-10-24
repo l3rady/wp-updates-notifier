@@ -36,6 +36,30 @@ Thanks for helping. Everything runs in Docker, so the only things you need are
   still open carry `@group known-bug` (see `tests/wp/test-known-bugs.php`); the
   fix removes the tag.
 
+## Which checks a pull request runs
+
+Every workflow still starts on every pull request, but a pull request only runs
+the jobs its changes can affect. A `changes` job in `ci.yml`, `lint.yml`,
+`docs.yml` and `security.yml` runs `bin/ci-changes.sh`, whose rule table maps
+paths to jobs and is the single source of truth. A path can match several
+rules, and all of them apply. The rest is skipped, and the WordPress tests run
+4 legs instead of 18 (single site only).
+
+Everything runs when a changed file is shared plumbing (the workflows, the
+`Makefile`, the Docker setup, `composer.json`, `composer.lock`), when a changed
+file matches no rule (so a new file never skips tests), on the Release PR, and
+on every event that is not a pull request (pushes to `main`, the scheduled
+runs, manual runs). `make ci-changes` shows what your branch would run (`BASE`
+defaults to `origin/main`, `HEAD` to `HEAD`), and `make test-ci-changes` checks
+the rules against the workflows.
+
+Only the gate jobs (`ci-gate`, `lint-gate`, `docs-gate`, `security-gate`) and
+`commits` are required checks. A gate passes when every job of its workflow
+passed or was skipped, so a skipped job never blocks a merge. A new job must be
+added to its workflow's gate `needs` and to the table in `bin/ci-changes.sh`
+(or, if it always runs or never runs on pull requests, to the exceptions in
+`tests/bin/test-ci-changes.sh`); that test fails until it is.
+
 ## Security checks
 
 Run `make security` before opening a pull request. It needs only Docker, and
