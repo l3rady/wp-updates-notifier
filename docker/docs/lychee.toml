@@ -11,6 +11,10 @@ max_concurrency = 8
 # 429 is a rate limit, not a broken link. Everything else that is not 2xx fails.
 accept = ["200..=299", "429"]
 
+# A link to this repository's main branch is checked against the checkout, so a pull request that adds a file and
+# links to it passes before the file is on main, and one that removes a linked file fails.
+remap = ['^https://github\.com/l3rady/wp-updates-notifier/(?:blob|tree)/main/([^#?]*).*$ file:///app/$1']
+
 # A root-relative link in the built HTML (/assets/...) is looked up in the built folder.
 root_dir = "/app/build/docs"
 
