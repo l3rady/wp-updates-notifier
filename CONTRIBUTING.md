@@ -121,6 +121,9 @@ Docker like everything else. `mkdocs.yml` holds the navigation and the theme, an
   or `tree/main/<path>` for a directory), as those files are not part of the site.
 - `docs/developers/hooks.md` is generated: change the hook's doc block, then run
   `make hook-docs` (`make check-hooks` fails if it is stale).
+- `languages/wp-updates-notifier.pot` is generated: after you add or change a translatable string or its
+  translators comment, run `make pot` and commit the result (`make check-pot` fails if it is stale, or if
+  WP-CLI warns about a string). Line numbers and the header are ignored, so moving code does not need a rerun.
 - The site is versioned with [mike](https://github.com/jimporter/mike) and deployed by
   CI (`.github/workflows/docs.yml`): `main` on every push, and each release as its own
   version and as `latest`. Published versions are not rebuilt; to fix one, run the

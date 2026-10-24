@@ -14,7 +14,7 @@ flowchart LR
         lint["make lint<br>coding standards"]
         stan["make stan<br>types"]
         rector["make rector<br>PHP 7.4 syntax"]
-        api["make check-public-api<br>make check-hooks<br>public API, hook docs"]
+        api["make check-public-api<br>make check-hooks<br>make check-pot<br>public API, hook docs, translation template"]
     end
     subgraph wp["WordPress tests (PHP 7.4 to 8.5)"]
         suite["make test-wp<br>make test-wp-ms<br>behaviour"]
@@ -76,7 +76,9 @@ CI runs every target in the diagram on pull requests, except `make dast`. It tak
 
 Two checks guard the same boundary without WordPress. `make check-public-api` fails if a module, the example channel or the fixture add-on uses anything that is not public API. `make check-hooks` fails if a hook the plugin fires has no doc block with `@since`, or if the [hook reference](hooks.md) is stale (`make hook-docs` rewrites it). Both have their own tests in `tests/bin/`, which the targets run first, so a checker that stopped finding problems would fail too.
 
-**CI.** The tests run in the `wordpress` jobs. The two checks run in the `phpcs` job of `lint.yml`.
+`make check-pot` guards the translation template the same way: it fails if `languages/wp-updates-notifier.pot` is stale (`make pot` rewrites it) or if WP-CLI warns about a string. It ignores the header and line numbers, so a version bump or moved code does not fail it.
+
+**CI.** The tests run in the `wordpress` jobs. The checks run in the `phpcs` job of `lint.yml`.
 
 ## Static analysis
 

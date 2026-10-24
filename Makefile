@@ -49,7 +49,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs pot check-pot check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -131,6 +131,12 @@ check-hooks: ## Check every hook the plugin fires is documented with @since, and
 
 hook-docs: ## Write docs/developers/hooks.md from the hook doc blocks
 	$(COMPOSE) run --build --rm php sh bin/hook-docs.sh
+
+pot: ## Write languages/wp-updates-notifier.pot from the translatable strings (WP-CLI)
+	$(COMPOSE) run --build --rm php sh bin/make-pot.sh
+
+check-pot: ## Check languages/wp-updates-notifier.pot is current (ignores the header and line numbers) and make-pot prints no warnings
+	$(COMPOSE) run --build --rm php sh bin/make-pot.sh --check
 
 check-public-api: ## Check modules and the test add-on use only the public API, and test the checker
 	$(COMPOSE) run --build --rm php sh bin/check-public-api.sh
