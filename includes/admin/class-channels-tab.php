@@ -370,7 +370,7 @@ class Channels_Tab {
 				<span class="sc-wpun-state"><?php echo esc_html( $instance->is_enabled() ? __( 'On', 'wp-updates-notifier' ) : __( 'Off', 'wp-updates-notifier' ) ); ?></span>
 				<?php
 				if ( ! $code_defined && null !== $external ) {
-					// translators: %s: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
+					// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
 					echo ' <span class="description sc-wpun-external">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';
 				}
 				?>
@@ -477,7 +477,7 @@ class Channels_Tab {
 			<p>
 				<?php
 				// translators: %s: Label of the channel.
-				echo esc_html( sprintf( __( 'Delete the channel %s? Its settings and delivery history are removed. This can not be undone.', 'wp-updates-notifier' ), $instance->get_label() ) );
+				echo esc_html( sprintf( __( 'Delete the channel %s? Its settings and delivery history are removed. This cannot be undone.', 'wp-updates-notifier' ), $instance->get_label() ) );
 				?>
 			</p>
 			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
@@ -614,7 +614,7 @@ class Channels_Tab {
 		$channel = $this->registry->get( $instance->get_type() );
 		if ( null === $channel || ! $channel->supports( 'test_message' ) ) {
 			// translators: %s: Label of the channel.
-			$this->notices->add( false, sprintf( __( '%s can not send a test message.', 'wp-updates-notifier' ), $instance->get_label() ) );
+			$this->notices->add( false, sprintf( __( '%s cannot send a test message.', 'wp-updates-notifier' ), $instance->get_label() ) );
 			return true;
 		}
 
@@ -660,7 +660,7 @@ class Channels_Tab {
 		$source = $this->store->external_source( $id, 'enabled' );
 		if ( null !== $source ) {
 			// translators: 1: Label of the channel. 2: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
-			$this->notices->add( false, sprintf( __( '%1$s can not be switched here: set by %2$s.', 'wp-updates-notifier' ), $instance->get_label(), $source ) );
+			$this->notices->add( false, sprintf( __( '%1$s cannot be switched here: set by %2$s.', 'wp-updates-notifier' ), $instance->get_label(), $source ) );
 			return true;
 		}
 
@@ -773,7 +773,7 @@ class Channels_Tab {
 		}
 		if ( $this->store->is_code_defined( $id ) ) {
 			// translators: %s: Label of the channel.
-			$this->notices->add( false, sprintf( __( '%s is defined in code and can not be changed here.', 'wp-updates-notifier' ), $instance->get_label() ) );
+			$this->notices->add( false, sprintf( __( '%s is defined in code and cannot be changed here.', 'wp-updates-notifier' ), $instance->get_label() ) );
 			return null;
 		}
 

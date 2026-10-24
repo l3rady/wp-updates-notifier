@@ -50,7 +50,7 @@ final class Env_Source implements Config_Source {
 	 * @return string
 	 */
 	public function get_label( string $key ): string {
-		// translators: %s: Name of an environment variable.
+		// translators: %s: Name of an environment variable. Describes where a configuration value comes from; shown in "Set by %s".
 		return sprintf( __( 'environment variable %s', 'wp-updates-notifier' ), $key );
 	}
 }

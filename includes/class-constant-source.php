@@ -44,7 +44,7 @@ final class Constant_Source implements Config_Source {
 	 * @return string
 	 */
 	public function get_label( string $key ): string {
-		// translators: %s: Name of a PHP constant.
+		// translators: %s: Name of a PHP constant. Describes where a configuration value comes from; shown in "Set by %s".
 		return sprintf( __( 'constant %s', 'wp-updates-notifier' ), $key );
 	}
 }

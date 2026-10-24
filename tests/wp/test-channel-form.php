@@ -447,7 +447,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertSame( 'Email', $xpath->query( '//input[@name="label"]' )->item( 0 )->getAttribute( 'value' ) );
 		$this->assertSame( '', $xpath->query( '//input[@name="settings[to]"]' )->item( 0 )->getAttribute( 'value' ) );
 		$this->assertSame( 0, $xpath->query( '//*[@checked][@name="enabled"]' )->length );
-		$this->assertStringContainsString( 'can not be changed afterwards', $this->text( $xpath, '//body' ) );
+		$this->assertStringContainsString( 'cannot be changed afterwards', $this->text( $xpath, '//body' ) );
 		$this->assertSame( 0, $xpath->query( '//code[contains(@class,"sc-wpun-channel-id")]' )->length );
 		$this->assertSame( 1, $xpath->query( '//button[@type="submit"][normalize-space()="Add channel"]' )->length );
 
@@ -469,7 +469,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 			array( array( 'action' => 'new', 'type' => 'nope' ), 'There is no such channel module.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 			array( array( 'action' => 'edit', 'id' => 'nope' ), 'There is no such channel.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 			array( array( 'action' => 'edit', 'id' => 'slack' ), 'There is no such channel.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
-			array( array( 'action' => 'edit', 'id' => 'ops_code' ), 'Ops is defined in code and can not be changed here.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+			array( array( 'action' => 'edit', 'id' => 'ops_code' ), 'Ops is defined in code and cannot be changed here.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		);
 		foreach ( $cases as $case ) {
 			$xpath = $this->page( $case[0] );
@@ -1148,7 +1148,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$list   = admin_url( 'options-general.php?page=wp-updates-notifier&tab=channels' );
 
 		$cases = array(
-			array( 'edit', 'ops_code', 'Ops is defined in code and can not be changed here.' ),
+			array( 'edit', 'ops_code', 'Ops is defined in code and cannot be changed here.' ),
 			array( 'edit', 'slack', 'There is no such channel.' ),
 			array( 'edit', 'ghost', 'There is no such channel.' ),
 			array( 'new', 'slack', 'There is no such channel module.' ),
@@ -1455,7 +1455,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		sc_wpun()->config()->flush();
 		$xpath = $this->edit_page();
 		$this->assertSame( 0, $xpath->query( '//form[@class="sc-wpun-channel-form"]' )->length );
-		$this->assertStringContainsString( 'defined in code and can not be changed here', $this->text( $xpath, '//div[contains(@class,"sc-wpun-inline-notice")]' ) );
+		$this->assertStringContainsString( 'defined in code and cannot be changed here', $this->text( $xpath, '//div[contains(@class,"sc-wpun-inline-notice")]' ) );
 		$this->post_email( array( 'settings' => array( 'from' => 'other@example.org' ) ) );
 		sc_wpun()->channel_form()->process_save();
 		$this->assertSame( 'new@example.org', get_option( 'sc_wpun_channels' )['email']['settings']['from'], 'Nothing is saved for a code-defined email.' );

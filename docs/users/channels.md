@@ -16,7 +16,7 @@ A test message does not count as a delivery, so it never changes **Last delivery
 
 1. Click **Add channel**.
 2. Choose a module from the list. On a standard install that is **Email**.
-3. Give it a **Label**. The channel's id is made from the label when you save it and can not be changed afterwards.
+3. Give it a **Label**. The channel's id is made from the label when you save it and cannot be changed afterwards.
 4. Fill in the settings (see [the email options](#the-email-options)) and choose its [routing](#choose-what-each-channel-receives).
 5. Click **Add channel**.
 
@@ -50,7 +50,7 @@ Click **Duplicate** to copy a channel's settings and routing, for example to sen
 
 ## Delete a channel
 
-Click **Delete** and confirm. The channel's settings and delivery history are removed, and this can not be undone. If you add a channel again later it starts with no history.
+Click **Delete** and confirm. The channel's settings and delivery history are removed, and this cannot be undone. If you add a channel again later it starts with no history.
 
 ## Channels defined in code
 

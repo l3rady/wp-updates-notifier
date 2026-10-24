@@ -664,7 +664,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		$this->assertTrue( sc_wpun()->channels_tab()->process_test_send() );
 		$notice = $this->notice();
 		$this->assertFalse( $notice['success'] );
-		$this->assertSame( 'Plain can not send a test message.', $notice['message'] );
+		$this->assertSame( 'Plain cannot send a test message.', $notice['message'] );
 		$this->assertSame( array(), sc_wpun()->channels()->get( 'test' )->received );
 	}
 

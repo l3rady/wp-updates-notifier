@@ -306,7 +306,7 @@ class Channel_Form {
 		}
 		if ( $this->store->is_code_defined( $id ) ) {
 			// translators: %s: Label of the channel.
-			return sprintf( __( '%s is defined in code and can not be changed here.', 'wp-updates-notifier' ), $instance->get_label() );
+			return sprintf( __( '%s is defined in code and cannot be changed here.', 'wp-updates-notifier' ), $instance->get_label() );
 		}
 		$channel = $this->registry->get( $instance->get_type() );
 		if ( null === $channel ) {
@@ -574,7 +574,7 @@ class Channel_Form {
 		$described_by = trim( ( '' !== $description ? $id . '-description' : '' ) . ( null !== $external ? ' ' . $id . '-external' : '' ) );
 		$html         = Field_Renderer::field( $schema, $name, $id, $value, null !== $external, $described_by, array(), $error );
 		if ( null !== $external ) {
-			// translators: %s: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__TO".
+			// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
 			$html .= ' <span class="description sc-wpun-external" id="' . esc_attr( $id . '-external' ) . '">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';
 		}
 		if ( '' !== $description ) {
@@ -606,10 +606,10 @@ class Channel_Form {
 			<tbody>
 				<?php
 				if ( $is_new ) {
-					$this->row( esc_html__( 'Id', 'wp-updates-notifier' ), '', '<p class="description">' . esc_html__( 'The id is made from the label when the channel is saved and can not be changed afterwards.', 'wp-updates-notifier' ) . '</p>' );
+					$this->row( esc_html__( 'ID', 'wp-updates-notifier' ), '', '<p class="description">' . esc_html__( 'The id is made from the label when the channel is saved and cannot be changed afterwards.', 'wp-updates-notifier' ) . '</p>' );
 				} else {
 					$this->row(
-						esc_html__( 'Id', 'wp-updates-notifier' ),
+						esc_html__( 'ID', 'wp-updates-notifier' ),
 						'',
 						'<code class="sc-wpun-channel-id">' . esc_html( $id ) . '</code><p class="description">'
 						// translators: %s: Start of the names of the constants, for example "SC_WPUN_CHANNEL_EMAIL__".
@@ -684,11 +684,13 @@ class Channel_Form {
 		if ( 'none' === $settings['notify_plugins'] ) {
 			$scope[] = __( 'On the General tab, plugins are not checked.', 'wp-updates-notifier' );
 		} elseif ( 'active' === $settings['notify_plugins'] ) {
+			// translators: "All" and "Only active ones" are routing choices on this form: use the same translations as for those choices.
 			$scope[] = __( 'On the General tab, only active plugins are checked, so "All" here acts like "Only active ones" for plugins.', 'wp-updates-notifier' );
 		}
 		if ( 'none' === $settings['notify_themes'] ) {
 			$scope[] = __( 'On the General tab, themes are not checked.', 'wp-updates-notifier' );
 		} elseif ( 'active' === $settings['notify_themes'] ) {
+			// translators: "All" and "Only active ones" are routing choices on this form: use the same translations as for those choices.
 			$scope[] = __( 'On the General tab, only active themes are checked, so "All" here acts like "Only active ones" for themes.', 'wp-updates-notifier' );
 		}
 		if ( array() !== $scope ) {
@@ -919,7 +921,7 @@ class Channel_Form {
 			}
 			if ( $this->store->is_code_defined( $key ) ) {
 				// translators: %s: Label of the channel.
-				$this->notices->add( false, sprintf( __( '%s is defined in code and can not be changed here.', 'wp-updates-notifier' ), $effective->get_label() ) );
+				$this->notices->add( false, sprintf( __( '%s is defined in code and cannot be changed here.', 'wp-updates-notifier' ), $effective->get_label() ) );
 				return $this->tab_url();
 			}
 			$stored  = $this->store->stored_all()[ $key ] ?? null;

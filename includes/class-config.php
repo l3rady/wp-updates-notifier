@@ -117,6 +117,7 @@ final class Config {
 		$result = null;
 		if ( null !== $final ) {
 			if ( $final !== $value ) {
+				// translators: Describes where a configuration value comes from; shown in "Set by %s". Keep sc_wpun_config_value as is.
 				$source = __( 'the sc_wpun_config_value filter', 'wp-updates-notifier' );
 			}
 			$result = new Config_Value( $final, (string) $source, $key );
@@ -393,6 +394,7 @@ final class Config {
 		try {
 			return $source->get_label( $key );
 		} catch ( \Throwable $e ) {
+			// translators: Describes where a configuration value comes from; shown in "Set by %s".
 			return __( 'a configuration source', 'wp-updates-notifier' );
 		}
 	}

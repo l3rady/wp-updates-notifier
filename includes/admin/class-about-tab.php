@@ -53,7 +53,7 @@ class About_Tab {
 	private function link( string $slug, string $text ): string {
 		$links = self::links();
 
-		return '<a href="' . esc_url( $links[ $slug ] ) . '">' . esc_html( $text ) . '<span class="screen-reader-text">' . esc_html__( ' (external link)', 'wp-updates-notifier' ) . '</span></a>';
+		return '<a href="' . esc_url( $links[ $slug ] ) . '">' . esc_html( $text ) . '<span class="screen-reader-text"> ' . /* translators: Hidden accessibility text. */ esc_html__( '(external link)', 'wp-updates-notifier' ) . '</span></a>';
 	}
 
 	/**

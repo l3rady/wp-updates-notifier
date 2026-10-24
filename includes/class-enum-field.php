@@ -92,13 +92,11 @@ final class Enum_Field {
 					_doing_it_wrong(
 						__METHOD__,
 						esc_html(
-							sprintf(
-								// translators: 1: The display asked for. 2: "several choices" or "a single choice". 3: The display used instead.
-								__( 'The display "%1$s" cannot show %2$s, so "%3$s" is used.', 'wp-updates-notifier' ),
-								$shown,
-								$multiple ? __( 'several choices', 'wp-updates-notifier' ) : __( 'a single choice', 'wp-updates-notifier' ),
-								$default
-							)
+							$multiple
+								// translators: 1: The display asked for. 2: The display used instead.
+								? sprintf( __( 'The display "%1$s" cannot show several choices, so "%2$s" is used.', 'wp-updates-notifier' ), $shown, $default )
+								// translators: 1: The display asked for. 2: The display used instead.
+								: sprintf( __( 'The display "%1$s" cannot show a single choice, so "%2$s" is used.', 'wp-updates-notifier' ), $shown, $default )
 						),
 						'2.0.0'
 					);

@@ -950,7 +950,7 @@ Filters the tabs of the settings screen.
 
 A tab is shown only if something is hooked on `sc_wpun_settings_tab_{$tab}` to draw it. Entries
 whose slug is not a string equal to its `sanitize_key()` form, or whose label is not a string,
-are ignored. The General tab can not be removed.
+are ignored. The General tab cannot be removed.
 
 Example, add a tab:
 

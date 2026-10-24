@@ -414,8 +414,14 @@ class Settings {
 			$value = self::LEGACY_NOTIFY[ (string) $value ];
 		}
 
-		$schema            = $this->notify_schema( $name );
-		$schema['default'] = isset( $schema['options'][ $fallback ] ) ? $fallback : 'all';
+		// Only the keys matter here, so the labels are not translated: this runs on plugins_loaded (settings upgrade),
+		// before WordPress 6.7 allows translating.
+		$keys   = 'notify_core' === $name ? array( 'none', 'all', 'major' ) : array( 'none', 'all', 'active' );
+		$schema = array(
+			'type'    => 'enum',
+			'options' => array_combine( $keys, $keys ),
+			'default' => in_array( $fallback, $keys, true ) ? $fallback : 'all',
+		);
 
 		/**
 		 * Enum_Field only returns one of the schema's options.

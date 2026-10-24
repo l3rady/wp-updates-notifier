@@ -533,6 +533,7 @@ class Channel_Store {
 		$this->code_generation = $this->config->generation();
 		$this->code_defined    = array();
 
+		// translators: Describes where a configuration value comes from; shown in "Set by %s". Keep SC_WPUN_CHANNELS as is.
 		$json_source = __( 'constant SC_WPUN_CHANNELS', 'wp-updates-notifier' );
 		$entries     = array();
 		$constant    = null;
@@ -605,6 +606,7 @@ class Channel_Store {
 		 */
 		$filtered = apply_filters( 'sc_wpun_channels', $entries );
 		if ( is_array( $filtered ) ) {
+			// translators: Describes where a configuration value comes from; shown in "Set by %s". Keep sc_wpun_channels as is.
 			$filter_source = __( 'the sc_wpun_channels filter', 'wp-updates-notifier' );
 			$seen          = array();
 			foreach ( array_values( $filtered ) as $position => $entry ) {
