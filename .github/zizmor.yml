@@ -1,0 +1,7 @@
+# zizmor's configuration, found here by `make zizmor` and `make check-workflows`.
+rules:
+  # self-repository asks for `uses: $/.github/actions/...` instead of `./.github/actions/...`. actionlint, which
+  # check-workflows also runs, rejects that form, so the local actions keep `./` after the checkout step. Lift this
+  # once actionlint accepts `$/`.
+  self-repository:
+    disable: true

@@ -160,7 +160,7 @@ matrix: ## Smoke test on every PHP version in MATRIX
 		PHP_VERSION=$$v $(COMPOSE) run --build --rm php sh docker/smoke.sh || exit 1; \
 	done
 
-check-workflows: ## Audit .github/workflows/ with actionlint (and shellcheck) and zizmor (fails on findings)
+check-workflows: ## Audit .github/ with actionlint (and shellcheck) and zizmor (fails on findings)
 	$(COMPOSE) --profile security run --rm -T actionlint
 	$(MAKE) --no-print-directory zizmor
 
@@ -171,8 +171,8 @@ ci-changes: ## Show which CI jobs a pull request would run: the changes since BA
 test-ci-changes: ## Test the map of changed files to CI jobs, and that it agrees with the workflows and their gate jobs
 	$(COMPOSE) run --build --rm php sh tests/bin/test-ci-changes.sh
 
-zizmor: ## Audit .github/workflows/ with zizmor only (GITHUB_PUBLIC_TOKEN enables online audits; ZIZMOR_FORMAT=sarif ZIZMOR_OUT=file)
-	$(COMPOSE) --profile security run --rm -T $${GITHUB_PUBLIC_TOKEN:+-e GH_TOKEN=$$GITHUB_PUBLIC_TOKEN} zizmor --format $(ZIZMOR_FORMAT) .github/workflows/$(if $(ZIZMOR_OUT), > $(ZIZMOR_OUT))
+zizmor: ## Audit .github/ (workflows, actions, dependabot.yml) with zizmor only (GITHUB_PUBLIC_TOKEN enables online audits; ZIZMOR_FORMAT=sarif ZIZMOR_OUT=file)
+	$(COMPOSE) --profile security run --rm -T $${GITHUB_PUBLIC_TOKEN:+-e GH_TOKEN=$$GITHUB_PUBLIC_TOKEN} zizmor --format $(ZIZMOR_FORMAT) .github/$(if $(ZIZMOR_OUT), > $(ZIZMOR_OUT))
 
 secrets: secrets-history secrets-tree secrets-zip ## Scan the git history, the working tree and the built zip for secrets with gitleaks (make -k runs all three)
 

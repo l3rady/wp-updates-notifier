@@ -1,0 +1,28 @@
+# CI only: .github/actions/docker-cache adds this file to COMPOSE_FILE. Each image reads and writes its own scope of
+# BuildKit's GitHub Actions cache, per PHP version (and WordPress version for wp-tests), with every stage cached
+# (mode=max). A cache error never fails a build. Locally nothing changes: Docker keeps its own layer cache.
+services:
+  php:
+    build:
+      cache_from:
+        - "type=gha,scope=dev-php${PHP_VERSION:-8.3}"
+      cache_to:
+        - "type=gha,scope=dev-php${PHP_VERSION:-8.3},mode=max,ignore-error=true"
+  composer:
+    build:
+      cache_from:
+        - "type=gha,scope=dev-php${PHP_VERSION:-8.3}"
+      cache_to:
+        - "type=gha,scope=dev-php${PHP_VERSION:-8.3},mode=max,ignore-error=true"
+  dist:
+    build:
+      cache_from:
+        - "type=gha,scope=dev-php${PHP_VERSION:-8.3}"
+      cache_to:
+        - "type=gha,scope=dev-php${PHP_VERSION:-8.3},mode=max,ignore-error=true"
+  wp-tests:
+    build:
+      cache_from:
+        - "type=gha,scope=wp-tests-php${PHP_VERSION:-8.3}-wp${WP_VERSION:-7.1.3}"
+      cache_to:
+        - "type=gha,scope=wp-tests-php${PHP_VERSION:-8.3}-wp${WP_VERSION:-7.1.3},mode=max,ignore-error=true"

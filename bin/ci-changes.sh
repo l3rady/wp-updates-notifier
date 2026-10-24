@@ -39,6 +39,7 @@ docker/*.sh               ALL
 composer.json             ALL
 composer.lock             ALL
 docker-compose.yml        ALL
+docker/compose.ci-cache.yml ALL
 bin/ci-changes.sh         ALL
 tests/bin/test-ci-changes.sh ALL
 tests/bin/ci-changes/*    ALL
@@ -168,6 +169,7 @@ docker/commitlint/*       -
 commitlint.config.js      -
 .gitleaks.toml            -
 .github/dependabot.yml    -
+.github/zizmor.yml        -
 .github/CODEOWNERS        -
 .github/ISSUE_TEMPLATE/*  -
 .github/pull_request_template.md -
