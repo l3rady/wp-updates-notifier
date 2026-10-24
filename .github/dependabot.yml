@@ -11,8 +11,21 @@ multi-ecosystem-groups:
       interval: weekly
     commit-message:
       prefix: ci
+  # The documentation site's image, its Python packages and Mermaid change together and only affect the docs job, so
+  # one PR a week instead of up to three.
+  docs:
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+
+# Groups: each update below that can propose several bumps at once puts them in one PR a week, as every PR runs the
+# CI it affects. Major versions stay out of the groups (update-types) and come in a PR of their own, so a breaking
+# major never holds up the minor and patch bumps; security updates are never grouped.
 
 updates:
+  # Every action in one PR, majors included: they are pinned by SHA and reviewed together anyway.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -21,7 +34,12 @@ updates:
       default-days: 14
     commit-message:
       prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
 
+  # The PHP, WordPress, Composer, WP-CLI and Node images in docker/Dockerfile: one PR for all of them, as each
+  # security release of PHP moves several tags at once (#284).
   - package-ecosystem: docker
     directory: /docker
     schedule:
@@ -30,8 +48,12 @@ updates:
       default-days: 14
     commit-message:
       prefix: build
+    groups:
+      images:
+        patterns: ["*"]
+        update-types: [minor, patch]
 
-  # The pinned images of the security tools in docker-compose.yml.
+  # The pinned images of the security tools and the local site in docker-compose.yml, in one PR.
   - package-ecosystem: docker-compose
     directory: /
     schedule:
@@ -40,6 +62,10 @@ updates:
       default-days: 14
     commit-message:
       prefix: ci
+    groups:
+      tools:
+        patterns: ["*"]
+        update-types: [minor, patch]
 
   # The ZAP image (and the database) of the DAST site, tests/dast/compose.yml.
   - package-ecosystem: docker-compose
@@ -60,6 +86,7 @@ updates:
     cooldown:
       default-days: 14
 
+  # The development tools in composer.json (PHPUnit, PHPCS, PHPStan, Rector, the stubs): one PR.
   - package-ecosystem: composer
     directory: /
     schedule:
@@ -69,6 +96,10 @@ updates:
     commit-message:
       prefix: build
       include: scope
+    groups:
+      dev-tools:
+        patterns: ["*"]
+        update-types: [minor, patch]
 
   # Psalm for `make taint`: its own image and Composer project, as Psalm 6 needs PHP 8.1+. Keep the WordPress stubs
   # there at the version in the root composer.lock.
@@ -100,6 +131,10 @@ updates:
     commit-message:
       prefix: build
       include: scope
+    groups:
+      psalm:
+        patterns: ["*"]
+        update-types: [minor, patch]
 
   # commitlint for `make commits`, installed with npm ci from docker/commitlint/package-lock.json.
   - package-ecosystem: npm
@@ -111,6 +146,10 @@ updates:
     commit-message:
       prefix: build
       include: scope
+    groups:
+      commitlint:
+        patterns: ["*"]
+        update-types: [minor, patch]
 
   # Playwright and axe for `make a11y`, installed with npm ci from tests/e2e/package-lock.json. In the e2e group.
   - package-ecosystem: npm
@@ -121,35 +160,28 @@ updates:
       default-days: 14
 
   # The documentation site (make docs): its image, MkDocs, Material and mike from docker/docs/requirements.txt (with
-  # hashes, compiled from requirements.in), and the self-hosted Mermaid from docker/docs/package-lock.json.
+  # hashes, compiled from requirements.in), and the self-hosted Mermaid from docker/docs/package-lock.json. In the
+  # docs group.
   - package-ecosystem: docker
     directory: /docker/docs
-    schedule:
-      interval: weekly
+    multi-ecosystem-group: docs
+    patterns: ["*"]
     cooldown:
       default-days: 14
-    commit-message:
-      prefix: build
 
   - package-ecosystem: pip
     directory: /docker/docs
-    schedule:
-      interval: weekly
+    multi-ecosystem-group: docs
+    patterns: ["*"]
     cooldown:
       default-days: 14
-    commit-message:
-      prefix: build
-      include: scope
 
   - package-ecosystem: npm
     directory: /docker/docs
-    schedule:
-      interval: weekly
+    multi-ecosystem-group: docs
+    patterns: ["*"]
     cooldown:
       default-days: 14
-    commit-message:
-      prefix: build
-      include: scope
     # Material for MkDocs is built against one Mermaid major (it names it in its unpkg fallback). Move Mermaid to a
     # new major together with Material, never ahead of it. Mermaid 11 needs katex ^0.16, so a newer katex would drag
     # Mermaid to 12 (#287): lift both ignores together.

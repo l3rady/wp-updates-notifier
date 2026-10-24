@@ -82,12 +82,15 @@ repositories. Without one, those audits are skipped.
 
 - Every tool image and base image is pinned by tag and digest, and every
   action by its full commit SHA. Use a release that is at least two weeks old.
-  Dependabot proposes the updates after a 14-day cooldown.
+  Dependabot proposes the updates after a 14-day cooldown, grouped into one
+  pull request per directory each week (majors on their own, except actions).
 - A new tool goes in `docker-compose.yml` under the `security` profile, with a
   `make` target and a job in `security.yml`. If it needs its own Composer or
   npm project, like Psalm in `docker/psalm` and commitlint in
   `docker/commitlint`, commit the lockfile and add the directory to
-  `.github/dependabot.yml`.
+  `.github/dependabot.yml` with a group like the others.
+- Every job sets `timeout-minutes`, and every workflow that runs on pull
+  requests has a `concurrency` group, so a new push cancels the old run.
 - The plugin has no runtime dependencies, and `make dist-check` fails if one
   appears in `composer.json`'s `require` or the zip. Development dependencies
   must pass the dependency review's licence allowlist. An exception goes by
