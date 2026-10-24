@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://wpun.cariss.dev/latest/security/threat-model/">
       
       
-        <link rel="prev" href="../../decisions/0015-conventional-commits-and-linear-history/">
+        <link rel="prev" href="../../decisions/0016-pending-update-reminders-per-channel/">
       
       
       
@@ -845,6 +845,8 @@
       
         
       
+        
+      
     
     
     
@@ -1306,6 +1308,34 @@
     
   
     0015 Commits and history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
   
 
     
@@ -1924,7 +1954,7 @@ request (<code>.github/workflows/</code>). The security tests are in <code>tests
 <tr>
 <td>Delivery state</td>
 <td><code>sc_wpun_state</code></td>
-<td>It holds what was already notified, <code>last_result</code> and <code>retry_at</code>.</td>
+<td>It holds what was already notified, <code>last_result</code>, <code>retry_at</code> and <code>last_reminder</code>.</td>
 </tr>
 <tr>
 <td>The site's update inventory</td>

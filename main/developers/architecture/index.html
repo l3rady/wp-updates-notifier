@@ -940,6 +940,8 @@
       
         
       
+        
+      
     
     
     
@@ -1414,6 +1416,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1620,7 +1650,15 @@
 <p><strong>Notification.</strong> The items are wrapped in a <code>WPUN\Notification</code> with the site name, the site URL, the link to the Updates screen and some context, such as whether this is a test message. The <code>sc_wpun_notification</code> filter can change it before any channel sees it.</p>
 <p><strong>Channels and instances.</strong> A <em>channel</em> is a kind of delivery (the built-in <code>email</code>, or one your add-on registers) and is a subclass of <code>WPUN\Channel</code>. An <em>instance</em> is one configured use of a channel, for example "email to the ops team", stored as a <code>WPUN\Channel_Instance</code> with an id, a label, an enabled flag, its field values and its routing. Site owners create instances on the <strong>Channels</strong> tab. Instances can also be defined in code with the <code>SC_WPUN_CHANNELS</code> constant or the <code>sc_wpun_channels</code> filter. Channels are registered on the <code>sc_wpun_register_channels</code> action. A channel that declares an API version the site does not have (<code>get_api_constraint()</code>) is refused: it is not registered, <code>sc_wpun_channel_rejected</code> fires, and the <strong>Channels</strong> tab, a notice on the settings page and Site Health say why. Its instances are kept, but nothing is sent through them.</p>
 <p><strong>Routing.</strong> Each instance receives only the items its routing allows: which item types, all or only active plugins and themes, and all or only major WordPress releases. The <code>sc_wpun_channel_should_receive_item</code> filter adds rules of your own.</p>
-<p><strong>Delivery state.</strong> The plugin remembers, per instance, which version of each item it has told that instance about. An instance is sent only what is new to it. If a send fails, nothing is recorded for that instance, so the same items go out again on the next run, while the instances that succeeded are not sent them twice.</p>
+<p><strong>Delivery state.</strong> The plugin remembers, per instance, which version of each item it has told that instance about, and when it last sent a reminder. An instance is sent only what is new to it. If a send fails, nothing is recorded for that instance, so the same items go out again on the next run, while the instances that succeeded are not sent them twice.</p>
+<p><strong>Reminders.</strong> The <code>remind</code> routing key (<code>never</code>, <code>daily</code> or <code>weekly</code>) turns on reminders for an instance. The state of an instance has a <code>last_reminder</code> (a unix time) in <code>sc_wpun_state</code>, under <code>channels[id]</code>:</p>
+<ul>
+<li>While <code>remind</code> is not <code>never</code> and the instance receives at least one waiting item, the clock runs. The first check that sees this sets <code>last_reminder</code> to now and sends no reminder, so the first one comes one interval later. When <code>remind</code> is <code>never</code> or nothing is waiting, <code>last_reminder</code> is removed.</li>
+<li>A reminder is due when <code>now - last_reminder</code> is at least the interval minus a tolerance. The tolerance is half the interval of the site's check frequency, capped at half the reminder interval, so a late WP-Cron run does not skip a cycle.</li>
+<li>When it is due, the check sends one <code>Notification</code> with <code>is_reminder()</code> true and every waiting item the instance receives, even those that are new in this run. On success all of them are recorded as notified and <code>last_reminder</code> is set to now. On failure neither changes, so the next check tries again.</li>
+<li>Between reminders, new items are sent as a normal message and the clock is untouched. A skip run (see <code>State::skip_pending()</code>) sends no reminder but starts the clock. An instance that is off or deferred by <code>retry_at</code> is not touched. A test send never goes through the clock.</li>
+</ul>
+<p>There is no separate cron event. Reminders can not be more frequent than the check frequency.</p>
 <p><strong>Dispatcher.</strong> The dispatcher calls your channel's <code>send()</code> for one instance and turns whatever happens into a <code>WPUN\Delivery_Result</code>. It catches exceptions, so a broken add-on cannot stop the other channels. An instance whose channel is not registered fails as unavailable, with the reason if the module was refused for its API version. <code>sc_wpun_pre_send</code> can short-circuit a send. <code>sc_wpun_notification_sent</code> and <code>sc_wpun_notification_failed</code> fire after each one, and <code>sc_wpun_after_dispatch</code> after all of them.</p>
 <p><strong>Results.</strong> The last result of each instance is shown on the Channels tab. Once every instance has had its turn, the run state is saved and <code>sc_wpun_after_update_check</code> fires.</p>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>

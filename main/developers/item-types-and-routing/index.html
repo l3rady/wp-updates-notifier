@@ -940,6 +940,8 @@
       
         
       
+        
+      
     
     
     
@@ -1414,6 +1416,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1644,7 +1674,7 @@
 </ul>
 <p>Only <code>Notification_Item</code> objects survive the filter. The constructor throws an <code>InvalidArgumentException</code> for an invalid type.</p>
 <h2 id="3-route-it">3. Route it<a class="headerlink" href="#3-route-it" title="Permanent link">&para;</a></h2>
-<p>Each instance's routing is an array kept in <code>Channel_Instance::get_routing()</code>. <code>WPUN\Routing</code> knows three keys:</p>
+<p>Each instance's routing is an array kept in <code>Channel_Instance::get_routing()</code>. <code>WPUN\Routing</code> knows four keys:</p>
 <table>
 <thead>
 <tr>
@@ -1669,10 +1699,15 @@
 <td><code>all</code>, <code>major</code></td>
 <td>For <code>core</code> items: <code>major</code> keeps only updates that change the major.minor version.</td>
 </tr>
+<tr>
+<td><code>remind</code></td>
+<td><code>never</code>, <code>daily</code>, <code>weekly</code></td>
+<td>Repeat all updates the instance receives that are still waiting, in one message, at that interval. New updates are still sent at once. Missing or invalid means <code>never</code>.</td>
+</tr>
 </tbody>
 </table>
-<p>Site owners choose these on the instance's form. Other keys are stored and ignored by the plugin, so instances defined in code (the <code>SC_WPUN_CHANNELS</code> constant or the <code>sc_wpun_channels</code> filter) can carry rules of your own.</p>
-<p>For anything the three keys cannot express, use the <code>sc_wpun_channel_should_receive_item</code> filter. It runs after the instance's own rules, so it can block an item they let through or let through one they blocked:</p>
+<p>Site owners choose these on the instance's form. <code>Routing::normalise()</code> fills in the defaults (<code>all</code>, <code>all</code>, <code>never</code>). <code>remind</code> does not decide which items an instance receives, so <code>should_receive()</code> ignores it. The update check reads it to decide when to send a reminder: see the Reminders paragraph of the <a href="../architecture/">architecture</a>. Other keys are stored and ignored by the plugin, so instances defined in code (the <code>SC_WPUN_CHANNELS</code> constant or the <code>sc_wpun_channels</code> filter) can carry rules of your own.</p>
+<p>For anything the keys cannot express, use the <code>sc_wpun_channel_should_receive_item</code> filter. It runs after the instance's own rules, so it can block an item they let through or let through one they blocked:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_channel_should_receive_item',</span>
 <span class="x">    function ( $receive, $item, $instance ) {</span>

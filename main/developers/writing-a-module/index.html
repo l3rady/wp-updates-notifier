@@ -777,6 +777,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#reminders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reminders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#validation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1147,6 +1158,8 @@
       
         
           
+        
+      
         
       
         
@@ -1653,6 +1666,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1827,6 +1868,17 @@
   
     <nav class="md-nav" aria-label="3. Settings: the field schema">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reminders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reminders
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#validation" class="md-nav__link">
@@ -2213,7 +2265,14 @@
 </code></pre></div>
 <p>The types are <code>text</code>, <code>textarea</code>, <code>url</code>, <code>email_list</code>, <code>secret</code>, <code>number</code>, <code>boolean</code> and <code>enum</code> (with <code>checkbox</code> and <code>select</code> as aliases). The full list of keys (<code>default</code>, <code>required</code>, <code>secret</code>, <code>show_external</code>, <code>options</code>, <code>multiple</code>, <code>display</code>, <code>min</code>, <code>max</code>, <code>sanitize_callback</code>, <code>validate_callback</code> and more) is documented on the <code>WPUN\Channel</code> class in <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/includes/abstract-class-channel.php"><code>includes/abstract-class-channel.php</code></a>.</p>
 <p>A field with <code>'required' =&gt; true</code> is also marked in the form: "(required)" after its label (not for a <code>boolean</code>, which is always valid) and <code>aria-required="true"</code> on its control. For a group of radio buttons the fieldset gets <code>role="radiogroup"</code> to carry it; a group of checkboxes has only the text. A <code>secret</code> that already has a saved value keeps the text but not the attribute, as leaving it empty is valid. A custom field type registered with <code>sc_wpun_field_types</code> receives the schema in its <code>render</code> callable, so read <code>required</code> there and do the same.</p>
-<p>Every instance also has a label, an on/off switch and routing. The plugin adds these; don't put them in <code>get_fields()</code>.</p>
+<p>Every instance also has a label, an on/off switch and routing (including the choice of reminders, see below). The plugin adds these; don't put them in <code>get_fields()</code>.</p>
+<h3 id="reminders">Reminders<a class="headerlink" href="#reminders" title="Permanent link">&para;</a></h3>
+<p>A site owner can ask for reminders of updates that are still waiting (the <code>remind</code> routing key). Your <code>send()</code> then receives a <code>Notification</code> whose <code>is_reminder()</code> is true. It lists every update that is still waiting for the instance, so most of its items were delivered before.</p>
+<ul>
+<li>Don't drop an item because you have sent it already. If your channel de-duplicates by item, skip that check when <code>is_reminder()</code> is true.</li>
+<li>The built-in renderers only change the first line. If you build your own message, say that it is a reminder, for example in the title.</li>
+<li>In every other way a reminder is a normal notification. <code>is_test()</code> is false.</li>
+</ul>
 <h3 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h3>
 <p>The default <code>validate_settings()</code> runs, for every field: its <code>sanitize_callback</code>, the sanitiser of its type, then <code>required</code> and its <code>validate_callback</code>. An error is a <code>WP_Error</code> whose data names the field, and the form shows it next to that field. Override <code>validate_settings()</code> only for rules that involve several fields:</p>
 <div class="highlight"><pre><span></span><code><span class="x">public function validate_settings( array $settings, array $stored = array() ) {</span>

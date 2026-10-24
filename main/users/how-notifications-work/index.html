@@ -509,6 +509,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#reminders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reminders
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-a-message-contains" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -919,6 +930,8 @@
       
         
           
+        
+      
         
       
         
@@ -1425,6 +1438,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1561,6 +1602,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#reminders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reminders
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-a-message-contains" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1632,6 +1684,23 @@
 </ul>
 <p>A check sends one message to each channel, listing everything that is new to that channel. It does not send one message per update. If nothing is new, nothing is sent.</p>
 <p>Updates that a channel does not receive because of its <a href="../channels/#choose-what-each-channel-receives">routing</a> are not reported to it, and they do not count as sent.</p>
+<h2 id="reminders">Reminders<a class="headerlink" href="#reminders" title="Permanent link">&para;</a></h2>
+<p>A channel can repeat the updates you have not installed yet. Set <strong>Reminders</strong> to <strong>Daily</strong> or <strong>Weekly</strong> in the channel's <a href="../channels/#reminders">routing</a>. The default is <strong>Never</strong>.</p>
+<ul>
+<li>The reminder is one message listing all updates still waiting for that channel, not only the ones that were reported before. It is marked as a reminder (see below).</li>
+<li>New updates are not held back. They are sent at once, as a normal message.</li>
+<li>If a new update is found in the same check as a reminder that is due, you get one message: the reminder, with the new update in it. You never get two.</li>
+<li>The first reminder comes one interval after something starts waiting for the channel. When nothing is waiting, the interval is cleared. The next update to wait starts it again.</li>
+<li>A failed reminder does not restart the interval. The channel tries again at the next check.</li>
+<li>A channel that is switched off, or is waiting because of <code>Retry-After</code>, gets no reminder. If you added or switched on a channel and chose not to send what was already waiting, that check sends no reminder, but the interval starts, so you are reminded about those updates later.</li>
+</ul>
+<p>Reminders are decided at each check, so they can not come more often than the <a href="../settings/#frequency-to-check">frequency to check</a>. A reminder may go out up to half a check interval early, but never more than half its own interval early. This is because WP-Cron often runs a little late, and a strict rule would then skip a whole cycle. For example:</p>
+<ul>
+<li>A daily check and daily reminders: each daily check sends a reminder.</li>
+<li>Hourly checks and daily reminders: a reminder goes about a day after the last one, up to half an hour early.</li>
+<li>Weekly checks and daily reminders: a reminder goes on every check.</li>
+</ul>
+<p><strong>Check for updates and notify now</strong>, and <code>sc_wpun_run_check</code>, work out reminders too.</p>
 <h2 id="what-a-message-contains">What a message contains<a class="headerlink" href="#what-a-message-contains" title="Permanent link">&para;</a></h2>
 <p>An email says:</p>
 <ul>
@@ -1642,6 +1711,7 @@
 <li>The address of your site's <strong>Dashboard → Updates</strong> screen, with a request to visit it to update. In HTML format this is a link, "Go to the Updates screen to update."</li>
 </ul>
 <p>The subject is "WP Updates Notifier: updates available for" followed by your site name, with the channel's subject prefix first if it has one.</p>
+<p>A reminder has the same contents, but its first line is "Reminder: these updates are still waiting for" followed by your site name and its address, and its subject is "WP Updates Notifier: reminder of updates waiting for" followed by your site name.</p>
 <p>The site address in the message is your site's home address, the <strong>Site Address (URL)</strong> under <strong>Settings → General</strong>. If it is wrong, see <a href="../troubleshooting/#why-does-a-message-show-the-wrong-address">Why does a message show the wrong address?</a>.</p>
 <h2 id="when-a-send-fails">When a send fails<a class="headerlink" href="#when-a-send-fails" title="Permanent link">&para;</a></h2>
 <p>If a channel fails, for example because the mail server refused the message, the plugin does not record those updates as reported to that channel:</p>

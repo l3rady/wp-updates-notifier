@@ -990,6 +990,8 @@
       
         
       
+        
+      
     
     
     
@@ -1464,6 +1466,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1808,6 +1838,7 @@
 <span class="x">    '[{"id":"ops_email","type":"email","label":"Operations","settings":{"to":"ops@example.org"}}]'</span>
 <span class="x">);</span>
 </code></pre></div>
+<p><code>routing</code> holds the same choices as the channel form: <code>types</code>, <code>scope</code>, <code>core</code> and <code>remind</code>. For example, <code>"routing":{"remind":"weekly"}</code> sends a weekly reminder of updates still waiting. <code>remind</code> is <code>never</code> (the default), <code>daily</code> or <code>weekly</code>. See <a href="../channels/#reminders">Reminders</a>.</p>
 <p>These channels show <strong>Defined in code</strong> on the <strong>Channels</strong> tab. You can send a test through them but not edit, duplicate, disable or delete them there. A channel in code replaces a saved one with the same id.</p>
 <h2 id="if-a-value-is-not-valid">If a value is not valid<a class="headerlink" href="#if-a-value-is-not-valid" title="Permanent link">&para;</a></h2>
 <p>A value the plugin can not use is not applied:</p>

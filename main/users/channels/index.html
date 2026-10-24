@@ -572,6 +572,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Choose what each channel receives">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reminders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reminders
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -980,6 +997,8 @@
       
         
           
+        
+      
         
       
         
@@ -1486,6 +1505,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1713,6 +1760,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Choose what each channel receives">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reminders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reminders
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1786,8 +1850,19 @@
 <li><strong>Item types</strong>: tick <strong>WordPress</strong>, <strong>Plugins</strong> or <strong>Themes</strong> to receive only those. Tick nothing to receive every type, including any that an add-on adds later.</li>
 <li><strong>Plugins and themes</strong>: <strong>All</strong>, or <strong>Only active ones</strong>.</li>
 <li><strong>WordPress updates</strong>: <strong>All</strong>, or <strong>Only major releases</strong>.</li>
+<li><strong>Reminders</strong>: <strong>Never</strong> (the default), <strong>Daily</strong> or <strong>Weekly</strong>. See <a href="#reminders">Reminders</a>.</li>
 </ul>
-<p>Routing works on top of the <a href="../settings/">General settings</a>. Those decide what the plugin looks at, and routing then narrows what each channel gets. If <strong>Notify about plugin updates?</strong> is <strong>No</strong>, no channel can receive plugin updates. If it is <strong>Yes, but only active plugins</strong>, choosing <strong>All</strong> here still gives you only the active ones. The form adds a reminder under an option when a General setting limits it.</p>
+<p>Routing works on top of the <a href="../settings/">General settings</a>. Those decide what the plugin looks at, and routing then narrows what each channel gets. If <strong>Notify about plugin updates?</strong> is <strong>No</strong>, no channel can receive plugin updates. If it is <strong>Yes, but only active plugins</strong>, choosing <strong>All</strong> here still gives you only the active ones. The form adds a note under an option when a General setting limits it.</p>
+<h3 id="reminders">Reminders<a class="headerlink" href="#reminders" title="Permanent link">&para;</a></h3>
+<p>By default a channel is told about each update once. Set <strong>Reminders</strong> to <strong>Daily</strong> or <strong>Weekly</strong> to be reminded about updates you have not installed yet.</p>
+<ul>
+<li>A reminder is one message that lists every update still waiting for that channel. It is marked as a reminder: the email subject is "WP Updates Notifier: reminder of updates waiting for" followed by your site name, and the first line says "Reminder: these updates are still waiting for" followed by your site name and its address.</li>
+<li>A new update is still sent at once, as usual. If a new update turns up in the same check as a reminder that is due, you get one message, the reminder, with the new update in it.</li>
+<li>The first reminder comes one interval after an update starts waiting for the channel. Reminders stop when nothing is waiting any more.</li>
+<li>Each channel has its own setting, so you can, for example, remind only one address each week.</li>
+<li>The <strong>Routing</strong> column shows it, for example "Reminders: Weekly".</li>
+</ul>
+<p>Reminders are worked out at each check, so they can not come more often than your <a href="../settings/#frequency-to-check">frequency to check</a>. See <a href="../how-notifications-work/#reminders">How notifications work</a>.</p>
 <h2 id="the-email-options">The email options<a class="headerlink" href="#the-email-options" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

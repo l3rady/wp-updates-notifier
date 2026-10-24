@@ -565,6 +565,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#why-did-no-reminder-arrive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why did no reminder arrive?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#emails-only-arrive-after-someone-visits-the-site" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1002,6 +1013,8 @@
       
         
           
+        
+      
         
       
         
@@ -1508,6 +1521,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1637,6 +1678,17 @@
     <span class="md-ellipsis">
       
         Why did I not get an email about an update?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-did-no-reminder-arrive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why did no reminder arrive?
       
     </span>
   </a>
@@ -1797,6 +1849,16 @@
 <li><strong>Did the send fail?</strong> <strong>Last delivery</strong> shows <strong>Failed</strong> and the reason.</li>
 <li><strong>Has the check run?</strong> <strong>Last checked</strong> on the <strong>General</strong> tab says when. If it is old, see the next entry.</li>
 <li><strong>Is the data old?</strong> See <a href="#why-is-the-update-data-hours-old">Why is the update data hours old?</a>.</li>
+</ol>
+<h2 id="why-did-no-reminder-arrive">Why did no reminder arrive?<a class="headerlink" href="#why-did-no-reminder-arrive" title="Permanent link">&para;</a></h2>
+<p>Reminders are optional and per channel. Check these in turn:</p>
+<ol>
+<li><strong>Is it on?</strong> Edit the channel. <strong>Reminders</strong> must be <strong>Daily</strong> or <strong>Weekly</strong>, not <strong>Never</strong>.</li>
+<li><strong>Is anything waiting?</strong> A channel is reminded only about updates it receives that are still waiting. Check the channel's <strong>Routing</strong> column, and the <strong>General</strong> tab settings. If routing leaves nothing for the channel, there is nothing to remind it about.</li>
+<li><strong>Has the first interval passed?</strong> The first reminder comes one interval after an update starts waiting for the channel, not at once. A new update is sent at once as a normal message.</li>
+<li><strong>How often do you check?</strong> Reminders are decided at each check, so a weekly check can not remind you daily. See <a href="../how-notifications-work/#reminders">Reminders</a>.</li>
+<li><strong>Is the channel switched on and free to send?</strong> A channel that is switched off, or was told by a service to wait (<strong>Rate limited, next try after</strong> under <strong>Last delivery</strong>), gets no reminder until it is on and the wait is over.</li>
+<li><strong>Did the last send fail?</strong> <strong>Last delivery</strong> shows the reason. A failed reminder is tried again at the next check.</li>
 </ol>
 <h2 id="emails-only-arrive-after-someone-visits-the-site">Emails only arrive after someone visits the site<a class="headerlink" href="#emails-only-arrive-after-someone-visits-the-site" title="Permanent link">&para;</a></h2>
 <p>The schedule is run by WP-Cron. WP-Cron is not a real clock. WordPress only looks for due tasks when a page is requested, so on a site that few people visit, a check due at 03:00 can wait until someone arrives at 09:00. A forum user put it as "I only receive emails after someone has logged in".</p>
