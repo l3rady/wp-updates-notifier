@@ -16,6 +16,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Fork pull requests cannot upload SARIF to code scanning, so the upload steps below skip them.
+  UPLOAD_SARIF: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+
 concurrency:
   group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -24,6 +28,7 @@ jobs:
   # The workflows themselves: actionlint (with shellcheck on the run: blocks) and zizmor.
   workflows:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
@@ -43,9 +48,8 @@ jobs:
       - name: Write zizmor's findings as SARIF
         if: always()
         run: make zizmor ZIZMOR_FORMAT=sarif ZIZMOR_OUT=zizmor.sarif || true
-      # Fork pull requests cannot upload SARIF.
       - name: Upload the findings to code scanning
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('zizmor.sarif') != ''
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('zizmor.sarif') != ''
         uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: zizmor.sarif
@@ -55,6 +59,7 @@ jobs:
   # only its own commits; pushes to main, the weekly run and manual runs scan the whole history.
   secrets:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
@@ -76,21 +81,21 @@ jobs:
           else
             make -k secrets SECRETS_SARIF=1
           fi
-      # Fork pull requests cannot upload SARIF. One upload per report, each with its own category.
+      # One upload per report, each with its own category.
       - name: Upload the history findings to code scanning
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('security-reports/history.sarif') != ''
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/history.sarif') != ''
         uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: security-reports/history.sarif
           category: gitleaks-history
       - name: Upload the working tree findings to code scanning
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('security-reports/tree.sarif') != ''
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/tree.sarif') != ''
         uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: security-reports/tree.sarif
           category: gitleaks-tree
       - name: Upload the zip findings to code scanning
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('security-reports/zip.sarif') != ''
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/zip.sarif') != ''
         uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: security-reports/zip.sarif
@@ -99,6 +104,7 @@ jobs:
   # Known vulnerabilities and abandoned packages in the locked dependencies: composer audit and OSV-Scanner.
   dependencies:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
@@ -109,9 +115,8 @@ jobs:
       # make -k so OSV-Scanner still runs (and writes its report) when composer audit fails.
       - name: Audit the dependencies (composer audit, OSV-Scanner)
         run: make -k audit AUDIT_SARIF=1
-      # Fork pull requests cannot upload SARIF.
       - name: Upload the findings to code scanning
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('security-reports/osv.sarif') != ''
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/osv.sarif') != ''
         uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: security-reports/osv.sarif
@@ -122,6 +127,7 @@ jobs:
   dependency-review:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -148,6 +154,7 @@ jobs:
   images:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -159,6 +166,7 @@ jobs:
   # suppression carries a reason and every PHP file has its guard.
   sast:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
@@ -169,9 +177,8 @@ jobs:
       # make -k so the rule tests and the suppression check still run when the scan finds something.
       - name: Static analysis (Semgrep)
         run: make -k sast SAST_SARIF=1
-      # Fork pull requests cannot upload SARIF.
       - name: Upload the findings to code scanning
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('security-reports/semgrep.sarif') != ''
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/semgrep.sarif') != ''
         uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: security-reports/semgrep.sarif
@@ -182,6 +189,7 @@ jobs:
   # Runs from docker/psalm, as Psalm 6 needs PHP 8.1+. psalm-baseline.xml may only shrink.
   taint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
@@ -191,9 +199,8 @@ jobs:
           persist-credentials: false
       - name: Taint analysis (Psalm)
         run: make taint TAINT_SARIF=1
-      # Fork pull requests cannot upload SARIF.
       - name: Upload the findings to code scanning
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && hashFiles('security-reports/psalm.sarif') != ''
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/psalm.sarif') != ''
         uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: security-reports/psalm.sarif

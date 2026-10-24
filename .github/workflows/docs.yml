@@ -23,11 +23,18 @@ on:
 
 permissions: {}
 
+# A new push to a pull request cancels the run for the old one. Every other run gets a group of its own, so nothing
+# here queues or cancels a deploy; the deploy job keeps its own group below.
+concurrency:
+  group: docs-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Strict build, then axe in the dark and light schemes, no third-party requests, visible focus (make docs-a11y).
   docs:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -50,6 +57,7 @@ jobs:
   links:
     if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -71,6 +79,7 @@ jobs:
       || github.event_name == 'workflow_dispatch'
       || (github.event_name == 'release' && !github.event.release.prerelease)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write # Push to gh-pages.
     concurrency:
