@@ -73,6 +73,10 @@
          <lastmod>2026-10-24</lastmod>
     </url>
     <url>
+         <loc>https://wpun.cariss.dev/latest/decisions/0017-bundle-l10n-php-translations-only/</loc>
+         <lastmod>2026-10-24</lastmod>
+    </url>
+    <url>
          <loc>https://wpun.cariss.dev/latest/developers/</loc>
          <lastmod>2026-10-24</lastmod>
     </url>
@@ -98,6 +102,10 @@
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/testing/</loc>
+         <lastmod>2026-10-24</lastmod>
+    </url>
+    <url>
+         <loc>https://wpun.cariss.dev/latest/developers/translations/</loc>
          <lastmod>2026-10-24</lastmod>
     </url>
     <url>

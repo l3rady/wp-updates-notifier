@@ -16,7 +16,7 @@
         <link rel="prev" href="../architecture/">
       
       
-        <link rel="next" href="../writing-a-module/">
+        <link rel="next" href="../translations/">
       
       
         
@@ -549,6 +549,8 @@
       
         
       
+        
+      
     
     
     
@@ -801,6 +803,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../translations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../writing-a-module/" class="md-nav__link">
         
   
@@ -952,6 +982,8 @@
       
         
           
+        
+      
         
       
         
@@ -1488,6 +1520,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0017-bundle-l10n-php-translations-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0017 Bundled translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1730,7 +1790,7 @@
         lint["make lint&lt;br&gt;coding standards"]
         stan["make stan&lt;br&gt;types"]
         rector["make rector&lt;br&gt;PHP 7.4 syntax"]
-        api["make check-public-api&lt;br&gt;make check-hooks&lt;br&gt;make check-pot&lt;br&gt;public API, hook docs, translation template"]
+        api["make check-public-api&lt;br&gt;make check-hooks&lt;br&gt;make check-translations&lt;br&gt;public API, hook docs and bundled translations"]
     end
     subgraph wp["WordPress tests (PHP 7.4 to 8.5)"]
         suite["make test-wp&lt;br&gt;make test-wp-ms&lt;br&gt;behaviour"]
@@ -1770,7 +1830,7 @@
 <p><strong>Covers.</strong> What other code depends on. The contract tests pin the names and behaviour that existing sites and add-ons use: option names, hook names, the public classes. The extension API tests load a fixture add-on that uses every extension point (channels, item types, routing, configuration sources, the API version check) and the example channel from <code>examples/</code>, so the documented way to extend the plugin is exercised as an add-on author would use it. Changing one of these tests needs an upgrade path and a changelog entry.</p>
 <p><strong>Lives in.</strong> <code>tests/wp/test-contract.php</code>, <code>tests/wp/test-extension-api.php</code> and <code>tests/wp/test-example-channel.php</code>. The fixture add-on is in <code>tests/fixtures/plugins/wpun-test-addon/</code>.</p>
 <p>Two checks guard the same boundary without WordPress. <code>make check-public-api</code> fails if a module, the example channel or the fixture add-on uses anything that is not public API. <code>make check-hooks</code> fails if a hook the plugin fires has no doc block with <code>@since</code>, or if the <a href="../hooks/">hook reference</a> is stale (<code>make hook-docs</code> rewrites it). Both have their own tests in <code>tests/bin/</code>, which the targets run first, so a checker that stopped finding problems would fail too.</p>
-<p><code>make check-pot</code> guards the translation template the same way: it fails if <code>languages/wp-updates-notifier.pot</code> is stale (<code>make pot</code> rewrites it) or if WP-CLI warns about a string. It ignores the header and line numbers, so a version bump or moved code does not fail it.</p>
+<p><code>make check-translations</code> guards the bundled translations: it fails if a <code>.l10n.php</code> file has a string of the code untranslated, a fuzzy or obsolete entry, a broken placeholder, wrong plural forms, or is not byte for byte what the translations and the code build (a hand edit, or a changed string). It also fails when WP-CLI warns about a string, and on any other file in <code>languages/</code>. So a change to a string needs a translation session before CI is green. Its exporter has its own test in <code>tests/bin/</code>, which the target runs first. See <a href="../translations/">Translations</a>.</p>
 <p><strong>CI.</strong> The tests run in the <code>wordpress</code> jobs. The checks run in the <code>phpcs</code> job of <code>lint.yml</code>.</p>
 <h2 id="static-analysis">Static analysis<a class="headerlink" href="#static-analysis" title="Permanent link">&para;</a></h2>
 <p><strong>Covers.</strong> Mistakes found without running the code.</p>
