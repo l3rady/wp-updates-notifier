@@ -11,7 +11,7 @@
  */
 
 /**
-Copyright 2015 Scott Cariss (email:scott@cariss.dev)
+Copyright 2015-2026 Scott Cariss (email:scott@cariss.dev)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
