@@ -91,7 +91,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/docker-cache
       - name: Rehearse the release scripts
         run: make test-release
       - name: Check the map of changed files to jobs against the workflows
@@ -115,7 +114,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/docker-cache
       - name: Build the zip
         run: make dist
       - name: Check its contents
@@ -134,7 +132,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/docker-cache
       - name: Build the zip twice and compare
         run: make dist-repro
 
@@ -149,7 +146,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/docker-cache
       - name: Plugin header and readme.txt
         run: make check-headers
       - name: Build the zip

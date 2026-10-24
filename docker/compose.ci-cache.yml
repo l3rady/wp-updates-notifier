@@ -14,12 +14,6 @@ services:
         - "type=gha,scope=dev-php${PHP_VERSION:-8.3}"
       cache_to:
         - "type=gha,scope=dev-php${PHP_VERSION:-8.3},mode=max,ignore-error=true"
-  dist:
-    build:
-      cache_from:
-        - "type=gha,scope=dev-php${PHP_VERSION:-8.3}"
-      cache_to:
-        - "type=gha,scope=dev-php${PHP_VERSION:-8.3},mode=max,ignore-error=true"
   wp-tests:
     build:
       cache_from:

@@ -1,9 +1,9 @@
 name: Docker layer and Composer caches
 description: >-
   Builds the plugin's images with BuildKit against the GitHub Actions cache, so a job imports their layers instead of
-  rebuilding PHP, its extensions and wordpress-develop from cold. Optionally restores vendor/ as well. For ci.yml and
-  lint.yml only: never use it in a workflow that publishes a release, where a cache written by a pull request must
-  not reach the build.
+  rebuilding PHP, its extensions and wordpress-develop from cold. Optionally restores vendor/ as well. Used where it
+  measurably helps (#303): the wordpress, smoke, phpstan and rector jobs of ci.yml. Never use it in a workflow that
+  publishes a release, where a cache written by a pull request must not reach the build.
 inputs:
   vendor:
     description: Also restore and save vendor/, for the jobs that run make deps.
