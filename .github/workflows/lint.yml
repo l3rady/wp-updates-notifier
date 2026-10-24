@@ -21,8 +21,6 @@ jobs:
         run: make lint
       - name: Check every hook is documented
         run: make check-hooks
-      - name: Check the translation template is current
-        run: make check-pot
       - name: Check the bundled translations are complete and built
         run: make check-translations
       - name: Check add-ons and modules use only the public API

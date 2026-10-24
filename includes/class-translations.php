@@ -25,6 +25,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Loading stays just in time: nothing is loaded, and nothing is translated, until a string is first translated.
  *
+ * The plugin bundles `.l10n.php` files only, as WordPress 6.5+ prefers them. A site that forces the MO format with the
+ * `translation_file_format` filter therefore gets no bundled strings. A pack counts in either format.
+ *
  * @internal
  */
 final class Translations {
@@ -65,7 +68,8 @@ final class Translations {
 	 * @return string|false
 	 */
 	public function lang_dir( $path, $domain, $locale ) {
-		if ( self::DOMAIN === $domain && $this->has_file( $this->dir, (string) $locale ) ) {
+		$locale = (string) $locale;
+		if ( self::DOMAIN === $domain && '' !== $locale && is_file( $this->dir . self::DOMAIN . '-' . $locale . '.l10n.php' ) ) {
 			return $this->dir;
 		}
 
@@ -90,7 +94,7 @@ final class Translations {
 
 		$locale = substr( basename( $mofile, '.mo' ), strlen( self::DOMAIN ) + 1 );
 		$pack   = trailingslashit( WP_LANG_DIR ) . 'plugins/';
-		if ( '' === $locale || ! $this->has_file( $pack, $locale ) ) {
+		if ( '' === $locale || ! $this->has_pack( $pack . self::DOMAIN . '-' . $locale ) ) {
 			return;
 		}
 
@@ -98,15 +102,12 @@ final class Translations {
 	}
 
 	/**
-	 * Whether a directory has a translation file of the plugin for a locale.
+	 * Whether a language pack is installed, in either format.
 	 *
-	 * @param string $dir    Directory, with a trailing slash.
-	 * @param string $locale Locale.
+	 * @param string $base Path of the pack's files, without the extension.
 	 * @return bool
 	 */
-	private function has_file( string $dir, string $locale ): bool {
-		$base = $dir . self::DOMAIN . '-' . $locale;
-
-		return '' !== $locale && ( is_file( $base . '.l10n.php' ) || is_file( $base . '.mo' ) );
+	private function has_pack( string $base ): bool {
+		return is_file( $base . '.l10n.php' ) || is_file( $base . '.mo' );
 	}
 }

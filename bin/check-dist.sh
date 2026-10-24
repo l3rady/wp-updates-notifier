@@ -30,7 +30,7 @@ allowed="^$slug/$
 ^$slug/readme\.txt$
 ^$slug/LICENSE$
 ^$slug/languages/$
-^$slug/languages/[A-Za-z0-9_-]+\.(po|mo|pot|json|l10n\.php)$
+^$slug/languages/[A-Za-z0-9_-]+\.l10n\.php$
 ^$slug/assets/
 ^$slug/includes/
 ^$slug/modules/"

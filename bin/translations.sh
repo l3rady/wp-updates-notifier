@@ -1,23 +1,33 @@
 #!/bin/sh
-# Keep the bundled translations (languages/*.po, .mo and .l10n.php) in step with languages/wp-updates-notifier.pot.
-# Runs in the php container (`make translations`, `make translations-todo`, `make check-translations`), which has
-# WP-CLI and GNU gettext. It needs no database and no site.
+# Keep the bundled translations (languages/*.l10n.php) in step with the strings in the code.
+# Runs in the php container (`make translations-edit`, `make translations-todo`, `make translations`,
+# `make check-translations`), which has WP-CLI and GNU gettext. It needs no database and no site.
 #
-#   sh bin/translations.sh build [LOCALE]   create or update the .po files from the .pot, then build .mo and .l10n.php
+# The `.l10n.php` files are the only translation files in the repository. Gettext files (the template, and one PO file
+# per locale to edit) are made when they are needed and live in the git-ignored build/translations/.
+#
+#   sh bin/translations.sh edit  [LOCALE]   write build/translations/<locale>.po from the .l10n.php and the code
 #   sh bin/translations.sh todo  [LOCALE]   print the untranslated and fuzzy entries, with a count per locale
+#   sh bin/translations.sh build [LOCALE]   build languages/*.l10n.php from the PO files
 #   sh bin/translations.sh check [LOCALE]   fail unless every file is complete, valid and current
 #
-# The translations themselves are written by hand (in a Claude Code session), never by this script: it only merges,
-# lists, checks and builds. See docs/developers/translations.md.
+# The translations themselves are written by hand (in a Claude Code session), never by this script: it only exports,
+# merges, lists, checks and builds. See docs/developers/translations.md.
+#
+# Which PO file `todo` and `build` read: build/translations/<locale>.po when it is newer than the locale's .l10n.php
+# (a session is editing it), otherwise a fresh export of the .l10n.php. So a leftover edited file can never overwrite
+# newer committed translations. `edit` always overwrites it. `build` leaves it in place, so a session can build again.
 set -eu
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 dir="$root/languages"
+edits="$root/build/translations"
 slug="wp-updates-notifier"
-pot="$dir/$slug.pot"
+# The one list of what is not scanned for strings.
+exclude="tests,docker,examples,bin,vendor,node_modules,build,docs,site,.semgrep,languages"
 
 # The one list of the bundled locales and their plural forms (the values GlotPress / translate.wordpress.org use).
-# Format: locale|Plural-Forms. Adding a locale is adding a line here, then `make translations`.
+# Format: locale|Plural-Forms. Adding a locale is adding a line here, then `make translations-edit`.
 locales='de_DE|nplurals=2; plural=n != 1;
 fr_FR|nplurals=2; plural=n > 1;
 es_ES|nplurals=2; plural=n != 1;
@@ -30,19 +40,15 @@ pl_PL|nplurals=3; plural=(n == 1) ? 0 : ((n % 10 >= 2 && n % 10 <= 4 && (n % 100
 zh_CN|nplurals=1; plural=0;
 he_IL|nplurals=2; plural=n != 1;'
 
-# The marker every file carries until a native speaker has reviewed it. Removing it is a deliberate, reviewed change to
-# this script, not to a .po file: `make translations` writes it back.
-marker_field='X-Machine-Translation: yes'
-marker_comment='Machine translation (AI), not yet reviewed by a native speaker.'
-
 HOME="${TMPDIR:-/tmp}"
 export HOME
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-command="${1:-}"
+action="${1:-}"
 only="${2:-${LOCALE:-}}"
+pot="$work/$slug.pot"
 
 fail() {
 	echo "$*" >&2
@@ -67,17 +73,15 @@ body() {
 	awk 'seen { print } /^$/ && !seen { seen = 1 }' "$1"
 }
 
-# The header of a locale's file. Written whole on every run, so it never drifts and holds no date: the files stay the
-# same when nothing is translated.
+# The header of a locale's PO file. Written whole on every run, so it never drifts and holds no date: the built files
+# stay the same when nothing is translated.
 header() {
 	cat <<HEADER
-# $marker_comment
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
 "Project-Id-Version: WP Updates Notifier\\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-updates-notifier\\n"
-"Last-Translator: Machine translation\\n"
 "Language-Team: $1\\n"
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=UTF-8\\n"
@@ -87,19 +91,64 @@ msgstr ""
 "Language: $1\\n"
 "Plural-Forms: $(plural_forms "$1")\\n"
 "X-Domain: $slug\\n"
-"$marker_field\\n"
 
 HEADER
 }
 
-# Build the .mo and .l10n.php of one .po file into a directory.
+# Write the template from the code into $pot. A `Warning:` from make-pot (for example a translators comment that
+# differs between two uses of one string) is an error.
+make_pot() {
+	wp i18n make-pot "$root" "$pot" --slug="$slug" --domain="$slug" --exclude="$exclude" > "$work/make-pot.log" 2>&1 || {
+		cat "$work/make-pot.log" >&2
+		fail "wp i18n make-pot failed."
+	}
+	if grep -q 'Warning:' "$work/make-pot.log"; then
+		cat "$work/make-pot.log" >&2
+		fail "make-pot printed the warning above: fix the string."
+	fi
+	# One line per string, for the exporter.
+	msgcat --no-wrap -o "$work/flat.pot" "$pot"
+}
+
+# Export a locale's .l10n.php to a PO file ($2), header only when the locale has no file yet. The template tells the
+# exporter which entries are plural, and their plural original.
+export_po() {
+	if [ -f "$dir/$slug-$1.l10n.php" ]; then
+		php "$root/bin/l10n-to-po.php" "$dir/$slug-$1.l10n.php" "$work/flat.pot" > "$2"
+	else
+		header "$1" > "$2"
+	fi
+}
+
+# Merge a PO file ($2) with the template into $3, keeping obsolete entries as `#~` so `check` can see them. New strings
+# come in empty, and a changed string is never guessed from a similar one (that would be a fuzzy translation to
+# verify). Locations are left out, so moving code changes nothing.
+merge() {
+	msgmerge --quiet --no-fuzzy-matching --no-location --no-wrap "$1" "$pot" -o "$2"
+}
+
+# The merged PO file of a locale, with the fixed header and without obsolete entries: $1 locale, $2 PO file in, $3 out.
+clean() {
+	msgattrib --no-obsolete --no-location --no-wrap "$2" > "$work/clean.po"
+	{ header "$1"; body "$work/clean.po"; } > "$3"
+}
+
+# The PO file `todo` and `build` start from (see the top): $1 locale, $2 where to copy it.
+working_po() {
+	if [ -f "$edits/$1.po" ] && { [ ! -f "$dir/$slug-$1.l10n.php" ] || [ "$edits/$1.po" -nt "$dir/$slug-$1.l10n.php" ]; }; then
+		cp -f "$edits/$1.po" "$2"
+	else
+		export_po "$1" "$2"
+	fi
+}
+
+# Build the .l10n.php of one PO file into $3: $1 PO file, $2 locale.
 compile() {
 	rm -rf "$work/compile"
 	mkdir "$work/compile"
-	cp "$1" "$work/compile/$slug-$2.po"
-	wp i18n make-mo "$work/compile/$slug-$2.po" "$work/compile" >/dev/null
+	cp -f "$1" "$work/compile/$slug-$2.po"
 	wp i18n make-php "$work/compile/$slug-$2.po" "$work/compile" >/dev/null
-	mv "$work/compile/$slug-$2.mo" "$work/compile/$slug-$2.l10n.php" "$3/"
+	mv -f "$work/compile/$slug-$2.l10n.php" "$3/"
 }
 
 # Count the entries of a PO file that msgattrib selects (the header is not counted).
@@ -107,59 +156,48 @@ count() {
 	msgattrib "$@" | awk '/^msgid "/ && !/^msgid ""$/ { n++ } /^msgid ""$/ { getline nxt; if (nxt !~ /^msgstr/) n++ } END { print n + 0 }'
 }
 
-# One line per entry: context, id and plural id. Headers, locations, comments, flags and translations are left out.
-keys() {
-	msgcat --no-wrap --no-location "$1" | awk '
-		function flush() { if (have) print ctx "\t" id "\t" plural; have = 0; ctx = ""; id = ""; plural = "" }
-		/^msgctxt / { flush(); ctx = $0; sub(/^msgctxt /, "", ctx); have = 1; next }
-		/^msgid_plural / { plural = $0; sub(/^msgid_plural /, "", plural); next }
-		/^msgid / { if (!have || id != "") flush(); id = $0; sub(/^msgid /, "", id); have = 1; next }
-		/^msgstr/ { if (id == "\"\"" && ctx == "") { id = ""; plural = ""; have = 0 } ; next }
-		END { flush() }
-	' | sort
-}
-
-build() {
-	[ -f "$pot" ] || fail "languages/$slug.pot is missing: run \`make pot\`."
+edit() {
+	make_pot
+	mkdir -p "$edits"
 	for locale in $(selected); do
-		po="$dir/$slug-$locale.po"
-		old="$work/old.po"
-		if [ -f "$po" ]; then
-			cp "$po" "$old"
-		else
-			header "$locale" > "$old"
-			echo "Creating languages/$slug-$locale.po"
-		fi
-
-		# Merge: new strings come in empty, strings that left the template are dropped (not kept as `#~`), and a
-		# changed string is never guessed from a similar one (that would be a fuzzy translation to verify).
-		# Locations are left out, so moving code changes no .po file.
-		msgmerge --quiet --no-fuzzy-matching --no-location --no-wrap "$old" "$pot" -o "$work/merged.po"
-		msgattrib --no-obsolete --no-location --no-wrap "$work/merged.po" > "$work/clean.po"
-		{ header "$locale"; body "$work/clean.po"; } > "$po"
-
-		compile "$po" "$locale" "$dir"
-		echo "$locale: $(count --untranslated "$po") untranslated, $(count --only-fuzzy "$po") fuzzy"
+		export_po "$locale" "$work/export.po"
+		merge "$work/export.po" "$work/merged.po"
+		clean "$locale" "$work/merged.po" "$edits/$locale.po"
+		echo "build/translations/$locale.po: $(count --untranslated "$edits/$locale.po") untranslated, $(count --only-fuzzy "$edits/$locale.po") fuzzy"
 	done
 }
 
 todo() {
+	make_pot
 	for locale in $(selected); do
-		po="$dir/$slug-$locale.po"
-		[ -f "$po" ] || fail "languages/$slug-$locale.po is missing: run \`make translations\`."
-		untranslated="$(count --untranslated --no-obsolete "$po")"
-		fuzzy="$(count --only-fuzzy --no-obsolete "$po")"
+		working_po "$locale" "$work/in.po"
+		merge "$work/in.po" "$work/merged.po"
+		clean "$locale" "$work/merged.po" "$work/todo-all.po"
+		untranslated="$(count --untranslated "$work/todo-all.po")"
+		fuzzy="$(count --only-fuzzy "$work/todo-all.po")"
 		echo "# ===== $locale: $untranslated untranslated, $fuzzy fuzzy ($(plural_forms "$locale"))"
 		if [ "$untranslated" -gt 0 ]; then
 			echo "# ----- untranslated"
-			msgattrib --untranslated --no-obsolete --no-location --no-wrap "$po" > "$work/todo.po"
+			msgattrib --untranslated --no-location --no-wrap "$work/todo-all.po" > "$work/todo.po"
 			body "$work/todo.po"
 		fi
 		if [ "$fuzzy" -gt 0 ]; then
 			echo "# ----- fuzzy (translate again, then remove the fuzzy flag)"
-			msgattrib --only-fuzzy --no-obsolete --no-location --no-wrap "$po" > "$work/todo.po"
+			msgattrib --only-fuzzy --no-location --no-wrap "$work/todo-all.po" > "$work/todo.po"
 			body "$work/todo.po"
 		fi
+	done
+}
+
+build() {
+	make_pot
+	for locale in $(selected); do
+		working_po "$locale" "$work/in.po"
+		merge "$work/in.po" "$work/merged.po"
+		clean "$locale" "$work/merged.po" "$work/final.po"
+		msgfmt -c --check-format -o /dev/null "$work/final.po" || fail "$locale: msgfmt rejects the PO file (placeholders, plural forms or syntax). Nothing was built for it."
+		compile "$work/final.po" "$locale" "$dir"
+		echo "$locale: $(count --untranslated "$work/final.po") untranslated, $(count --only-fuzzy "$work/final.po") fuzzy"
 	done
 }
 
@@ -170,72 +208,64 @@ check() {
 		problems=$((problems + 1))
 	}
 
-	[ -f "$pot" ] || fail "languages/$slug.pot is missing: run \`make pot\`."
-	keys "$pot" > "$work/pot.keys"
+	make_pot
 
 	# Files that should not be there.
 	if [ -z "$only" ]; then
-		expected="$slug.pot"
+		expected=""
 		for locale in $(selected); do
-			expected="$expected $slug-$locale.po $slug-$locale.mo $slug-$locale.l10n.php"
+			expected="$expected $slug-$locale.l10n.php"
 		done
 		for file in "$dir"/* "$dir"/.[!.]*; do
 			[ -e "$file" ] || continue
 			case " $expected " in
 				*" $(basename "$file") "*) ;;
-				*) problem "languages/$(basename "$file")" "unexpected file. Only the template and the .po, .mo and .l10n.php of the bundled locales belong in languages/ (list: bin/translations.sh)." ;;
+				*) problem "languages/$(basename "$file")" "unexpected file. Only the .l10n.php files of the bundled locales belong in languages/ (list: bin/translations.sh). Gettext files are made in build/translations/ by \`make translations-edit\`." ;;
 			esac
 		done
 	fi
 
 	for locale in $(selected); do
-		po="$dir/$slug-$locale.po"
-		name="languages/$slug-$locale.po"
-		if [ ! -f "$po" ]; then
-			problem "$name" "is missing: run \`make translations\`."
+		name="languages/$slug-$locale.l10n.php"
+		if [ ! -f "$dir/$slug-$locale.l10n.php" ]; then
+			problem "$name" "is missing: run \`make translations-edit LOCALE=$locale\`, translate it, then \`make translations LOCALE=$locale\`."
 			continue
 		fi
 
-		msgfmt -c --check-format -o /dev/null "$po" 2> "$work/msgfmt.log" || problem "$name" "msgfmt rejects it (placeholders, plural forms or syntax):
+		export_po "$locale" "$work/export.po"
+		grep -qxF "\"Plural-Forms: $(plural_forms "$locale")\\n\"" "$work/export.po" || problem "$name" "Plural-Forms is not the one in bin/translations.sh: run \`make translations LOCALE=$locale\`."
+		grep -qxF "\"Language: $locale\\n\"" "$work/export.po" || problem "$name" "Language is not $locale: run \`make translations LOCALE=$locale\`."
+
+		merge "$work/export.po" "$work/merged.po"
+		clean "$locale" "$work/merged.po" "$work/final.po"
+
+		msgfmt -c --check-format -o /dev/null "$work/final.po" 2> "$work/msgfmt.log" || problem "$name" "msgfmt rejects it (placeholders, plural forms or syntax):
 $(cat "$work/msgfmt.log")"
 
-		untranslated="$(count --untranslated --no-obsolete "$po")"
-		fuzzy="$(count --only-fuzzy --no-obsolete "$po")"
-		[ "$untranslated" -eq 0 ] || problem "$name" "$untranslated untranslated entries: run \`make translations-todo LOCALE=$locale\`, translate them, then \`make translations LOCALE=$locale\`."
-		[ "$fuzzy" -eq 0 ] || problem "$name" "$fuzzy fuzzy entries: run \`make translations-todo LOCALE=$locale\`, fix them and remove the fuzzy flag."
-
-		keys "$po" > "$work/po.keys"
-		if ! diff "$work/pot.keys" "$work/po.keys" > "$work/keys.diff"; then
-			problem "$name" "does not hold exactly the strings of the template: run \`make translations LOCALE=$locale\`. (< template, > file)
-$(head -n 10 "$work/keys.diff")"
-		fi
-
-		grep -qxF "\"Plural-Forms: $(plural_forms "$locale")\\n\"" "$po" || problem "$name" "Plural-Forms is not the one in bin/translations.sh: run \`make translations LOCALE=$locale\`."
-		grep -qxF "\"$marker_field\\n\"" "$po" || problem "$name" "the machine translation marker is missing: run \`make translations LOCALE=$locale\`."
+		untranslated="$(count --untranslated "$work/final.po")"
+		fuzzy="$(count --only-fuzzy "$work/final.po")"
+		obsolete="$(grep -c '^#~ msgid "[^"]' "$work/merged.po" || true)"
+		[ "$untranslated" -eq 0 ] || problem "$name" "$untranslated strings in the code have no translation: run \`make translations-edit LOCALE=$locale\`, translate them (\`make translations-todo LOCALE=$locale\` lists them), then \`make translations LOCALE=$locale\`."
+		[ "$fuzzy" -eq 0 ] || problem "$name" "$fuzzy fuzzy entries: run \`make translations-edit LOCALE=$locale\`, fix them and remove the fuzzy flag."
+		[ "$obsolete" -eq 0 ] || problem "$name" "$obsolete translations are of strings that are no longer in the code: run \`make translations LOCALE=$locale\`."
 
 		rm -rf "$work/fresh"
 		mkdir "$work/fresh"
-		compile "$po" "$locale" "$work/fresh"
-		for ext in mo l10n.php; do
-			file="$dir/$slug-$locale.$ext"
-			if [ ! -f "$file" ]; then
-				problem "languages/$slug-$locale.$ext" "is missing: run \`make translations LOCALE=$locale\`."
-			elif ! cmp -s "$file" "$work/fresh/$slug-$locale.$ext"; then
-				problem "languages/$slug-$locale.$ext" "is not what the .po builds: run \`make translations LOCALE=$locale\`."
-			fi
-		done
+		compile "$work/final.po" "$locale" "$work/fresh"
+		cmp -s "$dir/$slug-$locale.l10n.php" "$work/fresh/$slug-$locale.l10n.php" || problem "$name" "is not what the translations and the code build (edited by hand, or the strings changed): run \`make translations LOCALE=$locale\`."
 	done
 
 	if [ "$problems" -gt 0 ]; then
-		echo "$problems problem(s) in the bundled translations. \`make translations\` merges and builds; \`make translations-todo\` lists what is left to translate." >&2
+		echo "$problems problem(s) in the bundled translations. \`make translations-edit\` writes PO files to translate in build/translations/; \`make translations\` builds languages/*.l10n.php from them." >&2
 		exit 1
 	fi
 	echo "The bundled translations are complete and current."
 }
 
-case "$command" in
-	build) build ;;
+case "$action" in
+	edit) edit ;;
 	todo) todo ;;
+	build) build ;;
 	check) check ;;
-	*) fail "Usage: sh bin/translations.sh build|todo|check [LOCALE]" ;;
+	*) fail "Usage: sh bin/translations.sh edit|todo|build|check [LOCALE]" ;;
 esac

@@ -10,7 +10,8 @@
  * comes from the bundled file.
  *
  * The fixtures are made during the test, in a temporary directory (the bundled files) and in `WP_LANG_DIR/plugins`
- * (the language pack), for a locale that does not exist. Both are built in the PHP and the MO format.
+ * (the language pack), for a locale that does not exist. The plugin bundles `.l10n.php` files only; a pack may also be
+ * (or only be) a `.mo` file.
  */
 class Test_Translations extends WPUN_Test_Case {
 
@@ -94,32 +95,41 @@ class Test_Translations extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Write a translation file pair (MO and PHP) for the domain.
+	 * Write a `.l10n.php` file for the domain, and a `.mo` file too when asked.
 	 *
 	 * @param string                $dir      Directory, with a trailing slash.
 	 * @param string                $locale   Locale.
 	 * @param array<string, string> $messages Original => translation.
+	 * @param bool                  $php      Write the `.l10n.php` file.
+	 * @param bool                  $mo       Write the `.mo` file.
 	 * @return string[] The files written.
 	 */
-	private function write_files( $dir, $locale, array $messages ) {
-		$base = $dir . self::DOMAIN . '-' . $locale;
+	private function write_files( $dir, $locale, array $messages, $php = true, $mo = false ) {
+		$base  = $dir . self::DOMAIN . '-' . $locale;
+		$files = array();
 
-		$mo = new MO();
-		foreach ( $messages as $original => $translation ) {
-			$mo->add_entry(
-				new Translation_Entry(
-					array(
-						'singular'     => $original,
-						'translations' => array( $translation ),
+		if ( $mo ) {
+			$mo_file = new MO();
+			foreach ( $messages as $original => $translation ) {
+				$mo_file->add_entry(
+					new Translation_Entry(
+						array(
+							'singular'     => $original,
+							'translations' => array( $translation ),
+						)
 					)
-				)
-			);
+				);
+			}
+			$mo_file->export_to_file( $base . '.mo' );
+			$files[] = $base . '.mo';
 		}
-		$mo->export_to_file( $base . '.mo' );
 
-		file_put_contents( $base . '.l10n.php', '<?php return ' . var_export( array( 'messages' => $messages ), true ) . ';' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		if ( $php ) {
+			file_put_contents( $base . '.l10n.php', '<?php return ' . var_export( array( 'messages' => $messages ), true ) . ';' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			$files[] = $base . '.l10n.php';
+		}
 
-		return array( $base . '.mo', $base . '.l10n.php' );
+		return $files;
 	}
 
 	/**
@@ -127,54 +137,33 @@ class Test_Translations extends WPUN_Test_Case {
 	 *
 	 * @param string                $locale   Locale.
 	 * @param array<string, string> $messages Original => translation.
+	 * @param bool                  $php      Write the `.l10n.php` file.
+	 * @param bool                  $mo       Write the `.mo` file.
 	 */
-	private function install_pack( $locale, array $messages ) {
+	private function install_pack( $locale, array $messages, $php = true, $mo = false ) {
 		wp_mkdir_p( WP_LANG_DIR . '/plugins' );
-		$this->pack_files = array_merge( $this->pack_files, $this->write_files( trailingslashit( WP_LANG_DIR ) . 'plugins/', $locale, $messages ) );
+		$this->pack_files = array_merge( $this->pack_files, $this->write_files( trailingslashit( WP_LANG_DIR ) . 'plugins/', $locale, $messages, $php, $mo ) );
 		wp_cache_delete( md5( WP_LANG_DIR . '/plugins/' ), 'translation_files' );
 	}
 
 	/**
-	 * Run the tests for both file formats.
-	 *
-	 * @return array<string, array{0: string}>
-	 */
-	public function formats() {
-		return array(
-			'php' => array( 'php' ),
-			'mo'  => array( 'mo' ),
-		);
-	}
-
-	/**
-	 * Use a locale and a file format.
+	 * Use a locale.
 	 *
 	 * @param string $locale Locale.
-	 * @param string $format php or mo.
 	 */
-	private function use_locale( $locale, $format ) {
+	private function use_locale( $locale ) {
 		add_filter(
 			'locale',
 			static function () use ( $locale ) {
 				return $locale;
 			}
 		);
-		add_filter(
-			'translation_file_format',
-			static function () use ( $format ) {
-				return $format;
-			}
-		);
 	}
 
 	/**
 	 * Without a pack, the bundled file translates.
-	 *
-	 * @dataProvider formats
-	 *
-	 * @param string $format File format.
 	 */
-	public function test_bundled_file_translates_without_a_pack( $format ) {
+	public function test_bundled_file_translates_without_a_pack() {
 		$this->write_files(
 			$this->bundled,
 			self::LOCALE,
@@ -183,7 +172,7 @@ class Test_Translations extends WPUN_Test_Case {
 				'Beta'  => 'Beta (bundled)',
 			)
 		);
-		$this->use_locale( self::LOCALE, $format );
+		$this->use_locale( self::LOCALE );
 
 		$this->assertSame( 'Alpha (bundled)', __( 'Alpha', 'wp-updates-notifier' ) );
 		$this->assertSame( 'Beta (bundled)', __( 'Beta', 'wp-updates-notifier' ) );
@@ -191,13 +180,28 @@ class Test_Translations extends WPUN_Test_Case {
 	}
 
 	/**
-	 * With a pack, its strings win and the bundled file fills the gaps.
-	 *
-	 * @dataProvider formats
-	 *
-	 * @param string $format File format.
+	 * A pack that is only a `.mo` file counts too: its strings win and the bundled file fills the gaps.
 	 */
-	public function test_pack_wins_and_bundled_file_fills_the_gaps( $format ) {
+	public function test_mo_only_pack_wins_and_bundled_file_fills_the_gaps() {
+		$this->write_files(
+			$this->bundled,
+			self::LOCALE,
+			array(
+				'Alpha' => 'Alpha (bundled)',
+				'Beta'  => 'Beta (bundled)',
+			)
+		);
+		$this->install_pack( self::LOCALE, array( 'Alpha' => 'Alpha (pack)' ), false, true );
+		$this->use_locale( self::LOCALE );
+
+		$this->assertSame( 'Alpha (pack)', __( 'Alpha', 'wp-updates-notifier' ) );
+		$this->assertSame( 'Beta (bundled)', __( 'Beta', 'wp-updates-notifier' ) );
+	}
+
+	/**
+	 * With a pack, its strings win and the bundled file fills the gaps.
+	 */
+	public function test_pack_wins_and_bundled_file_fills_the_gaps() {
 		$this->write_files(
 			$this->bundled,
 			self::LOCALE,
@@ -207,7 +211,7 @@ class Test_Translations extends WPUN_Test_Case {
 			)
 		);
 		$this->install_pack( self::LOCALE, array( 'Alpha' => 'Alpha (pack)' ) );
-		$this->use_locale( self::LOCALE, $format );
+		$this->use_locale( self::LOCALE );
 
 		$this->assertSame( 'Alpha (pack)', __( 'Alpha', 'wp-updates-notifier' ) );
 		$this->assertSame( 'Beta (bundled)', __( 'Beta', 'wp-updates-notifier' ) );
@@ -219,7 +223,7 @@ class Test_Translations extends WPUN_Test_Case {
 	public function test_locale_without_a_bundled_file_is_unchanged() {
 		$this->write_files( $this->bundled, 'yy_YY', array( 'Alpha' => 'Alpha (bundled)' ) );
 		$this->install_pack( self::LOCALE, array( 'Alpha' => 'Alpha (pack)' ) );
-		$this->use_locale( self::LOCALE, 'php' );
+		$this->use_locale( self::LOCALE );
 
 		$this->assertSame( 'Alpha (pack)', __( 'Alpha', 'wp-updates-notifier' ) );
 		$this->assertSame( 'Beta', __( 'Beta', 'wp-updates-notifier' ) );
@@ -229,7 +233,7 @@ class Test_Translations extends WPUN_Test_Case {
 	 * Neither a pack nor a bundled file: English, and no error.
 	 */
 	public function test_locale_without_any_file_is_english() {
-		$this->use_locale( self::LOCALE, 'php' );
+		$this->use_locale( self::LOCALE );
 
 		$this->assertSame( 'Alpha', __( 'Alpha', 'wp-updates-notifier' ) );
 	}
@@ -273,25 +277,21 @@ class Test_Translations extends WPUN_Test_Case {
 
 	/**
 	 * Every locale the plugin ships loads from its languages/ directory.
-	 *
-	 * @dataProvider formats
-	 *
-	 * @param string $format File format.
 	 */
-	public function test_shipped_locales_translate( $format ) {
+	public function test_shipped_locales_translate() {
 		( new \WPUN\Translations() )->register();
-		$files = glob( dirname( SC_WPUN_FILE ) . '/languages/' . self::DOMAIN . '-*.po' );
+		$files = glob( dirname( SC_WPUN_FILE ) . '/languages/' . self::DOMAIN . '-*.l10n.php' );
 		$this->assertNotEmpty( $files );
 
 		foreach ( $files as $file ) {
-			$locale = substr( basename( $file, '.po' ), strlen( self::DOMAIN ) + 1 );
+			$locale = substr( basename( $file, '.l10n.php' ), strlen( self::DOMAIN ) + 1 );
 			$this->reset_loaded();
-			$this->use_locale( $locale, $format );
+			$this->use_locale( $locale );
 
 			$this->assertNotSame( 'Channels', __( 'Channels', 'wp-updates-notifier' ), $locale );
 		}
 		$this->reset_loaded();
-		$this->use_locale( 'de_DE', $format );
+		$this->use_locale( 'de_DE' );
 		$this->assertSame( 'Kanäle', __( 'Channels', 'wp-updates-notifier' ) );
 	}
 

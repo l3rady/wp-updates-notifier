@@ -14,7 +14,7 @@ flowchart LR
         lint["make lint<br>coding standards"]
         stan["make stan<br>types"]
         rector["make rector<br>PHP 7.4 syntax"]
-        api["make check-public-api<br>make check-hooks<br>make check-pot<br>make check-translations<br>public API, hook docs, translation template and bundled translations"]
+        api["make check-public-api<br>make check-hooks<br>make check-translations<br>public API, hook docs and bundled translations"]
     end
     subgraph wp["WordPress tests (PHP 7.4 to 8.5)"]
         suite["make test-wp<br>make test-wp-ms<br>behaviour"]
@@ -76,9 +76,7 @@ CI runs every target in the diagram on pull requests, except `make dast`. It tak
 
 Two checks guard the same boundary without WordPress. `make check-public-api` fails if a module, the example channel or the fixture add-on uses anything that is not public API. `make check-hooks` fails if a hook the plugin fires has no doc block with `@since`, or if the [hook reference](hooks.md) is stale (`make hook-docs` rewrites it). Both have their own tests in `tests/bin/`, which the targets run first, so a checker that stopped finding problems would fail too.
 
-`make check-pot` guards the translation template the same way: it fails if `languages/wp-updates-notifier.pot` is stale (`make pot` rewrites it) or if WP-CLI warns about a string. It ignores the header and line numbers, so a version bump or moved code does not fail it.
-
-`make check-translations` guards the bundled translations: it fails if any `.po` file has untranslated or fuzzy entries, a broken placeholder, strings that differ from the template, or `.mo` and `.l10n.php` files that are not what the `.po` builds. So a change to a string needs a translation session before CI is green. See [Translations](translations.md).
+`make check-translations` guards the bundled translations: it fails if a `.l10n.php` file has a string of the code untranslated, a fuzzy or obsolete entry, a broken placeholder, wrong plural forms, or is not byte for byte what the translations and the code build (a hand edit, or a changed string). It also fails when WP-CLI warns about a string, and on any other file in `languages/`. So a change to a string needs a translation session before CI is green. Its exporter has its own test in `tests/bin/`, which the target runs first. See [Translations](translations.md).
 
 **CI.** The tests run in the `wordpress` jobs. The checks run in the `phpcs` job of `lint.yml`.
 

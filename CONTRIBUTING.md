@@ -121,13 +121,10 @@ Docker like everything else. `mkdocs.yml` holds the navigation and the theme, an
   or `tree/main/<path>` for a directory), as those files are not part of the site.
 - `docs/developers/hooks.md` is generated: change the hook's doc block, then run
   `make hook-docs` (`make check-hooks` fails if it is stale).
-- `languages/wp-updates-notifier.pot` is generated: after you add or change a translatable string or its
-  translators comment, run `make pot` and commit the result (`make check-pot` fails if it is stale, or if
-  WP-CLI warns about a string). Line numbers and the header are ignored, so moving code does not need a rerun.
-- The plugin bundles translations for 11 locales (`languages/*.po`, `.mo` and `.l10n.php`). A changed string needs a
-  translation session before CI is green: `make pot && make translations && make translations-todo`, fill in the
-  entries, then `make translations && make check-translations`. See
-  [Translations](docs/developers/translations.md).
+- The plugin bundles translations for 11 locales, as `languages/*.l10n.php` files (the only translation files in the
+  repository). A changed string or translators comment needs a translation session before CI is green:
+  `make translations-edit`, fill in the empty entries in `build/translations/*.po`, then `make translations &&
+  make check-translations`. See [Translations](docs/developers/translations.md).
 - The site is versioned with [mike](https://github.com/jimporter/mike) and deployed by
   CI (`.github/workflows/docs.yml`): `main` on every push, and each release as its own
   version and as `latest`. Published versions are not rebuilt; to fix one, run the
