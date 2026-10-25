@@ -1,0 +1,54 @@
+# `make blueprint-smoke`: runs the generated Playground blueprint (build/blueprint-smoke/blueprint.json, with the plugin
+# taken from the zip of `make dist`) in WordPress Playground CLI, and checks the demo in a browser. Always run as its own
+# project (`docker compose -p wpun-playground -f tests/blueprint-smoke/compose.yml`): its containers and network are
+# named after the project, so nothing here can touch the local site from `make up`. No port is published: the browser
+# shares the network namespace of the Playground container and reaches it at http://127.0.0.1:9400.
+#
+# Playground downloads WordPress, and its other files, from the network on every run.
+name: wpun-playground
+
+services:
+  # Playground CLI from the lockfile (package.json), installed into /tmp. /smoke is the directory run.sh fills: the
+  # blueprint and the zip, mounted into Playground's file system at the same path (the blueprint installs the plugin
+  # from /smoke/wp-updates-notifier.zip). Ready when the blueprint has run: the CLI only listens after that.
+  playground:
+    image: node:24-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /tmp
+    init: true
+    environment:
+      HOME: /tmp
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    volumes:
+      - ./package.json:/src/package.json:ro
+      - ./package-lock.json:/src/package-lock.json:ro
+      - ../../build/blueprint-smoke:/smoke:ro
+    command:
+      - sh
+      - -c
+      - mkdir -p /tmp/playground && cp /src/package.json /src/package-lock.json /tmp/playground/ && cd /tmp/playground && npm ci --no-fund --no-audit --loglevel=error && exec node_modules/.bin/wp-playground-cli server --blueprint=/smoke/blueprint.json --mount=/smoke:/smoke --login --port=9400 --verbosity=normal
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9400/wp-login.php', { redirect: 'manual' }).then(r => process.exit(r.status < 500 ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 10s
+      retries: 90
+
+  # Playwright from the image and npm packages of `make a11y` (tests/e2e/package.json, mounted at /e2e).
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /smoke
+    init: true
+    ipc: host
+    network_mode: service:playground
+    depends_on:
+      playground:
+        condition: service_healthy
+    environment:
+      HOME: /tmp
+      NODE_PATH: /e2e/node_modules
+      E2E_BASE_URL: http://127.0.0.1:9400
+    volumes:
+      - ../e2e:/e2e
+      - .:/smoke
+    command: ["sh", "-c", "(cd /e2e && npm ci --no-fund --no-audit) && /e2e/node_modules/.bin/playwright test"]

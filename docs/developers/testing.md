@@ -102,11 +102,12 @@ Two checks guard the same boundary without WordPress. `make check-public-api` fa
 - `make dist-repro` builds the zip twice from fresh clones, with a different umask, file times and time zone, and fails if the SHA-256 differs.
 - `make test-dist` installs the zip into a fresh WordPress, then activates, deactivates and uninstalls it.
 - `make plugin-check` runs WordPress.org's Plugin Check on the zip. `make check-headers` generates `readme.txt` (it is not committed; edit `.wordpress-org/readme/`, `docs/users/troubleshooting.md` and `CHANGELOG.md`, see `make readme`) and checks that it agrees with the plugin header and follows WordPress.org's rules. `make test-readme` tests the generator and those checks.
+- `make blueprint` generates the WordPress Playground blueprint (the WordPress.org Live Preview, `build/blueprint.json`; it is not committed) from `.wordpress-org/blueprint/` with `bin/blueprint.php`. `make check-blueprint` validates it against the Playground blueprint schema vendored in `tests/bin/blueprint/` (Ajv in a pinned node image) and checks that the landing page is the settings screen and no `@file:` placeholder is left. `make test-blueprint` tests the generator (deterministic, missing and unused files) and that the schema check rejects broken blueprints.
 - `make test-release` rehearses the scripts the release workflow runs: the copyright year and the signed commit request.
 
 **Lives in.** `bin/` for the scripts, `tests/bin/test-release-scripts.sh` for the release rehearsal.
 
-**CI.** `ci.yml` has a job for each: `smoke` (every PHP version), `dist` (PHP 7.4 and 8.5, which also runs `make test-dist`), `dist-repro`, `plugin-check` (with `check-headers`) and `release-scripts`.
+**CI.** `ci.yml` has a job for each: `smoke` (every PHP version), `dist` (PHP 7.4 and 8.5, which also runs `make test-dist`), `dist-repro`, `plugin-check` (with `check-headers`, `test-blueprint` and `check-blueprint`) and `release-scripts`.
 
 ## Browser checks
 
@@ -114,6 +115,7 @@ Two checks guard the same boundary without WordPress. `make check-public-api` fa
 
 - `make a11y` checks the settings screen on a throwaway WordPress site (its own Compose project, so it never touches `make up`). Specs are in `tests/e2e/specs/`.
 - `make screenshots` is not a test: it regenerates the WordPress.org screenshots (`.wordpress-org/screenshot-1.png` to `4`) on a throwaway site of its own (compose project `wpun-shots`, files in `tests/screenshots/`), with made-up data and the update email caught by Mailpit. It fails if the update check did not send. Run it before a release; CI does not.
+- `make blueprint-smoke` runs the generated Playground blueprint in WordPress Playground CLI (compose project `wpun-playground`, files in `tests/blueprint-smoke/`; it never touches `make up`), with the plugin taken from the zip of `make dist` instead of WordPress.org. Playwright then checks that the settings screen shows the demo notice, the Channels tab shows two deliveries as sent, and Tools → Demo emails lists the update emails with the made-up plugins. Playground downloads WordPress on every run, so it needs the network. Run it before a release; CI does not.
 - `make docs-a11y` builds this documentation site and checks every page in the dark and the light scheme: axe, no request to a third party, visible keyboard focus, and that every Mermaid diagram parses. A syntax error in a diagram fails it, because Mermaid would otherwise draw an error image and the page would still load. Specs are in `tests/e2e/docs/specs/`.
 - `make docs-links` checks the links in the built site and in `README.md`, the generated `readme.txt` and `CONTRIBUTING.md` with lychee, including links to other sites. Internal links and anchors are already checked by the strict `make docs` build.
 

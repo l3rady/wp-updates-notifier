@@ -225,6 +225,12 @@ zip (`make readme` writes a preview to `build/readme.txt`) from the plugin heade
 Edit those, never a `readme.txt`. `make check-headers` checks the result against
 WordPress.org's rules, and `make test-readme` tests the generator.
 
+The Live Preview blueprint is generated the same way: `bin/blueprint.php` builds
+it from `.wordpress-org/blueprint/` (`make blueprint` writes a preview to
+`build/blueprint.json`), `make check-blueprint` validates it against the
+Playground schema and `make test-blueprint` tests the generator. The asset
+deploy ships it to SVN `assets/blueprints/`.
+
 The zip is reproducible. `make dist-repro` builds it twice from fresh clones of
 `HEAD` (so only committed changes count), with a different umask, file times and
 time zone, and fails if the SHA-256 differs. `make dist` also writes the
@@ -240,3 +246,8 @@ seconds, Docker only), look at the four files in `.wordpress-org/` and commit
 them if the settings screens or the email changed. Check that the captions in
 `.wordpress-org/readme/template.txt` still match. They are uploaded with the
 other assets, not with the zip.
+
+Run `make blueprint-smoke` as well (about 2 minutes, Docker and the network). It
+runs the generated Live Preview blueprint in WordPress Playground with the zip
+of `make dist` and checks the demo in a browser. It fails if Playground or the
+plugin changed in a way that breaks the demo.

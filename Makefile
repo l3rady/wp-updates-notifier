@@ -53,7 +53,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y screenshots security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y screenshots security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -82,7 +82,7 @@ test-wp-ms: ## Run the WordPress test suite as multisite
 test-known-bugs: ## Run the tests that document open bugs (they are expected to fail)
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 
-test: test-wp test-wp-ms test-release test-readme ## Run every test layer
+test: test-wp test-wp-ms test-release test-readme test-blueprint ## Run every test layer
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), the plugin, the example add-on and the field showcase
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcs && vendor/bin/phpcs --standard=examples/wpun-example-channel/phpcs.xml.dist && vendor/bin/phpcs --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist'
@@ -135,6 +135,19 @@ readme: ## Write a preview of the generated readme.txt to build/readme.txt (the 
 
 test-readme: ## Test the readme generator and check-headers.sh against fixtures and broken readmes
 	$(COMPOSE) run --build --rm php sh tests/bin/test-readme.sh
+
+blueprint: ## Write a preview of the generated WordPress Playground blueprint to build/blueprint.json (the Live Preview of WordPress.org)
+	$(COMPOSE) run --build --rm php php bin/blueprint.php build/blueprint.json
+
+check-blueprint: blueprint ## Generate the blueprint and validate it against the vendored Playground schema (needs the network once, for Ajv)
+	$(COMPOSE) --profile blueprint run --rm -T blueprint-check tests/bin/blueprint/check.js build/blueprint.json
+
+test-blueprint: blueprint ## Test the blueprint generator, and the schema check against broken blueprints
+	$(COMPOSE) run --build --rm php sh tests/bin/test-blueprint.sh
+	$(COMPOSE) --profile blueprint run --rm -T blueprint-check tests/bin/blueprint/test-check.js build/blueprint.json
+
+blueprint-smoke: dist ## Run the blueprint with the zip of make dist in WordPress Playground and check the demo in a browser (own compose project wpun-playground, never touches make up; needs the network; not in CI)
+	@./tests/blueprint-smoke/run.sh
 
 check-hooks: ## Check every hook the plugin fires is documented with @since, and docs/developers/hooks.md is current
 	$(COMPOSE) run --build --rm php sh bin/check-hooks.sh

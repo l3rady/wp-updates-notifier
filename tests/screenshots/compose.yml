@@ -25,6 +25,7 @@ x-mounts: &mounts
   # Single files, not the whole mu-plugins directory: mail goes to Mailpit, and the update data is fake and offline.
   - ../../docker/mu-plugins/mailpit.php:/var/www/html/wp-content/mu-plugins/mailpit.php:ro
   - ./mu-plugin.php:/var/www/html/wp-content/mu-plugins/wpun-screenshots.php:ro
+  - ../../.wordpress-org/blueprint/fake-updates.php:/var/www/html/wp-content/mu-plugins/wpun-fake-updates.php:ro
 
 services:
   db:
@@ -83,6 +84,7 @@ services:
       - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
       - ../../docker/mu-plugins/mailpit.php:/var/www/html/wp-content/mu-plugins/mailpit.php:ro
       - ./mu-plugin.php:/var/www/html/wp-content/mu-plugins/wpun-screenshots.php:ro
+      - ../../.wordpress-org/blueprint/fake-updates.php:/var/www/html/wp-content/mu-plugins/wpun-fake-updates.php:ro
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: root

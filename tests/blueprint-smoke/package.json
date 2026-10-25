@@ -1,0 +1,9 @@
+{
+  "name": "wp-updates-notifier-blueprint-smoke",
+  "description": "WordPress Playground CLI for `make blueprint-smoke` (tests/blueprint-smoke/compose.yml), installed with npm ci from package-lock.json inside a pinned node image. Development only, never shipped. Keep tests/bin/blueprint/blueprint-schema.json at the schema of the same version (tests/bin/blueprint/README.md).",
+  "private": true,
+  "license": "GPL-2.0-or-later",
+  "devDependencies": {
+    "@wp-playground/cli": "3.1.60"
+  }
+}

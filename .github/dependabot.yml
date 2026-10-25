@@ -159,6 +159,37 @@ updates:
     cooldown:
       default-days: 14
 
+  # Ajv for `make check-blueprint`, installed with npm ci from tests/bin/blueprint/package-lock.json.
+  - package-ecosystem: npm
+    directory: /tests/bin/blueprint
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      blueprint-check:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # WordPress Playground CLI for `make blueprint-smoke`, installed with npm ci from tests/blueprint-smoke/package-lock.json.
+  # A new version can need a newer tests/bin/blueprint/blueprint-schema.json (see the README next to it).
+  - package-ecosystem: npm
+    directory: /tests/blueprint-smoke
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      blueprint-smoke:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
   # The documentation site (make docs): its image, MkDocs, Material and mike from docker/docs/requirements.txt (with
   # hashes, compiled from requirements.in), and the self-hosted Mermaid from docker/docs/package-lock.json. In the
   # docs group.

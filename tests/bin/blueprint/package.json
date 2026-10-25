@@ -1,0 +1,9 @@
+{
+  "name": "wp-updates-notifier-blueprint-check",
+  "description": "The JSON Schema validator of `make check-blueprint` (tests/bin/blueprint/check.js), installed with npm ci from package-lock.json inside a pinned node image (docker-compose.yml, service blueprint-check). Development only, never shipped.",
+  "private": true,
+  "license": "GPL-2.0-or-later",
+  "devDependencies": {
+    "ajv": "8.20.0"
+  }
+}

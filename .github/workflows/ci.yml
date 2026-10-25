@@ -137,6 +137,7 @@ jobs:
 
   # WordPress.org's Plugin Check on the zip, and the header and generated
   # readme.txt rules it enforces, so a release is never refused at submission.
+  # The generated Playground blueprint (Live Preview) is checked here too.
   plugin-check:
     needs: changes
     if: github.event_name != 'schedule' && contains(fromJSON(needs.changes.outputs.jobs), 'plugin-check')
@@ -150,6 +151,10 @@ jobs:
         run: make test-readme
       - name: Plugin header and readme.txt
         run: make check-headers
+      - name: Test the blueprint generator and its schema check
+        run: make test-blueprint
+      - name: Playground blueprint
+        run: make check-blueprint
       - name: Build the zip
         run: make dist
       - name: Plugin Check

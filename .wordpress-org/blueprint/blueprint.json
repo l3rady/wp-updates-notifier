@@ -1,0 +1,33 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"meta": {
+		"title": "WP Updates Notifier demo",
+		"author": "l3rady",
+		"description": "Email notifications about pending WordPress updates, on a demo site with made-up updates. Emails are caught, not sent."
+	},
+	"landingPage": "/wp-admin/options-general.php?page=wp-updates-notifier",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "latest"
+	},
+	"steps": [
+		{ "step": "login", "username": "admin" },
+		{
+			"step": "installPlugin",
+			"pluginData": { "resource": "wordpress.org/plugins", "slug": "wp-updates-notifier" },
+			"options": { "activate": true }
+		},
+		{ "step": "mkdir", "path": "/wordpress/wp-content/mu-plugins" },
+		{ "step": "writeFile", "path": "/wordpress/wp-content/mu-plugins/wpun-demo-fake-updates.php", "data": "@file:fake-updates.php" },
+		{ "step": "writeFile", "path": "/wordpress/wp-content/mu-plugins/wpun-demo-mail-catcher.php", "data": "@file:mail-catcher.php" },
+		{ "step": "mkdir", "path": "/wordpress/wp-content/plugins/example-contact-forms" },
+		{ "step": "writeFile", "path": "/wordpress/wp-content/plugins/example-contact-forms/example-contact-forms.php", "data": "@file:fake-plugins/example-contact-forms.php" },
+		{ "step": "mkdir", "path": "/wordpress/wp-content/plugins/example-gallery" },
+		{ "step": "writeFile", "path": "/wordpress/wp-content/plugins/example-gallery/example-gallery.php", "data": "@file:fake-plugins/example-gallery.php" },
+		{ "step": "mkdir", "path": "/wordpress/wp-content/plugins/example-backup" },
+		{ "step": "writeFile", "path": "/wordpress/wp-content/plugins/example-backup/example-backup.php", "data": "@file:fake-plugins/example-backup.php" },
+		{ "step": "activatePlugin", "pluginPath": "example-contact-forms/example-contact-forms.php" },
+		{ "step": "activatePlugin", "pluginPath": "example-gallery/example-gallery.php" },
+		{ "step": "runPHP", "code": "@file:seed.php" }
+	]
+}

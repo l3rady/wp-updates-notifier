@@ -105,6 +105,18 @@ bin/readme.php            plugin-check dist dist-repro wordpress links
 tests/bin/test-readme.sh  plugin-check
 tests/bin/readme/*        plugin-check
 LICENSE                   plugin-check dist dist-repro
+# The Playground blueprint is not committed either: bin/blueprint.php generates it from .wordpress-org/blueprint (the
+# template and the demo PHP; smoke lints the PHP and phpcs checks it). make check-blueprint and make test-blueprint
+# run in the plugin-check job. The vendored schema, Ajv and their tests are tests/bin/blueprint; make blueprint-smoke
+# (tests/blueprint-smoke) is local only.
+.wordpress-org/blueprint/* phpcs smoke plugin-check
+bin/blueprint.php         smoke plugin-check
+tests/bin/test-blueprint.sh plugin-check
+tests/bin/blueprint/*     plugin-check
+tests/bin/blueprint/package.json dependencies dependency-review
+tests/bin/blueprint/package-lock.json dependencies dependency-review
+tests/blueprint-smoke/package.json dependencies dependency-review
+tests/blueprint-smoke/package-lock.json dependencies dependency-review
 # check-headers.sh reads the plugin header and the generated readme.txt.
 bin/check-headers.sh      plugin-check
 # The zip, and what is built, checked and installed from it. build-dist.sh follows .distignore and .gitattributes.
@@ -141,9 +153,10 @@ docs/index.md             wordpress docs links
 
 # The browser checks of the settings screen (a11y) and of the docs site (docs). Both use tests/e2e/compose.yml.
 tests/e2e/*               a11y docs
-# Local only (make dast, make screenshots): no pull request job runs them.
+# Local only (make dast, make screenshots, make blueprint-smoke): no pull request job runs them.
 tests/dast/*              -
 tests/screenshots/*       -
+tests/blueprint-smoke/*   -
 
 # The documentation site: the strict build and its checks, and lychee over the built site.
 docs/*                    docs links

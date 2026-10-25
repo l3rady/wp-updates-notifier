@@ -26,6 +26,8 @@ Requires WordPress 6.7 or newer and PHP 7.4 or newer.
 
 Then open **Settings → Updates Notifier** to choose where notifications go.
 
+**Try it first:** the [Live Preview on WordPress.org](https://wordpress.org/plugins/wp-updates-notifier/?preview=1) opens the plugin in [WordPress Playground](https://wordpress.github.io/wordpress-playground/), a throwaway site in your browser with made-up pending updates and two email channels already set up. Emails are caught, not sent: Tools → Demo emails shows them. The button appears once the blueprint is deployed with the assets of 2.0.0.
+
 Checks run on WP-Cron, which only runs when the site gets visits. On a quiet site, or with `DISABLE_WP_CRON`, set up a real cron job that calls `wp-cron.php`.
 
 ## Help, bugs and security
@@ -71,9 +73,15 @@ make plugin-check                # WordPress.org's Plugin Check on the zip (fail
 make check-headers               # plugin header and the generated readme.txt agree and follow WordPress.org's rules
 make readme                      # preview the generated readme.txt in build/readme.txt (it is not committed)
 make test-readme                 # test the readme generator
+make blueprint                   # preview the generated WordPress Playground blueprint in build/blueprint.json (it is not committed)
+make check-blueprint             # validate it against the Playground blueprint schema (vendored in tests/bin/blueprint)
+make test-blueprint              # test the blueprint generator and that schema check
+make blueprint-smoke             # run the blueprint with the zip in WordPress Playground CLI and check the demo in a browser (needs the network; not in CI)
 ```
 
 `.distignore` lists what stays out of the zip; the WordPress.org deploy uses the same list.
+
+The Live Preview button of WordPress.org needs `assets/blueprints/blueprint.json` in SVN. Like `readme.txt` it is not committed: `bin/blueprint.php` generates it from `.wordpress-org/blueprint/` (the template `blueprint.json`, the demo PHP it includes with `"@file:<name>"` values, and the made-up plugins). The demo is a mail catcher (`mail-catcher.php`: nothing is sent, Tools → Demo emails shows the messages), fake offline updates (`fake-updates.php`, shared with `make screenshots`) and `seed.php`, which sets up the two channels and runs the update check once. `make check-blueprint` validates the output against the schema of the Playground version it is tested with (`tests/bin/blueprint/README.md` says which). `make blueprint-smoke` is the real test: it runs the blueprint in Playground CLI (own compose project `wpun-playground`, never touches `make up`), installing the plugin from the zip of `make dist` because WordPress.org does not have the release yet, and opens the demo in Playwright.
 
 ### Security checks
 
@@ -116,7 +124,7 @@ The suite runs on WordPress's own test library with a real database, no real net
 
 `make a11y` builds a throwaway site as its own compose project (`wpun-e2e`, from `tests/e2e/compose.yml`; it never touches `make up`) and runs Playwright from the official image against the settings screen: axe scans of every view for WCAG 2.2 A and AA, and keyboard checks of the Channels list and a channel form. Any violation fails the run and is listed with its rule and elements; the HTML report is written to `tests/e2e/reports/`. CI runs it on every pull request.
 
-`make screenshots` writes the WordPress.org screenshots (`.wordpress-org/screenshot-1.png` to `screenshot-4.png`). It builds its own throwaway site (compose project `wpun-shots`, from `tests/screenshots/compose.yml`; it touches neither `make up` nor `make a11y`) with made-up data: example.com addresses, fake plugins whose updates and the offline update data come from `tests/screenshots/mu-plugin.php`, and Mailpit to catch the update email. It runs the update check once from WP-CLI before the browser opens any page, then photographs the General tab, the Channels list, a channel's form and the email. The captions are in `.wordpress-org/readme/template.txt`, in the same order as `SHOTS` in `tests/screenshots/screenshots.spec.js`. Dates and times in the files are those of the run. CI does not run it.
+`make screenshots` writes the WordPress.org screenshots (`.wordpress-org/screenshot-1.png` to `screenshot-4.png`). It builds its own throwaway site (compose project `wpun-shots`, from `tests/screenshots/compose.yml`; it touches neither `make up` nor `make a11y`) with made-up data: example.com addresses, fake plugins whose updates and the offline update data come from `.wordpress-org/blueprint/fake-updates.php` (shared with the Playground blueprint), and Mailpit to catch the update email. It runs the update check once from WP-CLI before the browser opens any page, then photographs the General tab, the Channels list, a channel's form and the email. The captions are in `.wordpress-org/readme/template.txt`, in the same order as `SHOTS` in `tests/screenshots/screenshots.spec.js`. Dates and times in the files are those of the run. CI does not run it.
 
 ### Local site
 

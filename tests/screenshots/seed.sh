@@ -1,7 +1,8 @@
 #!/bin/sh
 #
 # Seeds the `make screenshots` site after docker/site-setup.sh (SITE_MODE=e2e) has installed it: made-up plugins whose
-# updates mu-plugin.php reports, and three email channels. Everything here is fake: example.com addresses, generic names.
+# updates .wordpress-org/blueprint/fake-updates.php reports, and three email channels. Everything here is fake:
+# example.com addresses, generic names.
 # Runs in the wp-cli container, in /var/www/html. Nothing is checked here: run.sh runs the update check afterwards.
 
 set -eu
