@@ -1,5 +1,5 @@
 === {{name}} ===
-Contributors: l3rady, alleyinteractive
+Contributors: l3rady
 Donate link: {{donate_link}}
 Tags: updates, notifications, email, monitor
 Requires at least: {{requires_at_least}}
