@@ -711,6 +711,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mutation-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mutation testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#security-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1714,6 +1725,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mutation-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mutation testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#security-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1827,6 +1849,7 @@
         secTests["Security tests&lt;br&gt;capabilities, security tokens, escaping"]
         contract["Contract and extension API tests&lt;br&gt;what add-ons rely on"]
         bugs["make test-known-bugs&lt;br&gt;open bugs"]
+        mutation["make mutation&lt;br&gt;would the tests notice a change"]
     end
     subgraph pkg["The zip"]
         dist["make dist-check&lt;br&gt;make dist-repro&lt;br&gt;contents, same bytes"]
@@ -1842,13 +1865,19 @@
         scan["make security&lt;br&gt;workflows, secrets, dependencies, code"]
         dast["make dast&lt;br&gt;running site, before a release"]
     end</code></pre>
-<p>CI runs every target in the diagram on pull requests, except <code>make dast</code>. It takes about 11 minutes, so you run it yourself before a release.</p>
+<p>CI runs every target in the diagram on pull requests, except <code>make dast</code> and <code>make mutation</code>. <code>make dast</code> takes about 11 minutes, so you run it yourself before a release. <code>make mutation</code> is slow, so CI runs it every night.</p>
 <h2 id="wordpress-tests">WordPress tests<a class="headerlink" href="#wordpress-tests" title="Permanent link">&para;</a></h2>
 <p><strong>Covers.</strong> Behaviour of the plugin inside a real WordPress: the update check, scheduling, settings and validation, channels and routing, the email channel, the settings screen markup, upgrades from older versions and uninstall. WordPress, its test library and a database come from the Docker setup. Mail and HTTP are faked.</p>
 <p><strong>Lives in.</strong> <code>tests/wp/</code>, one <code>test-*.php</code> file per area, on <code>tests/wp/class-wpun-test-case.php</code>. Add a file there and it runs: they are found by name.</p>
 <p><strong>Run it.</strong> <code>make test-wp</code> for a single site, <code>make test-wp-ms</code> for multisite. Pass PHPUnit options with <code>ARGS</code>, for example <code>make test-wp ARGS="--filter Test_Routing"</code>. <code>PHP_VERSION</code> and <code>WP_VERSION</code> pick the versions.</p>
 <p><strong>Coverage.</strong> <code>make coverage</code> runs the same suite (single site) in an image with pcov, prints the summary and the five least covered files, writes <code>build/coverage/clover.xml</code> and <code>build/coverage/html/</code>, and fails when line coverage of the shipped code (<code>wp-updates-notifier.php</code>, <code>uninstall.php</code>, <code>includes/</code>, <code>modules/</code>; files no test loads count as uncovered) is below <code>COVERAGE_MIN</code> in the <code>Makefile</code>. It is a floor that only goes up: raise it, rounded down to a whole number, when a change raises the coverage. The aim is 90% or more. <code>bin/coverage-check.php</code> computes the percentage from the Clover report, and <code>tests/bin/test-coverage-check.sh</code> tests it. The pcov image is a separate Docker stage, so <code>make test-wp</code> is unchanged. Multisite-only code paths are not measured.</p>
 <p><strong>CI.</strong> The <code>coverage</code> job in <code>ci.yml</code> runs <code>make coverage</code> on PHP 8.3 and WordPress 7.1.3 for every pull request that changes code, tests or <code>phpunit.xml.dist</code>, and keeps the report as the <code>coverage-report</code> artifact for 14 days. It is in <code>ci-gate</code>, the required check, so a pull request below the floor cannot merge. The <code>wordpress</code> job in <code>ci.yml</code> runs PHP 7.4 to 8.5 on WordPress 7.1.3, single site and multisite, and PHP 7.4 and 8.3 on WordPress 6.7.9, the oldest supported. The <code>wordpress-trunk</code> job runs the suite against WordPress trunk every night, on PHP 7.4 and 8.5.</p>
+<h2 id="mutation-testing">Mutation testing<a class="headerlink" href="#mutation-testing" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> Whether the WordPress tests would fail if the shipped code were wrong. <a href="https://infection.github.io/">Infection</a> changes the code one small step at a time (a comparison, a <code>continue</code>, a removed call), runs the tests that cover the changed line, and reports the changes no test fails on. Coverage says a line ran; this says a test would notice if it were wrong.</p>
+<p><strong>Lives in.</strong> <code>infection.json5</code> at the root: the shipped code (<code>wp-updates-notifier.php</code>, <code>uninstall.php</code>, <code>includes/</code>, <code>modules/</code>), the default mutators, the floors, and the mutants that are ignored with a reason. <code>docker/mutation.sh</code> runs it in the <code>wp-tests-coverage</code> image, where Infection is a pinned and checked PHAR. The tests are the WordPress suite, so it needs no tests of its own; a surviving mutant is fixed with a test in <code>tests/wp/</code>.</p>
+<p><strong>Run it.</strong> <code>make mutation</code> for everything (about 35 minutes on 4 threads), <code>make mutation ARGS="--filter=includes/class-state.php"</code> for one file. <code>THREADS</code> sets how many PHPUnit processes run at once. Each gets its own table prefix from Infection's <code>TEST_TOKEN</code>, so the processes share the one test database. The log, with the diff of every survivor, is <code>build/infection/infection.log</code>.</p>
+<p><strong>Floors.</strong> <code>minMsi</code> and <code>minCoveredMsi</code> in <code>infection.json5</code> were 92.98% and 93.52% when set and only go up; <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> says how to raise them and how to ignore a mutant that cannot be observed. The code that decides whether a notification is sent has no survivors that are not ignored with a reason.</p>
+<p><strong>CI.</strong> The <code>mutation</code> job in <code>ci.yml</code> runs <code>make mutation</code> every night and on <strong>Run workflow</strong>, never on a pull request, and keeps the log as the <code>mutation-report</code> artifact for 14 days. It is not part of <code>ci-gate</code>, like the <code>wordpress-trunk</code> job.</p>
 <h2 id="security-tests">Security tests<a class="headerlink" href="#security-tests" title="Permanent link">&para;</a></h2>
 <p><strong>Covers.</strong> Hostile input and access control: the capability and security token matrix for every admin action, stored and reflected cross-site scripting through names, versions, URLs and settings, secrets that must never reach the page or a log, malformed settings input, and outbound requests. These tests back the <a href="../../security/threat-model/">threat model</a>.</p>
 <p><strong>Lives in.</strong> <code>tests/wp/security/</code>, in the <code>security</code> PHPUnit group. They are found automatically, so a new admin action or setting gets a new test in this folder, not a change to a list.</p>
