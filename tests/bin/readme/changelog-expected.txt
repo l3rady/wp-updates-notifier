@@ -1,106 +1,25 @@
+= 2.1.0 =
+
+**Features**
+
+* add an about tab
+* list channel instances
+
+**Bug fixes**
+
+* store the run state in its own option
+
 = 2.0.0 =
 
 **Breaking changes**
 
-* WordPress's core auto-update emails now always go to the site admin email. Sites that sent them to another address must change the admin email or use the auto_core_update_email filter. The notify_automatic setting, its SC_WPUN_SETTING_NOTIFY_AUTOMATIC constant and the sc_wpun_default_settings key are no longer read.
-* removed Settings_Page methods sc_wpun_settings_email_notifications_field_email_notifications(), sc_wpun_settings_email_notifications_field_notify_to(), sc_wpun_settings_email_notifications_field_notify_from(), sc_wpun_settings_email_notifications_field_notify_reply_to(), email_enabled_schema(), email_read_only(), email_note(), instance_setting(), instance_enabled(), save_instance() and value_attribute(), and the SC_WP_Updates_Notifier wrappers sc_wpun_settings_email_notifications_text(), sc_wpun_settings_email_notifications_field_email_notifications(), sc_wpun_settings_email_notifications_field_notify_to() and sc_wpun_settings_email_notifications_field_notify_from(). The keys notify_to, notify_from, notify_reply_to and email_notifications in a sc_wpun_settings save are ignored: they are not migrated or forwarded.
-* Channel::validate_settings() takes a second parameter, array $stored = array(), the instance's stored settings. A channel that overrides it must declare the same signature.
-* the sc_wpun_settings option stores notify_automatic and hide_updates as booleans instead of 1/0, and the sc_wpun_default_settings filter documents them as bool. Code reading the option directly sees true/false. A settings save that leaves out notify_automatic, hide_updates or email_notifications no longer turns them off.
-* the default Channel::validate_settings() now rejects a `checkbox` or `boolean` field whose value is not true/false, 1/0, '1'/'0' or '', returning a WP_Error naming the field, and stores the value as a bool.
-* the sc_wpun_settings option stores notify_plugins and notify_themes as 'none', 'all' or 'active' instead of 0, 1 and 2, and the sc_wpun_default_settings filter and SC_WPUN_SETTING_NOTIFY_PLUGINS / SC_WPUN_SETTING_NOTIFY_THEMES take only those keys. Code that reads the option directly must compare the keys.
-* the main file is now wp-updates-notifier.php. Sites updating from 1.5 or 1.6 must activate the plugin again; settings are kept.
-* channel instance IDs may no longer contain "__" or start or end with "_", so they map to unambiguous constant names.
-* the plugin no longer removes already-notified items through sc_wpun_plugins_need_update and sc_wpun_themes_need_update, so callbacks on those filters receive every pending item on each run. SC_WP_Updates_Notifier::check_plugins_against_notified() and check_themes_against_notified() are deprecated.
-* the email subject is now "WP Updates Notifier: updates available for <site name>" and the body uses the new plain-text layout. sc_wpun_email_content receives unescaped text and both email filters get the notification and channel instance as extra arguments. No From address is set unless one is configured; a 1.x From equal to the admin email is cleared on upgrade. The "Save settings with test email" button is replaced by "Send test email". send_email_message() and the sc_wpun_wp_mail_* methods of SC_WP_Updates_Notifier are deprecated.
-* Slack notifications are no longer sent. The Slack settings are kept in the slack channel instance but are not used. SC_WP_Updates_Notifier::send_slack_message(), send_test_slack() and the Slack settings field callbacks are deprecated and do nothing.
-* the email and Slack settings (email_notifications, notify_to, notify_from, slack_notifications, slack_webhook_url, slack_channel_override) are no longer in the sc_wpun_settings option. Code that read them directly should use sc_wpun_channels() instead.
-* the plugin now requires PHP 7.4 or newer and WordPress 6.7 or newer. WordPress.org does not offer the update to sites below those versions, so they stay on 1.6.0.
-
-**Features**
-
-* add a boolean field type with checkbox, radio or select display
-* add a check now button to the settings screen
-* add a plugin header for the api version an add-on needs
-* add an action to run the update check on demand
-* add an enum field type and store notify settings as keys
-* add and edit channel instances from schema-driven forms
-* add length-limited rendering for channel modules
-* add settings screen tabs with general and channels tabs
-* add text, textarea, url, email_list, secret, number field types
-* add the notification module API, registry and dispatcher
-* add the public hook API for checks, notifications and delivery
-* add version constraints for the public api
-* add an about tab, hidden by a code-only setting
-* link the documentation from the plugin's row
-* mark required fields with "(required)" and aria-required
-* name the view and flag errors in the page title
-* add optional reminders for pending updates
-* defer a channel instance until its retry-after time
-* drop Slack notifications and keep their settings
-* bundle translations for 11 locales
-* let add-ons check the plugin API version they need
-* let modules declare the api version they need
-* list channel instances on the channels tab with row actions
-* load channel settings and whole channels from outside the database
-* load global settings from constants, env or custom sources
-* move the email settings to the channels tab
-* route update items to each notification channel
-* send email through a built-in notification module
-* add a global setting for wordpress core updates
-* stop redirecting wordpress core auto-update emails
-* store each channel instance's last delivery result
-* store notification channels as instances
-* track what each notification channel was told
-
-**Bug fixes**
-
-* describe saved secrets and name each clear checkbox
-* explain empty item types and global settings in routing
-* give every settings view a heading outline
-* head the error summary and link groups to a control
-* hide the update notice by the update_core capability
-* link set-by and check now notes to their controls
-* show check times in the site timezone, with the next one
-* show general tab validation errors on their fields
-* stop the channel list row header holding row actions
-* check the capability on the settings page and harden the autoloader
-* read the core update data safely
-* correct settings screen markup and accessibility
-* offer fixed frequencies and handle missing schedules
-* schedule the update check when the plugin is activated
-* send HTML email as a full document with lang and dir
-* stop the auto-update email filter from fatally erroring
-* attach translators comments to the right strings
-* stop translating on plugins_loaded and tidy strings
-* keep resolved channel secrets out of dumps, forms and custom types
-* let the local site reach its own url
-* meet the WordPress.org Plugin Check rules
-* only link http(s) urls in markdown and keep item values on one line
-* send auto-update emails through an enabled email channel only
-* normalise settings and keep the run state separately
-* stop the settings sanitizer dying outside the form
-* tidy the channel list into core-style row actions
-* remove the cron event, transients and multisite data
-* count child themes and network plugins as active
-* link plugins correctly and cope with other updaters
-* work out plugin compatibility from the update data
-* word notification versions and name the item in link text
+* the plugin now requires PHP 7.4 or newer and WordPress 6.7 or newer.
 
 **Code refactoring**
 
-* draw settings screen from schemas with consistent displays
-* make wp-updates-notifier.php the main file
-* require PHP 7.4 and WordPress 6.7
+* move the classes to includes/
 
 = 1.6 =
 * Added slack notifications and testing button
-* Separated notifications so they can be email, slack, or both
-* Reorganized settings page
-* Changed validation to not turn on notifications for email or slack unless required fields are valid
-* Test email or slack message are now triggered with a temporary transient
-* Removed javascript functions
-
-= 1.5.1 =
-* Removed ability to trigger with external cron job (a potential security risk)
 
 The full changelog is in [CHANGELOG.md](https://github.com/l3rady/wp-updates-notifier/blob/main/CHANGELOG.md).
