@@ -516,4 +516,129 @@ class Test_Reminders extends WPUN_Test_Case {
 		$this->assertSame( 'All updates · Reminders: Weekly', \WPUN\Admin\Channels_Tab::routing_summary( array( 'remind' => 'weekly' ) ) );
 		$this->assertSame( 'WordPress updates: Only major releases · Reminders: Daily', \WPUN\Admin\Channels_Tab::routing_summary( array( 'core' => 'major', 'remind' => 'daily' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 	}
+
+	/**
+	 * Wait for the first half of a second, so a test that sets a time and checks it right away stays within one second.
+	 */
+	private function start_of_a_second() {
+		$fraction = microtime( true ) - floor( microtime( true ) );
+		if ( $fraction > 0.4 ) {
+			usleep( (int) ( ( 1 - $fraction ) * 1000000 ) + 20000 );
+		}
+	}
+
+	/**
+	 * A reminder is due when the time since the last one is exactly the interval less the tolerance.
+	 */
+	public function test_a_reminder_is_due_exactly_at_the_interval_less_the_tolerance() {
+		$this->add( 'a', 'daily' ); // The check frequency is daily: 12 hours of tolerance.
+		$this->run_check();
+
+		$this->start_of_a_second();
+		$this->backdate( 'a', DAY_IN_SECONDS - 12 * HOUR_IN_SECONDS );
+		$this->run_check();
+
+		$this->assertCount( 2, $this->received() );
+		$this->assertTrue( $this->received()[1]->is_reminder() );
+	}
+
+	/**
+	 * A check frequency the site does not offer anymore forgives nothing.
+	 */
+	public function test_an_unknown_check_frequency_has_no_tolerance() {
+		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'schedule_from_a_removed_plugin' ) ) );
+		$this->add( 'a', 'daily' );
+		$this->run_check();
+
+		$this->backdate( 'a', DAY_IN_SECONDS - 60 );
+		$this->run_check();
+
+		$this->assertCount( 1, $this->received() );
+	}
+
+	/**
+	 * The reminder says what started the check, like the message it repeats.
+	 */
+	public function test_a_reminder_keeps_the_source_of_the_check() {
+		$this->add( 'a', 'daily' );
+		$this->run_check();
+		$this->backdate( 'a', DAY_IN_SECONDS + 60 );
+
+		sc_wpun()->update_checker()->run_manual_check();
+
+		$this->assertTrue( $this->received()[1]->is_reminder() );
+		$this->assertSame( 'manual', $this->received()[1]->get_source() );
+	}
+
+	/**
+	 * A reminder lists the items the instance is routed as a list, not with the gaps of the ones left out.
+	 */
+	public function test_a_reminder_of_routed_items_is_a_list() {
+		sc_wpun_channels()->save( new Channel_Instance( 'a', 'remtest', 'A', true, array(), array( 'types' => array( 'plugin' ), 'remind' => 'daily' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		$this->run_check();
+		$this->backdate( 'a', DAY_IN_SECONDS + 60 );
+
+		$this->run_check();
+
+		$this->assertTrue( $this->received()[1]->is_reminder() );
+		$this->assertSame( array( 0 ), array_keys( $this->received()[1]->get_items() ) );
+		$this->assertSame( array( 'hello.php' ), $this->keys( $this->received()[1] ) );
+	}
+
+	/**
+	 * An instance waiting for its channel to come back does not hold up the instances after it.
+	 */
+	public function test_a_pending_skip_without_its_channel_does_not_stop_the_next_instance() {
+		sc_wpun_channels()->save( new Channel_Instance( 'gone', 'not_registered', 'Gone', true ) );
+		sc_wpun()->state()->skip_pending( 'gone' );
+		$this->add( 'b', 'never' );
+
+		$this->run_check();
+
+		$this->assertCount( 1, $this->received( 'b' ) );
+		$this->assertTrue( $this->stored_state()['channels']['gone']['skip_pending'], 'The skip waits for the channel.' );
+	}
+
+	/**
+	 * The items a veto leaves are a list.
+	 */
+	public function test_items_left_after_a_veto_are_a_list() {
+		add_filter(
+			'sc_wpun_should_notify_item',
+			static function ( $notify, $item ) {
+				return 'core' === $item->get_key() ? false : $notify;
+			},
+			10,
+			2
+		);
+		$kept = null;
+		add_filter(
+			'sc_wpun_notification',
+			static function ( $notification ) use ( &$kept ) {
+				$kept = array_keys( $notification->get_items() );
+				return $notification;
+			}
+		);
+
+		$this->run_check();
+
+		$this->assertSame( array( 0 ), $kept );
+	}
+
+	/**
+	 * A veto that answers with something other than true or false still counts as a yes or a no.
+	 */
+	public function test_a_veto_filter_may_return_any_value() {
+		add_filter(
+			'sc_wpun_should_notify_item',
+			static function () {
+				return array( 'yes' );
+			}
+		);
+		$this->add( 'a', 'never' );
+
+		$this->run_check();
+
+		$this->assertCount( 1, $this->received() );
+	}
 }

@@ -1,6 +1,7 @@
 #!/bin/sh
 # Render wp-tests-config.php for the wordpress-develop checkout from the
-# environment, then run the given command. The database healthcheck in
+# environment (and, when Infection sets TEST_TOKEN for a parallel PHPUnit process, a table prefix of its own, so the
+# processes do not share tables; make mutation), then run the given command. The database healthcheck in
 # docker-compose.yml gates this container, so no waiting is needed here.
 set -eu
 
@@ -16,6 +17,7 @@ sed \
     -e "s/yourusernamehere/${DB_USER}/" \
     -e "s/yourpasswordhere/${DB_PASSWORD}/" \
     -e "s/'localhost'/'${DB_HOST}'/" \
+    -e "s/^\\\$table_prefix = 'wptests_';.*/\\\$table_prefix = 'wptests_' . ( getenv( 'TEST_TOKEN' ) ? getenv( 'TEST_TOKEN' ) . '_' : '' );/" \
     wp-tests-config-sample.php > wp-tests-config.php
 
 exec "$@"

@@ -724,4 +724,140 @@ class Test_Hooks extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'X-Good: yes', $mail->header );
 		$this->assertStringNotContainsString( 'evil@example.org', $mail->header );
 	}
+
+	/**
+	 * Where a callback of a class is registered on a hook.
+	 *
+	 * @param string $hook   Hook name.
+	 * @param string $owner  Class of the object the callback is a method of.
+	 * @param string $method Method name.
+	 * @return array|false Priority and number of arguments, or false when it is not registered.
+	 */
+	private function registered( $hook, $owner, $method ) {
+		global $wp_filter;
+
+		if ( ! isset( $wp_filter[ $hook ] ) ) {
+			return false;
+		}
+		foreach ( $wp_filter[ $hook ]->callbacks as $priority => $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				$function = $callback['function'];
+				if ( is_array( $function ) && $function[1] === $method && ( is_object( $function[0] ) ? $function[0] instanceof $owner : $function[0] === $owner ) ) {
+					return array( $priority, $callback['accepted_args'] );
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Drop what is registered on hooks, so only what the code under test registers is left.
+	 *
+	 * @param string[] $hooks Hook names.
+	 */
+	private function clear_hooks( array $hooks ) {
+		foreach ( $hooks as $hook ) {
+			remove_all_filters( $hook );
+		}
+	}
+
+	/**
+	 * Booting registers each hook of the plugin at its priority, so the cron, the delivery state and the checks are wired.
+	 */
+	public function test_boot_registers_the_hooks() {
+		$this->clear_hooks( array( 'switch_blog', 'site_status_tests', 'sc_wpun_channel_deleted', 'sc_wpun_notification_sent', 'sc_wpun_notification_failed', 'sc_wpun_enable_cron', 'sc_wpun_disable_cron', 'sc_wpun_run_check', 'sc_wpun_update_check', 'admin_post_sc_wpun_dismiss_slack_notice', 'init', 'update_option_sc_wpun_settings', 'lang_dir_for_domain', 'load_textdomain' ) );
+		\SC_WP_Updates_Notifier::$did_init = false;
+		$plugin                            = new WPUN\Plugin();
+
+		$plugin->boot();
+
+		$this->assertTrue( \SC_WP_Updates_Notifier::$did_init );
+		$expected = array(
+			array( 'switch_blog', 'WPUN\Config', 'flush', 10, 1 ),
+			array( 'site_status_tests', 'WPUN\Config_Report', 'add_site_health_test', 10, 1 ),
+			array( 'site_status_tests', 'WPUN\Rejected_Channels', 'add_site_health_test', 10, 1 ),
+			array( 'site_status_tests', 'WPUN\Slack_Notice', 'add_site_health_test', 10, 1 ),
+			array( 'sc_wpun_channel_deleted', 'WPUN\State', 'forget_channel', 10, 1 ),
+			array( 'sc_wpun_notification_sent', 'WPUN\State', 'record_delivery', 10, 3 ),
+			array( 'sc_wpun_notification_failed', 'WPUN\State', 'record_delivery', 10, 3 ),
+			array( 'sc_wpun_enable_cron', 'WPUN\Scheduler', 'enable_cron', 10, 1 ),
+			array( 'sc_wpun_disable_cron', 'WPUN\Scheduler', 'disable_cron', 10, 1 ),
+			array( 'sc_wpun_run_check', 'WPUN\Update_Checker', 'run_manual_check', 10, 1 ),
+			array( 'sc_wpun_update_check', 'WPUN\Update_Checker', 'do_update_check', 10, 1 ),
+			array( 'sc_wpun_update_check', 'WPUN\Slack_Notice', 'maybe_send_email', 5, 1 ),
+			array( 'admin_post_sc_wpun_dismiss_slack_notice', 'WPUN\Slack_Notice', 'handle_dismiss', 10, 1 ),
+			array( 'init', 'WPUN\Scheduler', 'maybe_schedule', 10, 1 ),
+			array( 'update_option_sc_wpun_settings', 'WPUN\Scheduler', 'settings_updated', 10, 2 ),
+			array( 'lang_dir_for_domain', 'WPUN\Translations', 'lang_dir', 10, 3 ),
+			array( 'load_textdomain', 'WPUN\Translations', 'load_pack_first', 10, 2 ),
+		);
+		foreach ( $expected as list( $hook, $owner, $method, $priority, $args ) ) {
+			$this->assertSame( array( $priority, $args ), $this->registered( $hook, $owner, $method ), "$hook: $owner::$method" );
+		}
+	}
+
+	/**
+	 * The plugin hooks itself on load: it boots when plugins are loaded and lets add-ons declare the API they need.
+	 */
+	public function test_register_hooks_the_plugin_in() {
+		$this->clear_hooks( array( 'plugins_loaded', 'extra_plugin_headers' ) );
+		$plugin = new WPUN\Plugin();
+
+		$plugin->register();
+
+		$this->assertSame( array( 10, 1 ), $this->registered( 'plugins_loaded', 'WPUN\Plugin', 'boot' ) );
+		$this->assertSame( array( 10, 1 ), $this->registered( 'extra_plugin_headers', 'WPUN\Plugin', 'add_plugin_header' ) );
+	}
+
+	/**
+	 * The admin screens, buttons and notices are wired when the request is for the admin.
+	 */
+	public function test_the_admin_hooks_are_registered() {
+		$this->clear_hooks( array( 'plugin_action_links_wp-updates-notifier/wp-updates-notifier.php', 'plugin_row_meta', 'after_plugin_row', 'admin_menu', 'admin_init', 'option_page_capability_sc_wpun_settings', 'admin_post_sc_wpun_send_test', 'admin_post_sc_wpun_channel_toggle', 'admin_post_sc_wpun_channel_duplicate', 'admin_post_sc_wpun_channel_delete', 'admin_post_sc_wpun_check_now', 'admin_post_sc_wpun_save_channel' ) );
+		$plugin = new WPUN\Plugin();
+
+		$plugin->register_admin_hooks();
+
+		$expected = array(
+			array( 'plugin_action_links_wp-updates-notifier/wp-updates-notifier.php', 'WPUN\Admin\Settings_Page', 'plugin_action_links', 10, 2 ),
+			array( 'plugin_row_meta', 'WPUN\Admin\Settings_Page', 'plugin_row_meta', 10, 2 ),
+			array( 'after_plugin_row', 'WPUN\Admin\Plugin_Requirements', 'render_row', 10, 2 ),
+			array( 'admin_menu', 'WPUN\Admin\Settings_Page', 'admin_settings_menu', 10, 1 ),
+			array( 'admin_init', 'WPUN\Admin\Settings_Page', 'admin_settings_init', 10, 1 ),
+			array( 'admin_init', 'WPUN\Admin\Update_Nag', 'remove_update_nag_for_nonadmins', 10, 1 ),
+			array( 'admin_post_sc_wpun_send_test', 'WPUN\Admin\Channels_Tab', 'handle_test_send', 10, 1 ),
+			array( 'admin_post_sc_wpun_channel_toggle', 'WPUN\Admin\Channels_Tab', 'handle_toggle', 10, 1 ),
+			array( 'admin_post_sc_wpun_channel_duplicate', 'WPUN\Admin\Channels_Tab', 'handle_duplicate', 10, 1 ),
+			array( 'admin_post_sc_wpun_channel_delete', 'WPUN\Admin\Channels_Tab', 'handle_delete', 10, 1 ),
+			array( 'admin_post_sc_wpun_check_now', 'WPUN\Admin\Check_Now', 'handle', 10, 1 ),
+			array( 'admin_post_sc_wpun_save_channel', 'WPUN\Admin\Channel_Form', 'handle_save', 10, 1 ),
+		);
+		foreach ( $expected as list( $hook, $owner, $method, $priority, $args ) ) {
+			$this->assertSame( array( $priority, $args ), $this->registered( $hook, $owner, $method ), "$hook: $owner::$method" );
+		}
+		$this->assertNotFalse( has_filter( 'option_page_capability_sc_wpun_settings', array( WPUN\Admin\Settings_Page::class, 'capability' ) ) );
+	}
+
+	/**
+	 * The parts of the plugin are made once and then reused.
+	 */
+	public function test_the_parts_are_made_once() {
+		$plugin = new WPUN\Plugin();
+
+		$this->assertSame( $plugin->channels_tab(), $plugin->channels_tab() );
+		$this->assertSame( $plugin->about_tab(), $plugin->about_tab() );
+		$this->assertSame( $plugin->update_nag(), $plugin->update_nag() );
+	}
+
+	/**
+	 * The memoised parts include the plugin requirements.
+	 */
+	public function test_the_plugin_requirements_are_made_once() {
+		$plugin = new WPUN\Plugin();
+
+		$this->assertSame( $plugin->plugin_requirements(), $plugin->plugin_requirements() );
+		$this->assertSame( $plugin->settings_page(), $plugin->settings_page() );
+		$this->assertSame( $plugin->notices(), $plugin->notices() );
+	}
 }

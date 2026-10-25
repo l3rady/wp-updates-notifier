@@ -130,6 +130,19 @@ RUN pecl install pcov \
     && docker-php-ext-enable pcov \
     && echo "pcov.directory=/opt/wordpress-develop/src/wp-content/plugins/wp-updates-notifier" >> "${PHP_INI_DIR}/conf.d/docker-php-ext-pcov.ini"
 
+# Infection (mutation testing, `make mutation`) as a PHAR, not a Composer dev dependency: its dependencies need PHP 8.2 or
+# newer, and this project's Composer platform is PHP 7.4. The version is on one line (Dependabot cannot track a PHAR; bump
+# it by hand) with the SHA-256 of the release's infection.phar. To bump: download infection.phar and infection.phar.asc
+# from the GitHub release, check the signature with `gpg --verify` (the release key, fingerprint
+# C6D76C329EBADE2FB9C458CFC5095986493B4AA0, is on keyserver.ubuntu.com and in Infection's documentation), then
+# `sha256sum infection.phar`; change the version in the $schema line of infection.json5 too. 0.35.8's signature was
+# verified against that key. It runs on the default PHP 8.3 or newer only.
+ARG INFECTION_VERSION=0.35.8
+ARG INFECTION_SHA256=b2049ae1bff43d9dc82831c2833005005eb62d5180cd518892af93fc8e23ddc5
+RUN curl -fsSL -o /usr/local/bin/infection "https://github.com/infection/infection/releases/download/${INFECTION_VERSION}/infection.phar" \
+    && echo "${INFECTION_SHA256}  /usr/local/bin/infection" | sha256sum -c - \
+    && chmod +x /usr/local/bin/infection
+
 # ---------------------------------------------------------------------------
 # site: the local site's WordPress (`make up`). The wordpress and wp-cli services
 # both run this image, so the web server and WP-CLI share one PHP, with the

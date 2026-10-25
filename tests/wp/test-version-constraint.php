@@ -280,4 +280,44 @@ class Test_Version_Constraint extends WPUN_Test_Case {
 		$this->assertTrue( Version_Constraint::is_valid( '^1.0 || >=3.0 <4.0' ) );
 		$this->assertSame( 0, $count );
 	}
+
+	/**
+	 * A constraint that cannot be read is answered with false and nothing else: no PHP warning follows the notice.
+	 */
+	public function test_an_invalid_constraint_raises_nothing_but_the_notice() {
+		$errors = array();
+		$this->setExpectedIncorrectUsage( 'WPUN\Version_Constraint::satisfies' );
+		set_error_handler( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting,WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Collecting what PHP reports.
+			static function ( $number, $message ) use ( &$errors ) {
+				$errors[] = $message;
+				return true;
+			}
+		);
+		try {
+			$answer = Version_Constraint::satisfies( '1.0.0', 'nothing-to-read-here' );
+		} finally {
+			restore_error_handler();
+		}
+
+		$this->assertFalse( $answer );
+		$this->assertSame( array(), $errors );
+	}
+
+	/**
+	 * A version that cannot be read satisfies nothing, not even an upper limit.
+	 */
+	public function test_an_unreadable_version_satisfies_no_upper_limit() {
+		$this->setExpectedIncorrectUsage( 'WPUN\Version_Constraint::satisfies' );
+
+		$this->assertFalse( Version_Constraint::satisfies( '1.0.0-beta', '<9.0' ) );
+	}
+
+	/**
+	 * A wildcard ends the condition: anything after it makes the constraint unreadable.
+	 */
+	public function test_text_after_a_wildcard_is_not_a_constraint() {
+		$this->assertTrue( Version_Constraint::is_valid( '1.2.*' ) );
+		$this->assertFalse( Version_Constraint::is_valid( '1.2.*x' ) );
+		$this->assertFalse( Version_Constraint::is_valid( '1.*.3' ) );
+	}
 }

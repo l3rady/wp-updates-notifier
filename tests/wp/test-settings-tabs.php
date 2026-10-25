@@ -271,4 +271,149 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		$this->assertSame( 1, $referer->length );
 		$this->assertStringContainsString( 'tab=general', $referer->item( 0 )->getAttribute( 'value' ) );
 	}
+
+	/**
+	 * The page lists the tabs in a labelled bar, titles each setting with its label, and a tab slug must be a non-empty clean key.
+	 */
+	public function test_the_bar_is_labelled_and_slugs_must_be_clean_keys() {
+		add_filter(
+			'sc_wpun_settings_tabs',
+			static function ( $tabs ) {
+				$tabs['']      = 'Empty';
+				$tabs['Mine!'] = 'Unclean';
+				$tabs['mine']  = 'Mine';
+				return $tabs;
+			}
+		);
+		foreach ( array( '', 'Mine!', 'mine' ) as $slug ) {
+			add_action( 'sc_wpun_settings_tab_' . $slug, '__return_empty_string' );
+		}
+
+		$this->assertSame( array( 'general', 'mine' ), array_keys( sc_wpun()->settings_page()->tabs() ) );
+		$this->assertStringContainsString( 'aria-label="Settings sections"', $this->html() );
+	}
+
+	/**
+	 * Each setting is titled with its label, or its name when it has none.
+	 */
+	public function test_settings_are_titled_with_their_labels() {
+		global $wp_settings_fields;
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		sc_wpun()->settings_page()->admin_settings_init();
+		$fields = $wp_settings_fields['wp-updates-notifier']['sc_wpun_settings_main'];
+
+		$this->assertSame( 'Frequency to check', wp_strip_all_tags( $fields['sc_wpun_settings_main_frequency']['title'] ) );
+		$this->assertArrayNotHasKey( 'sc_wpun_settings_main_show_about', $fields, 'Code-only settings have no field.' );
+		$this->assertArrayHasKey( 'sc_wpun_settings_main_hide_updates', $fields, 'The setting after the code-only one is still added.' );
+	}
+
+	/**
+	 * A setting supplied from outside says where it is set, in a note the control points to.
+	 */
+	public function test_the_note_of_an_external_setting() {
+		add_filter(
+			'sc_wpun_config_sources',
+			static function ( $sources ) {
+				$sources[] = new Test_Config_Source( array( 'SC_WPUN_SETTING_FREQUENCY' => 'weekly' ) );
+				return $sources;
+			}
+		);
+		sc_wpun()->config()->flush();
+
+		ob_start();
+		sc_wpun()->settings_page()->sc_wpun_settings_main_field_frequency();
+		$html = (string) ob_get_clean();
+
+		$this->assertMatchesRegularExpression( '#<span class="description sc-wpun-external" id="sc_wpun_settings_main_frequency-external">Set by [^<]+</span>#', $html );
+		sc_wpun()->config()->flush();
+	}
+
+	/**
+	 * A saved frequency that is not offered anymore is explained.
+	 */
+	public function test_an_unavailable_frequency_is_explained() {
+		$this->save_settings( array( 'frequency' => 'schedule_from_a_removed_plugin' ) );
+
+		ob_start();
+		sc_wpun()->settings_page()->sc_wpun_settings_main_field_frequency();
+		$html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'checks run at the interval they were last scheduled with', $html );
+	}
+
+	/**
+	 * Every setting of the page draws its own control, and an unknown one draws nothing.
+	 */
+	public function test_each_setting_draws_its_control() {
+		$page = sc_wpun()->settings_page();
+
+		foreach ( array( 'notify_plugins', 'notify_themes', 'hide_updates' ) as $name ) {
+			ob_start();
+			$page->{'sc_wpun_settings_main_field_' . $name}();
+			$this->assertStringContainsString( 'name="sc_wpun_settings[' . $name . ']', (string) ob_get_clean(), $name );
+		}
+
+		ob_start();
+		$page->render_setting( array() );
+		$page->render_setting( array( 'name' => 'unknown' ) );
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	/**
+	 * The plugin row links to the settings and the documentation, and only on its own row.
+	 */
+	public function test_the_plugin_row_links() {
+		$page = sc_wpun()->settings_page();
+		$own  = plugin_basename( SC_WPUN_FILE );
+
+		$this->assertMatchesRegularExpression( '#^<a href="[^"]*options-general\.php\?page=wp-updates-notifier">Settings</a>$#', $page->plugin_action_links( array(), $own )[0] );
+		$this->assertSame( array( 'x' ), $page->plugin_action_links( array( 'x' ), 'other/other.php' ) );
+		$this->assertMatchesRegularExpression( '#^<a href="[^"]+">Documentation</a>$#', $page->plugin_row_meta( array(), $own )[0] );
+		$this->assertSame( array(), $page->plugin_row_meta( array(), 'other/other.php' ) );
+	}
+
+	/**
+	 * The test email goes to the email instances.
+	 */
+	public function test_the_test_email() {
+		$this->save_settings();
+
+		sc_wpun()->settings_page()->send_test_email();
+
+		$this->assertSame( 1, $this->sent_mail_count() );
+		$this->assertStringContainsString( 'This is a test message from WP Updates Notifier.', $this->sent_mail()->body );
+	}
+
+	/**
+	 * The settings page is added to the Settings menu and draws itself.
+	 */
+	public function test_the_settings_page_is_added_to_the_menu() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		sc_wpun()->settings_page()->admin_settings_menu();
+
+		$hook = get_plugin_page_hook( 'wp-updates-notifier', 'options-general.php' );
+		$this->assertNotEmpty( $hook );
+		$this->assertNotFalse( has_action( $hook ) );
+	}
+
+	/**
+	 * Of several errors on a setting, the first is the one drawn with it.
+	 */
+	public function test_the_first_error_of_a_setting_is_drawn() {
+		global $wp_settings_errors;
+
+		$wp_settings_errors = array(); // Core keeps them for the whole request, and other tests save settings.
+		add_settings_error( 'sc_wpun_settings_main_frequency', 'first', 'The first error', 'error' );
+		add_settings_error( 'sc_wpun_settings_main_frequency', 'second', 'The second error', 'error' );
+
+		ob_start();
+		sc_wpun()->settings_page()->sc_wpun_settings_main_field_frequency();
+		$html               = (string) ob_get_clean();
+		$wp_settings_errors = array();
+
+		$this->assertStringContainsString( 'The first error', $html );
+		$this->assertStringNotContainsString( 'The second error', $html );
+	}
 }

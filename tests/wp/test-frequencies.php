@@ -90,6 +90,38 @@ class Test_Frequencies extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A name that is not a registered schedule does not hide the ones after it, and the display text is text.
+	 */
+	public function test_an_unregistered_name_is_skipped_not_the_end_of_the_list() {
+		add_filter(
+			'cron_schedules',
+			static function ( $schedules ) {
+				$schedules['numbered'] = array(
+					'interval' => DAY_IN_SECONDS,
+					'display'  => 24,
+				);
+				return $schedules;
+			}
+		);
+		add_filter(
+			'sc_wpun_frequencies',
+			static function () {
+				return array( 'not_registered', 5, 'numbered' );
+			}
+		);
+
+		$this->assertSame(
+			array(
+				'numbered' => array(
+					'interval' => DAY_IN_SECONDS,
+					'display'  => '24',
+				),
+			),
+			\WPUN\Frequencies::all()
+		);
+	}
+
+	/**
 	 * Every fieldset the field renders is closed.
 	 */
 	public function test_the_field_markup_is_closed() {
@@ -179,5 +211,46 @@ class Test_Frequencies extends WPUN_Test_Case {
 		do_action( 'sc_wpun_enable_cron', 'manual' );
 
 		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ) );
+	}
+
+	/**
+	 * A filter that answers with one name instead of a list still offers it.
+	 */
+	public function test_the_frequencies_filter_may_return_one_name() {
+		add_filter(
+			'sc_wpun_frequencies',
+			static function () {
+				return 'daily';
+			}
+		);
+
+		$this->assertSame( array( 'daily' ), array_keys( \WPUN\Frequencies::all() ) );
+	}
+
+	/**
+	 * A schedule that states its interval as text is offered with the interval as a number.
+	 */
+	public function test_the_interval_is_a_number() {
+		// phpcs:disable WordPress.WP.CronInterval.ChangeDetected -- A schedule with its interval as text, on purpose.
+		add_filter(
+			'cron_schedules',
+			static function ( $schedules ) {
+				$schedules['every_two_hours'] = array(
+					'interval' => '7200',
+					'display'  => 'Every two hours',
+				);
+				return $schedules;
+			}
+		);
+		add_filter(
+			'sc_wpun_frequencies',
+			static function () {
+				return array( 'every_two_hours' );
+			}
+		);
+
+		// phpcs:enable WordPress.WP.CronInterval.ChangeDetected
+
+		$this->assertSame( 7200, \WPUN\Frequencies::all()['every_two_hours']['interval'] );
 	}
 }

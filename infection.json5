@@ -1,0 +1,253 @@
+{
+    // Mutation testing with Infection (make mutation): the shipped runtime code, as in the coverage section of
+    // phpunit.xml.dist, run against the WordPress suite. See CONTRIBUTING.md.
+    "$schema": "https://raw.githubusercontent.com/infection/infection/0.35.8/resources/schema.json",
+    "source": {
+        // The code that ships (bin/check-dist.sh's allowlist), as a directory so the two root files are in it.
+        "directories": ["."],
+        "excludes": [
+            ".github", "assets", "bin", "build", "docker", "docs", "examples", "languages", "node_modules",
+            "rector.php", "security-reports", "tests", "vendor"
+        ]
+    },
+    // Infection's own process needs the plugin's autoloader to reflect the classes it mutates.
+    "bootstrap": "docker/infection-bootstrap.php",
+    "phpUnit": {
+        // WordPress's own PHPUnit (docker/infection-phpunit.sh runs it) with this plugin's config, from the plugin
+        // directory of the checkout.
+        "customPath": "/opt/wp-updates-notifier/docker/infection-phpunit.sh",
+        "configDir": "/opt/wordpress-develop/src/wp-content/plugins/wp-updates-notifier"
+    },
+    "logs": {
+        "text": "/infection/infection.log",
+        "summary": "/infection/summary.log",
+        "summaryJson": "/infection/summary.json"
+    },
+    // Seconds a mutant may take. The default of 10 is too short for a WordPress test process under load, and a mutant
+    // that only timed out counts as killed, so a short limit hides survivors.
+    "timeout": 120,
+    "mutators": {
+        "@default": true,
+
+        // Lines ignored for every mutator.
+        "global-ignoreSourceCodeByRegex": [
+            // Multisite only: this suite runs on a single site (make test-wp-ms covers it, but is not mutated).
+            "\\$network = array_keys\\( \\(array\\) get_site_option\\(.*",
+            "\\$active  = array_merge\\( \\$active, array_filter\\( \\$network, 'is_string' \\) \\);",
+            // Only reached for a setting that has no message of its own; the plugin's five settings all have one.
+            "\\$fallback = sprintf\\( __\\( 'Choose a value for %s\\.'.*",
+            // The id that decides which developer notice was shown already; it only changes how often one is repeated.
+            "\\$id\\s+= md5\\(.*",
+            "self::\\$warned\\[ \\$id \\] = true;",
+            // Needs a request in which WordPress has not loaded its plugin functions, as in WP-Cron.
+            "require_once ABSPATH \\. 'wp-admin/includes/plugin\\.php';.*",
+            "if \\( ! function_exists\\( 'get_plugin_data' \\) \\) \\{"
+        ],
+
+        // Mutants that change nothing anyone can observe. Each is ignored by the text of its line, with the reason.
+        "CastString": {
+            "ignoreSourceCodeByRegex": [
+                // An array key that looks like a number is an integer either way.
+                ".*\\$channels\\[ \\(string\\) \\$id \\] = .*",
+                ".*\\$clean\\[ \\(string\\) \\$type \\] = .*",
+                ".*\\[ \\$type \\]\\[ \\(string\\) \\$key \\] \\?\\? null.*",
+                ".*LEGACY_NOTIFY\\[ \\(string\\) \\$value \\].*",
+                // preg_replace() only returns null on a PCRE error, which this pattern cannot cause.
+                ".*explode\\( '\\.', \\(string\\) preg_replace.*",
+                ".*\\$clean\\[ \\(string\\) \\$key \\] = \\(string\\) \\$version;.*",
+                // State::normalise_legacy() already made the pre-2.0.0 core version a string.
+                ".*array\\( 'core' => \\(string\\) \\$legacy\\['core'\\] \\).*",
+                // A theme key that is a number is turned into text by Notification_Item.
+                ".*'key'\\s+=> \\(string\\) \\$key,.*",
+                // The update entries are normalised to text before the slug is read, and get_option() returns text.
+                ".*preg_match\\( '#\\^https\\?.*, \\(string\\) \\$entry->url \\);.*",
+                // string_setting() returns a string, so PHP converts the value on the way out.
+                ".*return isset\\( \\$stored\\[ \\$key \\] \\) && is_scalar.*",
+                ".*wp_date\\( \\(string\\) get_option\\( '(date|time)_format' \\).*",
+                ".*in_array\\( \\(string\\) \\$key, \\$active_plugins, true.*",
+                ".*\\$updates\\[ \\(string\\) \\$(file|stylesheet) \\] = \\$entry;.*",
+                ".*\\$this->document\\( \\(string\\) \\$body, \\(string\\) \\$subject \\).*",
+                ".*send_legacy_message\\( \\(string\\) \\$message \\).*",
+                // WordPress returns the offered version as text, and the method returns text.
+                ".*return \\(string\\) \\$offer->current;.*",
+                // The slug was made text when the plugin updates were normalised.
+                ".*\\$slug\\s+= \\(string\\) \\$entry->slug;.*",
+                // The code of a WP_Error that wp_mail() raises is text.
+                ".*'error_code' => \\(string\\) \\$error->get_error_code\\(\\).*",
+                // Enum values from outside are tested as text whichever way PHP turns a number into one.
+                ".*\\$given = array\\( \\(string\\) \\$value \\);.*",
+                ".*\\$item = trim\\( \\(string\\) \\$item \\);.*",
+                ".*\\$admin_email = \\(string\\) get_option\\( 'admin_email' \\);.*",
+                // Known limitation, reported with the mutation testing work: an enum option named with digits (a schedule
+                // such as "7200") comes back from outside as a rejected value, so this cast never sees a number.
+                ".*\\$settings\\['frequency'\\] = \\(string\\) \\$frequency->get_value\\(\\);.*"
+            ]
+        },
+        "FalseValue": {
+            "ignoreSourceCodeByRegex": [
+                // Core has no legacy 0, 1 and 2.
+                ".*'notify_core'\\s+=> \\$this->notify_key\\( 'notify_core', \\$filtered.*",
+                // Not a string, so enable_cron() uses the saved frequency, as it does for false.
+                ".*function enable_cron\\( \\$manual_interval = false \\).*",
+                ".*\\? \\$new_frequency : false \\).*",
+                // A true last check time is not a time, and State::normalise() turns it into false.
+                ".*'last_check_time' => \\$options\\['last_check_time'\\] \\?\\? false.*",
+                // The value of an enum is validated before this, and 0, 1 and 2 are not options; core has no legacy form.
+                ".*notify_key\\( 'notify_(core|plugins|themes)', \\$(core|plugins|themes)->get_value\\(\\).*, false \\).*",
+                // Whether the header of a plugin is translated is not visible when no plugin ships a translation.
+                ".*get_plugin_data\\( WP_PLUGIN_DIR .*, false, false \\).*"
+            ]
+        },
+        "CastBool": {
+            "ignoreSourceCodeByRegex": [
+                // The value of a boolean field is a boolean already.
+                ".*\\$settings\\['hide_updates'\\] = \\(bool\\) \\$hide->get_value\\(\\).*",
+                ".*\\$schema\\['default'\\] : \\(bool\\) \\$value->get_value\\(\\).*"
+            ]
+        },
+        "IncrementInteger": {
+            "ignoreSourceCodeByRegex": [
+                ".*\\$channels\\[ \\$id \\]\\['retry_at'\\] \\?\\? 0 \\) > time\\(\\).*",
+                // Half an interval is cut to whole seconds, and -0.5 and 0.5 both become 0.
+                ".*Frequencies::all\\(\\)\\[ \\$frequency \\]\\['interval'\\] \\?\\? 0.*"
+            ]
+        },
+        "DecrementInteger": {
+            "ignoreSourceCodeByRegex": [
+                ".*Frequencies::all\\(\\)\\[ \\$frequency \\]\\['interval'\\] \\?\\? 0.*",
+                // No retry time at all or minus one is not in the future either way.
+                ".*\\$channels\\[ \\$id \\]\\['retry_at'\\] \\?\\? 0 \\) > time\\(\\).*",
+                // The first number of a wildcard constraint, read as a number from the whole match or from the group.
+                ".*\\$major = \\(int\\) \\$match\\[1\\].*"
+            ]
+        },
+        "UnwrapArrayUnique": {
+            // A parent theme that is also the active one is only listed twice; array_flip() folds it.
+            "ignoreSourceCodeByRegex": ["\\$active_themes\\s+= array_unique\\(.*"]
+        },
+        "TrueValue": {
+            "ignoreSourceCodeByRegex": [
+                // isset() is true for false as well as for true.
+                ".*self::\\$reported\\[ \\$constraint \\] = true.*",
+                ".*\\$chosen\\[ \\$item \\] = true;.*"
+            ]
+        },
+        "CastInt": {
+            "ignoreSourceCodeByRegex": [
+                // A numeric string is compared with a number the same as the integer is.
+                ".*\\$count >= \\(int\\) \\$field\\['min'\\].*",
+                // min() of halves: a float with no seconds fraction is compared the same as the integer.
+                ".*\\$tolerance = \\(int\\) min\\(.*",
+                // PHP does the arithmetic on a numeric string just the same.
+                ".*\\$(major|minor) = \\(int\\) \\$match\\[[12]\\].*"
+            ]
+        },
+        "Break_": {
+            // Once one instance has not been told, the answer is no; carrying on with the others cannot change it.
+            "ignore": ["WPUN\\Update_Checker::without_notified"]
+        },
+        "UnwrapArrayValues": {
+            // Notification re-indexes the items it is given, and the other lists are only walked or flipped.
+            "ignore": [
+                "WPUN\\Dispatcher::notification_for",
+                "WPUN\\Update_Checker::items_for_instance",
+                "WPUN\\Update_Checker::active_plugins"
+            ],
+            "ignoreSourceCodeByRegex": [
+                "\\$items = array_values\\( array_filter\\( \\$items, array\\( \\$this, 'should_notify' \\) \\) \\);"
+            ]
+        },
+        "UnwrapTrim": {
+            "ignoreSourceCodeByRegex": [
+                // The mailer skips a blank recipient.
+                ".*'' !== trim\\( \\$address \\) && 1 !== preg_match.*",
+                // sanitize_text_field() and sanitize_email() already trim.
+                "\\$entry = trim\\( \\$entry \\);",
+                "\\$address = trim\\( sanitize_text_field\\(.*",
+                "\\$address = sanitize_email\\( trim\\( \\$address \\) \\);",
+                // filter_var() with FILTER_VALIDATE_INT accepts the spaces around a number.
+                ".*filter_var\\( trim\\(.*"
+            ]
+        },
+        "MethodCallRemoval": {
+            // boot() runs only once, so a second call from the 1.x method changes nothing.
+            "ignoreSourceCodeByRegex": ["\\s*sc_wpun\\(\\)->boot\\(\\);"]
+        },
+        "Continue_": {
+            "ignoreSourceCodeByRegex": [
+                // Show About is the last setting, so nothing follows to be skipped.
+                "continue; // Code-only settings have no field\\."
+            ]
+        },
+        "UnwrapArrayMap": {
+            // Plugin files and theme folders are never numbers, so strval changes no key.
+            "ignoreSourceCodeByRegex": ["\\$checked\\['(plugin|theme)'\\] = array_map\\( 'strval', array_keys\\( \\$pending \\) \\);"]
+        },
+        "ArrayItemRemoval": {
+            "ignoreSourceCodeByRegex": [
+                // Enum_Field::sanitize() does not read the type of the schema it is given.
+                "'type'\\s+=> 'enum',",
+                // preg_split() with a pattern that is fine never returns false.
+                "return false === \\$pieces \\? array\\( '' \\) : \\$pieces;"
+            ]
+        },
+        "Ternary": {
+            "ignoreSourceCodeByRegex": [
+                // The text of a developer notice about a field that asks for a display it cannot give.
+                "\\$shown = is_string\\( \\$field\\['display'\\] \\).*",
+                ".*cannot show several choices.*",
+                "\\s*\\$multiple"
+            ]
+        },
+        "LogicalAnd": {
+            "ignoreSourceCodeByRegex": [
+                // WordPress always defines WP_DEBUG.
+                ".*defined\\( 'WP_DEBUG' \\) && WP_DEBUG.*",
+                // A header line that is not text is dropped by wp_mail() as well.
+                "if \\( is_string\\( \\$line \\) && 1 !== preg_match.*",
+                // None of the five settings is required, and all have a label.
+                "\\$title = \\( isset\\( \\$schema\\['label'\\] \\).*"
+            ]
+        },
+        "ProtectedVisibility": {
+            // Only a class that extends the dispatcher can tell protected from private.
+            "ignore": ["WPUN\\Dispatcher::notification_for"]
+        },
+        "PregMatchRemoveFlags": {
+            "ignoreSourceCodeByRegex": [
+                // The D flag stops a trailing newline matching, and the constraint was trimmed before this.
+                ".*preg_match\\( '/\\^\\(.*"
+            ]
+        },
+        "SharedCaseRemoval": {
+            // PHP's version_compare() reads = as ==, so the case for = and for no operator can be the default.
+            "ignore": ["WPUN\\Version_Constraint::expand"]
+        },
+        "Concat": {
+            "ignoreSourceCodeByRegex": [
+                // version_compare() reads a bound such as 1..03 like 1.3.0 for every version at or above the lower bound.
+                "return self::between\\( \"\\$major\\..*",
+                "\\$upper = '0\\.' \\. .*",
+                "\\$upper = \\$count < 3 .*",
+                // The closing > of the sender, which the mailer adds when it is missing.
+                "\\$headers\\[\\] = 'From: '.*"
+            ]
+        },
+        "ConcatOperandRemoval": {
+            "ignoreSourceCodeByRegex": [
+                // The bound 1.3 is the same as 1.3.0 for every version of three numbers.
+                "return self::between\\( \"\\$major\\..*",
+                "\\$upper = '0\\.' \\. .*",
+                "\\$upper = \\$count < 3 .*",
+                "\\$upper = \\( \\$major \\+ 1 \\) \\. '\\.0\\.0';",
+                // Only the closing > of the sender, which the mailer adds when it is missing.
+                "\\$headers\\[\\] = 'From: '.*",
+                // None of the five settings is required, so there is no marker to add.
+                "\\$title = \\( isset.*"
+            ]
+        }
+    },
+    // Floors that only go up: a point below the measured 92.98 / 93.52, for run-to-run noise (CONTRIBUTING.md).
+    "minMsi": 91,
+    "minCoveredMsi": 92
+}

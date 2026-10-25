@@ -364,4 +364,137 @@ class Test_Routing extends WPUN_Test_Case {
 		$this->assertSame( array(), $this->run_check() );
 		$this->assertSame( array( 'core' => array( 'core' => '99.0.0' ) ), $this->channel_notified( 'one' ) );
 	}
+
+	/**
+	 * An instance routed nothing does not stop the ones after it.
+	 */
+	public function test_an_instance_routed_nothing_does_not_stop_the_next() {
+		$registry   = new Channel_Registry();
+		$channel    = new Test_Channel( 'test' );
+		$dispatcher = new Dispatcher( $registry );
+		$registry->register( $channel );
+		$instances = array(
+			new Channel_Instance( 'plugins', 'test', 'P', true, array(), array( 'types' => array( 'plugin' ) ) ),
+			new Channel_Instance( 'cores', 'test', 'C', true, array(), array( 'types' => array( 'core' ) ) ),
+		);
+		$mixed     = new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $this->item( 'core' ) ) );
+
+		$results = $dispatcher->dispatch( $mixed, $instances );
+
+		$this->assertSame( array( 'cores' ), array_keys( $results ) );
+	}
+
+	/**
+	 * An instance receives the items routed to it as a list, and a test notification keeps all of its items.
+	 */
+	public function test_routed_items_are_a_list_and_a_test_notification_is_not_narrowed() {
+		$registry   = new Channel_Registry();
+		$channel    = new Test_Channel( 'test' );
+		$dispatcher = new Dispatcher( $registry );
+		$registry->register( $channel );
+		$cores = new Channel_Instance( 'cores', 'test', 'C', true, array(), array( 'types' => array( 'core' ) ) );
+		$items = array( $this->item( 'plugin' ), $this->item( 'core' ) );
+
+		$dispatcher->dispatch( new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', $items ), array( $cores ) );
+		$this->assertSame( array( 0 ), array_keys( $channel->received['cores'][0]->get_items() ) );
+
+		$channel->received = array();
+		$dispatcher->dispatch( new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', $items, array( 'is_test' => true ) ), array( $cores ) );
+		$this->assertCount( 2, $channel->received['cores'][0]->get_items() );
+	}
+
+	/**
+	 * Only a channel that returns the wrong type is reported as such; another exception that mentions it is an exception.
+	 */
+	public function test_an_exception_that_mentions_the_result_type_is_still_an_exception() {
+		$registry   = new Channel_Registry();
+		$dispatcher = new Dispatcher( $registry );
+		$registry->register(
+			new class() extends Test_Channel {
+				/**
+				 * Throw an exception whose message looks like the type error.
+				 *
+				 * @param Notification     $notification Notification.
+				 * @param Channel_Instance $instance     Instance.
+				 * @return \WPUN\Delivery_Result
+				 * @throws RuntimeException For the instance a.
+				 */
+				public function send( Notification $notification, Channel_Instance $instance ): \WPUN\Delivery_Result {
+					if ( 'a' === $instance->get_id() ) {
+						throw new RuntimeException( 'Return value of Delivery_Result' );
+					}
+
+					return \WPUN\Delivery_Result::success();
+				}
+			}
+		);
+		$notification = new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $this->item( 'core' ) ) );
+
+		$results = @$dispatcher->dispatch( $notification, array( new Channel_Instance( 'a', 'test', 'A', true ) ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- WP_DEBUG reports the exception as a notice.
+
+		$this->assertSame( 'exception', $results['a']->get_code() );
+	}
+
+	/**
+	 * Dumping an instance lists all of its parts.
+	 */
+	public function test_instance_debug_info_lists_every_part() {
+		$instance = new Channel_Instance( 'ops', 'email', 'Ops', true, array( 'to' => 'secret@example.org' ), array( 'scope' => 'active' ) );
+
+		$this->assertSame(
+			array(
+				'id'       => 'ops',
+				'type'     => 'email',
+				'label'    => 'Ops',
+				'enabled'  => true,
+				'routing'  => $instance->get_routing(),
+				'settings' => array( 'to' => '[redacted]' ),
+			),
+			$instance->__debugInfo()
+		);
+	}
+
+	/**
+	 * A channel type is refused when anything else follows it, a line break included.
+	 */
+	public function test_a_channel_type_with_a_line_break_is_refused() {
+		$this->expectException( InvalidArgumentException::class );
+
+		new Channel_Instance( 'ops', "email\n", 'Ops', true );
+	}
+
+	/**
+	 * With "only active", an item that does not say whether it is active is not sent.
+	 */
+	public function test_an_item_without_an_active_flag_is_not_active() {
+		$instance = new Channel_Instance( 'a', 'email', 'A', true, array(), array( 'scope' => 'active' ) );
+
+		$this->assertFalse( Routing::should_receive( $this->item( 'plugin' ), $instance ) );
+		$this->assertFalse( Routing::should_receive( $this->item( 'theme', array( 'active' => 'yes' ) ), $instance ) );
+		$this->assertTrue( Routing::should_receive( $this->item( 'plugin', array( 'active' => true ) ), $instance ) );
+	}
+
+	/**
+	 * An instance id is refused when anything else follows it, a line break included.
+	 */
+	public function test_an_instance_id_with_a_line_break_is_refused() {
+		$this->expectException( InvalidArgumentException::class );
+
+		new Channel_Instance( "ops\n", 'email', 'Ops', true );
+	}
+
+	/**
+	 * The add-on filter may answer with anything: it counts as a yes or a no.
+	 */
+	public function test_the_filter_answer_counts_as_yes_or_no() {
+		$instance = new Channel_Instance( 'a', 'email', 'A', true );
+		add_filter(
+			'sc_wpun_channel_should_receive_item',
+			static function () {
+				return array( 'maybe' );
+			}
+		);
+
+		$this->assertTrue( Routing::should_receive( $this->item( 'core' ), $instance ) );
+	}
 }

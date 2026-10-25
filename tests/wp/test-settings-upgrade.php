@@ -504,4 +504,135 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->assertSame( 'daily', get_option( 'sc_wpun_settings' )['frequency'] );
 		$this->assertSame( '13.0', get_option( 'sc_wpun_settings_ver' ) );
 	}
+
+	/**
+	 * From version 7 on, a missing email choice is off: the upgrade does not turn email on by itself.
+	 */
+	public function test_a_missing_email_choice_is_off_from_version_7() {
+		$fixtures = require dirname( __DIR__ ) . '/fixtures/settings.php';
+		$options  = $fixtures['1.6.0']['options'];
+
+		unset( $options['email_notifications'] );
+		$this->upgrade_from( '7.0', $options );
+
+		$this->assertFalse( $this->stored_instance( 'email' )->is_enabled() );
+	}
+
+	/**
+	 * Spaces around the admin email do not stop a From address equal to it from being the old default.
+	 */
+	public function test_the_admin_email_is_trimmed_before_it_is_compared() {
+		add_filter(
+			'pre_option_admin_email',
+			static function () {
+				return ' admin@example.org ';
+			}
+		);
+		$fixtures               = require dirname( __DIR__ ) . '/fixtures/settings.php';
+		$options                = $fixtures['1.6.0']['options'];
+		$options['notify_from'] = 'admin@example.org';
+
+		$this->upgrade_from( '7.0', $options );
+
+		$this->assertSame( '', $this->instance_setting( 'email', 'from' ) );
+	}
+
+	/**
+	 * A notify setting that is not a key falls back to the default the site chose, not to the built-in one.
+	 */
+	public function test_junk_falls_back_to_the_default_of_the_site() {
+		add_filter(
+			'sc_wpun_default_settings',
+			static function ( $defaults ) {
+				$defaults['notify_plugins'] = 'active';
+				$defaults['notify_themes']  = 'none';
+				return $defaults;
+			}
+		);
+
+		$this->upgrade_from(
+			'12.0',
+			$this->global_settings(
+				array(
+					'notify_plugins' => 'bogus',
+					'notify_themes'  => 'bogus',
+				)
+			)
+		);
+
+		$stored = get_option( 'sc_wpun_settings' );
+		$this->assertSame( 'active', $stored['notify_plugins'] );
+		$this->assertSame( 'none', $stored['notify_themes'] );
+	}
+
+	/**
+	 * The built-in defaults, a filter that answers with something else than a list, and a filter that answers with numbers.
+	 */
+	public function test_the_default_settings() {
+		$settings = sc_wpun()->settings();
+
+		$this->assertTrue( $settings->default_settings()['hide_updates'] );
+		$this->assertTrue( $settings->schemas()['hide_updates']['default'], 'The form offers the notice hidden by default.' );
+
+		add_filter( 'sc_wpun_default_settings', '__return_empty_string' );
+		$this->assertSame( array( 'frequency', 'notify_core', 'notify_plugins', 'notify_themes', 'hide_updates' ), array_keys( $settings->default_settings() ) );
+		remove_filter( 'sc_wpun_default_settings', '__return_empty_string' );
+
+		add_filter(
+			'sc_wpun_default_settings',
+			static function ( $defaults ) {
+				$defaults['frequency']      = 86400;
+				$defaults['notify_plugins'] = 2;
+				$defaults['notify_themes']  = 2;
+				return $defaults;
+			}
+		);
+		$this->assertSame( '86400', $settings->default_settings()['frequency'] );
+		$this->assertSame( 'all', $settings->default_settings()['notify_plugins'], 'Numbers are no keys in a default of the site.' );
+		$this->assertSame( 'all', $settings->default_settings()['notify_themes'] );
+	}
+
+	/**
+	 * Writing a setting goes through the put filter and reports whether the option changed.
+	 */
+	public function test_write_option_filters_and_reports() {
+		add_filter(
+			'sc_wpun_put_options_filter',
+			static function ( $value ) {
+				return 'filtered-' . $value;
+			}
+		);
+
+		$this->assertTrue( sc_wpun()->settings()->write_option( 'wpun_test_option', 'x' ) );
+		$this->assertSame( 'filtered-x', get_option( 'wpun_test_option' ) );
+		$this->assertFalse( sc_wpun()->settings()->write_option( 'wpun_test_option', 'x' ), 'Nothing changed the second time.' );
+	}
+
+	/**
+	 * The "only active" choice names what it limits.
+	 */
+	public function test_the_active_choice_names_plugins_and_themes() {
+		$schemas = sc_wpun()->settings()->schemas();
+
+		$this->assertStringContainsString( 'plugin', $schemas['notify_plugins']['label'] );
+		$this->assertStringContainsString( 'theme', $schemas['notify_themes']['label'] );
+		$this->assertStringContainsString( 'plugins', $schemas['notify_plugins']['options']['active'] );
+		$this->assertStringContainsString( 'themes', $schemas['notify_themes']['options']['active'] );
+	}
+
+	/**
+	 * Only whole numbers and text are read as the numbers of before settings version 10.
+	 */
+	public function test_a_decimal_is_not_a_legacy_notify_number() {
+		$this->upgrade_from( '9.0', $this->global_settings( array( 'notify_plugins' => 2.0 ) ) );
+
+		$this->assertSame( 'all', get_option( 'sc_wpun_settings' )['notify_plugins'] );
+	}
+
+	/**
+	 * A setting that does not exist has no outside source.
+	 */
+	public function test_an_unknown_setting_has_no_external_source() {
+		$this->assertNull( sc_wpun()->settings()->external_source( 'unknown_setting' ) );
+	}
 }

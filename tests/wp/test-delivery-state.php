@@ -6,6 +6,8 @@
  */
 
 use WPUN\Channel_Instance;
+use WPUN\Delivery_Result;
+use WPUN\Notification;
 
 /**
  * What each instance was told, forgotten, pruned, skipped and upgraded.
@@ -430,5 +432,136 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		$this->assertSame( array(), $plugin->check_themes_against_notified( $themes ) );
 		$this->assertSame( 'junk', $plugin->check_plugins_against_notified( 'junk' ) );
 		$this->assertSame( array( 'x' => 'junk' ), $plugin->check_plugins_against_notified( array( 'x' => 'junk' ) ) );
+	}
+
+	/**
+	 * Recording a delivery keeps what the instance was already told, and its reminder.
+	 */
+	public function test_recording_a_delivery_keeps_the_rest_of_the_entry() {
+		$this->save_channel_state( 'email', array( 'plugin' => array( 'hello.php' => '2.0.0' ) ) );
+		$state                                       = $this->stored_state();
+		$state['channels']['email']['last_reminder'] = 12345;
+		update_option( 'sc_wpun_state', $state );
+
+		sc_wpun()->state()->record_delivery(
+			Delivery_Result::success( 'Sent' ),
+			new Notification( 'Site', 'https://example.org', 'https://example.org/wp-admin/update-core.php', array() ),
+			sc_wpun_channels()->get( 'email' )
+		);
+
+		$entry = $this->stored_state()['channels']['email'];
+		$this->assertSame( array( 'plugin' => array( 'hello.php' => '2.0.0' ) ), $entry['notified'] );
+		$this->assertSame( 12345, $entry['last_reminder'] );
+		$this->assertTrue( $entry['last_result']['success'] );
+	}
+
+	/**
+	 * Recording a delivery for an instance with no entry yet starts one that has told it nothing.
+	 */
+	public function test_recording_a_delivery_starts_an_entry() {
+		$this->save_settings();
+		delete_option( 'sc_wpun_state' );
+
+		sc_wpun()->state()->record_delivery(
+			Delivery_Result::failure( 'Down' ),
+			new Notification( 'Site', 'https://example.org', 'https://example.org/wp-admin/update-core.php', array() ),
+			sc_wpun_channels()->get( 'email' )
+		);
+
+		$entry = $this->stored_state()['channels']['email'];
+		$this->assertSame( array(), $entry['notified'] );
+		$this->assertFalse( $entry['skip_pending'] );
+		$this->assertFalse( $entry['last_result']['success'] );
+	}
+
+	/**
+	 * A stored delivery time below one second is not a time: the last result is dropped.
+	 */
+	public function test_a_fractional_delivery_time_is_dropped() {
+		$state = sc_wpun()->state()->normalise( array( 'channels' => array( 'one' => array( 'last_result' => array( 'time' => '0.5' ) ) ) ) );
+
+		$this->assertArrayNotHasKey( 'last_result', $state['channels']['one'] );
+	}
+
+	/**
+	 * State from before 2.0.0 is read whatever it lacks: a missing core version is empty, a number is text.
+	 */
+	public function test_the_old_global_list_is_normalised() {
+		$state = sc_wpun()->state()->normalise( array( 'notified' => array( 'plugin' => array( 'a.php' => 3 ) ) ) );
+		$this->assertSame(
+			array(
+				'core'   => '',
+				'plugin' => array( 'a.php' => '3' ),
+				'theme'  => array(),
+			),
+			$state['legacy_notified']
+		);
+
+		$state = sc_wpun()->state()->normalise( array( 'notified' => array( 'core' => 6 ) ) );
+		$this->assertSame( '6', $state['legacy_notified']['core'] );
+	}
+
+	/**
+	 * The version list helper is public for the code that reads old state.
+	 */
+	public function test_versions_are_normalised_to_text() {
+		$this->assertSame(
+			array(
+				'a' => '1',
+				'b' => '2',
+			),
+			sc_wpun()->state()->normalise_versions(
+				array(
+					'a' => 1,
+					'b' => '2',
+					'c' => array(),
+				)
+			)
+		);
+		$this->assertSame( array(), sc_wpun()->state()->normalise_versions( 'junk' ) );
+	}
+
+	/**
+	 * A reminder time below one second is not a time.
+	 */
+	public function test_a_fractional_reminder_time_is_dropped() {
+		$state = sc_wpun()->state()->normalise( array( 'channels' => array( 'one' => array( 'last_reminder' => '0.5' ) ) ) );
+
+		$this->assertArrayNotHasKey( 'last_reminder', $state['channels']['one'] );
+	}
+
+	/**
+	 * A delivery is recorded only for a real result, notification and instance.
+	 */
+	public function test_a_delivery_with_something_else_is_not_recorded() {
+		$this->save_settings();
+		delete_option( 'sc_wpun_state' );
+		$result       = Delivery_Result::success( 'Sent' );
+		$notification = new Notification( 'Site', 'https://example.org', 'https://example.org/wp-admin/update-core.php', array() );
+		$instance     = sc_wpun_channels()->get( 'email' );
+
+		sc_wpun()->state()->record_delivery( $result, 'junk', $instance );
+		sc_wpun()->state()->record_delivery( $result, $notification, 'junk' );
+		sc_wpun()->state()->record_delivery( 'junk', $notification, $instance );
+
+		$this->assertArrayNotHasKey( 'email', $this->stored_state()['channels'] ?? array() );
+	}
+
+	/**
+	 * A time to wait below one second is not a time.
+	 */
+	public function test_a_fractional_retry_time_is_dropped() {
+		$state = sc_wpun()->state()->normalise( array( 'channels' => array( 'one' => array( 'retry_at' => '0.5' ) ) ) );
+
+		$this->assertArrayNotHasKey( 'retry_at', $state['channels']['one'] );
+	}
+
+	/**
+	 * A list of what was told that is not a list is read as nothing.
+	 */
+	public function test_a_notified_list_that_is_not_a_list_is_nothing() {
+		$state = sc_wpun()->state()->normalise( array( 'channels' => array( 'one' => array( 'notified' => 'junk' ) ) ) );
+
+		$this->assertSame( array(), $state['channels']['one']['notified'] );
 	}
 }

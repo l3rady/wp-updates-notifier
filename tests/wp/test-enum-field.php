@@ -554,4 +554,42 @@ class Test_Enum_Field extends WPUN_Test_Case {
 		$this->assertSame( 'all', $routing['scope'] );
 		$this->assertSame( 'major', $routing['core'] );
 	}
+
+	/**
+	 * A value from outside that cannot be one of the choices is refused, with nothing else in the answer.
+	 */
+	public function test_cast_external_refuses_with_the_whole_answer() {
+		$refused = array(
+			'ok'    => false,
+			'value' => null,
+		);
+		$field   = array(
+			'type'    => 'enum',
+			'options' => array(
+				'a' => 'A',
+				'b' => 'B',
+			),
+		);
+
+		$this->assertSame( $refused, Enum_Field::cast_external( array( 'a' ), $field ) );
+		$this->assertSame( $refused, Enum_Field::cast_external( 'c', $field ) );
+		$this->assertSame( $refused, Enum_Field::cast_external( 'a,c', array_merge( $field, array( 'multiple' => true ) ) ) );
+	}
+
+	/**
+	 * A schema without options has no keys.
+	 */
+	public function test_keys_of_a_schema_without_options() {
+		$this->assertSame( array(), Enum_Field::keys( array() ) );
+	}
+
+	/**
+	 * Both names of the type are enums, and nothing else is.
+	 */
+	public function test_is_enum() {
+		$this->assertTrue( Enum_Field::is_enum( array( 'type' => 'enum' ) ) );
+		$this->assertTrue( Enum_Field::is_enum( array( 'type' => 'select' ) ) );
+		$this->assertFalse( Enum_Field::is_enum( array( 'type' => 'text' ) ) );
+		$this->assertFalse( Enum_Field::is_enum( array() ) );
+	}
 }

@@ -13,7 +13,7 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 # Jobs that do not use the map: they always run, or never run on a pull request. Each is still in its gate's needs.
-exempt='workflows secrets images wordpress-trunk deploy'
+exempt='workflows secrets images wordpress-trunk mutation deploy'
 workflows='ci lint docs security'
 gate_of() {
 	case "$1" in

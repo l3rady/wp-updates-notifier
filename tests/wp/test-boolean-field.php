@@ -418,4 +418,17 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 		$this->assertInstanceOf( WP_Error::class, $error );
 		$this->assertSame( array( 'field' => 'alias' ), $error->get_error_data() );
 	}
+
+	/**
+	 * A value that is neither on nor off is refused, and the value that comes with the refusal is off.
+	 */
+	public function test_sanitize_refuses_junk() {
+		$this->assertSame(
+			array(
+				'ok'    => false,
+				'value' => false,
+			),
+			Boolean_Field::sanitize( 'maybe', array( 'type' => 'boolean' ) )
+		);
+	}
 }

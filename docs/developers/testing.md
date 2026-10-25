@@ -21,6 +21,7 @@ flowchart LR
         secTests["Security tests<br>capabilities, security tokens, escaping"]
         contract["Contract and extension API tests<br>what add-ons rely on"]
         bugs["make test-known-bugs<br>open bugs"]
+        mutation["make mutation<br>would the tests notice a change"]
     end
     subgraph pkg["The zip"]
         dist["make dist-check<br>make dist-repro<br>contents, same bytes"]
@@ -38,7 +39,7 @@ flowchart LR
     end
 ```
 
-CI runs every target in the diagram on pull requests, except `make dast`. It takes about 11 minutes, so you run it yourself before a release.
+CI runs every target in the diagram on pull requests, except `make dast` and `make mutation`. `make dast` takes about 11 minutes, so you run it yourself before a release. `make mutation` is slow, so CI runs it every night.
 
 ## WordPress tests
 
@@ -51,6 +52,18 @@ CI runs every target in the diagram on pull requests, except `make dast`. It tak
 **Coverage.** `make coverage` runs the same suite (single site) in an image with pcov, prints the summary and the five least covered files, writes `build/coverage/clover.xml` and `build/coverage/html/`, and fails when line coverage of the shipped code (`wp-updates-notifier.php`, `uninstall.php`, `includes/`, `modules/`; files no test loads count as uncovered) is below `COVERAGE_MIN` in the `Makefile`. It is a floor that only goes up: raise it, rounded down to a whole number, when a change raises the coverage. The aim is 90% or more. `bin/coverage-check.php` computes the percentage from the Clover report, and `tests/bin/test-coverage-check.sh` tests it. The pcov image is a separate Docker stage, so `make test-wp` is unchanged. Multisite-only code paths are not measured.
 
 **CI.** The `coverage` job in `ci.yml` runs `make coverage` on PHP 8.3 and WordPress 7.1.3 for every pull request that changes code, tests or `phpunit.xml.dist`, and keeps the report as the `coverage-report` artifact for 14 days. It is in `ci-gate`, the required check, so a pull request below the floor cannot merge. The `wordpress` job in `ci.yml` runs PHP 7.4 to 8.5 on WordPress 7.1.3, single site and multisite, and PHP 7.4 and 8.3 on WordPress 6.7.9, the oldest supported. The `wordpress-trunk` job runs the suite against WordPress trunk every night, on PHP 7.4 and 8.5.
+
+## Mutation testing
+
+**Covers.** Whether the WordPress tests would fail if the shipped code were wrong. [Infection](https://infection.github.io/) changes the code one small step at a time (a comparison, a `continue`, a removed call), runs the tests that cover the changed line, and reports the changes no test fails on. Coverage says a line ran; this says a test would notice if it were wrong.
+
+**Lives in.** `infection.json5` at the root: the shipped code (`wp-updates-notifier.php`, `uninstall.php`, `includes/`, `modules/`), the default mutators, the floors, and the mutants that are ignored with a reason. `docker/mutation.sh` runs it in the `wp-tests-coverage` image, where Infection is a pinned and checked PHAR. The tests are the WordPress suite, so it needs no tests of its own; a surviving mutant is fixed with a test in `tests/wp/`.
+
+**Run it.** `make mutation` for everything (about 35 minutes on 4 threads), `make mutation ARGS="--filter=includes/class-state.php"` for one file. `THREADS` sets how many PHPUnit processes run at once. Each gets its own table prefix from Infection's `TEST_TOKEN`, so the processes share the one test database. The log, with the diff of every survivor, is `build/infection/infection.log`.
+
+**Floors.** `minMsi` and `minCoveredMsi` in `infection.json5` were 92.98% and 93.52% when set and only go up; [CONTRIBUTING.md](https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md) says how to raise them and how to ignore a mutant that cannot be observed. The code that decides whether a notification is sent has no survivors that are not ignored with a reason.
+
+**CI.** The `mutation` job in `ci.yml` runs `make mutation` every night and on **Run workflow**, never on a pull request, and keeps the log as the `mutation-report` artifact for 14 days. It is not part of `ci-gate`, like the `wordpress-trunk` job.
 
 ## Security tests
 

@@ -449,4 +449,128 @@ class Test_Email_Channel extends WPUN_Test_Case {
 			),
 		);
 	}
+
+	/**
+	 * Blank entries between addresses are skipped, not the end of the list.
+	 */
+	public function test_validate_settings_skips_blank_entries() {
+		$clean = $this->channel->validate_settings( array( 'to' => 'a@example.org, ,, b@example.org' ) );
+
+		$this->assertSame( 'a@example.org,b@example.org', $clean['to'] );
+	}
+
+	/**
+	 * The From header names the sender and the address.
+	 */
+	public function test_the_from_header_has_the_name_and_the_address() {
+		$this->channel->send( $this->notification(), $this->instance( array( 'from' => 'ops@example.org' ) ) );
+
+		$this->assertStringContainsString( 'From: WP Updates Notifier <ops@example.org>', $this->headers() );
+	}
+
+	/**
+	 * A failure carries the message the mailer gave.
+	 */
+	public function test_a_failure_carries_the_message_of_the_mailer() {
+		add_filter(
+			'wp_mail',
+			static function ( $args ) {
+				$args['to'] = 'not-an-address';
+				return $args;
+			}
+		);
+
+		$result = $this->channel->send( $this->notification(), $this->instance() );
+
+		$this->assertStringContainsString( 'recipient', $result->get_message() );
+		$this->assertNotSame( 'WordPress could not send the email.', $result->get_message() );
+	}
+
+	/**
+	 * What a payload filter returns is used where it is the right type and ignored where it is not.
+	 */
+	public function test_the_payload_filter_may_only_return_safe_values() {
+		add_filter(
+			'sc_wpun_channel_payload',
+			static function ( $payload ) {
+				$payload['to']      = array( '   ', 5, "evil@example.org\nBcc: x@example.org", 'good@example.org' );
+				$payload['headers'] = array( 'X-Ok: 1', "X-Bad: 1\nBcc: evil@example.org", 5 );
+				$payload['message'] = array( 'not text' );
+				$payload['subject'] = 7;
+				return $payload;
+			}
+		);
+
+		$result = $this->channel->send( $this->notification(), $this->instance() );
+
+		$this->assertTrue( $result->is_success() );
+		$this->assertSame( 'good@example.org', $this->mailer()->get_recipient( 'to', 0, 0 )->address );
+		$this->assertFalse( $this->mailer()->get_recipient( 'to', 0, 1 ) );
+		$this->assertStringContainsString( 'X-Ok: 1', $this->headers() );
+		$this->assertStringNotContainsString( 'Bcc', $this->headers() );
+		$this->assertStringContainsString( 'Hello & <Dolly>', $this->sent_mail()->body );
+	}
+
+	/**
+	 * A payload filter that returns only some of the keys leaves the rest as they were.
+	 */
+	public function test_the_payload_filter_may_leave_keys_out() {
+		add_filter(
+			'sc_wpun_channel_payload',
+			static function () {
+				return array( 'message' => 'Only a message' );
+			}
+		);
+		$errors = array();
+		set_error_handler( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting,WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Collecting what PHP reports.
+			static function ( $number, $message ) use ( &$errors ) {
+				$errors[] = $message;
+				return true;
+			}
+		);
+		try {
+			$result = $this->channel->send( $this->notification(), $this->instance( array( 'from' => 'ops@example.org' ) ) );
+		} finally {
+			restore_error_handler();
+		}
+
+		$this->assertSame( array(), $errors );
+		$this->assertTrue( $result->is_success() );
+		$this->assertSame( 'ops@example.org', $this->mailer()->get_recipient( 'to', 0, 0 )->address );
+		$this->assertStringContainsString( 'WP Updates Notifier', $this->sent_mail()->subject );
+		$this->assertStringContainsString( 'From: WP Updates Notifier', $this->headers() );
+	}
+
+	/**
+	 * A payload filter may replace the subject and the message with text.
+	 */
+	public function test_the_payload_filter_may_replace_the_subject_and_message() {
+		add_filter(
+			'sc_wpun_channel_payload',
+			static function ( $payload ) {
+				$payload['subject'] = 'A new subject';
+				$payload['message'] = 'A new message';
+				return $payload;
+			}
+		);
+
+		$this->channel->send( $this->notification(), $this->instance() );
+
+		$this->assertSame( 'A new subject', $this->sent_mail()->subject );
+		$this->assertStringContainsString( 'A new message', $this->sent_mail()->body );
+	}
+
+	/**
+	 * Spaces around the format are not part of it.
+	 */
+	public function test_validate_settings_trims_the_format() {
+		$clean = $this->channel->validate_settings(
+			array(
+				'to'     => 'a@example.org',
+				'format' => ' html ',
+			)
+		);
+
+		$this->assertSame( 'html', $clean['format'] );
+	}
 }

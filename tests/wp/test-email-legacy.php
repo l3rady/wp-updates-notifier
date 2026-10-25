@@ -43,6 +43,30 @@ class Test_Email_Legacy extends WPUN_Test_Case {
 	}
 
 	/**
+	 * An instance without a usable recipient is skipped, and the ones after it still get the message.
+	 */
+	public function test_send_email_message_skips_a_blank_recipient_and_goes_on() {
+		$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::send_email_message' );
+		$this->save_settings( array( 'email_notifications' => 0 ) );
+		$attempts = array();
+		add_filter(
+			'wp_mail',
+			static function ( $args ) use ( &$attempts ) {
+				$attempts[] = $args['to'];
+				return $args;
+			}
+		);
+		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'blank', 'email', 'Blank', true, array( 'to' => '   ' ) ) );
+		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'client', 'email', 'Client', true, array( 'to' => 'client@example.org' ) ) );
+
+		$this->assertTrue( $this->plugin()->send_email_message( 'Hello' ) );
+
+		$this->assertSame( array( 'client@example.org' ), $attempts, 'No mail is attempted for a blank recipient.' );
+		$this->assertSame( 1, $this->sent_mail_count() );
+		$this->assertSame( 'client@example.org', tests_retrieve_phpmailer_instance()->get_recipient( 'to' )->address );
+	}
+
+	/**
 	 * The mail filter callbacks are deprecated. The two for the From address do nothing now.
 	 */
 	public function test_the_mail_filter_callbacks_are_deprecated() {

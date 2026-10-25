@@ -102,6 +102,62 @@ the file with `make coverage COVERAGE_MIN=98`. Do not lower it to get a change t
 
 The job is part of `ci-gate`, the required check on `main`, so it needs no branch protection setting of its own.
 
+### Mutation testing
+
+Coverage says which lines the tests run, not whether they would notice a change. `make mutation` runs
+[Infection](https://infection.github.io/) on the same WordPress suite (PHP 8.3, pcov): it changes the shipped code
+one small step at a time (a `>` becomes `>=`, a `continue` becomes `break`, a call is removed) and runs the tests that
+cover the changed line. A mutant that no test fails on has survived: either a test is missing, or the change is one
+nobody can observe.
+
+```sh
+make mutation                                            # everything: about 35 minutes with the default 4 threads on a 16-core machine, run nightly in CI
+make mutation THREADS=12                                 # more or fewer PHPUnit processes at once (4 by default)
+make mutation ARGS="--filter=includes/class-state.php"   # one file (--filter also takes a directory); a few minutes
+make mutation ARGS="includes/class-state.php includes/class-routing.php"   # several files
+```
+
+The report is `build/infection/infection.log` (every surviving mutant with a diff, `summary.log` and `summary.json`
+count them). Each PHPUnit process Infection starts gets its own table prefix (`TEST_TOKEN`, see
+`docker/wp-tests-entrypoint.sh`), so they share one database without touching each other's tables. `make test-wp` is
+unchanged.
+
+Infection is a pinned PHAR in the `wp-tests-coverage` image (`INFECTION_VERSION` and `INFECTION_SHA256` in
+`docker/Dockerfile`, with the steps to verify a new release), not a Composer dependency: it needs PHP 8.2, and the
+project's Composer platform is PHP 7.4.
+
+It is slow, so it runs in CI every night and on demand (the `mutation` job of `ci.yml`, **Run workflow**), never on a
+pull request. Like the nightly `wordpress-trunk` job it is listed in `ci-gate` but skipped on pull requests, so it
+never blocks one. The logs are kept as the `mutation-report` artifact for 14 days.
+
+**The floors.** `infection.json5` sets `minMsi` and `minCoveredMsi`; `make mutation` and the nightly job fail below
+them. They are 91 and 92: the scores were 92.98% (MSI) and 93.52% (covered MSI) when set, on 5322 mutants of which
+150 are ignored, and two full runs of the same code differed by about a point (timing under load), so the floors sit
+a point below. MSI counts the mutants of lines no test runs as missed, covered MSI only those the tests run. They
+only go up: when a change raises the score, raise the floors in the same pull request to the new score rounded down,
+less one.
+Do not lower them to get a change through; write the missing test. Try a value without editing the file with
+`make mutation ARGS="--min-msi=95"`.
+
+Baseline: 5322 mutants, 4792 killed, 5 timed out, 12 errored (these count as detected), 333 survived, 30 not covered
+by any test, 150 ignored; the 35 minutes were with 4 threads. The decision-logic classes listed below score about 99%
+when run alone; the survivors left are mostly in the channel form, channel store, field renderer and field type
+code.
+
+**Survivors.** The code that decides whether a notification is sent (what was notified, the active-only filter,
+routing, reminders, validation of settings, the cron schedule and its repair) is tested to a higher standard than the
+floor: no survivor is left there unless it is ignored with a reason. To handle a survivor, read its diff in the log and
+either write the test that fails with the change, or, if the changed code does the same thing for everyone (a cast of
+an array key, a `trim()` before a function that trims, a check that cannot be reached), ignore it in
+`infection.json5`. Ignore it by the text of its line under the mutator that made it (`ignoreSourceCodeByRegex`), or by
+`Class::method` under `ignore`, put the reason in a comment above it, and keep the pattern as narrow as the line.
+Never change the plugin to make a mutant go away.
+
+Known limits: it runs a single site, so multisite-only lines are ignored; a lone `continue` line is never marked as
+run by pcov, so those mutants are reported as not covered; and code that runs only while WordPress loads, before any
+test starts (the plugin's hook registration), is mapped to the few tests that boot the plugin again, which is why
+`tests/wp/test-hooks.php` boots a fresh `Plugin` and checks each hook.
+
 The security tests (`tests/wp/security/`, `@group security`) run with the rest
 of the suite. To run only them, use `make test-wp ARGS="--group security"`.
 

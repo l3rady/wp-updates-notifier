@@ -53,7 +53,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-upgrade screenshots security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-upgrade screenshots security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -86,6 +86,15 @@ COVERAGE_MIN ?= 96
 coverage: ## Line coverage of the plugin by the WordPress suite (pcov, single site); fails below COVERAGE_MIN; report in build/coverage/
 	@mkdir -p build/coverage
 	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
+
+# Mutation testing with Infection (slow, so it runs nightly in CI and by hand, not on pull requests): it changes the
+# code and checks that a test fails. THREADS PHPUnit processes run at once, each on tables of its own (TEST_TOKEN).
+# ARGS goes to Infection, e.g. make mutation ARGS="--filter=includes/class-state.php". The floors are in
+# infection.json5; see CONTRIBUTING.md.
+THREADS ?= 4
+mutation: ## Mutation testing of the plugin with Infection (pcov, slow); fails below the minimums in infection.json5; logs in build/infection/
+	@mkdir -p build/infection
+	$(COMPOSE) run --build --rm -v $(CURDIR)/build/infection:/infection wp-tests-coverage sh /opt/wp-updates-notifier/docker/mutation.sh --threads=$(THREADS) $(ARGS)
 
 test-known-bugs: ## Run the tests that document open bugs (they are expected to fail)
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)

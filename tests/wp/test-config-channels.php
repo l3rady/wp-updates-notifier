@@ -666,4 +666,17 @@ class Test_Config_Channels extends WPUN_Test_Case {
 		$this->assertSame( 'first@example.org', $store->get( 'dup' )->get_setting( 'to' ) );
 		$this->assertCount( 2, array_filter( sc_wpun()->config()->problems(), static fn( $problem ) => 'SC_WPUN_CHANNELS' === $problem['key'] ) );
 	}
+
+	/**
+	 * An instance that is misconfigured does not stop the instances after it.
+	 */
+	public function test_a_misconfigured_instance_does_not_stop_the_next() {
+		sc_wpun_channels()->save( new Channel_Instance( 'second', 'email', 'Second', true, array( 'to' => 'second@example.org' ) ) );
+		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__TO' => 'not an address' ) );
+
+		$results = $this->run_check();
+
+		$this->assertSame( 'misconfigured', $results['email']->get_code() );
+		$this->assertTrue( $results['second']->is_success() );
+	}
 }

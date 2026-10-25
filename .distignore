@@ -32,6 +32,7 @@
 /.gitleaks.toml
 /.semgrep
 /phpcs.xml.dist
+/infection.json5
 /phpstan-baseline.neon
 /phpstan.neon.dist
 /psalm-baseline.xml
