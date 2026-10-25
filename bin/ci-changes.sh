@@ -167,6 +167,7 @@ tests/flows/compose.yml   e2e
 tests/flows/run.sh        e2e
 tests/flows/seed.sh       e2e
 tests/flows/playwright.config.js e2e
+tests/flows/opcache.ini   e2e
 tests/flows/control.php   e2e phpcs
 tests/flows/reset.php     e2e phpcs
 # make e2e-upgrade (tests/flows/upgrade) installs 1.6.0 from WordPress.org: no pull request job runs it, so run it

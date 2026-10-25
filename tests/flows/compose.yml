@@ -51,6 +51,8 @@ services:
       - wp:/var/www/html
       - ../../docker/apache/ports.conf:/etc/apache2/ports.conf:ro
       - ../../docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
+      # Re-reads changed PHP files on every request (see the file).
+      - ./opcache.ini:/usr/local/etc/php/conf.d/zz-flows-opcache.ini:ro
       - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
       - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
       # Installed, not active: a test activates it, because it adds an item, a routing rule and a short-circuit.

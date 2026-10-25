@@ -53,6 +53,8 @@ services:
       - wp:/var/www/html
       - ../../../docker/apache/ports.conf:/etc/apache2/ports.conf:ro
       - ../../../docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
+      # Re-reads changed PHP files on every request (see the file).
+      - ../opcache.ini:/usr/local/etc/php/conf.d/zz-flows-opcache.ini:ro
       # Single files: mail goes to Mailpit; the fake updates are loaded by the stage mu-plugin when a test asks.
       - ../../../docker/mu-plugins/mailpit.php:/var/www/html/wp-content/mu-plugins/mailpit.php:ro
       - ./mu-plugin.php:/var/www/html/wp-content/mu-plugins/wpun-upgrade-stage.php:ro
