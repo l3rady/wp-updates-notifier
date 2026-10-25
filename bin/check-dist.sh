@@ -39,6 +39,13 @@ unexpected="$(echo "$entries" | grep -Ev "$(echo "$allowed" | paste -sd'|')" || 
 [ -z "$unexpected" ] || fail "unexpected files in the zip:
 $unexpected"
 
+# The WordPress.org assets (icons, banners, screenshots, the blueprint) go to SVN assets/, never into the zip. The
+# plugin has its own assets/ directory for the settings screen, so the check is by file name, at any depth.
+wporg="$(echo "$entries" | grep -E '/(icon-(128x128|256x256)\.(png|jpg)|icon\.svg|banner-(772x250|1544x500)(-rtl)?\.(png|jpg)|screenshot-[0-9]+\.(png|jpe?g|gif)|blueprint\.json)$' || true)"
+[ -z "$wporg" ] || fail "the zip contains WordPress.org assets:
+$wporg"
+echo "ok: no WordPress.org icons, banners, screenshots or blueprint in the zip"
+
 for required in wp-updates-notifier.php uninstall.php readme.txt LICENSE; do
 	echo "$entries" | grep -qx "$slug/$required" || fail "$required is missing from the zip"
 done

@@ -137,7 +137,7 @@ jobs:
 
   # WordPress.org's Plugin Check on the zip, and the header and generated
   # readme.txt rules it enforces, so a release is never refused at submission.
-  # The generated Playground blueprint (Live Preview) is checked here too.
+  # The generated Playground blueprint (Live Preview) and the WordPress.org assets are checked here too.
   plugin-check:
     needs: changes
     if: github.event_name != 'schedule' && contains(fromJSON(needs.changes.outputs.jobs), 'plugin-check')
@@ -155,6 +155,10 @@ jobs:
         run: make test-blueprint
       - name: Playground blueprint
         run: make check-blueprint
+      - name: Test the WordPress.org assets check
+        run: make test-wporg-assets
+      - name: WordPress.org assets
+        run: make wporg-assets-check
       - name: Build the zip
         run: make dist
       - name: Plugin Check

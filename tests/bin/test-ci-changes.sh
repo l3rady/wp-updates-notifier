@@ -55,6 +55,7 @@ check "Makefile" 'Makefile' "$all_jobs" false
 check "the script itself" 'bin/ci-changes.sh' "$all_jobs" false
 check "plugin PHP" 'includes/class-plugin.php' "$php_set" false
 check "WordPress tests" 'tests/wp/test-x.php' 'wordpress phpcs smoke' false
+check "WordPress.org assets" '.wordpress-org/screenshot-1.png' 'plugin-check' false
 check "local-only DAST" 'tests/dast/compose.yml' '' false
 check "no changes" '' '' false
 check "several rules apply" 'docs/developers/hooks.md

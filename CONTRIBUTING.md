@@ -231,6 +231,16 @@ it from `.wordpress-org/blueprint/` (`make blueprint` writes a preview to
 Playground schema and `make test-blueprint` tests the generator. The asset
 deploy ships it to SVN `assets/blueprints/`.
 
+`make wporg-assets` assembles what goes to SVN `assets/` in `build/wporg-assets/`: the
+top-level files of `.wordpress-org/` (icons, banners, screenshots; never `src/`,
+`readme/` or `blueprint/`) and `blueprints/blueprint.json`. `make wporg-assets-check`
+validates it (names, formats, exact sizes, screenshots against the readme captions, the
+SVG icon, the blueprint schema) and runs in the `plugin-check` CI job. The release deploy
+(`10up/action-wordpress-plugin-deploy`) uses `build/wporg-assets/` as its `ASSETS_DIR`.
+It syncs it with `rsync --delete` and sets `svn:mime-type` for the png, jpg, gif and svg
+files itself, so no extra step is needed. `make dist` wipes `build/`, so run
+`make wporg-assets` after it. `make dist-check` fails if the zip holds any of these files.
+
 The zip is reproducible. `make dist-repro` builds it twice from fresh clones of
 `HEAD` (so only committed changes count), with a different umask, file times and
 time zone, and fails if the SHA-256 differs. `make dist` also writes the

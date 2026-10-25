@@ -128,8 +128,13 @@ bin/check-dist-repro.sh   dist dist-repro plugin-check
 bin/test-dist.sh          dist dist-repro plugin-check
 bin/plugin-check.sh       dist dist-repro plugin-check
 bin/fresh-wordpress.sh    dist dist-repro plugin-check
-# The WordPress.org assets are excluded from the zip (.distignore); make assets is not run by CI.
-.wordpress-org/*          -
+# The WordPress.org assets are excluded from the zip (.distignore). make wporg-assets-check assembles and checks them
+# in the plugin-check job; make assets (rendering the icons and banners) and make screenshots are not run by CI.
+.wordpress-org/*          plugin-check
+bin/build-wporg-assets.sh plugin-check
+bin/check-wporg-assets.sh plugin-check
+bin/check-wporg-assets.php plugin-check smoke
+tests/bin/test-wporg-assets.sh plugin-check
 docker/assets/*           -
 bin/build-assets.sh       -
 

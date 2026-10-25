@@ -76,6 +76,9 @@ make test-readme                 # test the readme generator
 make blueprint                   # preview the generated WordPress Playground blueprint in build/blueprint.json (it is not committed)
 make check-blueprint             # validate it against the Playground blueprint schema (vendored in tests/bin/blueprint)
 make test-blueprint              # test the blueprint generator and that schema check
+make wporg-assets                # assemble build/wporg-assets/, what the release deploys to SVN assets/ (icons, banners, screenshots, blueprints/blueprint.json)
+make wporg-assets-check          # check it: allowed names, formats, exact sizes, screenshots against the readme captions, the SVG icon, the blueprint schema
+make test-wporg-assets           # test that check against a clean set and broken ones
 make blueprint-smoke             # run the blueprint with the zip in WordPress Playground CLI and check the demo in a browser (needs the network; not in CI)
 ```
 

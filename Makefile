@@ -53,7 +53,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y screenshots security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y screenshots security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -82,7 +82,7 @@ test-wp-ms: ## Run the WordPress test suite as multisite
 test-known-bugs: ## Run the tests that document open bugs (they are expected to fail)
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 
-test: test-wp test-wp-ms test-release test-readme test-blueprint ## Run every test layer
+test: test-wp test-wp-ms test-release test-readme test-blueprint test-wporg-assets ## Run every test layer
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), the plugin, the example add-on and the field showcase
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcs && vendor/bin/phpcs --standard=examples/wpun-example-channel/phpcs.xml.dist && vendor/bin/phpcs --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist'
@@ -251,6 +251,16 @@ screenshots: ## Regenerate .wordpress-org/screenshot-1.png to 4 from a throwaway
 
 assets: ## Render the plugin icon, banner and docs site brand files from the SVG sources in .wordpress-org/src (docker/assets)
 	$(COMPOSE) --profile assets run --build --rm -T assets sh bin/build-assets.sh
+
+wporg-assets: ## Assemble build/wporg-assets/ (what the release deploys to SVN assets/): the icons, banners and screenshots, plus the generated blueprints/blueprint.json
+	$(COMPOSE) run --build --rm php sh bin/build-wporg-assets.sh
+
+wporg-assets-check: wporg-assets ## Check build/wporg-assets: allowed names, formats, exact sizes, screenshots against the readme captions, the SVG icon and the blueprint schema
+	$(COMPOSE) run --build --rm php sh bin/check-wporg-assets.sh
+	$(COMPOSE) --profile blueprint run --rm -T blueprint-check tests/bin/blueprint/check.js build/wporg-assets/blueprints/blueprint.json
+
+test-wporg-assets: ## Test the assets checker against a clean set and broken ones
+	$(COMPOSE) run --build --rm php sh tests/bin/test-wporg-assets.sh
 
 # The documentation site (docker/docs, mkdocs.yml). docs-deploy is what the deploy workflow runs: it commits one version
 # to the local gh-pages branch with mike and never pushes (the caller does, so no token enters the container).
