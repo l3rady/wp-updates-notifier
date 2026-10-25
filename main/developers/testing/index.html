@@ -1018,6 +1018,8 @@
       
         
       
+        
+      
     
     
     
@@ -1548,6 +1550,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0018-generate-readme-at-build-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0018 Generated readme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1849,8 +1879,8 @@
 <li><code>make dist</code> builds <code>build/wp-updates-notifier-&lt;version&gt;.zip</code> with the runtime files only. <code>make dist-check</code> fails if the contents are not on the allowlist, a required file is missing or the version is wrong.</li>
 <li><code>make dist-repro</code> builds the zip twice from fresh clones, with a different umask, file times and time zone, and fails if the SHA-256 differs.</li>
 <li><code>make test-dist</code> installs the zip into a fresh WordPress, then activates, deactivates and uninstalls it.</li>
-<li><code>make plugin-check</code> runs WordPress.org's Plugin Check on the zip. <code>make check-headers</code> checks that the plugin header and <code>readme.txt</code> agree and follow WordPress.org's rules.</li>
-<li><code>make test-release</code> rehearses the scripts the release workflow runs: the copyright year, the stable tag and the signed commit request.</li>
+<li><code>make plugin-check</code> runs WordPress.org's Plugin Check on the zip. <code>make check-headers</code> generates <code>readme.txt</code> (it is not committed; edit <code>.wordpress-org/readme/</code>, <code>docs/users/troubleshooting.md</code> and <code>CHANGELOG.md</code>, see <code>make readme</code>) and checks that it agrees with the plugin header and follows WordPress.org's rules. <code>make test-readme</code> tests the generator and those checks.</li>
+<li><code>make test-release</code> rehearses the scripts the release workflow runs: the copyright year and the signed commit request.</li>
 </ul>
 <p><strong>Lives in.</strong> <code>bin/</code> for the scripts, <code>tests/bin/test-release-scripts.sh</code> for the release rehearsal.</p>
 <p><strong>CI.</strong> <code>ci.yml</code> has a job for each: <code>smoke</code> (every PHP version), <code>dist</code> (PHP 7.4 and 8.5, which also runs <code>make test-dist</code>), <code>dist-repro</code>, <code>plugin-check</code> (with <code>check-headers</code>) and <code>release-scripts</code>.</p>
@@ -1859,7 +1889,7 @@
 <ul>
 <li><code>make a11y</code> checks the settings screen on a throwaway WordPress site (its own Compose project, so it never touches <code>make up</code>). Specs are in <code>tests/e2e/specs/</code>.</li>
 <li><code>make docs-a11y</code> builds this documentation site and checks every page in the dark and the light scheme: axe, no request to a third party, visible keyboard focus, and that every Mermaid diagram parses. A syntax error in a diagram fails it, because Mermaid would otherwise draw an error image and the page would still load. Specs are in <code>tests/e2e/docs/specs/</code>.</li>
-<li><code>make docs-links</code> checks the links in the built site and in <code>README.md</code>, <code>readme.txt</code> and <code>CONTRIBUTING.md</code> with lychee, including links to other sites. Internal links and anchors are already checked by the strict <code>make docs</code> build.</li>
+<li><code>make docs-links</code> checks the links in the built site and in <code>README.md</code>, the generated <code>readme.txt</code> and <code>CONTRIBUTING.md</code> with lychee, including links to other sites. Internal links and anchors are already checked by the strict <code>make docs</code> build.</li>
 </ul>
 <p><strong>CI.</strong> The <code>a11y</code> job in <code>ci.yml</code>. The <code>docs</code> and <code>links</code> jobs in <code>docs.yml</code>. The <code>links</code> job also runs every week, because links to other sites break without a change here.</p>
 <h2 id="security-tooling">Security tooling<a class="headerlink" href="#security-tooling" title="Permanent link">&para;</a></h2>
