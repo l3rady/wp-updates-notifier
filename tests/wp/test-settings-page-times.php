@@ -48,7 +48,9 @@ class Test_Settings_Page_Times extends WPUN_Test_Case {
 		$html = $this->render();
 
 		$this->assertStringContainsString( 'Last checked: ' . esc_html( $this->site_time( $timestamp ) ), $html );
-		$this->assertStringNotContainsString( gmdate( get_option( 'time_format' ), $timestamp ), $html, 'The UTC time must not be shown.' );
+		// Only the "Last checked" line: other times on the page are now-based and can match the UTC time by chance (#286).
+		$utc = gmdate( get_option( 'date_format' ), $timestamp ) . ' at ' . gmdate( get_option( 'time_format' ), $timestamp );
+		$this->assertStringNotContainsString( 'Last checked: ' . esc_html( $utc ), $html, 'The UTC time must not be shown.' );
 	}
 
 	/**
