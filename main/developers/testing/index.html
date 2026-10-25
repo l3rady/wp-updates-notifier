@@ -1888,6 +1888,7 @@
 <p><strong>Covers.</strong> Accessibility in a real browser, with Playwright and axe: WCAG 2.2 A and AA, and keyboard use.</p>
 <ul>
 <li><code>make a11y</code> checks the settings screen on a throwaway WordPress site (its own Compose project, so it never touches <code>make up</code>). Specs are in <code>tests/e2e/specs/</code>.</li>
+<li><code>make screenshots</code> is not a test: it regenerates the WordPress.org screenshots (<code>.wordpress-org/screenshot-1.png</code> to <code>4</code>) on a throwaway site of its own (compose project <code>wpun-shots</code>, files in <code>tests/screenshots/</code>), with made-up data and the update email caught by Mailpit. It fails if the update check did not send. Run it before a release; CI does not.</li>
 <li><code>make docs-a11y</code> builds this documentation site and checks every page in the dark and the light scheme: axe, no request to a third party, visible keyboard focus, and that every Mermaid diagram parses. A syntax error in a diagram fails it, because Mermaid would otherwise draw an error image and the page would still load. Specs are in <code>tests/e2e/docs/specs/</code>.</li>
 <li><code>make docs-links</code> checks the links in the built site and in <code>README.md</code>, the generated <code>readme.txt</code> and <code>CONTRIBUTING.md</code> with lychee, including links to other sites. Internal links and anchors are already checked by the strict <code>make docs</code> build.</li>
 </ul>
