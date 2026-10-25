@@ -39,11 +39,6 @@ This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/u
 - A number of available hooks and filters for advanced users, and an API for add-ons to add notification channels. See the [developer guide](https://wpun.cariss.dev/latest/developers/).
 - Active support and development.
 
-*Languages*
-
-- French by [Christophe Catarina](http://www.ordilibre.com/) - *Added 03 July 2013*
-- German by Alexander Pfabel - *Added 02 October 2012*
-
 == Installation ==
 
 * Unzip and upload contents to your plugins directory (usually wp-content/plugins/).
