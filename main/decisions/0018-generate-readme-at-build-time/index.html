@@ -1761,7 +1761,7 @@
 <li>Good: no generated file in the repository, so no staleness check and no merge conflicts in it.</li>
 <li>Good: the FAQ answers are the ones on the documentation site, so they are written once.</li>
 <li>Bad: a reader of the repository cannot open <code>readme.txt</code> or see its diff in a pull request. <code>make readme</code> shows it, and a change to a source shows in the diff of the source.</li>
-<li>Bad: anything that needs the readme must build it first. The SVN deploy for readme-only changes (#57), lychee (<code>make docs-links</code> does) and the WordPress tests (they call the generator) do.</li>
+<li>Bad: anything that needs the readme must build it first. Lychee (<code>make docs-links</code>) and the WordPress tests (they call the generator) do; the release deploy to SVN (#57) takes it from the zip.</li>
 <li>Bad: the FAQ and changelog Markdown support is the subset the user guide uses. A new construct needs the generator taught first.</li>
 </ul>
 <h2 id="considered-options">Considered options<a class="headerlink" href="#considered-options" title="Permanent link">&para;</a></h2>
