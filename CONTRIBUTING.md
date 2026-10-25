@@ -87,6 +87,21 @@ CI also runs these, outside `make security`:
 - **Trivy** over the images (`make audit-images`): on `main` and weekly, report only.
 - **OpenSSF Scorecard** (`scorecard.yml`) on `main`.
 
+### Coverage
+
+`make coverage` runs the WordPress test suite (single site, PHP 8.3 unless `PHP_VERSION` says otherwise) with
+pcov, prints the summary and the least covered files, writes `build/coverage/clover.xml` and an HTML report in
+`build/coverage/html/`, and fails when line coverage of the code that ships (`wp-updates-notifier.php`,
+`uninstall.php`, `includes/` and `modules/`) is below `COVERAGE_MIN`. The `coverage` job in CI runs it on every pull
+request that changes code or tests, and keeps the report as an artifact (`coverage-report`).
+
+`COVERAGE_MIN` is set in the `Makefile` (96 now, measured at 96.39%) and is a floor: new code comes with tests. The aim
+is 90% or more, which is already met, so the floor only goes up. When a change raises the coverage, raise
+`COVERAGE_MIN` to the new value rounded down to a whole number, in the same pull request. Try a value without editing
+the file with `make coverage COVERAGE_MIN=98`. Do not lower it to get a change through; write the missing test.
+
+The job is part of `ci-gate`, the required check on `main`, so it needs no branch protection setting of its own.
+
 The security tests (`tests/wp/security/`, `@group security`) run with the rest
 of the suite. To run only them, use `make test-wp ARGS="--group security"`.
 

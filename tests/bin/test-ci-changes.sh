@@ -28,7 +28,7 @@ gate_of() {
 
 all_jobs="$(sed -n "s/^ALL_JOBS='\(.*\)'$/\1/p" "$script")"
 [ -n "$all_jobs" ] || fail "no ALL_JOBS line in $script"
-php_set='phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint'
+php_set='phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs sast taint'
 
 # The job ids of a "jobs=[...]" line, sorted, one line.
 ids() { echo "$1" | sed -n 's/^jobs=//p' | tr -d '[]"' | tr ',' '\n' | sort | tr '\n' ' ' | sed 's/ $//'; }
@@ -54,7 +54,7 @@ check "workflow" '.github/workflows/ci.yml' "$all_jobs" false
 check "Makefile" 'Makefile' "$all_jobs" false
 check "the script itself" 'bin/ci-changes.sh' "$all_jobs" false
 check "plugin PHP" 'includes/class-plugin.php' "$php_set" false
-check "WordPress tests" 'tests/wp/test-x.php' 'wordpress phpcs smoke' false
+check "WordPress tests" 'tests/wp/test-x.php' 'wordpress coverage phpcs smoke' false
 check "WordPress.org assets" '.wordpress-org/screenshot-1.png' 'plugin-check' false
 check "flow tests" 'tests/flows/specs/runs.spec.js' 'e2e' false
 check "upgrade test" 'tests/flows/upgrade/specs/update-cli.spec.js' '' false

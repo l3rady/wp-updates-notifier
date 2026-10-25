@@ -79,6 +79,14 @@ test-wp: ## Run the WordPress test suite (single site)
 test-wp-ms: ## Run the WordPress test suite as multisite
 	$(COMPOSE) run --build --rm -e WP_MULTISITE=1 wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
 
+# The WordPress suite with pcov (the wp-tests-coverage image, which only this target builds, so make test-wp stays
+# fast). COVERAGE_MIN is a floor in whole percent that only goes up (see CONTRIBUTING.md); the aim is 90 or more, and it
+# was 96.39 when set. The text summary is printed; build/coverage/ gets clover.xml and html/.
+COVERAGE_MIN ?= 96
+coverage: ## Line coverage of the plugin by the WordPress suite (pcov, single site); fails below COVERAGE_MIN; report in build/coverage/
+	@mkdir -p build/coverage
+	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
+
 test-known-bugs: ## Run the tests that document open bugs (they are expected to fail)
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 

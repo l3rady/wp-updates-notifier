@@ -48,7 +48,9 @@ CI runs every target in the diagram on pull requests, except `make dast`. It tak
 
 **Run it.** `make test-wp` for a single site, `make test-wp-ms` for multisite. Pass PHPUnit options with `ARGS`, for example `make test-wp ARGS="--filter Test_Routing"`. `PHP_VERSION` and `WP_VERSION` pick the versions.
 
-**CI.** The `wordpress` job in `ci.yml` runs PHP 7.4 to 8.5 on WordPress 7.1.3, single site and multisite, and PHP 7.4 and 8.3 on WordPress 6.7.9, the oldest supported. The `wordpress-trunk` job runs the suite against WordPress trunk every night, on PHP 7.4 and 8.5.
+**Coverage.** `make coverage` runs the same suite (single site) in an image with pcov, prints the summary and the five least covered files, writes `build/coverage/clover.xml` and `build/coverage/html/`, and fails when line coverage of the shipped code (`wp-updates-notifier.php`, `uninstall.php`, `includes/`, `modules/`; files no test loads count as uncovered) is below `COVERAGE_MIN` in the `Makefile`. It is a floor that only goes up: raise it, rounded down to a whole number, when a change raises the coverage. The aim is 90% or more. `bin/coverage-check.php` computes the percentage from the Clover report, and `tests/bin/test-coverage-check.sh` tests it. The pcov image is a separate Docker stage, so `make test-wp` is unchanged. Multisite-only code paths are not measured.
+
+**CI.** The `coverage` job in `ci.yml` runs `make coverage` on PHP 8.3 and WordPress 7.1.3 for every pull request that changes code, tests or `phpunit.xml.dist`, and keeps the report as the `coverage-report` artifact for 14 days. It is in `ci-gate`, the required check, so a pull request below the floor cannot merge. The `wordpress` job in `ci.yml` runs PHP 7.4 to 8.5 on WordPress 7.1.3, single site and multisite, and PHP 7.4 and 8.3 on WordPress 6.7.9, the oldest supported. The `wordpress-trunk` job runs the suite against WordPress trunk every night, on PHP 7.4 and 8.5.
 
 ## Security tests
 

@@ -112,6 +112,24 @@ services:
       WP_DB_HOST: db
       WP_MULTISITE: ${WP_MULTISITE:-0}
 
+  # The same suite with pcov, for `make coverage`. The report goes to build/coverage on the host; the container runs
+  # as root, so docker/coverage.sh gives the files back to HOST_UID:HOST_GID.
+  wp-tests-coverage:
+    extends:
+      service: wp-tests
+    build:
+      <<: *dev-build
+      target: wp-tests-coverage
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.3}
+        WP_VERSION: ${WP_VERSION:-7.1.3}
+    image: wp-updates-notifier:php${PHP_VERSION:-8.3}-wp${WP_VERSION:-7.1.3}-coverage
+    volumes:
+      - ./build/coverage:/coverage
+    environment:
+      HOST_UID: ${HOST_UID:-0}
+      HOST_GID: ${HOST_GID:-0}
+
   # ----- Local site for manual testing (`make up`), profile "site" -----
 
   site-db:

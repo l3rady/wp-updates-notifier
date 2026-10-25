@@ -22,7 +22,7 @@
 set -eu
 
 # Every job the map controls: the job ids of the workflows, which are unique across them.
-ALL_JOBS='phpstan rector release-scripts dist dist-repro plugin-check smoke wordpress a11y e2e phpcs docs links sast taint dependencies dependency-review'
+ALL_JOBS='phpstan rector release-scripts dist dist-repro plugin-check smoke wordpress coverage a11y e2e phpcs docs links sast taint dependencies dependency-review'
 
 # One rule per line: a shell case glob (a * also matches /), then the job ids it triggers. ALL runs every job and -
 # runs none (the path is known and affects no pull request job). Blank lines and lines starting with # are ignored.
@@ -46,18 +46,18 @@ tests/bin/ci-changes/*    ALL
 
 # The plugin's PHP: analysed, linted, tested, zipped and run in the browser. The hooks and translations checks (in
 # the phpcs job) read it too. wp-updates-notifier.php and uninstall.php are also what the release scripts rehearse on.
-wp-updates-notifier.php   phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint release-scripts
-uninstall.php             phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint release-scripts
-includes/*                phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint
-modules/*                 phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint
+wp-updates-notifier.php   phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs sast taint release-scripts
+uninstall.php             phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs sast taint release-scripts
+includes/*                phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs sast taint
+modules/*                 phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs sast taint
 # Translations: tested (test-translations), zipped, linted as PHP and checked complete by check-translations.
-languages/*               smoke wordpress dist dist-repro plugin-check a11y e2e phpcs
+languages/*               smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs
 # The settings screen's stylesheet: in the zip and in the browser checks.
-assets/*                  wordpress dist dist-repro plugin-check a11y e2e
+assets/*                  wordpress coverage dist dist-repro plugin-check a11y e2e
 # The example add-on: PHPStan, phpcs, Semgrep, Psalm, public API check and the WordPress tests read it. Not in the zip.
-examples/*                phpstan smoke wordpress phpcs sast taint
+examples/*                phpstan smoke wordpress coverage phpcs sast taint
 # The dev plugins are mounted into the browser checks; PHPStan, phpcs, the public API check and a test read them.
-docker/dev-plugins/*      phpstan smoke wordpress a11y e2e phpcs
+docker/dev-plugins/*      phpstan smoke wordpress coverage a11y e2e phpcs
 # Only the smoke test lints these.
 docker/mu-plugins/*       smoke e2e
 # The browser checks mount these into their throwaway site.
@@ -99,9 +99,9 @@ docs/developers/hooks.md  phpcs docs links
 
 # readme.txt is not committed: bin/readme.php generates it from these (and from the plugin header and the About tab
 # class, covered above). The header check, the zip, Plugin Check, the contract and About tab tests and lychee read it.
-.wordpress-org/readme/*   plugin-check dist dist-repro wordpress links
-docs/users/troubleshooting.md plugin-check dist dist-repro wordpress
-bin/readme.php            plugin-check dist dist-repro wordpress links
+.wordpress-org/readme/*   plugin-check dist dist-repro wordpress coverage links
+docs/users/troubleshooting.md plugin-check dist dist-repro wordpress coverage
+bin/readme.php            plugin-check dist dist-repro wordpress coverage links
 tests/bin/test-readme.sh  plugin-check
 tests/bin/readme/*        plugin-check
 LICENSE                   plugin-check dist dist-repro
@@ -138,6 +138,10 @@ tests/bin/test-wporg-assets.sh plugin-check
 docker/assets/*           -
 bin/build-assets.sh       -
 
+# make coverage: the WordPress suite with pcov (the coverage job). Its Clover check and the test of that check.
+bin/coverage-check.php    coverage phpcs smoke
+tests/bin/test-coverage-check.sh coverage
+
 # What the release workflow runs on the Release PR, rehearsed by make test-release.
 bin/sign-release-tag.sh   release-scripts
 bin/commit-payload.php    release-scripts smoke
@@ -149,12 +153,12 @@ release-please-config.json release-scripts
 
 # The WordPress tests, their fixtures and the PHP files in them (linted by phpcs, parsed by the smoke test). The
 # fixtures plugins are also analysed by PHPStan and checked by the public API check.
-tests/wp/*                wordpress phpcs smoke
-tests/bootstrap.php       wordpress phpcs smoke
-tests/fixtures/*          wordpress phpcs smoke phpstan e2e
-phpunit.xml.dist          wordpress
+tests/wp/*                wordpress coverage phpcs smoke
+tests/bootstrap.php       wordpress coverage phpcs smoke
+tests/fixtures/*          wordpress coverage phpcs smoke phpstan e2e
+phpunit.xml.dist          wordpress coverage
 # The test about tab reads the docs home page.
-docs/index.md             wordpress docs links
+docs/index.md             wordpress coverage docs links
 
 # The browser checks of the settings screen (a11y) and of the docs site (docs). Both use tests/e2e/compose.yml. The
 # flow tests (e2e, tests/flows) borrow its npm packages and its login.
@@ -188,7 +192,7 @@ docker/docs/*             docs links
 README.md                 links
 CONTRIBUTING.md           links
 SECURITY.md               links
-CHANGELOG.md              plugin-check dist dist-repro wordpress links
+CHANGELOG.md              plugin-check dist dist-repro wordpress coverage links
 
 # Dependency manifests and lockfiles: osv-scanner (dependencies) and the dependency graph review, as well as the
 # area they belong to above. composer.json and composer.lock are plumbing.

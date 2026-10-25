@@ -116,7 +116,8 @@ Limits: security tokens turn away most of the active scan's requests to the POST
 ```sh
 make test-wp                     # WordPress test suite, single site
 make test-wp-ms                  # the same as multisite
-make test                        # both
+make test                        # every test layer
+make coverage                    # line coverage of the plugin by the WordPress suite (pcov); fails below COVERAGE_MIN; report in build/coverage/
 make test-known-bugs             # tests documenting open bugs: they are expected to FAIL
 make a11y                        # axe and keyboard checks of the settings screen in a browser (about 40 seconds)
 make e2e                         # end-to-end flows in a browser on a throwaway site: settings, channels, a real update check and its mail (about 1 minute)

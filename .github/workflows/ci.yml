@@ -221,6 +221,29 @@ jobs:
       - name: Run the tests
         run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
 
+  # Line coverage of the plugin's runtime PHP by the WordPress suite (pcov, single site, one PHP and WordPress
+  # version). Fails below COVERAGE_MIN in the Makefile; the report is kept as an artifact.
+  coverage:
+    needs: changes
+    if: github.event_name != 'schedule' && contains(fromJSON(needs.changes.outputs.jobs), 'coverage')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/docker-cache
+      - name: Measure the coverage
+        run: make coverage
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-report
+          path: build/coverage/
+          if-no-files-found: ignore
+          retention-days: 14
+
   # axe (WCAG 2.2 A and AA) and keyboard checks of the settings screen in a browser, on a throwaway site (tests/e2e).
   # Any violation fails the job; the Playwright report is kept when it does.
   a11y:
@@ -283,7 +306,7 @@ jobs:
   # (tests/bin/test-ci-changes.sh checks it).
   ci-gate:
     if: always()
-    needs: [changes, phpstan, rector, release-scripts, dist, dist-repro, plugin-check, smoke, wordpress, a11y, e2e, wordpress-trunk]
+    needs: [changes, phpstan, rector, release-scripts, dist, dist-repro, plugin-check, smoke, wordpress, coverage, a11y, e2e, wordpress-trunk]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

@@ -5,6 +5,7 @@
 #   docker build --target dev      --build-arg PHP_VERSION=7.4 -f docker/Dockerfile .
 #   docker build --target wp-tests --build-arg WP_VERSION=7.1.3 ...   (WordPress test suite)
 #   docker build --target coverage ...                                (adds pcov)
+#   docker build --target wp-tests-coverage ...                       (the WordPress test suite with pcov)
 #   docker build --target site ...                                    (the local site, `make up`)
 
 ARG PHP_VERSION=8.3
@@ -117,6 +118,17 @@ ENV WP_TESTS_DIR=/opt/wordpress-develop/tests/phpunit
 WORKDIR /opt/wordpress-develop
 ENTRYPOINT ["wp-tests-entrypoint"]
 CMD ["php", "./vendor/bin/phpunit", "--version"]
+
+# ---------------------------------------------------------------------------
+# wp-tests-coverage: wp-tests + pcov, for `make coverage` (and mutation testing). A separate stage, so the normal
+# test image stays without pcov and fast. pcov only collects the plugin: its default directory would be the
+# wordpress-develop checkout's src/, i.e. WordPress core.
+# ---------------------------------------------------------------------------
+FROM wp-tests AS wp-tests-coverage
+
+RUN pecl install pcov \
+    && docker-php-ext-enable pcov \
+    && echo "pcov.directory=/opt/wordpress-develop/src/wp-content/plugins/wp-updates-notifier" >> "${PHP_INI_DIR}/conf.d/docker-php-ext-pcov.ini"
 
 # ---------------------------------------------------------------------------
 # site: the local site's WordPress (`make up`). The wordpress and wp-cli services

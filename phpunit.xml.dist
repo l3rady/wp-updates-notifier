@@ -16,6 +16,19 @@
 		</testsuite>
 	</testsuites>
 
+	<!--
+	What `make coverage` measures: the code that ships (bin/check-dist.sh's allowlist: the two root files, includes/
+	and modules/). Files no test loads count as uncovered. Ignored by every other run.
+	-->
+	<coverage processUncoveredFiles="true">
+		<include>
+			<file>wp-updates-notifier.php</file>
+			<file>uninstall.php</file>
+			<directory suffix=".php">includes</directory>
+			<directory suffix=".php">modules</directory>
+		</include>
+	</coverage>
+
 	<groups>
 		<exclude>
 			<!--
