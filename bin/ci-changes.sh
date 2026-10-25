@@ -22,7 +22,7 @@
 set -eu
 
 # Every job the map controls: the job ids of the workflows, which are unique across them.
-ALL_JOBS='phpstan rector release-scripts dist dist-repro plugin-check smoke wordpress a11y phpcs docs links sast taint dependencies dependency-review'
+ALL_JOBS='phpstan rector release-scripts dist dist-repro plugin-check smoke wordpress a11y e2e phpcs docs links sast taint dependencies dependency-review'
 
 # One rule per line: a shell case glob (a * also matches /), then the job ids it triggers. ALL runs every job and -
 # runs none (the path is known and affects no pull request job). Blank lines and lines starting with # are ignored.
@@ -46,23 +46,23 @@ tests/bin/ci-changes/*    ALL
 
 # The plugin's PHP: analysed, linted, tested, zipped and run in the browser. The hooks and translations checks (in
 # the phpcs job) read it too. wp-updates-notifier.php and uninstall.php are also what the release scripts rehearse on.
-wp-updates-notifier.php   phpstan rector smoke wordpress dist dist-repro plugin-check a11y phpcs sast taint release-scripts
-uninstall.php             phpstan rector smoke wordpress dist dist-repro plugin-check a11y phpcs sast taint release-scripts
-includes/*                phpstan rector smoke wordpress dist dist-repro plugin-check a11y phpcs sast taint
-modules/*                 phpstan rector smoke wordpress dist dist-repro plugin-check a11y phpcs sast taint
+wp-updates-notifier.php   phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint release-scripts
+uninstall.php             phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint release-scripts
+includes/*                phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint
+modules/*                 phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint
 # Translations: tested (test-translations), zipped, linted as PHP and checked complete by check-translations.
-languages/*               smoke wordpress dist dist-repro plugin-check a11y phpcs
+languages/*               smoke wordpress dist dist-repro plugin-check a11y e2e phpcs
 # The settings screen's stylesheet: in the zip and in the browser checks.
-assets/*                  wordpress dist dist-repro plugin-check a11y
+assets/*                  wordpress dist dist-repro plugin-check a11y e2e
 # The example add-on: PHPStan, phpcs, Semgrep, Psalm, public API check and the WordPress tests read it. Not in the zip.
 examples/*                phpstan smoke wordpress phpcs sast taint
 # The dev plugins are mounted into the browser checks; PHPStan, phpcs, the public API check and a test read them.
-docker/dev-plugins/*      phpstan smoke wordpress a11y phpcs
+docker/dev-plugins/*      phpstan smoke wordpress a11y e2e phpcs
 # Only the smoke test lints these.
-docker/mu-plugins/*       smoke
+docker/mu-plugins/*       smoke e2e
 # The browser checks mount these into their throwaway site.
-docker/apache/*           a11y
-docker/site/*             a11y
+docker/apache/*           a11y e2e
+docker/site/*             a11y e2e
 
 # Tool configuration.
 phpcs.xml.dist            phpcs
@@ -109,7 +109,7 @@ LICENSE                   plugin-check dist dist-repro
 # template and the demo PHP; smoke lints the PHP and phpcs checks it). make check-blueprint and make test-blueprint
 # run in the plugin-check job. The vendored schema, Ajv and their tests are tests/bin/blueprint; make blueprint-smoke
 # (tests/blueprint-smoke) is local only.
-.wordpress-org/blueprint/* phpcs smoke plugin-check
+.wordpress-org/blueprint/* phpcs smoke plugin-check e2e
 bin/blueprint.php         smoke plugin-check
 tests/bin/test-blueprint.sh plugin-check
 tests/bin/blueprint/*     plugin-check
@@ -151,14 +151,29 @@ release-please-config.json release-scripts
 # fixtures plugins are also analysed by PHPStan and checked by the public API check.
 tests/wp/*                wordpress phpcs smoke
 tests/bootstrap.php       wordpress phpcs smoke
-tests/fixtures/*          wordpress phpcs smoke phpstan
+tests/fixtures/*          wordpress phpcs smoke phpstan e2e
 phpunit.xml.dist          wordpress
 # The test about tab reads the docs home page.
 docs/index.md             wordpress docs links
 
-# The browser checks of the settings screen (a11y) and of the docs site (docs). Both use tests/e2e/compose.yml.
-tests/e2e/*               a11y docs
-# Local only (make dast, make screenshots, make blueprint-smoke): no pull request job runs them.
+# The browser checks of the settings screen (a11y) and of the docs site (docs). Both use tests/e2e/compose.yml. The
+# flow tests (e2e, tests/flows) borrow its npm packages and its login.
+tests/e2e/*               a11y docs e2e
+# The flow tests: a real browser, WP-CLI cron run and Mailpit, on a throwaway site (make e2e). phpcs lints the PHP
+# files. They are listed one by one because a * also matches /, and the rules of a path all apply: tests/flows/upgrade
+# must not trigger the e2e job.
+tests/flows/specs/*       e2e
+tests/flows/compose.yml   e2e
+tests/flows/run.sh        e2e
+tests/flows/seed.sh       e2e
+tests/flows/playwright.config.js e2e
+tests/flows/control.php   e2e phpcs
+tests/flows/reset.php     e2e phpcs
+# make e2e-upgrade (tests/flows/upgrade) installs 1.6.0 from WordPress.org: no pull request job runs it, so run it
+# before a release. phpcs lints its PHP files.
+tests/flows/upgrade/*     -
+tests/flows/upgrade/*.php phpcs
+# Local only (make dast, make screenshots, make blueprint-smoke, make e2e-upgrade): no pull request job runs them.
 tests/dast/*              -
 tests/screenshots/*       -
 tests/blueprint-smoke/*   -
@@ -183,8 +198,8 @@ docker/docs/requirements.txt dependencies dependency-review
 docker/docs/osv-scanner.toml dependencies
 docker/psalm/composer.json   dependencies dependency-review
 docker/psalm/composer.lock   dependencies dependency-review
-tests/e2e/package.json    dependencies dependency-review
-tests/e2e/package-lock.json dependencies dependency-review
+tests/e2e/package.json    e2e dependencies dependency-review
+tests/e2e/package-lock.json e2e dependencies dependency-review
 
 # Only the always-on jobs (commits, secrets, workflows) look at these.
 docker/commitlint/*       -

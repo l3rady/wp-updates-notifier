@@ -242,6 +242,20 @@ jobs:
           path: tests/e2e/reports/
           retention-days: 14
 
+  # The flows of tests/flows in a real browser: settings, channels, a real update check from WP-CLI with fake pending
+  # updates, and the mail it sends (caught by Mailpit), on a throwaway site. One PHP and WordPress combination.
+  e2e:
+    needs: changes
+    if: github.event_name != 'schedule' && contains(fromJSON(needs.changes.outputs.jobs), 'e2e')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: End-to-end flows
+        run: make e2e
+
   # The same against WordPress trunk every night.
   wordpress-trunk:
     if: github.event_name == 'schedule'
@@ -269,7 +283,7 @@ jobs:
   # (tests/bin/test-ci-changes.sh checks it).
   ci-gate:
     if: always()
-    needs: [changes, phpstan, rector, release-scripts, dist, dist-repro, plugin-check, smoke, wordpress, a11y, wordpress-trunk]
+    needs: [changes, phpstan, rector, release-scripts, dist, dist-repro, plugin-check, smoke, wordpress, a11y, e2e, wordpress-trunk]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

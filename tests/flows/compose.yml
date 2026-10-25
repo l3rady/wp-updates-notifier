@@ -1,0 +1,144 @@
+# The throwaway site `make e2e` drives (tests/flows/specs). Always run as its own project
+# (`docker compose -p wpun-flows -f tests/flows/compose.yml`): its containers, network and volumes are named after the
+# project, so nothing here can touch the local site from `make up`, `make a11y` or `make screenshots`. No port is
+# published. The browser joins the network and reaches WordPress at http://wordpress:8080, Mailpit at
+# http://mailpit:8025 and WP-CLI (tests/flows/control.php) at http://wpcli:9000.
+name: wpun-flows
+
+x-site: &site
+  build:
+    context: ../..
+    dockerfile: docker/Dockerfile
+    target: site
+    args:
+      PHP_VERSION: ${PHP_VERSION:-8.3}
+  # The same image as the local site and the other throwaway sites, so it is built once and shared.
+  image: wp-updates-notifier:site-php${PHP_VERSION:-8.3}
+
+x-db: &db
+  WORDPRESS_DB_HOST: db
+  WORDPRESS_DB_USER: root
+  WORDPRESS_DB_PASSWORD: root
+  WORDPRESS_DB_NAME: wordpress
+
+services:
+  db:
+    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: wordpress
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  # Catches every email; the specs read and empty it through its API.
+  mailpit:
+    image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48
+
+  wordpress:
+    <<: *site
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment: *db
+    volumes:
+      - wp:/var/www/html
+      - ../../docker/apache/ports.conf:/etc/apache2/ports.conf:ro
+      - ../../docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
+      - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
+      - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
+      # Installed, not active: a test activates it, because it adds an item, a routing rule and a short-circuit.
+      - ../fixtures/plugins/wpun-test-addon:/var/www/html/wp-content/plugins/wpun-test-addon:ro
+      # Single files, not the whole mu-plugins directory: mail goes to Mailpit, and the update data is fake and offline.
+      - ../../docker/mu-plugins/mailpit.php:/var/www/html/wp-content/mu-plugins/mailpit.php:ro
+      - ../../.wordpress-org/blueprint/fake-updates.php:/var/www/html/wp-content/mu-plugins/wpun-fake-updates.php:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
+  # WP-CLI, for one-off commands: installs the site with docker/site-setup.sh (SITE_MODE=e2e), then tests/flows/seed.sh.
+  wp-cli:
+    <<: *site
+    user: "33:33"
+    working_dir: /var/www/html
+    depends_on:
+      - wordpress
+    volumes:
+      - wp:/var/www/html
+      - ../../docker/site-setup.sh:/usr/local/bin/wpun-site-setup:ro
+      - ./seed.sh:/usr/local/bin/wpun-flows-seed:ro
+      - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
+      - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
+      # Installed, not active: a test activates it, because it adds an item, a routing rule and a short-circuit.
+      - ../fixtures/plugins/wpun-test-addon:/var/www/html/wp-content/plugins/wpun-test-addon:ro
+      # Single files, not the whole mu-plugins directory: mail goes to Mailpit, and the update data is fake and offline.
+      - ../../docker/mu-plugins/mailpit.php:/var/www/html/wp-content/mu-plugins/mailpit.php:ro
+      - ../../.wordpress-org/blueprint/fake-updates.php:/var/www/html/wp-content/mu-plugins/wpun-fake-updates.php:ro
+    environment:
+      <<: *db
+      SITE_MODE: e2e
+      SITE_URL: http://wordpress:8080
+    entrypoint: ["wp"]
+
+  # The same, as a small server the specs call (control.php): the Playwright image has no WP-CLI.
+  wpcli:
+    <<: *site
+    user: "33:33"
+    working_dir: /var/www/html
+    depends_on:
+      - wordpress
+    volumes:
+      - wp:/var/www/html
+      - ./control.php:/flows/control.php:ro
+      - ./reset.php:/flows/reset.php:ro
+      - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
+      - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
+      # Installed, not active: a test activates it, because it adds an item, a routing rule and a short-circuit.
+      - ../fixtures/plugins/wpun-test-addon:/var/www/html/wp-content/plugins/wpun-test-addon:ro
+      # Single files, not the whole mu-plugins directory: mail goes to Mailpit, and the update data is fake and offline.
+      - ../../docker/mu-plugins/mailpit.php:/var/www/html/wp-content/mu-plugins/mailpit.php:ro
+      - ../../.wordpress-org/blueprint/fake-updates.php:/var/www/html/wp-content/mu-plugins/wpun-fake-updates.php:ro
+    environment: *db
+    entrypoint: ["php", "-S", "0.0.0.0:9000", "/flows/control.php"]
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9000'"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  # Playwright from the same image and npm packages as `make a11y` (tests/e2e/package.json, mounted at /e2e). The specs
+  # are in /flows and find @playwright/test through NODE_PATH. Runs as the host user, so the files are yours.
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /flows
+    init: true
+    ipc: host
+    depends_on:
+      wordpress:
+        condition: service_healthy
+      wpcli:
+        condition: service_healthy
+    environment:
+      HOME: /tmp
+      NODE_PATH: /e2e/node_modules
+      E2E_BASE_URL: http://wordpress:8080
+      MAILPIT_URL: http://mailpit:8025
+      WPCLI_URL: http://wpcli:9000
+      # Which spec files to run (a Playwright file filter), for a stack variant: see run.sh.
+      FLOWS_ARGS: ${FLOWS_ARGS:-}
+    volumes:
+      - ../e2e:/e2e
+      - .:/flows
+    command: ["sh", "-c", "(cd /e2e && npm ci --no-fund --no-audit) && /e2e/node_modules/.bin/playwright test $$FLOWS_ARGS"]
+
+volumes:
+  wp:

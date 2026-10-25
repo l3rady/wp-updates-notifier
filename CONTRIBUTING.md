@@ -20,6 +20,12 @@ Thanks for helping. Everything runs in Docker, so the only things you need are
   Also check new markup by keyboard and with a screen reader. Playwright is
   pinned by image digest and npm lockfile in `tests/e2e/`: keep the image tag
   and `@playwright/test` at the same version.
+- Changes to what a user sees or receives (the settings screen, channels, the
+  update check, the email) should keep `make e2e` passing (about 1 minute,
+  Docker only; the `e2e` job runs it on pull requests that touch the plugin):
+  a real browser, a real `wp cron event run` and the mail in Mailpit, on a
+  throwaway site that never touches `make up`. Add a case in `tests/flows/specs/`
+  for a new flow; each test resets the site first (`resetSite` in `helpers.js`).
 - Commits use [Conventional Commits](https://www.conventionalcommits.org/)
   (`fix(cron): …`, `feat!: …` for breaking changes). They decide the next
   version number, so write them with care. `make commits` checks the commits on
@@ -266,6 +272,17 @@ time zone, and fails if the SHA-256 differs. `make dist` also writes the
 Before merging the Release PR, run the OWASP ZAP scan with `make dast` (about
 11 minutes, Docker only). It is too slow for CI. It must finish with no Medium
 or High alerts. The report is in `security-reports/zap-report.html`.
+
+Also run `make e2e-upgrade` before merging the Release PR (about 1 minute, Docker
+and the network: it installs the real 1.6.0 from WordPress.org, so CI does not
+run it). It updates 1.6.0 to the zip of `make dist` (a copy with the Version
+header raised to 2.0.0; the repository's header is not touched) with WP-CLI, from
+the Plugins screen and as a background auto-update. Each time the plugin must be
+left deactivated at 2.0.0 with no PHP fatal error, and activating it again must
+keep the settings (the email channel, Slack kept, the Slack notice once, the check
+scheduled, mail sent to the migrated address). Run it when `main` changes the
+plugin's main file, the migration or the activation, and for every release that
+follows a 1.x one.
 
 Also regenerate the WordPress.org screenshots with `make screenshots` (about 30
 seconds, Docker only), look at the four files in `.wordpress-org/` and commit

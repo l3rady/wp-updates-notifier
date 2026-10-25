@@ -15,7 +15,7 @@ keywords = ["hooks.slack.com"]
 # T000/B000/XXXX is not a real workspace: it is the placeholder every Slack test fixture uses.
 description = "Placeholder Slack URL in the test fixtures"
 condition = "AND"
-paths = ['''^(?:/app/)?tests/(?:wp|fixtures)/''']
+paths = ['''^(?:/app/)?tests/(?:wp|fixtures|flows)/''']
 regexes = ['''^https://hooks\.slack\.com/services/T000/B000/XXXX$''']
 regexTarget = "match"
 

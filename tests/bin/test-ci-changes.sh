@@ -28,7 +28,7 @@ gate_of() {
 
 all_jobs="$(sed -n "s/^ALL_JOBS='\(.*\)'$/\1/p" "$script")"
 [ -n "$all_jobs" ] || fail "no ALL_JOBS line in $script"
-php_set='phpstan rector smoke wordpress dist dist-repro plugin-check a11y phpcs sast taint'
+php_set='phpstan rector smoke wordpress dist dist-repro plugin-check a11y e2e phpcs sast taint'
 
 # The job ids of a "jobs=[...]" line, sorted, one line.
 ids() { echo "$1" | sed -n 's/^jobs=//p' | tr -d '[]"' | tr ',' '\n' | sort | tr '\n' ' ' | sed 's/ $//'; }
@@ -45,7 +45,7 @@ check() {
 }
 
 check "Playwright bump" 'tests/e2e/package.json
-tests/e2e/package-lock.json' 'a11y docs dependencies dependency-review' false
+tests/e2e/package-lock.json' 'a11y docs e2e dependencies dependency-review' false
 check "docs only" 'docs/users/x.md' 'docs links' false
 check "unmatched path" 'newdir/file.txt' "$all_jobs" false
 check "an unmatched path among matched ones" 'docs/users/x.md
@@ -56,6 +56,10 @@ check "the script itself" 'bin/ci-changes.sh' "$all_jobs" false
 check "plugin PHP" 'includes/class-plugin.php' "$php_set" false
 check "WordPress tests" 'tests/wp/test-x.php' 'wordpress phpcs smoke' false
 check "WordPress.org assets" '.wordpress-org/screenshot-1.png' 'plugin-check' false
+check "flow tests" 'tests/flows/specs/runs.spec.js' 'e2e' false
+check "upgrade test" 'tests/flows/upgrade/specs/update-cli.spec.js' '' false
+check "upgrade test PHP" 'tests/flows/upgrade/reset.php' 'phpcs' false
+check "fake updates" '.wordpress-org/blueprint/fake-updates.php' 'phpcs smoke plugin-check e2e' false
 check "local-only DAST" 'tests/dast/compose.yml' '' false
 check "no changes" '' '' false
 check "several rules apply" 'docs/developers/hooks.md
