@@ -39,6 +39,5 @@
 /phpunit.xml.dist
 /rector.php
 /release-please-config.json
-/screenshot*.png
 /tests
 /vendor

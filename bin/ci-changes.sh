@@ -116,8 +116,7 @@ bin/check-dist-repro.sh   dist dist-repro plugin-check
 bin/test-dist.sh          dist dist-repro plugin-check
 bin/plugin-check.sh       dist dist-repro plugin-check
 bin/fresh-wordpress.sh    dist dist-repro plugin-check
-# The screenshots and the WordPress.org assets are excluded from the zip (.distignore); make assets is not run by CI.
-screenshot*.png           -
+# The WordPress.org assets are excluded from the zip (.distignore); make assets is not run by CI.
 .wordpress-org/*          -
 docker/assets/*           -
 bin/build-assets.sh       -
