@@ -101,8 +101,8 @@ Two checks guard the same boundary without WordPress. `make check-public-api` fa
 - `make dist` builds `build/wp-updates-notifier-<version>.zip` with the runtime files only. `make dist-check` fails if the contents are not on the allowlist, a required file is missing or the version is wrong.
 - `make dist-repro` builds the zip twice from fresh clones, with a different umask, file times and time zone, and fails if the SHA-256 differs.
 - `make test-dist` installs the zip into a fresh WordPress, then activates, deactivates and uninstalls it.
-- `make plugin-check` runs WordPress.org's Plugin Check on the zip. `make check-headers` checks that the plugin header and `readme.txt` agree and follow WordPress.org's rules.
-- `make test-release` rehearses the scripts the release workflow runs: the copyright year, the stable tag and the signed commit request.
+- `make plugin-check` runs WordPress.org's Plugin Check on the zip. `make check-headers` generates `readme.txt` (it is not committed; edit `.wordpress-org/readme/`, `docs/users/troubleshooting.md` and `CHANGELOG.md`, see `make readme`) and checks that it agrees with the plugin header and follows WordPress.org's rules. `make test-readme` tests the generator and those checks.
+- `make test-release` rehearses the scripts the release workflow runs: the copyright year and the signed commit request.
 
 **Lives in.** `bin/` for the scripts, `tests/bin/test-release-scripts.sh` for the release rehearsal.
 
@@ -114,7 +114,7 @@ Two checks guard the same boundary without WordPress. `make check-public-api` fa
 
 - `make a11y` checks the settings screen on a throwaway WordPress site (its own Compose project, so it never touches `make up`). Specs are in `tests/e2e/specs/`.
 - `make docs-a11y` builds this documentation site and checks every page in the dark and the light scheme: axe, no request to a third party, visible keyboard focus, and that every Mermaid diagram parses. A syntax error in a diagram fails it, because Mermaid would otherwise draw an error image and the page would still load. Specs are in `tests/e2e/docs/specs/`.
-- `make docs-links` checks the links in the built site and in `README.md`, `readme.txt` and `CONTRIBUTING.md` with lychee, including links to other sites. Internal links and anchors are already checked by the strict `make docs` build.
+- `make docs-links` checks the links in the built site and in `README.md`, the generated `readme.txt` and `CONTRIBUTING.md` with lychee, including links to other sites. Internal links and anchors are already checked by the strict `make docs` build.
 
 **CI.** The `a11y` job in `ci.yml`. The `docs` and `links` jobs in `docs.yml`. The `links` job also runs every week, because links to other sites break without a change here.
 

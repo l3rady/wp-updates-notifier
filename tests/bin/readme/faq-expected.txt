@@ -1,0 +1,38 @@
+= Links and lists =
+
+See [the other page](https://wpun.cariss.dev/latest/users/other/), [a part of it](https://wpun.cariss.dev/latest/users/other/#part), [the index](https://wpun.cariss.dev/latest/users/), [a sibling folder](https://wpun.cariss.dev/latest/developers/hooks/), [here](https://wpun.cariss.dev/latest/users/guide/#links-and-lists) and [outside](https://example.com/a?b=c#d). A code span keeps `[text](x.md)` as it is.
+
+1. **First.** One.
+2. **Second.** Two.
+
+* A bullet
+* Another bullet
+
+= Code and subheadings =
+
+Intro line one
+and line two of the same paragraph.
+
+**Request it**
+
+`
+define( 'DISABLE_WP_CRON', true );
+`
+
+**Fire it**
+
+`
+*/30 * * * * wp eval "do_action( 'x' );"
+## not a heading
+`
+
+= Admonitions and tables =
+
+**Note:** The default title is the type.
+
+A second paragraph.
+
+**Careful now:** A titled one with [a link](https://wpun.cariss.dev/latest/users/other/).
+
+* The `schedule` - Core: 1 minute; Plugins: 2 hours
+* **Now** - Core: 1 minute; Plugins: 12 hours

@@ -57,6 +57,7 @@ nav:
       - 0015 Commits and history: decisions/0015-conventional-commits-and-linear-history.md
       - 0016 Pending update reminders: decisions/0016-pending-update-reminders-per-channel.md
       - 0017 Bundled translations: decisions/0017-bundle-l10n-php-translations-only.md
+      - 0018 Generated readme: decisions/0018-generate-readme-at-build-time.md
   - Security:
       - Threat model: security/threat-model.md
 

@@ -68,7 +68,9 @@ make dist                        # build/wp-updates-notifier-<version>.zip, runt
 make dist-check                  # check its contents
 make test-dist                   # install it into a fresh WordPress, activate, deactivate, uninstall
 make plugin-check                # WordPress.org's Plugin Check on the zip (fails on errors)
-make check-headers               # plugin header and readme.txt agree and follow WordPress.org's rules
+make check-headers               # plugin header and the generated readme.txt agree and follow WordPress.org's rules
+make readme                      # preview the generated readme.txt in build/readme.txt (it is not committed)
+make test-readme                 # test the readme generator
 ```
 
 `.distignore` lists what stays out of the zip; the WordPress.org deploy uses the same list.

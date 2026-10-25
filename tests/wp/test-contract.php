@@ -31,11 +31,22 @@ class Test_Contract extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The requirements in the plugin header and in readme.txt agree (WordPress.org reads both).
+	 * The readme.txt that bin/readme.php generates into the zip. It is not committed.
+	 *
+	 * @return string
+	 */
+	private static function readme(): string {
+		require_once dirname( __DIR__, 2 ) . '/bin/readme.php';
+
+		return wpun_render_readme( dirname( __DIR__, 2 ) );
+	}
+
+	/**
+	 * The requirements in the plugin header and in the generated readme.txt agree (WordPress.org reads both).
 	 */
 	public function test_the_plugin_header_and_readme_agree_on_requirements() {
 		$data   = get_plugin_data( WP_PLUGIN_DIR . '/wp-updates-notifier/wp-updates-notifier.php', false, false );
-		$readme = file_get_contents( WP_PLUGIN_DIR . '/wp-updates-notifier/readme.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+		$readme = self::readme();
 
 		$this->assertSame( '7.4', $data['RequiresPHP'] );
 		$this->assertSame( '6.7', $data['RequiresWP'] );
@@ -55,7 +66,7 @@ class Test_Contract extends WPUN_Test_Case {
 				'LicenseURI' => 'License URI',
 			)
 		);
-		$readme   = file_get_contents( $dir . '/readme.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+		$readme   = self::readme();
 		$composer = json_decode( file_get_contents( $dir . '/composer.json' ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
 
 		$this->assertSame( 'GPL-2.0-or-later', $header['License'] );

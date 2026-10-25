@@ -52,7 +52,9 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       # release-please only rewrites version strings in the files it is told
-      # about, so these two are set here, on the Release PR's own branch.
+      # about, so the copyright year is set here, on the Release PR's own
+      # branch. The stable tag needs no step: readme.txt is generated from the
+      # plugin header when the zip is built.
       - name: Check out the Release PR
         if: ${{ steps.release.outputs.pr != '' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -63,7 +65,7 @@ jobs:
       # Committed through GitHub's API with the app token, so the commit is signed (main requires signed commits; a
       # git push from the runner would not be). bin/commit-payload.php builds the request; make test-release
       # rehearses it.
-      - name: Set the copyright year and the stable tag
+      - name: Set the copyright year
         if: ${{ steps.release.outputs.pr != '' }}
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -75,12 +77,11 @@ jobs:
           branch="$(printf '%s' "$RELEASE_PR" | jq -r .headBranchName)"
           version="$(sed -n 's/.*"\.": "\(.*\)".*/\1/p' .release-please-manifest.json)"
           sh bin/update-copyright-year.sh "$(date +%Y)"
-          sh bin/set-stable-tag.sh "$version"
           files="$(git diff --name-only)"
           if [ -n "$files" ]; then
             # shellcheck disable=SC2086 # One argument per changed file; the paths have no spaces.
             php bin/commit-payload.php "$REPO" "$branch" "$(git rev-parse HEAD)" \
-              "chore: set the copyright year and the stable tag for $version" $files \
+              "chore: set the copyright year for $version" $files \
               | gh api graphql --input - --jq '.data.createCommitOnBranch.commit.url'
           fi
 

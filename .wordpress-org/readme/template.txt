@@ -1,0 +1,83 @@
+=== {{name}} ===
+Contributors: l3rady, alleyinteractive
+Donate link: {{donate_link}}
+Tags: updates, notifications, email, monitor
+Requires at least: {{requires_at_least}}
+Tested up to: 7.1
+Requires PHP: {{requires_php}}
+Stable tag: {{stable_tag}}
+License: {{license}}
+License URI: {{license_uri}}
+
+Get an email when your WordPress site has core, plugin or theme updates waiting.
+
+== Description ==
+
+Monitors your WordPress installation for core, plugin and theme updates and emails you when they are available. This plugin is ideal if you don't login to your WordPress admin regularly or you support a client's website.
+
+The documentation is at [wpun.cariss.dev](https://wpun.cariss.dev/).
+
+*Features*
+
+- Set the interval of how often to check for updates; hourly, twice daily or daily.
+- Sets WordPress to check for updates more often meaning you get to know about updates sooner.
+- Get emailed about core, plugin and theme updates.
+- Chose if you want to be notified about active only themes and plugins updates.
+- Optional daily or weekly reminders, per channel, about updates you haven't installed yet.
+- Remove upgrade nag message to non-admin users.
+- For advanced users there are a number of filters and actions you can use. More coming soon.
+
+This plugin is a fork of [Update Notifier](http://wordpress.org/extend/plugins/update-notifier/). This plugin was forked because there seemed to be no further development on the existing plugin and there was no way to contact the original author to ask about taking ownership. WP Updates Notifier has the following improvements over Updates Notifier:
+
+- Completely rewritten from the ground up using best practises for writing WordPress plugins
+- Code wrapped in a class so better namespace.
+- You can set the cron interval, allowing for more frequent checks.
+- Update checks trigger WordPress internal update check before notification.
+- Allows you to set the 'from address'.
+- Allows you to set multiple 'to addresses'.
+- Makes use of the Settings API.
+- A number of available hooks and filters for advanced users, and an API for add-ons to add notification channels. See the [developer guide](https://wpun.cariss.dev/latest/developers/).
+- Active support and development.
+
+*Languages*
+
+- French by [Christophe Catarina](http://www.ordilibre.com/) - *Added 03 July 2013*
+- German by Alexander Pfabel - *Added 02 October 2012*
+
+== Installation ==
+
+* Unzip and upload contents to your plugins directory (usually wp-content/plugins/).
+* Activate plugin
+* Visit Settings page under Settings -> WP Updates Monitor in your WordPress Administration Area
+* Configure plugin settings
+* Wait for email notifications of updates
+
+== Frequently Asked Questions ==
+
+{{faq}}
+
+= How do I send WordPress's automatic update emails to another address? =
+
+Version 2.0.0 leaves WordPress's own automatic update emails alone, so they go to the admin email under Settings > General. Change that address, or set the recipient with the `auto_core_update_email` filter:
+
+`add_filter( 'auto_core_update_email', function ( $email ) { $email['to'] = 'ops@example.org'; return $email; } );`
+
+The `auto_plugin_theme_update_email` filter does the same for plugin and theme automatic updates.
+
+= How do I report a security problem? =
+
+Please don't post it in the support forum or in a public GitHub issue. Report it privately through GitHub: on the [repository's Security tab](https://github.com/l3rady/wp-updates-notifier/security), choose "Report a vulnerability". The [security policy](https://github.com/l3rady/wp-updates-notifier/blob/main/SECURITY.md) has the details, and an email address if you can't use GitHub.
+
+== Screenshots ==
+
+1. Settings page
+2. Email alert
+
+== Changelog ==
+
+{{changelog}}
+
+== Upgrade Notice ==
+
+= 2.0.0 =
+From 1.5 or 1.6: activate the plugin again after updating (main file renamed, settings kept). Slack is no longer supported; its settings are kept. WordPress's auto-update emails now go to the admin email. Emails have a new subject, the default From unless set, and no HTML entities.

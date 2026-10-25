@@ -97,10 +97,15 @@ tests/bin/test-l10n-to-po.sh phpcs
 # check-hooks compares it with the hooks in the code, and the docs site includes it.
 docs/developers/hooks.md  phpcs docs links
 
-# readme.txt: the header check, the zip, Plugin Check, a contract test, the release scripts' copy and lychee.
-readme.txt                plugin-check dist dist-repro wordpress release-scripts links
+# readme.txt is not committed: bin/readme.php generates it from these (and from the plugin header and the About tab
+# class, covered above). The header check, the zip, Plugin Check, the contract and About tab tests and lychee read it.
+.wordpress-org/readme/*   plugin-check dist dist-repro wordpress links
+docs/users/troubleshooting.md plugin-check dist dist-repro wordpress
+bin/readme.php            plugin-check dist dist-repro wordpress links
+tests/bin/test-readme.sh  plugin-check
+tests/bin/readme/*        plugin-check
 LICENSE                   plugin-check dist dist-repro
-# check-headers.sh reads the plugin header and readme.txt.
+# check-headers.sh reads the plugin header and the generated readme.txt.
 bin/check-headers.sh      plugin-check
 # The zip, and what is built, checked and installed from it. build-dist.sh follows .distignore and .gitattributes.
 .distignore               dist dist-repro plugin-check
@@ -118,7 +123,6 @@ docker/assets/*           -
 bin/build-assets.sh       -
 
 # What the release workflow runs on the Release PR, rehearsed by make test-release.
-bin/set-stable-tag.sh     release-scripts
 bin/sign-release-tag.sh   release-scripts
 bin/commit-payload.php    release-scripts smoke
 bin/update-copyright-year.sh release-scripts
@@ -150,7 +154,7 @@ docker/docs/*             docs links
 README.md                 links
 CONTRIBUTING.md           links
 SECURITY.md               links
-CHANGELOG.md              links
+CHANGELOG.md              plugin-check dist dist-repro wordpress links
 
 # Dependency manifests and lockfiles: osv-scanner (dependencies) and the dependency graph review, as well as the
 # area they belong to above. composer.json and composer.lock are plumbing.

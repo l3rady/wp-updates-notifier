@@ -53,7 +53,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage matrix docs docs-serve docs-a11y docs-links docs-deploy assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -82,7 +82,7 @@ test-wp-ms: ## Run the WordPress test suite as multisite
 test-known-bugs: ## Run the tests that document open bugs (they are expected to fail)
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 
-test: test-wp test-wp-ms test-release ## Run every test layer
+test: test-wp test-wp-ms test-release test-readme ## Run every test layer
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), the plugin, the example add-on and the field showcase
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcs && vendor/bin/phpcs --standard=examples/wpun-example-channel/phpcs.xml.dist && vendor/bin/phpcs --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist'
@@ -105,7 +105,7 @@ rector: deps ## Show the PHP 7.4 syntax upgrades Rector would make (changes noth
 rector-fix: deps ## Apply Rector's upgrades, then run make fix and make lint
 	$(COMPOSE) run --build --rm php vendor/bin/rector process --no-progress-bar $(ARGS)
 
-test-release: ## Rehearse the scripts the release workflow runs (copyright year, stable tag, signed commit request)
+test-release: ## Rehearse the scripts the release workflow runs (copyright year, signed commit request)
 	$(COMPOSE) run --build --rm php sh tests/bin/test-release-scripts.sh
 
 dist: ## Build build/wp-updates-notifier-<version>.zip (runtime files only)
@@ -127,8 +127,14 @@ test-dist: ## Install the zip into a fresh WordPress, activate, deactivate and u
 plugin-check: ## Run WordPress.org's Plugin Check on the zip (fails on errors)
 	$(COMPOSE) run --build --rm dist sh bin/plugin-check.sh
 
-check-headers: ## Check the plugin header and readme.txt agree and follow WordPress.org's rules
+check-headers: ## Generate readme.txt and check it agrees with the plugin header and follows WordPress.org's rules
 	$(COMPOSE) run --build --rm php sh bin/check-headers.sh
+
+readme: ## Write a preview of the generated readme.txt to build/readme.txt (the zip gets the same file)
+	$(COMPOSE) run --build --rm php php bin/readme.php build/readme.txt
+
+test-readme: ## Test the readme generator and check-headers.sh against fixtures and broken readmes
+	$(COMPOSE) run --build --rm php sh tests/bin/test-readme.sh
 
 check-hooks: ## Check every hook the plugin fires is documented with @since, and docs/developers/hooks.md is current
 	$(COMPOSE) run --build --rm php sh bin/check-hooks.sh
@@ -252,9 +258,10 @@ docs-a11y: docs ## axe, third-party request and focus checks of the built site, 
 	@./tests/e2e/docs/run.sh
 
 # lychee reads docker/docs/lychee.toml (exclusions, retries, accepted statuses). GITHUB_TOKEN is passed on only when set,
-# and never printed: without it github.com answers 429 after a few dozen links.
-docs-links: docs ## Check the external links of the built site, README.md, readme.txt and CONTRIBUTING.md with lychee (GITHUB_TOKEN avoids GitHub's rate limit)
-	$(COMPOSE) --profile docs run --rm -T lychee --config docker/docs/lychee.toml --no-progress build/docs README.md readme.txt CONTRIBUTING.md
+# and never printed: without it github.com answers 429 after a few dozen links. readme.txt is not committed, so the
+# generated preview is checked.
+docs-links: docs readme ## Check the external links of the built site, README.md, the generated readme.txt and CONTRIBUTING.md with lychee (GITHUB_TOKEN avoids GitHub's rate limit)
+	$(COMPOSE) --profile docs run --rm -T lychee --config docker/docs/lychee.toml --no-progress build/docs README.md build/readme.txt CONTRIBUTING.md
 
 docs-deploy: ## Commit one version to the local gh-pages branch with mike, without pushing: make docs-deploy DOCS_VERSION=main [DOCS_ALIAS=latest] [DOCS_TITLE=...] [DOCS_DEFAULT=1]
 	@test -n "$(DOCS_VERSION)" || { echo 'Set DOCS_VERSION, e.g. make docs-deploy DOCS_VERSION=main' >&2; exit 1; }

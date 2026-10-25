@@ -76,7 +76,7 @@ jobs:
           path: tests/e2e/reports/docs/
           retention-days: 14
 
-  # Links to other sites in the built site, README.md, readme.txt and CONTRIBUTING.md (make docs-links, lychee). The
+  # Links to other sites in the built site, README.md, the generated readme.txt and CONTRIBUTING.md (make docs-links, lychee). The
   # strict build already checks the internal ones. The workflow's token only stops github.com from rate limiting the
   # many links to it; the job can read the repository and nothing else. Not on a release or a manual deploy.
   links:

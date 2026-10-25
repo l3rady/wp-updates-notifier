@@ -232,7 +232,7 @@ services:
       GIT_COMMITTER_NAME: ${DOCS_GIT_NAME:-github-actions[bot]}
       GIT_COMMITTER_EMAIL: ${DOCS_GIT_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}
 
-  # Checks the links of the built site and of the README, readme.txt and CONTRIBUTING.md: `make docs-links`. Pinned
+  # Checks the links of the built site and of the README, the generated readme.txt and CONTRIBUTING.md: `make docs-links`. Pinned
   # by tag and digest like the security tools, so Dependabot proposes the updates. Reads the repository, writes
   # nothing. GITHUB_TOKEN (set only when the caller has one) stops github.com from rate limiting the many links to it.
   lychee:

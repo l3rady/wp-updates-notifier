@@ -11,7 +11,7 @@ trap 'rm -rf "$work"' EXIT
 
 mkdir -p "$work/bin"
 cp "$here"/bin/*.sh "$work/bin/"
-cp "$here/wp-updates-notifier.php" "$here/uninstall.php" "$here/readme.txt" "$work/"
+cp "$here/wp-updates-notifier.php" "$here/uninstall.php" "$work/"
 
 # Copyright: a single year becomes a range, a range is moved on, a same-year range collapses.
 sh "$work/bin/update-copyright-year.sh" 2031
@@ -25,19 +25,12 @@ sh "$work/bin/update-copyright-year.sh" 2032
 grep -q 'Copyright 2032[^-]' "$work/uninstall.php" || fail "same-year range not collapsed"
 echo "ok: copyright year"
 
-# Stable tag: replaced, once, nothing else touched. 9.9.9 is never the real tag, so
-# this also passes on the Release PR's branch, where the tag is already set.
-sh "$work/bin/set-stable-tag.sh" 9.9.9
-[ "$(grep -c '^Stable tag: 9.9.9$' "$work/readme.txt")" = 1 ] || fail "stable tag not set"
-[ "$(diff "$here/readme.txt" "$work/readme.txt" | grep -c '^>')" = 1 ] || fail "readme.txt changed in more than one line"
-echo "ok: stable tag"
-
 # The commit request: an existing file is added with its contents in base64, a missing one is deleted, and the
 # branch, expected head and message are passed through.
 cp "$here/bin/commit-payload.php" "$work/bin/"
 (
 	cd "$work"
-	php bin/commit-payload.php owner/repo release-branch abc123 "chore: a message" readme.txt gone.txt > payload.json
+	php bin/commit-payload.php owner/repo release-branch abc123 "chore: a message" uninstall.php gone.txt > payload.json
 	php -r '
 		$p = json_decode( file_get_contents( "payload.json" ), true );
 		$i = $p["variables"]["input"];
@@ -46,8 +39,8 @@ cp "$here/bin/commit-payload.php" "$work/bin/"
 			&& "release-branch" === $i["branch"]["branchName"]
 			&& "abc123" === $i["expectedHeadOid"]
 			&& "chore: a message" === $i["message"]["headline"]
-			&& "readme.txt" === $i["fileChanges"]["additions"][0]["path"]
-			&& file_get_contents( "readme.txt" ) === base64_decode( $i["fileChanges"]["additions"][0]["contents"] )
+			&& "uninstall.php" === $i["fileChanges"]["additions"][0]["path"]
+			&& file_get_contents( "uninstall.php" ) === base64_decode( $i["fileChanges"]["additions"][0]["contents"] )
 			&& array( array( "path" => "gone.txt" ) ) === $i["fileChanges"]["deletions"];
 		exit( $ok ? 0 : 1 );
 	' || fail "commit payload is wrong"

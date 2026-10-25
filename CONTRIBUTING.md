@@ -136,7 +136,7 @@ Docker like everything else. `mkdocs.yml` holds the navigation and the theme, an
   (about 30 seconds; the reports are in `tests/e2e/reports/docs/`). A colour change
   in `extra.css` must keep it passing. Do not disable a rule to make it pass.
 - `make docs-links` checks the links to other sites in the built site, `README.md`,
-  `readme.txt` and `CONTRIBUTING.md` with [lychee](https://lychee.cli.rs/) (needs only
+  the generated `readme.txt` and `CONTRIBUTING.md` with [lychee](https://lychee.cli.rs/) (needs only
   Docker; it builds the site first). CI runs it on every pull request and push, and
   every Monday, as links break without a change here. Fix a broken link rather than
   excluding it. `docker/docs/lychee.toml` holds the retries, accepts a 429 (a rate limit)
@@ -215,8 +215,15 @@ and holds:
 The public key goes in `.github/release-signers` as
 `<RELEASE_TAGGER_EMAIL> namespaces="git" ssh-ed25519 AAAA…`.
 
-The workflow also sets the copyright year and the `readme.txt` stable tag on the
-Release PR's branch.
+The workflow also sets the copyright year on the Release PR's branch.
+
+`readme.txt` is not in the repository. `bin/build-dist.sh` generates it into the
+zip (`make readme` writes a preview to `build/readme.txt`) from the plugin header
+(name, requirements, licence, and the version as the stable tag), `CHANGELOG.md`
+(the latest 3 releases), the questions of `docs/users/troubleshooting.md` listed in
+`.wordpress-org/readme/faq.txt`, and `.wordpress-org/readme/template.txt` (the rest).
+Edit those, never a `readme.txt`. `make check-headers` checks the result against
+WordPress.org's rules, and `make test-readme` tests the generator.
 
 The zip is reproducible. `make dist-repro` builds it twice from fresh clones of
 `HEAD` (so only committed changes count), with a different umask, file times and

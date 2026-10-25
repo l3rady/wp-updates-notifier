@@ -1,7 +1,8 @@
 #!/bin/sh
 # Builds the plugin as users get it: build/wp-updates-notifier/ and
 # build/wp-updates-notifier-<version>.zip, from the files tracked in git minus
-# everything in .distignore. Run with `make dist`.
+# everything in .distignore, plus the readme.txt that bin/readme.php generates (it is not committed). Run with
+# `make dist`.
 #
 # The zip is reproducible: the same commit gives the same bytes whatever the
 # machine, umask, time zone or clock. `make dist-repro` proves it. Times come
@@ -31,6 +32,9 @@ tracked="$(mktemp -d)"
 git -C "$root" ls-files -z | rsync -a --from0 --files-from=- "$root/" "$tracked/"
 rsync -a --exclude-from="$root/.distignore" "$tracked/" "$out/$slug/"
 rm -rf "$tracked"
+
+# readme.txt comes from committed files only (see bin/readme.php), so it does not break the reproducibility.
+php "$root/bin/readme.php" "$out/$slug/readme.txt"
 
 # Fixed modes and times, so neither the umask nor the clock reaches the zip.
 find "$out/$slug" -type d -exec chmod 755 {} +

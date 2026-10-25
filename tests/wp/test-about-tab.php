@@ -134,15 +134,18 @@ class Test_About_Tab extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The readme's Donate link and the plugin header's Author URI point at the same sections of the documentation home page.
+	 * The generated readme's Donate link and the plugin header's Author URI point at the same sections of the documentation home page.
 	 */
 	public function test_readme_and_header_link_the_documentation_home_page() {
-		$root   = dirname( __DIR__, 2 );
+		$root = dirname( __DIR__, 2 );
+		require_once $root . '/bin/readme.php';
+
 		$home   = (string) file_get_contents( $root . '/docs/index.md' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file.
-		$readme = get_file_data( $root . '/readme.txt', array( 'donate' => 'Donate link' ) );
+		$readme = wpun_render_readme( $root );
 		$header = get_file_data( SC_WPUN_FILE, array( 'author_uri' => 'Author URI' ) );
 
-		$this->assertSame( About_Tab::links()['donate'], $readme['donate'] );
+		$this->assertSame( 1, preg_match( '/^Donate link: *(\S+)$/m', $readme, $donate ) );
+		$this->assertSame( About_Tab::links()['donate'], $donate[1] );
 		$this->assertSame( Plugin::SITE_URL . '#about-the-developer', $header['author_uri'] );
 		$this->assertMatchesRegularExpression( '/^## About the developer$/m', $home, 'The fragment of the Author URI.' );
 	}

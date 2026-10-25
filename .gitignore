@@ -1,5 +1,7 @@
 /vendor/
 /build/
+# Generated into the build by bin/readme.php (make readme), never committed
+/readme.txt
 /node_modules/
 *.zip
 .phpunit.result.cache

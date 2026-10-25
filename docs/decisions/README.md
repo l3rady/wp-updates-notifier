@@ -39,3 +39,4 @@ The date is when the decision was made, not when the record was written.
 | [0015](0015-conventional-commits-and-linear-history.md) | Conventional Commits and a linear history | Accepted | 2026-10-13 |
 | [0016](0016-pending-update-reminders-per-channel.md) | Remind about pending updates, per channel | Accepted | 2026-10-23 |
 | [0017](0017-bundle-l10n-php-translations-only.md) | Bundle translations as `.l10n.php` files only | Accepted | 2026-10-24 |
+| [0018](0018-generate-readme-at-build-time.md) | Generate readme.txt at build time and do not commit it | Accepted | 2026-10-25 |

@@ -1,5 +1,5 @@
 # lychee settings for `make docs-links`: the links of the built site (build/docs) and of the files that are not part of
-# it (README.md, readme.txt, CONTRIBUTING.md). Links to other sites are the point. Internal links and anchors in the
+# it (README.md, the generated build/readme.txt, CONTRIBUTING.md). Links to other sites are the point. Internal links and anchors in the
 # site are already checked by the strict `make docs` build; lychee checks the files it is given again, which is fine.
 
 # A server that is busy or limits requests gets a few more tries, so a hiccup does not fail a pull request.
