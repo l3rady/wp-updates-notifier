@@ -108,12 +108,15 @@ make test-wp-ms                  # the same as multisite
 make test                        # both
 make test-known-bugs             # tests documenting open bugs: they are expected to FAIL
 make a11y                        # axe and keyboard checks of the settings screen in a browser (about 40 seconds)
+make screenshots                 # regenerate .wordpress-org/screenshot-1.png to 4 from a throwaway site (about 30 seconds)
 make test-wp WP_VERSION=6.7.9 PHP_VERSION=7.4   # pick versions (WP_VERSION is a wordpress-develop tag or trunk)
 ```
 
 The suite runs on WordPress's own test library with a real database, no real network (every HTTP request must be faked or the test fails) and no real mail. Tests for a bug that is still open carry `@group known-bug`, assert the *correct* behaviour, and are excluded from the normal run; the fix removes the tag.
 
 `make a11y` builds a throwaway site as its own compose project (`wpun-e2e`, from `tests/e2e/compose.yml`; it never touches `make up`) and runs Playwright from the official image against the settings screen: axe scans of every view for WCAG 2.2 A and AA, and keyboard checks of the Channels list and a channel form. Any violation fails the run and is listed with its rule and elements; the HTML report is written to `tests/e2e/reports/`. CI runs it on every pull request.
+
+`make screenshots` writes the WordPress.org screenshots (`.wordpress-org/screenshot-1.png` to `screenshot-4.png`). It builds its own throwaway site (compose project `wpun-shots`, from `tests/screenshots/compose.yml`; it touches neither `make up` nor `make a11y`) with made-up data: example.com addresses, fake plugins whose updates and the offline update data come from `tests/screenshots/mu-plugin.php`, and Mailpit to catch the update email. It runs the update check once from WP-CLI before the browser opens any page, then photographs the General tab, the Channels list, a channel's form and the email. The captions are in `.wordpress-org/readme/template.txt`, in the same order as `SHOTS` in `tests/screenshots/screenshots.spec.js`. Dates and times in the files are those of the run. CI does not run it.
 
 ### Local site
 

@@ -113,6 +113,7 @@ Two checks guard the same boundary without WordPress. `make check-public-api` fa
 **Covers.** Accessibility in a real browser, with Playwright and axe: WCAG 2.2 A and AA, and keyboard use.
 
 - `make a11y` checks the settings screen on a throwaway WordPress site (its own Compose project, so it never touches `make up`). Specs are in `tests/e2e/specs/`.
+- `make screenshots` is not a test: it regenerates the WordPress.org screenshots (`.wordpress-org/screenshot-1.png` to `4`) on a throwaway site of its own (compose project `wpun-shots`, files in `tests/screenshots/`), with made-up data and the update email caught by Mailpit. It fails if the update check did not send. Run it before a release; CI does not.
 - `make docs-a11y` builds this documentation site and checks every page in the dark and the light scheme: axe, no request to a third party, visible keyboard focus, and that every Mermaid diagram parses. A syntax error in a diagram fails it, because Mermaid would otherwise draw an error image and the page would still load. Specs are in `tests/e2e/docs/specs/`.
 - `make docs-links` checks the links in the built site and in `README.md`, the generated `readme.txt` and `CONTRIBUTING.md` with lychee, including links to other sites. Internal links and anchors are already checked by the strict `make docs` build.
 

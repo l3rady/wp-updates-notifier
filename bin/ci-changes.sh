@@ -141,8 +141,9 @@ docs/index.md             wordpress docs links
 
 # The browser checks of the settings screen (a11y) and of the docs site (docs). Both use tests/e2e/compose.yml.
 tests/e2e/*               a11y docs
-# Local only (make dast): no pull request job runs it.
+# Local only (make dast, make screenshots): no pull request job runs them.
 tests/dast/*              -
+tests/screenshots/*       -
 
 # The documentation site: the strict build and its checks, and lychee over the built site.
 docs/*                    docs links

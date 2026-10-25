@@ -85,8 +85,10 @@ Please don't post it in the support forum or in a public GitHub issue. Report it
 
 == Screenshots ==
 
-1. Settings page
-2. Email alert
+1. The General tab: when the last and next check run, a button to check now, and the settings.
+2. The Channels tab: each channel with what it receives and when it last delivered.
+3. Editing an email channel; a value set in code is shown as read-only.
+4. An update email listing the updates that are waiting.
 
 == Changelog ==
 

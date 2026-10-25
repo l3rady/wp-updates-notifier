@@ -1,0 +1,120 @@
+# The throwaway site `make screenshots` photographs (tests/screenshots/screenshots.spec.js). Always run as its own
+# project (`docker compose -p wpun-shots -f tests/screenshots/compose.yml`): its containers, network and volumes are
+# named after the project, so nothing here can touch the local site from `make up` or the `make a11y` site. No port is
+# published. The browser joins the network and reaches WordPress at http://example.com:8080 (a network alias, so the
+# screens show a plain example.com and not the container's name) and Mailpit at http://mailpit:8025.
+name: wpun-shots
+
+x-site: &site
+  build:
+    context: ../..
+    dockerfile: docker/Dockerfile
+    target: site
+    args:
+      PHP_VERSION: ${PHP_VERSION:-8.3}
+  # The same image as the local site and the `make a11y` site, so it is built once and shared.
+  image: wp-updates-notifier:site-php${PHP_VERSION:-8.3}
+
+x-mounts: &mounts
+  - wp:/var/www/html
+  - ../../docker/apache/ports.conf:/etc/apache2/ports.conf:ro
+  - ../../docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
+  - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
+  # docker/site-setup.sh activates it; seed.sh switches it off again.
+  - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
+  # Single files, not the whole mu-plugins directory: mail goes to Mailpit, and the update data is fake and offline.
+  - ../../docker/mu-plugins/mailpit.php:/var/www/html/wp-content/mu-plugins/mailpit.php:ro
+  - ./mu-plugin.php:/var/www/html/wp-content/mu-plugins/wpun-screenshots.php:ro
+
+services:
+  db:
+    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: wordpress
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  # Catches the update email, which the spec then photographs.
+  mailpit:
+    image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48
+
+  wordpress:
+    <<: *site
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_NAME: wordpress
+    volumes: *mounts
+    networks:
+      default:
+        aliases:
+          - example.com
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
+  # WP-CLI: installs the site with docker/site-setup.sh (SITE_MODE=e2e), then tests/screenshots/seed.sh. It has the
+  # same mu-plugins as the web server, because the update check (and so wp_mail) runs here.
+  wp-cli:
+    <<: *site
+    user: "33:33"
+    working_dir: /var/www/html
+    depends_on:
+      - wordpress
+    volumes:
+      - wp:/var/www/html
+      - ../../docker/site-setup.sh:/usr/local/bin/wpun-site-setup:ro
+      - ./seed.sh:/usr/local/bin/wpun-shots-seed:ro
+      - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
+      - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
+      - ../../docker/mu-plugins/mailpit.php:/var/www/html/wp-content/mu-plugins/mailpit.php:ro
+      - ./mu-plugin.php:/var/www/html/wp-content/mu-plugins/wpun-screenshots.php:ro
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_NAME: wordpress
+      SITE_MODE: e2e
+      SITE_URL: http://example.com:8080
+    entrypoint: ["wp"]
+
+  # Playwright from the same image and npm packages as `make a11y` (tests/e2e/package.json, mounted at /e2e). The spec
+  # is in /shots and finds @playwright/test through NODE_PATH. The PNGs go to /out, the one place that is writable
+  # (.wordpress-org). Runs as the host user, so the files are yours.
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /shots
+    init: true
+    ipc: host
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    environment:
+      HOME: /tmp
+      NODE_PATH: /e2e/node_modules
+      E2E_BASE_URL: http://example.com:8080
+      MAILPIT_URL: http://mailpit:8025
+      SHOTS_OUT: /out
+    volumes:
+      - ../e2e:/e2e
+      - .:/shots
+      - ../../.wordpress-org:/out
+    command: ["sh", "-c", "(cd /e2e && npm ci --no-fund --no-audit) && /e2e/node_modules/.bin/playwright test"]
+
+volumes:
+  wp:
