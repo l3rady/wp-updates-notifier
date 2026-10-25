@@ -1,0 +1,74 @@
+name: wordpress-org
+
+# Deploys a release to WordPress.org (#57): the zip to SVN trunk and tags/<version>, and build/wporg-assets (#110) to
+# assets/. Only a release reaches WordPress.org. Nothing merged to main is deployed: this runs when a GitHub release is
+# published, and only the release job of release-please.yml publishes one (with the release app's token, so the event
+# starts this workflow). The ref is then the release's v* tag, the only ref the wordpress-org environment accepts.
+#
+# It deploys the zip the release job built and attested, downloaded from the release, never a rebuild. Re-running it
+# after a deploy changes nothing: the action stops when SVN already has tags/<version>. The rehearsal (a dry run) is
+# the wordpress-org-rehearsal job of release-please.yml.
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  wordpress-org:
+    if: ${{ startsWith(github.event.release.tag_name, 'v') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Holds the SVN credentials (#58), accepts only v* tags and waits for the maintainer's approval.
+    environment: wordpress-org
+    permissions:
+      contents: read
+      attestations: read
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+
+      - name: Check the version matches the tag
+        run: |
+          version="$(sed -n 's/^ \* Version: //p' wp-updates-notifier.php | head -n 1)"
+          [ "v$version" = "$TAG" ] || { echo "Version $version does not match $TAG" >&2; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Download the released zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release download "$TAG" --repo "$REPO" --dir build/release \
+            --pattern "wp-updates-notifier-$VERSION.zip" --pattern "wp-updates-notifier-$VERSION.zip.sha256"
+
+      # SVN gets exactly the bytes that were attested and published (#226).
+      - name: Verify the zip and unpack it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          ( cd build/release && sha256sum -c "wp-updates-notifier-$VERSION.zip.sha256" )
+          gh attestation verify "build/release/wp-updates-notifier-$VERSION.zip" --repo "$REPO" \
+            --signer-workflow "$REPO/.github/workflows/release-please.yml" \
+            --source-ref refs/heads/main --source-digest "$SHA"
+          unzip -q "build/release/wp-updates-notifier-$VERSION.zip" -d build
+          test -f build/wp-updates-notifier/wp-updates-notifier.php
+
+      - name: Assemble and check the WordPress.org assets
+        run: make wporg-assets-check
+
+      - name: Deploy to WordPress.org
+        uses: 10up/action-wordpress-plugin-deploy@54bd289b8525fd23a5c365ec369185f2966529c2 # 2.3.0
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: wp-updates-notifier
+          VERSION: ${{ env.VERSION }}
+          BUILD_DIR: build/wp-updates-notifier
+          ASSETS_DIR: build/wporg-assets

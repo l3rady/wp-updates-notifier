@@ -186,7 +186,14 @@ and `!` with a `BREAKING CHANGE:` footer a major (`docs`, `chore`, `build`, `ci`
 a draft GitHub release. The `release` job then waits for the maintainer's
 approval in the `release` environment. It builds the zip, its `.sha256` and an
 SBOM, attests the zip, creates the signed `vX.Y.Z` tag, uploads the assets and
-publishes the release. Don't merge anything to `main` between merging the
+publishes the release. Publishing starts the `wordpress-org` workflow, which
+waits for approval in the `wordpress-org` environment (it holds `SVN_USERNAME`
+and `SVN_PASSWORD` and accepts only `v*` tags). It downloads the published zip,
+checks its `.sha256` and attestation, and deploys exactly those files to SVN
+`trunk` and `tags/X.Y.Z`, with `build/wporg-assets/` (below) as `assets/`. Only
+a release reaches WordPress.org: nothing merged to `main` is deployed, so a
+`Tested up to` bump or a new screenshot ships with the next release (a patch
+release, if it can't wait). Don't merge anything to `main` between merging the
 Release PR and the release being published: until then there is no tag, so
 release-please can't see the release and would open a Release PR that repeats
 it. If that happens, run the workflow by hand (Actions, release-please, Run
@@ -196,12 +203,20 @@ workflow) after publishing to rebuild the Release PR. To force a version, add a
 If the release job fails, use **Re-run failed jobs**, not "Re-run all jobs":
 re-running release-please finds nothing new to release, and the release job is
 skipped. Every step after the tag push is safe to repeat, and a tag that is
-already pushed is checked, not created again.
+already pushed is checked, not created again. If the `wordpress-org` workflow
+fails, re-run it: it deploys the same attested zip, and stops without changes
+when SVN already has `tags/X.Y.Z`.
 
-Run the workflow by hand with **rehearse** ticked to try the release job without
-releasing. It also waits for approval in the `release` environment. It builds
-and signs a throwaway tag on the runner, then stops before anything is
-attested, pushed or published.
+Run the release-please workflow by hand with **rehearse** ticked to try the
+release without releasing. The release job also waits for approval in the
+`release` environment. It builds and signs a throwaway tag on the runner, then
+stops before anything is attested, pushed or published. The
+`wordpress-org-rehearsal` job then deploys the zip it built as a dry run, with
+no credentials (the SVN checkout is anonymous): the log ends with the
+`svn status` of trunk, the new tag and `assets/`, and nothing is committed.
+Rehearse before each release and read that list. Before 2.0.0, the first automated deploy, it removes the files 1.x
+shipped by hand (`trunk/js/`, `trunk/tests/`, `trunk/bin/`, `.travis.yml` and
+the phpcs and phpunit configs). That is intended.
 
 The `release` environment is limited to `main`, needs the maintainer's approval
 and holds:
@@ -228,15 +243,16 @@ WordPress.org's rules, and `make test-readme` tests the generator.
 The Live Preview blueprint is generated the same way: `bin/blueprint.php` builds
 it from `.wordpress-org/blueprint/` (`make blueprint` writes a preview to
 `build/blueprint.json`), `make check-blueprint` validates it against the
-Playground schema and `make test-blueprint` tests the generator. The asset
+Playground schema and `make test-blueprint` tests the generator. The release
 deploy ships it to SVN `assets/blueprints/`.
 
 `make wporg-assets` assembles what goes to SVN `assets/` in `build/wporg-assets/`: the
 top-level files of `.wordpress-org/` (icons, banners, screenshots; never `src/`,
 `readme/` or `blueprint/`) and `blueprints/blueprint.json`. `make wporg-assets-check`
 validates it (names, formats, exact sizes, screenshots against the readme captions, the
-SVG icon, the blueprint schema) and runs in the `plugin-check` CI job. The release deploy
-(`10up/action-wordpress-plugin-deploy`) uses `build/wporg-assets/` as its `ASSETS_DIR`.
+SVG icon, the blueprint schema) and runs in the `plugin-check` CI job and before the
+deploy. The deploy (`10up/action-wordpress-plugin-deploy`) uses `build/wporg-assets/` as
+its `ASSETS_DIR`.
 It syncs it with `rsync --delete` and sets `svn:mime-type` for the png, jpg, gif and svg
 files itself, so no extra step is needed. `make dist` wipes `build/`, so run
 `make wporg-assets` after it. `make dist-check` fails if the zip holds any of these files.

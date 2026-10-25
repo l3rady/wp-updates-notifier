@@ -23,7 +23,7 @@ WordPress.org reads `readme.txt` or `readme.md`, and both must use the WordPress
 - Good: no generated file in the repository, so no staleness check and no merge conflicts in it.
 - Good: the FAQ answers are the ones on the documentation site, so they are written once.
 - Bad: a reader of the repository cannot open `readme.txt` or see its diff in a pull request. `make readme` shows it, and a change to a source shows in the diff of the source.
-- Bad: anything that needs the readme must build it first. The SVN deploy for readme-only changes (#57), lychee (`make docs-links` does) and the WordPress tests (they call the generator) do.
+- Bad: anything that needs the readme must build it first. Lychee (`make docs-links`) and the WordPress tests (they call the generator) do; the release deploy to SVN (#57) takes it from the zip.
 - Bad: the FAQ and changelog Markdown support is the subset the user guide uses. A new construct needs the generator taught first.
 
 ## Considered options

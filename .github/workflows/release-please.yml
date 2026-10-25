@@ -1,8 +1,10 @@
 name: release-please
 
-# Merging to main never changes the version. release-please keeps a Release PR
-# open; merging that PR makes a draft GitHub release, and the release job below
-# tags, attests and publishes it once the maintainer approves.
+# Merging to main never changes the version, and nothing merged to main reaches
+# WordPress.org. release-please keeps a Release PR open; merging that PR makes a
+# draft GitHub release, the release job below tags, attests and publishes it once
+# the maintainer approves, and publishing it starts the deploy to SVN
+# (wordpress-org.yml).
 on:
   push:
     branches:
@@ -177,8 +179,8 @@ jobs:
           permission-contents: write
 
       # The point of no return: a pushed v* tag can't be moved or deleted. Pushed and
-      # published with the app token, not GITHUB_TOKEN, so the published release can
-      # start the WordPress.org deploy (#57).
+      # published with the app token, not GITHUB_TOKEN, so publishing starts the WordPress.org deploy
+      # (wordpress-org.yml; events made with GITHUB_TOKEN start no workflows).
       - name: Push the tag, upload the assets and publish the release
         if: ${{ env.REHEARSE != 'true' }}
         env:
@@ -195,6 +197,64 @@ jobs:
             "build/wp-updates-notifier-$VERSION.cdx.json"
           gh release edit "$TAG" --repo "$REPO" --draft=false --verify-tag --latest
 
+      # A rehearsal publishes nothing, so the deploy rehearsal below takes the zip from here.
+      - name: Keep the zip for the deploy rehearsal
+        if: ${{ env.REHEARSE == 'true' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-zip
+          path: |
+            build/wp-updates-notifier-${{ env.VERSION }}.zip
+            build/wp-updates-notifier-${{ env.VERSION }}.zip.sha256
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Remove the signing key
         if: ${{ always() }}
         run: rm -f "$RUNNER_TEMP/release-signing-key"
+
+  # Rehearses the WordPress.org deploy (#57) with the zip the rehearsal built: a dry run that checks out SVN, shows
+  # the svn status of trunk, the new tag and assets/, and commits nothing. The real deploy is wordpress-org.yml, which
+  # only a published release starts. A dry run needs no credentials (the SVN checkout is anonymous; the action only
+  # checks that both are set), so this job has no environment and no secrets.
+  wordpress-org-rehearsal:
+    needs: [release-please, release]
+    if: ${{ inputs.rehearse && needs.release-please.outputs.release_created != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read the version
+        run: |
+          echo "VERSION=$(sed -n 's/^ \* Version: //p' wp-updates-notifier.php | head -n 1)" >> "$GITHUB_ENV"
+
+      - name: Download the rehearsal's zip
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-zip
+          path: build/release
+
+      - name: Verify the zip and unpack it
+        run: |
+          ( cd build/release && sha256sum -c "wp-updates-notifier-$VERSION.zip.sha256" )
+          unzip -q "build/release/wp-updates-notifier-$VERSION.zip" -d build
+          test -f build/wp-updates-notifier/wp-updates-notifier.php
+
+      - name: Assemble and check the WordPress.org assets
+        run: make wporg-assets-check
+
+      - name: Deploy to WordPress.org (dry run)
+        uses: 10up/action-wordpress-plugin-deploy@54bd289b8525fd23a5c365ec369185f2966529c2 # 2.3.0
+        with:
+          dry-run: true
+        env:
+          SVN_USERNAME: rehearsal
+          SVN_PASSWORD: rehearsal
+          SLUG: wp-updates-notifier
+          BUILD_DIR: build/wp-updates-notifier
+          ASSETS_DIR: build/wporg-assets
