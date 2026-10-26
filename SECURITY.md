@@ -16,8 +16,10 @@ Please do not open a public issue for a security problem. Report it privately
 on GitHub: open the repository's **Security** tab and choose **Report a
 vulnerability**. If you cannot use that, email
 [scott@cariss.dev](mailto:scott@cariss.dev). Either way, describe the problem
-and, if you can, how to reproduce it. You will get a reply as soon as
-possible, and a fix will be released before the details are made public.
+and, if you can, how to reproduce it. You will get a reply within 7 days, and
+a fix or a plan for one within 30 days. A fix is released before the details
+are made public. There is no bug bounty and no third-party disclosure
+programme: report here directly.
 
 WP Updates Notifier checks the site for core, plugin and theme updates and sends
 what it finds through notification channels. Email is the one built-in channel,
@@ -40,7 +42,9 @@ Problems we would like to hear about include:
   documented.
 
 The [threat model](docs/security/threat-model.md) describes what the plugin
-trusts, each entry point, and the control and test that cover it.
+trusts, each entry point, and the control and test that cover it. The
+[2.0.0 security audit](docs/security/audit-2.0.0.md) checks the plugin against
+OWASP ASVS 5.0 Level 1 and the WordPress security guidance.
 
 ## How this plugin is checked
 
@@ -51,7 +55,10 @@ the reports go to the repository's code scanning alerts.
 - **Secrets:** gitleaks over the git history, the working tree and the release
   zip (`make secrets`).
 - **Dependencies:** composer audit, OSV-Scanner and GitHub's dependency
-  review. The plugin has no runtime dependencies.
+  review. The plugin has no runtime dependencies. A known vulnerability in a
+  development dependency, a GitHub Action or a tool image is fixed within 7
+  days if it is High or Critical, and within 30 days otherwise. Other updates
+  come through Dependabot after a 14-day cooldown.
 - **Static analysis:** WordPress Coding Standards, including its escaping,
   security token and sanitising sniffs (`make lint`), PHPStan (`make stan`), Semgrep with
   the plugin's own rules (`make sast`), and Psalm's taint analysis (`make taint`).
