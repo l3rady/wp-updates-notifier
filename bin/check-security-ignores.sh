@@ -1,9 +1,11 @@
 #!/bin/sh
-# Security hygiene checks that Semgrep cannot express, over the code `make sast` scans (or the paths given):
+# Security hygiene checks that Semgrep cannot express, over the code `make sast` scans plus the demo PHP in
+# .wordpress-org/blueprint (phpcs lints it and it ships to the WordPress.org assets), or the paths given:
 #  - every phpcs:ignore / phpcs:disable naming a WordPress.Security sniff, every nosemgrep and every
 #    @psalm-suppress Tainted* (`make taint`) says why on the same line, after " -- "
 #    ("// nosemgrep: wpun-no-unserialize -- Reads our own export.");
-#  - every PHP file has an ABSPATH guard near the top (uninstall.php: WP_UNINSTALL_PLUGIN, WordPress's own rule).
+#  - every PHP file has an ABSPATH guard near the top (uninstall.php: WP_UNINSTALL_PLUGIN, WordPress's own rule;
+#    the blueprint's seed.php runs outside WordPress, so it requires wp-load.php under an ABSPATH check).
 # Run by `make sast`.
 set -eu
 
@@ -13,7 +15,7 @@ cd "$root"
 if [ "$#" -gt 0 ]; then
 	paths="$*"
 else
-	paths="wp-updates-notifier.php uninstall.php includes modules examples"
+	paths="wp-updates-notifier.php uninstall.php includes modules examples .wordpress-org/blueprint"
 fi
 
 status=0

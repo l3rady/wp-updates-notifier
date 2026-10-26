@@ -6,3 +6,7 @@
  *
  * @package example-gallery
  */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Not loaded by WordPress.
+}

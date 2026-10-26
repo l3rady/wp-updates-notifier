@@ -59,7 +59,7 @@ check "WordPress.org assets" '.wordpress-org/screenshot-1.png' 'plugin-check' fa
 check "flow tests" 'tests/flows/specs/runs.spec.js' 'e2e' false
 check "upgrade test" 'tests/flows/upgrade/specs/update-cli.spec.js' '' false
 check "upgrade test PHP" 'tests/flows/upgrade/reset.php' 'phpcs' false
-check "fake updates" '.wordpress-org/blueprint/fake-updates.php' 'phpcs smoke plugin-check e2e' false
+check "fake updates" '.wordpress-org/blueprint/fake-updates.php' 'phpcs smoke plugin-check e2e sast' false
 check "local-only DAST" 'tests/dast/compose.yml' '' false
 check "no changes" '' '' false
 check "several rules apply" 'docs/developers/hooks.md

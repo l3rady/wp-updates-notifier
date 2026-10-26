@@ -6,3 +6,7 @@
  *
  * @package example-contact-forms
  */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Not loaded by WordPress.
+}

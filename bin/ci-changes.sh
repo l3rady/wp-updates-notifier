@@ -109,7 +109,7 @@ LICENSE                   plugin-check dist dist-repro
 # template and the demo PHP; smoke lints the PHP and phpcs checks it). make check-blueprint and make test-blueprint
 # run in the plugin-check job. The vendored schema, Ajv and their tests are tests/bin/blueprint; make blueprint-smoke
 # (tests/blueprint-smoke) is local only.
-.wordpress-org/blueprint/* phpcs smoke plugin-check e2e
+.wordpress-org/blueprint/* phpcs smoke plugin-check e2e sast
 bin/blueprint.php         smoke plugin-check
 tests/bin/test-blueprint.sh plugin-check
 tests/bin/blueprint/*     plugin-check

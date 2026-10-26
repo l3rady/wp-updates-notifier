@@ -9,6 +9,10 @@
  * @package wp-updates-notifier
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Not loaded by WordPress.
+}
+
 // Where the caught emails are kept, how many, and the slug of the page that lists them.
 const WPUN_DEMO_MAIL_OPTION = 'wpun_demo_emails';
 const WPUN_DEMO_MAIL_LIMIT  = 20;
@@ -98,8 +102,7 @@ function wpun_demo_render_emails() {
 	$emails = is_array( $emails ) ? $emails : array();
 	$base   = admin_url( 'tools.php?page=' . WPUN_DEMO_MAIL_PAGE );
 
-	// Reading which email to show changes nothing, so there is no security token to check.
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading which email to show changes nothing, so there is no security token to check.
 	$wanted   = isset( $_GET['email'] ) ? absint( wp_unslash( $_GET['email'] ) ) : 0;
 	$selected = null;
 	foreach ( $emails as $email ) {

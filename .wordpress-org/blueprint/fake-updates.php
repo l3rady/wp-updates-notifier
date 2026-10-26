@@ -12,6 +12,10 @@
  * @package wp-updates-notifier
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Not loaded by WordPress.
+}
+
 // The made-up plugins: file => slug, installed version, new version, and whether the new version is tested with this
 // WordPress (the last one is not yet). tests/screenshots/seed.sh and the blueprint template (blueprint.json) make the
 // same plugins.

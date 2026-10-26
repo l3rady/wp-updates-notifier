@@ -10,7 +10,7 @@
  * @package wp-updates-notifier
  */
 
-// phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.Security.EscapeOutput, WordPress.PHP.DevelopmentFunctions
+// phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.Security.EscapeOutput, WordPress.PHP.DevelopmentFunctions -- A command line script: it writes to the terminal and reads files directly, and nothing is sent to a browser.
 
 if ( PHP_SAPI !== 'cli' ) {
 	exit( 1 );

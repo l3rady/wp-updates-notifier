@@ -7,7 +7,9 @@
  */
 
 // runPHP does not load WordPress.
-require '/wordpress/wp-load.php';
+if ( ! defined( 'ABSPATH' ) ) {
+	require '/wordpress/wp-load.php';
+}
 
 update_option( 'blogname', 'Example Site' );
 update_option( 'blogdescription', 'Just another example' );

@@ -6,3 +6,7 @@
  *
  * @package example-backup
  */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Not loaded by WordPress.
+}
