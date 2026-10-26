@@ -2237,7 +2237,7 @@ handlers above. Field types are in <code>includes/class-field-types.php</code>, 
 <tr>
 <td>I</td>
 <td>A secret is shown on the page.</td>
-<td>Secret fields are never rendered: the renderer only learns whether a value is saved (<code>'1'</code>/<code>''</code>). An empty input keeps the stored value, and <code>&lt;name&gt;__clear</code> removes it. <code>secret =&gt; true</code> works on any type. Values set in code show as read-only and are never echoed unless the schema opts in with <code>show_external</code>, which email uses for its non-secret fields only.</td>
+<td>Secret fields are never rendered: the renderer only learns whether a value is saved (<code>'1'</code>/<code>''</code>). An empty input keeps the stored value, and <code>&lt;name&gt;__clear</code> removes it. <code>secret =&gt; true</code> works on any type. Values set in code show as read-only and are never echoed unless the schema opts in with <code>show_external</code>, which email uses for its non-secret fields only. This holds for every type except <code>number</code>, <code>boolean</code> and <code>enum</code>, so a custom field type is not given an outside value by default (#325).</td>
 <td><code>test-field-types.php</code> (<code>test_render_secret_never_outputs_value</code>, <code>test_secret_keep_and_clear</code>, <code>test_secret_flag_on_other_types</code>), <code>test-channel-form.php</code> (<code>test_secrets_are_never_output_and_can_be_kept_or_cleared</code>, <code>test_secrets_are_not_kept_for_the_error_round_trip</code>), <code>test-channels-tab.php</code> (<code>test_duplicate_does_not_store_external_secrets</code>). <code>security/test-secrets.php</code> (#220): a secret set through the form, a constant and an env var never shows, apart from the placeholder or its source.</td>
 </tr>
 <tr>
@@ -2267,8 +2267,8 @@ text or Markdown (<code>includes/class-notification-renderer.php</code>), as wel
 <tr>
 <td>T/I</td>
 <td>A plugin name such as <code>&lt;script&gt;…</code> or <code>"&gt;&lt;img onerror=…&gt;</code> runs in HTML mail or an admin page.</td>
-<td><code>Notification_Item</code> collapses control characters so each value is a single line. The HTML renderer escapes every value with <code>esc_html</code> or <code>esc_url</code>. Markdown escapes its special characters and links only explicit <code>http(s)</code> URLs. Plain text is not HTML, and it is sent as <code>text/plain</code>.</td>
-<td><code>test-notification.php</code> (<code>test_html_escapes_values</code>, <code>test_markdown_escapes_special_characters</code>, <code>test_markdown_drops_unsafe_link_targets</code>, <code>test_plain_text_is_not_escaped</code>), <code>test-message-snapshot.php</code>, <code>make taint</code> (sources <code>get_plugins</code>, <code>get_plugin_data</code>, <code>wp_get_themes</code>, <code>get_site_transient</code>). <code>security/test-stored-xss.php</code> (#220): the payloads through a mocked update check into the HTML and plain-text mail (no live markup, no double encoding), the nag, the channel list, Site Health and every tab.</td>
+<td><code>Notification_Item</code> collapses control characters so each value is a single line. The HTML renderer escapes every value with <code>esc_html</code> or <code>esc_url</code>. Markdown escapes its special characters and links only explicit <code>http(s)</code> URLs, and plain text lists only those too (#325). Plain text is not HTML, and it is sent as <code>text/plain</code>. The update check reads plugin and theme files only for plugins and themes that are installed, so a key such as <code>../../wp-config.php</code> in a transient or a filter is never opened (#325). The General tab escapes the titles it gives the Settings API (#325).</td>
+<td><code>test-notification.php</code> (<code>test_html_escapes_values</code>, <code>test_markdown_escapes_special_characters</code>, <code>test_markdown_drops_unsafe_link_targets</code>, <code>test_plain_text_is_not_escaped</code>), <code>test-message-snapshot.php</code>, <code>make taint</code> (sources <code>get_plugins</code>, <code>get_plugin_data</code>, <code>wp_get_themes</code>, <code>get_site_transient</code>). <code>security/test-stored-xss.php</code> (#220): the payloads through a mocked update check into the HTML and plain-text mail (no live markup, no double encoding), the nag, the channel list, Site Health and every tab. <code>security/test-hardening-*.php</code> (#325): the escaped titles, the installed-only reads and the plain-text links.</td>
 </tr>
 <tr>
 <td>T</td>
@@ -2323,8 +2323,8 @@ malformed or leak.</p>
 <tr>
 <td>I</td>
 <td>A secret from wp-config or the environment shows up in a page, a log, Site Health or debug output.</td>
-<td><code>Config_Value</code> hides secret values in debug output and string casts. <code>Channel_Instance::__debugInfo</code> redacts. Reports name only the source, never the value. External values are read-only on the form.</td>
-<td><code>test-config-channels.php</code> (<code>test_a_secret_never_leaks</code>, <code>test_a_valid_secret_is_used_and_not_logged</code>), <code>test-config.php</code> (<code>test_external_settings_render_read_only</code>). <code>security/test-secrets.php</code> (#220): Site Health debug data, <code>_doing_it_wrong</code> messages, notices, the debug log and <code>print_r</code>/<code>var_dump</code> of an instance.</td>
+<td><code>Config_Value</code> hides secret values in debug output and string casts. <code>Channel_Instance::__debugInfo</code> and <code>__serialize</code> redact. Reports name only the source, never the value. External values are read-only on the form.</td>
+<td><code>test-config-channels.php</code> (<code>test_a_secret_never_leaks</code>, <code>test_a_valid_secret_is_used_and_not_logged</code>), <code>test-config.php</code> (<code>test_external_settings_render_read_only</code>). <code>security/test-secrets.php</code> (#220): Site Health debug data, <code>_doing_it_wrong</code> messages, notices, the debug log and <code>print_r</code>/<code>var_dump</code> of an instance. <code>security/test-hardening-instance-serialize.php</code> (#325): <code>serialize()</code> redacts too; <code>var_export()</code> and Reflection still bypass it.</td>
 </tr>
 <tr>
 <td>E</td>
@@ -2436,8 +2436,8 @@ of the database sets them in <code>wp-config.php</code> constants or environment
 <tbody>
 <tr>
 <td>I</td>
-<td>Secrets leak through <code>var_dump</code>, <code>print_r</code> or debug plugins.</td>
-<td><code>Channel_Instance::__debugInfo</code> and <code>Config_Value</code> redact.</td>
+<td>Secrets leak through <code>var_dump</code>, <code>print_r</code>, <code>serialize</code> or debug plugins.</td>
+<td><code>Channel_Instance::__debugInfo</code> and <code>__serialize</code>, and <code>Config_Value</code>, redact. <code>var_export()</code> and Reflection still bypass it.</td>
 <td><code>test-notification.php</code>, <code>test-config-channels.php</code>.</td>
 </tr>
 <tr>
