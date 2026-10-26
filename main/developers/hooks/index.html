@@ -4094,7 +4094,10 @@ the label of the module, switched off, with the default settings.</p>
 <p><em>Filter</em>, since 2.0.0</p>
 <p>Filters the capability needed to use the plugin's settings page.</p>
 <p>It decides who sees the settings page, saves the settings, sends a test message
-and dismisses the plugin's notice. An empty or non-string value is ignored.</p>
+and dismisses the plugin's notice. An empty or non-string value is ignored and
+the default is used.</p>
+<p>The default is <code>manage_options</code>, or <code>manage_network_options</code> on multisite, which
+only super admins have, as with core's update screens.</p>
 <p>Lowering it hands every user with the capability control over where the plugin's
 notifications go. Such a user can:</p>
 <ul>
@@ -4110,6 +4113,9 @@ notifications go. Such a user can:</p>
 <p>Example, let editors manage the plugin:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter( 'sc_wpun_capability', fn() =&gt; 'edit_pages' );</span>
 </code></pre></div>
+<p>Example, let the administrators of the sites of a network manage the plugin:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter( 'sc_wpun_capability', fn() =&gt; 'manage_options' );</span>
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -4122,7 +4128,7 @@ notifications go. Such a user can:</p>
 <tr>
 <td><code>$capability</code></td>
 <td><code>string</code></td>
-<td>Capability. Default <code>manage_options</code>.</td>
+<td>Capability. Default <code>manage_options</code>, or <code>manage_network_options</code> on multisite.</td>
 </tr>
 </tbody>
 </table>

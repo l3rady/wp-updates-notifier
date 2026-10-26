@@ -1996,7 +1996,8 @@ request (<code>.github/workflows/</code>). The security tests are in <code>tests
   <code>wp_mail()</code>/PHPMailer, the HTTP API's <code>wp_safe_remote_*</code> checks and the cron runner. A flaw in core is out of scope.</li>
 <li><strong>Administrators are trusted</strong> with what an administrator can already do in WordPress. Here that means anyone with the
   settings capability: <code>manage_options</code> by default, or whatever the <code>sc_wpun_capability</code> filter returns. On multisite
-  that is a site administrator, and the plugin keeps settings per site.</li>
+  the default is <code>manage_network_options</code>, so only super admins hold it, as core keeps update information for super
+  admins. A site administrator is not trusted with the settings unless the filter says so.</li>
 <li><strong>Code that runs in the same PHP process is trusted.</strong> That covers other plugins, the theme, add-on channel modules,
   <code>wp-config.php</code> and anything hooked into the plugin's filters. Such code can already do anything the plugin can, so the
   public API does not try to sandbox it. What the plugin owes add-ons is a safe API when it is used as documented: secrets
@@ -2164,7 +2165,7 @@ and the plugin registers none. The Semgrep rule <code>wpun-no-nopriv-hooks</code
 <td>E</td>
 <td>A user without the capability changes channels, sends messages or runs the check.</td>
 <td>Each handler checks <code>current_user_can( Settings_Page::capability() )</code> first, and refuses with a 403 and no change.</td>
-<td><code>test-channels-tab.php</code> (<code>test_nonce_and_capability_are_enforced_for_every_action</code>), <code>test-channel-form.php</code> (<code>test_nonce_and_capability_are_required</code>, <code>test_refusals_change_nothing</code>, <code>test_the_handler_answers_403_when_refused</code>), <code>test-check-now.php</code> (<code>test_a_refused_request_runs_nothing</code>), <code>test-test-send.php</code>, <code>test-slack-notice.php</code>. <code>security/test-capability-matrix.php</code> (#220): discovers every <code>admin_post_*</code>/<code>wp_ajax_*</code> hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests: logged out, subscriber, editor, administrator without <code>manage_options</code>, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (<code>make dast</code>, #222).</td>
+<td><code>test-channels-tab.php</code> (<code>test_nonce_and_capability_are_enforced_for_every_action</code>), <code>test-channel-form.php</code> (<code>test_nonce_and_capability_are_required</code>, <code>test_refusals_change_nothing</code>, <code>test_the_handler_answers_403_when_refused</code>), <code>test-check-now.php</code> (<code>test_a_refused_request_runs_nothing</code>), <code>test-test-send.php</code>, <code>test-slack-notice.php</code>. <code>security/test-capability-matrix.php</code> (#220): discovers every <code>admin_post_*</code>/<code>wp_ajax_*</code> hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests (eleven on multisite): logged out, subscriber, editor, administrator without <code>manage_options</code>, on multisite a site administrator who is not a super admin, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (<code>make dast</code>, #222).</td>
 </tr>
 <tr>
 <td>S/T</td>
@@ -2387,7 +2388,7 @@ filters, and supply config values. What the plugin still guarantees when an add-
 <li>schema values are sanitised and validated before the module sees them;</li>
 <li>an exception in one module becomes a failed <code>Delivery_Result</code> and doesn't stop the other channels;</li>
 <li>payload filters can't inject mail headers (see 5);</li>
-<li>the capability for the screens comes from one filter, <code>sc_wpun_capability</code>, and a non-string or empty value falls back to <code>manage_options</code>.</li>
+<li>the capability for the screens comes from one filter, <code>sc_wpun_capability</code>, and a non-string or empty value falls back to the default, <code>manage_options</code>, or <code>manage_network_options</code> on multisite.</li>
 </ul>
 <p>Proof: <code>test-extension-api.php</code>, <code>test-dispatcher.php</code>, <code>test-channel-api-constraint.php</code>, <code>test-api-version.php</code>,
 <code>test-contract.php</code>, <code>make check-public-api</code> (modules use only the public API), and <code>make check-hooks</code> (every hook is
