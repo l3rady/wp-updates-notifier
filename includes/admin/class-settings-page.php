@@ -551,7 +551,7 @@ class Settings_Page {
 			} else {
 				// translators: %s: Label of the setting.
 				$fallback = sprintf( __( 'Choose a value for %s.', 'wp-updates-notifier' ), isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name );
-				add_settings_error( 'sc_wpun_settings_main_' . $name, 'sc_wpun_settings_main_' . $name . '_error', $messages[ $name ] ?? $fallback, 'error' );
+				add_settings_error( 'sc_wpun_settings_main_' . $name, 'sc_wpun_settings_main_' . $name . '_error', esc_html( $messages[ $name ] ?? $fallback ), 'error' );
 			}
 		}
 
