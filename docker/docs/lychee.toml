@@ -24,9 +24,6 @@ exclude = [
   '^https?://127\.0\.0\.1(:\d+)?(/|$)',
   # Reserved for examples (RFC 2606): the domain never serves a page.
   '^https?://([a-z0-9-]+\.)*example\.(com|org)(/|$)',
-  # The `latest` alias of the docs site only exists once the 2.0.0 release has been deployed, so it is a 404 until then.
-  # Remove this line after 2.0.0 is released.
-  '^https://wpun\.cariss\.dev/latest(/|$)',
   # In a plain `make docs` build, every page's <link rel="canonical"> is its unversioned address (site_url + path).
   # Only `mike deploy` points it at /latest/ (canonical_version in mkdocs.yml), and lychee cannot skip one HTML
   # element. Links in the sources go to the root or to a versioned path, which are still checked.
