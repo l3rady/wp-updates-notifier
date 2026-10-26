@@ -33,10 +33,23 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	const SETTINGS_VERSION = '13.0';
 
 	/**
+	 * Whether the tests run with the default settings capability. On multisite that is `manage_network_options`,
+	 * which a site administrator lacks (#328). Most tests use a plain administrator, so unless a class sets this
+	 * to true, the capability is `manage_options` on multisite too.
+	 *
+	 * @var bool
+	 */
+	protected $default_capability = false;
+
+	/**
 	 * Set up: block the network and reset the mailer.
 	 */
 	public function set_up() {
 		parent::set_up();
+
+		if ( is_multisite() && ! $this->default_capability ) {
+			add_filter( 'sc_wpun_capability', static fn() => 'manage_options' );
+		}
 
 		$this->http_requests = array();
 		$this->http_fakes    = array();

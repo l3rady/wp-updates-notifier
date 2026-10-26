@@ -131,11 +131,18 @@ class Settings_Page {
 	 * @return string
 	 */
 	public static function capability(): string {
+		// Like core's update screens, a network keeps this for super admins by default (#328).
+		$default = is_multisite() ? 'manage_network_options' : 'manage_options';
+
 		/**
 		 * Filters the capability needed to use the plugin's settings page.
 		 *
 		 * It decides who sees the settings page, saves the settings, sends a test message
-		 * and dismisses the plugin's notice. An empty or non-string value is ignored.
+		 * and dismisses the plugin's notice. An empty or non-string value is ignored and
+		 * the default is used.
+		 *
+		 * The default is `manage_options`, or `manage_network_options` on multisite, which
+		 * only super admins have, as with core's update screens.
 		 *
 		 * Lowering it hands every user with the capability control over where the plugin's
 		 * notifications go. Such a user can:
@@ -153,13 +160,17 @@ class Settings_Page {
 		 *
 		 *     add_filter( 'sc_wpun_capability', fn() => 'edit_pages' );
 		 *
+		 * Example, let the administrators of the sites of a network manage the plugin:
+		 *
+		 *     add_filter( 'sc_wpun_capability', fn() => 'manage_options' );
+		 *
 		 * @since 2.0.0
 		 *
-		 * @param string $capability Capability. Default `manage_options`.
+		 * @param string $capability Capability. Default `manage_options`, or `manage_network_options` on multisite.
 		 */
-		$capability = apply_filters( 'sc_wpun_capability', 'manage_options' );
+		$capability = apply_filters( 'sc_wpun_capability', $default );
 
-		return is_string( $capability ) && '' !== $capability ? $capability : 'manage_options';
+		return is_string( $capability ) && '' !== $capability ? $capability : $default;
 	}
 
 	/**

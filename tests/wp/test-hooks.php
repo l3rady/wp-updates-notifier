@@ -221,7 +221,7 @@ class Test_Hooks extends WPUN_Test_Case {
 
 		remove_all_filters( 'sc_wpun_capability' );
 		add_filter( 'sc_wpun_capability', '__return_empty_string' );
-		$this->assertSame( 'manage_options', Settings_Page::capability() );
+		$this->assertSame( is_multisite() ? 'manage_network_options' : 'manage_options', Settings_Page::capability() );
 	}
 
 	/**

@@ -16,7 +16,8 @@ request (`.github/workflows/`). The security tests are in `tests/wp/security/` (
   `wp_mail()`/PHPMailer, the HTTP API's `wp_safe_remote_*` checks and the cron runner. A flaw in core is out of scope.
 - **Administrators are trusted** with what an administrator can already do in WordPress. Here that means anyone with the
   settings capability: `manage_options` by default, or whatever the `sc_wpun_capability` filter returns. On multisite
-  that is a site administrator, and the plugin keeps settings per site.
+  the default is `manage_network_options`, so only super admins hold it, as core keeps update information for super
+  admins. A site administrator is not trusted with the settings unless the filter says so.
 - **Code that runs in the same PHP process is trusted.** That covers other plugins, the theme, add-on channel modules,
   `wp-config.php` and anything hooked into the plugin's filters. Such code can already do anything the plugin can, so the
   public API does not try to sandbox it. What the plugin owes add-ons is a safe API when it is used as documented: secrets
@@ -105,7 +106,7 @@ and the plugin registers none. The Semgrep rule `wpun-no-nopriv-hooks` (`make sa
 
 | STRIDE | Threat | Control | Proof |
 | --- | --- | --- | --- |
-| E | A user without the capability changes channels, sends messages or runs the check. | Each handler checks `current_user_can( Settings_Page::capability() )` first, and refuses with a 403 and no change. | `test-channels-tab.php` (`test_nonce_and_capability_are_enforced_for_every_action`), `test-channel-form.php` (`test_nonce_and_capability_are_required`, `test_refusals_change_nothing`, `test_the_handler_answers_403_when_refused`), `test-check-now.php` (`test_a_refused_request_runs_nothing`), `test-test-send.php`, `test-slack-notice.php`. `security/test-capability-matrix.php` (#220): discovers every `admin_post_*`/`wp_ajax_*` hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests: logged out, subscriber, editor, administrator without `manage_options`, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (`make dast`, #222). |
+| E | A user without the capability changes channels, sends messages or runs the check. | Each handler checks `current_user_can( Settings_Page::capability() )` first, and refuses with a 403 and no change. | `test-channels-tab.php` (`test_nonce_and_capability_are_enforced_for_every_action`), `test-channel-form.php` (`test_nonce_and_capability_are_required`, `test_refusals_change_nothing`, `test_the_handler_answers_403_when_refused`), `test-check-now.php` (`test_a_refused_request_runs_nothing`), `test-test-send.php`, `test-slack-notice.php`. `security/test-capability-matrix.php` (#220): discovers every `admin_post_*`/`wp_ajax_*` hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests (eleven on multisite): logged out, subscriber, editor, administrator without `manage_options`, on multisite a site administrator who is not a super admin, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (`make dast`, #222). |
 | S/T | CSRF: another site makes an administrator's browser post the action. | A security token per action. Row actions and the form bind it to the channel id (and the mode and type), so a token for one channel can't act on another. | The tests above. `security/test-capability-matrix.php` (#220) covers the wrong-action, other-channel and other-user tokens for every hook. |
 | T | Tampered `id`, `mode` or `type` reaches the store. | `sanitize_key( wp_unslash() )` and `is_string` checks. Unknown ids and types are refused, and code-defined and externally set instances have no row actions. | `test-channels-tab.php`, `test-channel-form.php`. |
 | T | Open redirect after the action. | Redirects use `wp_safe_redirect()` to the settings page. | WPCS `WordPress.Security.SafeRedirect` (`make lint`). #222 checks the redirect targets. |
@@ -199,7 +200,7 @@ filters, and supply config values. What the plugin still guarantees when an add-
 - schema values are sanitised and validated before the module sees them;
 - an exception in one module becomes a failed `Delivery_Result` and doesn't stop the other channels;
 - payload filters can't inject mail headers (see 5);
-- the capability for the screens comes from one filter, `sc_wpun_capability`, and a non-string or empty value falls back to `manage_options`.
+- the capability for the screens comes from one filter, `sc_wpun_capability`, and a non-string or empty value falls back to the default, `manage_options`, or `manage_network_options` on multisite.
 
 Proof: `test-extension-api.php`, `test-dispatcher.php`, `test-channel-api-constraint.php`, `test-api-version.php`,
 `test-contract.php`, `make check-public-api` (modules use only the public API), and `make check-hooks` (every hook is

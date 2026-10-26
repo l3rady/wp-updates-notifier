@@ -5,10 +5,19 @@
  * @package wp-updates-notifier
  */
 
+use WPUN\Admin\Settings_Page;
+
 /**
  * Which control each global setting gets.
  */
 class Test_Settings_Screen extends WPUN_Test_Case {
+
+	/**
+	 * These tests need the default capability.
+	 *
+	 * @var bool
+	 */
+	protected $default_capability = true;
 
 	/**
 	 * No settings errors left over from another test.
@@ -32,7 +41,11 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 	 * @return DOMXPath
 	 */
 	private function page() {
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			grant_super_admin( $admin ); // Only super admins hold the default capability on multisite (#328).
+		}
+		wp_set_current_user( $admin );
 		sc_wpun()->settings_page()->admin_settings_init();
 		ob_start();
 		sc_wpun()->settings_page()->settings_page();
@@ -241,5 +254,96 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 		}
 
 		$this->assertStringNotContainsString( 'nav-tab', $html );
+	}
+
+	/**
+	 * Draw the settings page as the current user and say whether it was refused with a 403.
+	 *
+	 * @return bool
+	 */
+	private function page_is_refused(): bool {
+		add_filter(
+			'wp_die_handler',
+			static function () {
+				return static function ( $message, $title, $args ) {
+					throw new WPDieException( 'status ' . absint( $args['response'] ) );
+				};
+			}
+		);
+
+		ob_start();
+		try {
+			sc_wpun()->settings_page()->settings_page();
+			return false;
+		} catch ( WPDieException $e ) {
+			return 'status 403' === $e->getMessage();
+		} finally {
+			ob_end_clean();
+		}
+	}
+
+	/**
+	 * Make a site administrator who is not a super admin the current user.
+	 */
+	private function be_site_administrator() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->assertFalse( is_super_admin() );
+	}
+
+	/**
+	 * The default capability is manage_network_options on multisite, so a site administrator is refused (#328).
+	 */
+	public function test_a_site_administrator_cannot_open_the_page_on_multisite() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Multisite only.' );
+		}
+
+		$this->assertSame( 'manage_network_options', Settings_Page::capability() );
+		$this->be_site_administrator();
+		$this->assertTrue( current_user_can( 'manage_options' ) );
+		$this->assertTrue( $this->page_is_refused() );
+	}
+
+	/**
+	 * A super admin opens the page on multisite.
+	 */
+	public function test_a_super_admin_can_open_the_page_on_multisite() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Multisite only.' );
+		}
+
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		grant_super_admin( $admin );
+		wp_set_current_user( $admin );
+
+		$this->assertFalse( $this->page_is_refused() );
+	}
+
+	/**
+	 * The filter gives site administrators the page back on multisite.
+	 */
+	public function test_the_filter_lets_site_administrators_in_on_multisite() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Multisite only.' );
+		}
+
+		add_filter( 'sc_wpun_capability', static fn() => 'manage_options' );
+		$this->be_site_administrator();
+
+		$this->assertSame( 'manage_options', Settings_Page::capability() );
+		$this->assertFalse( $this->page_is_refused() );
+	}
+
+	/**
+	 * An invalid filter value falls back to the default for the kind of site.
+	 */
+	public function test_an_invalid_filter_value_falls_back_to_the_default() {
+		$default = is_multisite() ? 'manage_network_options' : 'manage_options';
+
+		foreach ( array( '', null, false, 5, array( 'manage_options' ) ) as $value ) {
+			remove_all_filters( 'sc_wpun_capability' );
+			add_filter( 'sc_wpun_capability', static fn() => $value );
+			$this->assertSame( $default, Settings_Page::capability() );
+		}
 	}
 }

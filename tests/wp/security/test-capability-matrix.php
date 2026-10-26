@@ -17,13 +17,13 @@ require_once __DIR__ . '/class-wpun-security-test-case.php';
  * The endpoints are found in `$wp_filter` after the admin hooks are registered, so a new endpoint is tested
  * without anyone writing a test: a hook without a request builder below fails the run.
  *
- * Who is refused, and who is not, follows `Settings_Page::capability()` (`manage_options`):
+ * Who is refused, and who is not, follows `Settings_Page::capability()` (#328):
  *
- * - On a single site an administrator has it.
- * - On multisite a site administrator who is not a super admin has it on their own site too, so the matrix uses
- *   the same administrator in both runs. A super admin passes every capability check on multisite, so that case
- *   has its own positive control and is skipped on a single site.
- * - "Administrator without manage_options" removes the capability with the `user_has_cap` filter.
+ * - On a single site the capability is `manage_options`, which an administrator has.
+ * - On multisite it is `manage_network_options`, which only a super admin has. A site administrator who is not a
+ *   super admin is refused on every endpoint, so the administrator rows that expect to be let in run on a single
+ *   site, and the super admin positive control runs on multisite and is skipped on a single site.
+ * - "Administrator without manage_options" removes `manage_options` with the `user_has_cap` filter.
  *
  * Every refused request is otherwise valid: the nonce is created for the user who sends it, so that only the
  * check being tested can refuse it. Removing a `current_user_can()` check from a handler makes its row fail.
@@ -38,6 +38,13 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	 * @var int[]
 	 */
 	private static $users = array();
+
+	/**
+	 * These tests need the default capability.
+	 *
+	 * @var bool
+	 */
+	protected $default_capability = true;
 
 	/**
 	 * Create the users.
@@ -516,7 +523,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	 * @return array<string, array{0: string, 1: string}> Who sends it and what is wrong with the nonce.
 	 */
 	public function refused_cases() {
-		return array(
+		$cases = array(
 			'logged out'                              => array( 'logged_out', 'valid' ),
 			'subscriber'                              => array( 'subscriber', 'valid' ),
 			'editor'                                  => array( 'editor', 'valid' ),
@@ -528,6 +535,13 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 			'administrator, nonce of another user'    => array( 'administrator', 'other_user' ),
 			'administrator, fields in the wrong superglobal' => array( 'administrator', 'wrong_method' ),
 		);
+
+		// A site administrator who is not a super admin holds manage_options but not manage_network_options.
+		if ( is_multisite() ) {
+			$cases['site administrator, not a super admin'] = array( 'administrator', 'valid' );
+		}
+
+		return $cases;
 	}
 
 	/**
@@ -604,6 +618,10 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	 * The same endpoints work for an administrator with the right nonce, so the refusals above are not vacuous.
 	 */
 	public function test_an_administrator_with_the_right_nonce_is_let_in() {
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'On multisite only a super admin is let in, see the super admin test.' );
+		}
+
 		$specs = $this->specs();
 		$this->assertSame( array(), $this->coverage_problems( $this->plugin_endpoints() ) );
 

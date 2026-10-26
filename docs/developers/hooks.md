@@ -905,7 +905,11 @@ Fired in `includes/admin/class-channel-form.php`.
 Filters the capability needed to use the plugin's settings page.
 
 It decides who sees the settings page, saves the settings, sends a test message
-and dismisses the plugin's notice. An empty or non-string value is ignored.
+and dismisses the plugin's notice. An empty or non-string value is ignored and
+the default is used.
+
+The default is `manage_options`, or `manage_network_options` on multisite, which
+only super admins have, as with core's update screens.
 
 Lowering it hands every user with the capability control over where the plugin's
 notifications go. Such a user can:
@@ -925,9 +929,15 @@ Example, let editors manage the plugin:
 add_filter( 'sc_wpun_capability', fn() => 'edit_pages' );
 ```
 
+Example, let the administrators of the sites of a network manage the plugin:
+
+```php
+add_filter( 'sc_wpun_capability', fn() => 'manage_options' );
+```
+
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `$capability` | `string` | Capability. Default `manage_options`. |
+| `$capability` | `string` | Capability. Default `manage_options`, or `manage_network_options` on multisite. |
 
 Fired in `includes/admin/class-settings-page.php`.
 
