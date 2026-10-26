@@ -233,7 +233,7 @@ of the database sets them in `wp-config.php` constants or environment variables 
 
 The release zip is built by `bin/build-dist.sh` from the files `.distignore` doesn't exclude, and the build is
 reproducible with the same image. release-please opens the release PR with a GitHub App token and, when it is merged, makes a draft release
-with no tag. The `release` job then runs in the `release` environment, which is limited to `main` and needs the
+with no tag. The app's key is held in environments, not the repository: `release-please`, which is limited to `main`, and `release`. The `release` job then runs in the `release` environment, which is limited to `main` and needs the
 maintainer's approval. It builds the zip and its SBOM, attests the zip's provenance and SBOM, creates a signed annotated tag at the release
 commit, uploads the assets and publishes the release. The WordPress.org deploy (#57, not built yet) will run on the
 published release in the `wordpress-org` environment, which needs a reviewer.

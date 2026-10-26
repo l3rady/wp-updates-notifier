@@ -25,6 +25,10 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Holds the release app's private key (the release job's `release` environment holds it too). An environment
+    # limited to main, with no required reviewers, so this job runs unattended; `release` needs approval, so it
+    # can't be reused here.
+    environment: release-please
     # The release app's token does the writing; GITHUB_TOKEN only reads.
     permissions:
       contents: read

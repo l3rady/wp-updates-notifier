@@ -306,6 +306,14 @@ and holds:
 The public key goes in `.github/release-signers` as
 `<RELEASE_TAGGER_EMAIL> namespaces="git" ssh-ed25519 AAAA…`.
 
+The release app's private key, the secret `RELEASE_APP_PRIVATE_KEY`, is stored
+in two environments, because two jobs use it. The `release` environment above
+holds it for the `release` job. The `release-please` environment holds it for
+the `release-please` job: it is limited to `main` and has no required
+reviewers, so that job runs unattended on every push to `main`. The
+`release-please` job can't use `release`, which waits for approval. The
+variable `RELEASE_APP_CLIENT_ID` is a repository variable.
+
 The workflow also sets the copyright year on the Release PR's branch.
 
 `readme.txt` is not in the repository. `bin/build-dist.sh` generates it into the
