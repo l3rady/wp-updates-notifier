@@ -215,7 +215,10 @@ final class Notification_Renderer {
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
 			$lines[] = sprintf( __( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), $item->get_name(), $item->get_current_version(), $item->get_new_version() );
 			foreach ( $item->get_links() as $label => $url ) {
-				$lines[] = '  ' . self::link_label( (string) $label ) . ': ' . $url;
+				$url = self::web_url( $url );
+				if ( '' !== $url ) {
+					$lines[] = '  ' . self::link_label( (string) $label ) . ': ' . $url;
+				}
 			}
 			foreach ( $item->get_notes() as $note ) {
 				$lines[] = '  ' . $note;
@@ -381,6 +384,21 @@ final class Notification_Renderer {
 	}
 
 	/**
+	 * A safe http or https URL as esc_url_raw() cleans it, or an empty string when the URL is not one.
+	 *
+	 * @param string $url URL.
+	 *
+	 * @return string
+	 */
+	private static function web_url( string $url ): string {
+		$url    = trim( $url );
+		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
+
+		// esc_url_raw() adds http:// to a URL without a scheme, so the scheme is checked first.
+		return in_array( $scheme, array( 'http', 'https' ), true ) ? esc_url_raw( $url, array( 'http', 'https' ) ) : '';
+	}
+
+	/**
 	 * A URL for the target of a Markdown link, or an empty string when it is not a safe http or https URL.
 	 *
 	 * @param string $url URL.
@@ -388,10 +406,8 @@ final class Notification_Renderer {
 	 * @return string
 	 */
 	private static function markdown_url( string $url ): string {
-		$url    = trim( $url );
-		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
-		// esc_url_raw() adds http:// to a URL without a scheme, so the scheme is checked first.
-		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) || '' === esc_url_raw( $url, array( 'http', 'https' ) ) ) {
+		$url = trim( $url );
+		if ( '' === self::web_url( $url ) ) {
 			return '';
 		}
 
