@@ -53,7 +53,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-upgrade screenshots security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-upgrade screenshots security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -221,6 +221,9 @@ secrets-tree: ## gitleaks over the working tree (not vendor/, build/, node_modul
 	$(GITLEAKS) gitleaks dir $(GITLEAKS_ARGS) $(call secrets_report,tree) /app
 
 secrets-zip: dist ## gitleaks over the built zip, unpacked (dist builds from the tracked files)
+	@$(MAKE) --no-print-directory secrets-zip-scan
+
+secrets-zip-scan: ## gitleaks over the zip already in build/, unpacked, without building it (the release job scans the zip it attests)
 	@mkdir -p security-reports
 	$(COMPOSE) run --rm -T php sh -c 'rm -rf build/zip-scan && mkdir build/zip-scan && unzip -q build/wp-updates-notifier-*.zip -d build/zip-scan'
 	$(GITLEAKS) -v "$(CURDIR)/build/zip-scan:/scan:ro" gitleaks dir $(GITLEAKS_ARGS) $(call secrets_report,zip) /scan
