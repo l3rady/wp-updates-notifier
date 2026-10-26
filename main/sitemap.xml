@@ -2,150 +2,150 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://wpun.cariss.dev/latest/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0001-licence-gpl-2-or-later/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0002-php-7-4-and-wordpress-6-7-minimums/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0003-rename-main-file-without-a-migration-stub/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0004-public-module-api-and-dogfooding/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0005-settings-state-and-channels-in-separate-options/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0006-drop-slack-in-2-0-0-and-keep-its-settings/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0007-settings-and-secrets-from-outside-the-database/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0008-single-sites-only-in-2-0-0/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0009-no-lock-against-overlapping-update-checks/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0010-leave-wordpress-auto-update-emails-alone/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0011-accessibility-wcag-2-2-aa-without-javascript/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0012-security-tooling-is-free-deterministic-and-scripted/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0013-verifiable-release-artefacts/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0014-documentation-site-on-a-custom-subdomain/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0015-conventional-commits-and-linear-history/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0016-pending-update-reminders-per-channel/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0017-bundle-l10n-php-translations-only/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/decisions/0018-generate-readme-at-build-time/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/architecture/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/configuration-sources/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/hooks/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/item-types-and-routing/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/stability/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/testing/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/translations/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/writing-a-module/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/security/threat-model/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/users/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/users/channels/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/users/getting-started/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/users/how-notifications-work/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/users/settings-in-code/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/users/settings/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/users/troubleshooting/</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
 </urlset>
