@@ -165,9 +165,9 @@ Mark anything that grants access as secret: API tokens, passwords, and webhook U
 - is never handed to the field's renderer: a custom type's `render` callable gets `'1'` as the value when one is saved and `''` when not;
 - is still stored in the database in plain text, like other plugin settings. Site owners who want it out of the database can supply it from `wp-config.php`, an environment variable or a secrets service instead. See [Configuration sources](configuration-sources.md). Your fields support this automatically, for example `SC_WPUN_CHANNEL_OPS_CHAT__WEBHOOK_URL`.
 
-A value that comes from outside the database (a constant, an environment variable or a source) is not printed on the edit screen for the text types (`text`, `textarea`, `url`, `email_list`) unless the field sets `'show_external' => true`: the screen then only says "Set by ...". Flag secrets with `secret`, and set `show_external` only for harmless values such as an address or a name.
+A value that comes from outside the database (a constant, an environment variable or a source) is not printed on the edit screen unless the field sets `'show_external' => true`: the screen then only says "Set by ...". This holds for every type except `number`, `boolean` and `enum`, so a custom type registered with `sc_wpun_field_types` is not given the value either. Flag secrets with `secret`, and set `show_external` only for harmless values such as an address or a name.
 
-Instances that reach hooks and your `send()` hold the resolved settings, secrets included. `var_dump()` and `print_r()` of a `Channel_Instance` show the setting names with `[redacted]` values, but don't log or dump the settings yourself.
+Instances that reach hooks and your `send()` hold the resolved settings, secrets included. `var_dump()`, `print_r()` and `serialize()` of a `Channel_Instance` show the setting names with `[redacted]` values (`var_export()` and Reflection don't), but don't log or dump the settings yourself.
 
 Your own code must keep secrets secret too. Never put one in a `Delivery_Result` message, an admin notice or a log. Results are shown to administrators and stored. The error messages of the HTTP API can contain the URL that was requested, so don't pass them on as they are.
 

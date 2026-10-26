@@ -19,11 +19,11 @@ Done by hand by the maintainer on 2026-10-26.
 | --- | --- | --- |
 | Confirmed findings | none | Nothing to file, so no new regression is needed. |
 | Needs validation | none | Nothing to run on a local site. |
-| [H1](#hardening-recommendations) Escape the General tab's Settings API titles | hardening | Fix in #325. |
-| [H2](#hardening-recommendations) Read files only for installed plugins and themes | hardening | Fix in #325. |
-| [H3](#hardening-recommendations) Treat external values as secret for custom field types | hardening | Fix in #325. |
-| [H4](#hardening-recommendations) Redact `Channel_Instance` when serialized | hardening | Fix in #325. |
-| [H5](#hardening-recommendations) Apply the http(s)-only link rule to plain text | hardening | Fix in #325. |
+| [H1](#hardening-recommendations) Escape the General tab's Settings API titles | hardening | Fixed in #325; regression in `tests/wp/security/test-hardening-settings-titles.php`. |
+| [H2](#hardening-recommendations) Read files only for installed plugins and themes | hardening | Fixed in #325; regression in `tests/wp/security/test-hardening-installed-items.php`. |
+| [H3](#hardening-recommendations) Treat external values as secret for custom field types | hardening | Fixed in #325; regression in `tests/wp/security/test-hardening-custom-field-secrets.php`. |
+| [H4](#hardening-recommendations) Redact `Channel_Instance` when serialized | hardening | Fixed in #325; regression in `tests/wp/security/test-hardening-instance-serialize.php`. |
+| [H5](#hardening-recommendations) Apply the http(s)-only link rule to plain text | hardening | Fixed in #325; regression in `tests/wp/security/test-hardening-plain-text-links.php`. |
 
 The maintainer's session checked the report's claims about the earlier fixes (#231, #232, #233, #235) against the code
 at `1002e36`, and they hold. Each of those fixes already has a deterministic regression in `tests/wp/`: `d708b81`
