@@ -1,0 +1,3798 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentation for WP Updates Notifier, the WordPress plugin that tells you when updates are waiting.">
+      
+      
+      
+        <link rel="canonical" href="https://wpun.cariss.dev/latest/security/audit-2.0.0/">
+      
+      
+        <link rel="prev" href="../ai-review-2.0.0/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/brand/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Security audit for 2.0.0 - WP Updates Notifier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#security-audit-for-200" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="WP Updates Notifier" class="md-header__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            WP Updates Notifier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Security audit for 2.0.0
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="solarized-dark" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="solarized-light" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="WP Updates Notifier" class="md-nav__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    WP Updates Notifier
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../users/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/channels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/how-notifications-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How notifications work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings-in-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../developers/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests and checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/translations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/writing-a-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing a module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/item-types-and-routing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Item types and routing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/configuration-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hook reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/stability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stability and deprecation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../decisions/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Decisions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0001-licence-gpl-2-or-later/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0001 Licence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0002-php-7-4-and-wordpress-6-7-minimums/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0002 PHP and WordPress minimums
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0003-rename-main-file-without-a-migration-stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0003 Main file rename
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0004-public-module-api-and-dogfooding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0004 Module API and dogfooding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0005-settings-state-and-channels-in-separate-options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0005 Separate options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0006-drop-slack-in-2-0-0-and-keep-its-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0006 Slack dropped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0007-settings-and-secrets-from-outside-the-database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0007 Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0008-single-sites-only-in-2-0-0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0008 Single sites only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0009-no-lock-against-overlapping-update-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0009 No update check lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0010-leave-wordpress-auto-update-emails-alone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0010 WordPress update emails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0011-accessibility-wcag-2-2-aa-without-javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0011 Accessibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0012-security-tooling-is-free-deterministic-and-scripted/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0012 Security tooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0013-verifiable-release-artefacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0013 Verifiable releases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0014-documentation-site-on-a-custom-subdomain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0014 Documentation site
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0015-conventional-commits-and-linear-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0015 Commits and history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0017-bundle-l10n-php-translations-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0017 Bundled translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0018-generate-readme-at-build-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0018 Generated readme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-review-2.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI review for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security audit for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security audit for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Method">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tool-results-at-d2f4377" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tool results at d2f4377
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repository-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repository settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#asvs-50-level-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASVS 5.0 Level 1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ASVS 5.0 Level 1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#v1-encoding-and-sanitization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V1 Encoding and Sanitization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v2-validation-and-business-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V2 Validation and Business Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v3-web-frontend-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V3 Web Frontend Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v4-api-and-web-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V4 API and Web Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v5-file-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V5 File Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v6-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V6 Authentication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v7-session-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V7 Session Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v8-authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V8 Authorization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v9-self-contained-tokens-and-v10-oauth-and-oidc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V9 Self-contained Tokens and V10 OAuth and OIDC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v11-cryptography" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V11 Cryptography
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v12-secure-communication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V12 Secure Communication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v13-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V13 Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v14-data-protection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V14 Data Protection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v15-secure-coding-and-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V15 Secure Coding and Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v16-security-logging-and-error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V16 Security Logging and Error Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wordpress-security-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WordPress security guidance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="WordPress security guidance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#developer-handbooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Developer handbooks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wordpressorg-plugin-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WordPress.org plugin guidelines
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="WordPress.org plugin guidelines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outbound-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outbound messages
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#areas-re-checked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Areas re-checked
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Areas re-checked">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-handlers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request handlers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email-header-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email header injection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suppressions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suppressions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supply-chain-and-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supply chain and release
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#owasp-top-102025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OWASP Top 10:2025
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Findings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#medium-multisite-fixed-in-328" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Medium (multisite, fixed in #328)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#low-and-info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Low and Info
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Method">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tool-results-at-d2f4377" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tool results at d2f4377
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repository-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repository settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#asvs-50-level-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASVS 5.0 Level 1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ASVS 5.0 Level 1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#v1-encoding-and-sanitization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V1 Encoding and Sanitization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v2-validation-and-business-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V2 Validation and Business Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v3-web-frontend-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V3 Web Frontend Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v4-api-and-web-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V4 API and Web Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v5-file-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V5 File Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v6-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V6 Authentication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v7-session-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V7 Session Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v8-authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V8 Authorization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v9-self-contained-tokens-and-v10-oauth-and-oidc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V9 Self-contained Tokens and V10 OAuth and OIDC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v11-cryptography" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V11 Cryptography
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v12-secure-communication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V12 Secure Communication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v13-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V13 Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v14-data-protection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V14 Data Protection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v15-secure-coding-and-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V15 Secure Coding and Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v16-security-logging-and-error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V16 Security Logging and Error Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wordpress-security-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WordPress security guidance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="WordPress security guidance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#developer-handbooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Developer handbooks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wordpressorg-plugin-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WordPress.org plugin guidelines
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="WordPress.org plugin guidelines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outbound-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outbound messages
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#areas-re-checked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Areas re-checked
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Areas re-checked">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-handlers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request handlers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email-header-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email header injection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suppressions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suppressions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supply-chain-and-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supply chain and release
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#owasp-top-102025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OWASP Top 10:2025
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Findings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#medium-multisite-fixed-in-328" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Medium (multisite, fixed in #328)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#low-and-info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Low and Info
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="security-audit-for-200">Security audit for 2.0.0<a class="headerlink" href="#security-audit-for-200" title="Permanent link">&para;</a></h1>
+<p>The security sign-off for 2.0.0 (#228, the last step of the security epic #229). It records a result for every item of
+three checklists, run against <code>main</code> at <code>d2f4377</code> on 2026-10-26:</p>
+<ul>
+<li><a href="https://github.com/OWASP/ASVS/tree/v5.0.0">OWASP ASVS 5.0.0</a> Level 1: all 70 requirements.</li>
+<li>The <a href="https://github.com/OWASP/Top10/tree/3a31f35346c3f4e90f350395124382fa53af2afe/2025">OWASP Top 10:2025</a>, mapped
+  onto the ASVS results.</li>
+<li>The security chapter of the WordPress developer handbooks, and the WordPress.org plugin guidelines that bear on
+  security and trust.</li>
+</ul>
+<p>It also re-checks the areas #228 names, and every suppression of a security sniff or rule.</p>
+<p><strong>Result: no High or Medium finding is open for 2.0.0, and nothing blocks the release once #328 is merged.</strong></p>
+<ul>
+<li><strong>On a single site, the only setup 2.0.0 supports, there are no findings above Info.</strong></li>
+<li><strong>Multisite: three Medium findings, fixed in #328.</strong></li>
+<li>They share one cause: the default capability let a site administrator who is not a super admin use the settings.</li>
+<li>On multisite that person could:<ul>
+<li>mail out the network's list of pending updates, which core shows only to super admins;</li>
+<li>pick up channel settings that a network owner set in <code>wp-config.php</code> for another site;</li>
+<li>send mail through the network's mailer from any From address.</li>
+</ul>
+</li>
+<li>The threat model counted that site administrator as trusted, so these sit on the old trust boundary rather than
+    below it. #328 moves the boundary to match core: on multisite only super admins manage the plugin by default.</li>
+<li><strong>Low and Info hardening:</strong> 16 items, none reachable from below the trust boundary. They are filed as #329 (plugin
+  code) and #330 (CI and release), for 3.0.0.</li>
+<li><strong>Fixed in the audit branch:</strong> one documentation gap (V15.1.1). <code>SECURITY.md</code> now gives fix times for vulnerable
+  development tools.</li>
+<li><strong>Reporting channel:</strong> the reporting policy in <code>SECURITY.md</code> now promises a reply within 7 days and a fix or a plan
+  within 30 days. No third-party disclosure programme was joined (decision on #228): GitHub private vulnerability
+  reporting stays the one channel.</li>
+</ul>
+<h2 id="method">Method<a class="headerlink" href="#method" title="Permanent link">&para;</a></h2>
+<p>The audit is checklist-driven, so it can be repeated for a later release.</p>
+<ul>
+<li><strong>Scope:</strong> <code>includes/</code>, <code>modules/</code>, <code>uninstall.php</code>, <code>wp-updates-notifier.php</code>, <code>bin/</code>, <code>.github/</code>, the release build,
+  and the GitHub repository settings that the release depends on.</li>
+<li><strong>Who did it:</strong> the maintainer's session split the checklists into three slices: encoding and validation;
+  authorisation, data and configuration; secure coding and supply chain. Each slice was a read-only source review with
+  the <a href="https://github.com/wpultimatesecurity/WordPress-Security-Skills">WordPress Security Skills</a> pack, checked
+  against the WordPress 7.1.3 source. The maintainer's session then verified every Fail and every open question itself,
+  and decided the N/A rows.</li>
+<li><strong>Severity rubric:</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Critical</td>
+<td>Unauthenticated code execution, SQL injection or authentication bypass.</td>
+</tr>
+<tr>
+<td>High</td>
+<td>Reachable by a visitor or a low-privilege user: stored XSS, CSRF on a state change, privilege escalation, or a secret disclosed to someone who isn't an administrator.</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Needs an unusual setup, or a lower-trust user with limited impact.</td>
+</tr>
+<tr>
+<td>Low or Info</td>
+<td>Hardening, or input the <a href="../threat-model/">threat model</a> trusts. That input is administrators, add-on code, translations, api.wordpress.org data, and <code>wp-config.php</code> or the environment.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Inputs:</strong></li>
+<li>the <a href="../threat-model/">threat model</a>;</li>
+<li>the triaged <a href="../ai-review-2.0.0/">AI review</a> (#230), whose five hardening items were fixed in #325 before this
+    audit;</li>
+<li>the security test group;</li>
+<li>the scripted tools below.</li>
+</ul>
+<h3 id="tool-results-at-d2f4377">Tool results at <code>d2f4377</code><a class="headerlink" href="#tool-results-at-d2f4377" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Command</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>actionlint, zizmor 1.31.1</td>
+<td><code>make check-workflows</code></td>
+<td>Clean. In CI, <code>security.yml</code> passed on <code>main</code> with zizmor's online audits, and no zizmor code-scanning alert is open.</td>
+</tr>
+<tr>
+<td>gitleaks</td>
+<td><code>make secrets</code></td>
+<td>No leaks in the history, the working tree or the release zip.</td>
+</tr>
+<tr>
+<td>composer audit, OSV-Scanner</td>
+<td><code>make audit</code></td>
+<td>No issues.</td>
+</tr>
+<tr>
+<td>Semgrep</td>
+<td><code>make sast</code></td>
+<td>7 rules on 48 files, 0 findings; the rule tests pass; every suppression carries a reason.</td>
+</tr>
+<tr>
+<td>Psalm taint analysis</td>
+<td><code>make taint</code></td>
+<td>No errors.</td>
+</tr>
+<tr>
+<td>OWASP ZAP 2.17.0</td>
+<td><code>make dast</code></td>
+<td>No Medium or High alerts. The 30 notes come from 6 rules (10010, 10021, 10036, 10037, 10054, 10096) about cookies and headers set by WordPress core and the test server, not the plugin.</td>
+</tr>
+<tr>
+<td>PHPUnit security group</td>
+<td><code>make test-wp ARGS="--group security"</code></td>
+<td>157 tests, 33,338 assertions, 1 skipped (the multisite-only control).</td>
+</tr>
+<tr>
+<td>OpenSSF Scorecard</td>
+<td><code>scorecard.yml</code></td>
+<td>Open alerts only for the checks <code>SECURITY.md</code> explains (Branch-Protection, Code-Review, Fuzzing, CII-Best-Practices).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="repository-settings">Repository settings<a class="headerlink" href="#repository-settings" title="Permanent link">&para;</a></h3>
+<p>Checked with <code>gh api</code> on 2026-10-26.</p>
+<ul>
+<li><strong><code>release</code> environment:</strong> deploys only from protected branches and needs the maintainer's approval. It holds
+  <code>RELEASE_SIGNING_KEY</code>.</li>
+<li><strong><code>wordpress-org</code> environment:</strong> deploys only <code>v*</code> tags and needs the maintainer's approval. It holds the SVN
+  username and password.</li>
+<li><strong>Repository-level secrets:</strong> <code>RELEASE_APP_PRIVATE_KEY</code> is the only one. Moving it into an environment is CI4 in
+  #330.</li>
+<li><strong><code>release tags</code> ruleset:</strong> active on <code>refs/tags/v*</code>. It blocks deletion, updates and non-fast-forward moves, and has
+  no bypass actors.</li>
+<li><strong><code>main</code> branch protection:</strong> requires signed commits, linear history and the required checks.</li>
+</ul>
+<h2 id="asvs-50-level-1">ASVS 5.0 Level 1<a class="headerlink" href="#asvs-50-level-1" title="Permanent link">&para;</a></h2>
+<p><strong>Result values:</strong></p>
+<ul>
+<li><strong>Pass:</strong> the control is in place.</li>
+<li><strong>Fail:</strong> the control is missing, with a link to the finding.</li>
+<li><strong>N/A:</strong> the requirement does not apply, with the reason.</li>
+</ul>
+<p><strong>How to read the rows:</strong></p>
+<ul>
+<li>Paths are relative to the repository root.</li>
+<li>Line numbers are at <code>d2f4377</code>.</li>
+<li>"Review only" means no automated proof exists beyond the source review.</li>
+</ul>
+<h3 id="v1-encoding-and-sanitization">V1 Encoding and Sanitization<a class="headerlink" href="#v1-encoding-and-sanitization" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V1.2.1</td>
+<td>Pass</td>
+<td>Each output context has its own encoder: HTML text and attributes (<code>esc_html</code>, <code>esc_attr</code>), URLs (<code>esc_url</code>), Markdown (<code>Notification_Renderer::escape_markdown</code>), and mail headers (left to PHPMailer).</td>
+<td><code>security/test-stored-xss.php</code>; <code>test-notification.php</code>; <code>make lint</code> (WPCS EscapeOutput); <code>make taint</code></td>
+</tr>
+<tr>
+<td>V1.2.2</td>
+<td>Pass</td>
+<td>HTML links use <code>esc_url</code>. Plain text and Markdown keep only http(s) (<code>Notification_Renderer::web_url</code>, #325). Ids in query arguments are limited to <code>[a-z0-9_]</code>.</td>
+<td><code>test-notification.php::test_markdown_drops_unsafe_link_targets</code>; <code>security/test-hardening-plain-text-links.php</code>; <code>security/test-settings-input.php::test_url_fields_reject_script_schemes</code></td>
+</tr>
+<tr>
+<td>V1.2.3</td>
+<td>N/A</td>
+<td>No JavaScript or JSON is output. <code>wp_json_encode</code> is used only to build an in-request key.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V1.2.4</td>
+<td>N/A</td>
+<td>No <code>$wpdb</code> or SQL. Storage uses the Options and Meta APIs.</td>
+<td>Review only; Psalm taint</td>
+</tr>
+<tr>
+<td>V1.2.5</td>
+<td>N/A</td>
+<td>No operating system calls. Mail goes through <code>wp_mail()</code>.</td>
+<td>Review only; Semgrep</td>
+</tr>
+<tr>
+<td>V1.3.1</td>
+<td>N/A</td>
+<td>No HTML input is accepted. Text is cleaned with <code>sanitize_text_field</code> and <code>sanitize_textarea_field</code>.</td>
+<td><code>security/test-settings-input.php::test_every_field_type_refuses_or_neutralises_a_payload</code></td>
+</tr>
+<tr>
+<td>V1.3.2</td>
+<td>Pass</td>
+<td>No <code>eval</code> or dynamic code. <code>call_user_func</code> only targets callbacks registered in code (<code>Field_Types</code>, <code>Field_Renderer</code>).</td>
+<td>Review only; Semgrep</td>
+</tr>
+<tr>
+<td>V1.5.1</td>
+<td>N/A</td>
+<td>No XML is parsed.</td>
+<td>Review only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v2-validation-and-business-logic">V2 Validation and Business Logic<a class="headerlink" href="#v2-validation-and-business-logic" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V2.1.1</td>
+<td>Pass</td>
+<td>The rules for each field type are documented in <a href="../../developers/writing-a-module/">Writing a module</a> and in the <a href="../threat-model/">threat model</a> (§2).</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V2.2.1</td>
+<td>Pass on a single site; multisite fixed in #328</td>
+<td>Enums, booleans, tabs, actions and ids are checked against allowlists. Numbers are bounded, URLs must be http(s), and addresses must pass <code>is_email</code>. On multisite, a site administrator could set any From address (finding M3).</td>
+<td><code>security/test-settings-input.php</code>; <code>test-field-types.php</code>; <code>test-settings-validation.php</code></td>
+</tr>
+<tr>
+<td>V2.2.2</td>
+<td>Pass</td>
+<td>All validation runs on the server. No JavaScript ships.</td>
+<td><code>security/test-settings-input.php::test_values_of_the_wrong_shape_are_not_stored_raw</code></td>
+</tr>
+<tr>
+<td>V2.3.1</td>
+<td>Pass</td>
+<td>Steps can't be skipped to any effect. Every step re-checks the capability, a security token bound to the mode and type or id, and whether the channel may be changed (<code>Channel_Form::handle_save</code>, <code>Channels_Tab::changeable</code>).</td>
+<td><code>security/test-capability-matrix.php::test_a_refused_request_changes_nothing</code>; <code>test-channel-form.php</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="v3-web-frontend-security">V3 Web Frontend Security<a class="headerlink" href="#v3-web-frontend-security" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V3.2.1</td>
+<td>N/A</td>
+<td>The plugin serves no API, download or user file. Every PHP file exits when it is loaded outside WordPress.</td>
+<td><code>make sast-ignores</code> (the file guard check); <code>make dast</code></td>
+</tr>
+<tr>
+<td>V3.2.2</td>
+<td>N/A</td>
+<td>No client-side code ships (<code>assets/css/admin.css</code> only).</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V3.3.1</td>
+<td>N/A</td>
+<td>The plugin sets no cookies.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V3.4.1</td>
+<td>N/A</td>
+<td>The plugin sends no headers. HSTS is the host's job.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V3.4.2</td>
+<td>N/A</td>
+<td>No CORS headers are sent.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V3.5.1</td>
+<td>Pass</td>
+<td>Every state change needs the capability and a security token for that action and target, and is refused with a 403 otherwise.</td>
+<td><code>security/test-capability-matrix.php</code></td>
+</tr>
+<tr>
+<td>V3.5.2</td>
+<td>N/A</td>
+<td>Nothing relies on a CORS preflight.</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>V3.5.3</td>
+<td>Pass</td>
+<td>Every sensitive action is a POST. The exception is the Slack notice dismiss: a GET that needs a security token and the capability, and only sets the user's own flag. Making it a POST is HN7 in #329.</td>
+<td><code>security/test-capability-matrix.php</code>; <code>test-slack-notice.php</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="v4-api-and-web-service">V4 API and Web Service<a class="headerlink" href="#v4-api-and-web-service" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V4.1.1</td>
+<td>Pass</td>
+<td>Screens render inside core's admin, which sends Content-Type with a charset. Refusals use <code>wp_die</code>. Mail sets <code>text/plain</code> or <code>text/html</code>.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V4.4.1</td>
+<td>N/A</td>
+<td>No WebSockets.</td>
+<td>Review only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v5-file-handling">V5 File Handling<a class="headerlink" href="#v5-file-handling" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V5.2.1</td>
+<td>N/A</td>
+<td>No file uploads.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V5.2.2</td>
+<td>N/A</td>
+<td>No files are accepted.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V5.3.1</td>
+<td>N/A</td>
+<td>The plugin writes no files.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V5.3.2</td>
+<td>Pass</td>
+<td>Every path is built from trusted parts: the autoloader allowlist, translation files with fixed names, and reads of installed plugins and themes only (#325).</td>
+<td><code>test-autoloader.php::test_names_with_path_characters_are_refused</code>; <code>security/test-hardening-installed-items.php</code>; <code>test-translations.php</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="v6-authentication">V6 Authentication<a class="headerlink" href="#v6-authentication" title="Permanent link">&para;</a></h3>
+<p>Authentication belongs to WordPress core. The plugin has no login, passwords, accounts, password reset or rate
+limiting of its own.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V6.1.1</td>
+<td>N/A</td>
+<td>Core's.</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>V6.2.1 to V6.2.5, V6.2.8</td>
+<td>N/A</td>
+<td>The plugin has no user passwords.</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>V6.2.6</td>
+<td>Pass (by analogy)</td>
+<td>The plugin's only credential-like inputs are channel secrets. They use <code>type="password"</code> and are never filled in (<code>Field_Renderer::secret</code>).</td>
+<td><code>test-field-types.php::test_render_secret_never_outputs_value</code></td>
+</tr>
+<tr>
+<td>V6.2.7</td>
+<td>N/A</td>
+<td>Not a user password. The secret input sets <code>autocomplete="off"</code>; HN4 in #329 changes that to <code>new-password</code>.</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>V6.3.1, V6.3.2</td>
+<td>N/A</td>
+<td>Core's.</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>V6.4.1, V6.4.2</td>
+<td>N/A</td>
+<td>Core's.</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v7-session-management">V7 Session Management<a class="headerlink" href="#v7-session-management" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V7.2.1 to V7.2.4, V7.4.1, V7.4.2</td>
+<td>N/A</td>
+<td>Sessions belong to WordPress core. The plugin creates, reads and ends no sessions and sets no cookies.</td>
+<td>Review only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v8-authorization">V8 Authorization<a class="headerlink" href="#v8-authorization" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V8.1.1</td>
+<td>Pass</td>
+<td>The rules are documented in the <a href="../threat-model/">threat model</a> (Scope, §1), <code>SECURITY.md</code> and the <code>sc_wpun_capability</code> filter's docblock. #328 corrects the multisite rule.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V8.2.1</td>
+<td>Pass</td>
+<td>Every function has an explicit capability check (<code>Settings_Page::capability()</code>), made before anything changes. An invalid filter value falls back to the default.</td>
+<td><code>security/test-capability-matrix.php</code>; <code>test-settings-screen.php::test_the_page_refuses_users_without_the_capability</code></td>
+</tr>
+<tr>
+<td>V8.2.2</td>
+<td>Pass on a single site; multisite fixed in #328</td>
+<td>Ids are validated and looked up, security tokens are bound to the id, and user meta is scoped per user and site. On multisite, a site administrator reached network data (findings M1 and M2).</td>
+<td><code>security/test-capability-matrix.php</code> (a token for another channel); #328 adds the multisite rows</td>
+</tr>
+<tr>
+<td>V8.3.1</td>
+<td>Pass</td>
+<td>All checks run in PHP on the server, before any change.</td>
+<td>Review only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v9-self-contained-tokens-and-v10-oauth-and-oidc">V9 Self-contained Tokens and V10 OAuth and OIDC<a class="headerlink" href="#v9-self-contained-tokens-and-v10-oauth-and-oidc" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V9.1.1 to V9.1.3, V9.2.1</td>
+<td>N/A</td>
+<td>The plugin issues and accepts no self-contained tokens. Core's security tokens are not self-contained tokens.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V10.4.1 to V10.4.5</td>
+<td>N/A</td>
+<td>The plugin is not an OAuth authorisation server or client.</td>
+<td>Review only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v11-cryptography">V11 Cryptography<a class="headerlink" href="#v11-cryptography" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V11.3.1</td>
+<td>N/A</td>
+<td>No encryption. Secrets are stored in plain text, as documented (threat model §8). Sites can supply them from <code>wp-config.php</code> or the environment instead.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V11.3.2</td>
+<td>N/A</td>
+<td>No ciphers.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V11.4.1</td>
+<td>Pass</td>
+<td>The only hash is an md5 key, used to warn once per field per request (<code>Enum_Field</code>, <code>Boolean_Field</code>). It is not a security use.</td>
+<td>Review only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v12-secure-communication">V12 Secure Communication<a class="headerlink" href="#v12-secure-communication" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V12.1.1</td>
+<td>N/A</td>
+<td>The plugin configures no TLS. Core and the host negotiate it.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V12.2.1</td>
+<td>Pass</td>
+<td>The plugin opens no HTTP connection itself, and email goes through <code>wp_mail</code>. Add-on channels are told to use <code>wp_safe_remote_*</code> (<a href="../../developers/writing-a-module/">Writing a module</a>).</td>
+<td><code>security/test-outbound-requests.php</code>; the Semgrep rule <code>wpun-outbound-http-safe-only</code></td>
+</tr>
+<tr>
+<td>V12.2.2</td>
+<td>Pass</td>
+<td>No <code>sslverify</code>, <code>https_ssl_verify</code> or <code>http_request_args</code> override, so core's certificate check stays on.</td>
+<td>Review only; Semgrep</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v13-configuration">V13 Configuration<a class="headerlink" href="#v13-configuration" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V13.4.1</td>
+<td>Pass</td>
+<td>The zip is built from tracked files minus <code>.distignore</code>, then checked against an allowlist (<code>bin/build-dist.sh</code>, <code>bin/check-dist.sh</code>). It contains no VCS folders, tests, <code>bin/</code> or <code>vendor/</code>.</td>
+<td><code>make dist-check</code>; <code>make test-dist</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="v14-data-protection">V14 Data Protection<a class="headerlink" href="#v14-data-protection" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V14.2.1</td>
+<td>Pass</td>
+<td>Secrets travel only in POST bodies, and the password input is always empty. URLs carry only the tab, action, id and a security token.</td>
+<td><code>security/test-secrets.php::test_a_secret_never_shows</code></td>
+</tr>
+<tr>
+<td>V14.3.1</td>
+<td>N/A</td>
+<td>Nothing is stored on the client: no JavaScript, no cookies, no Web Storage.</td>
+<td>Review only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v15-secure-coding-and-architecture">V15 Secure Coding and Architecture<a class="headerlink" href="#v15-secure-coding-and-architecture" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V15.1.1</td>
+<td>Pass (fixed in this audit)</td>
+<td><code>SECURITY.md</code> gives fix times for a vulnerable development dependency, Action or tool image: 7 days for High or Critical, 30 days otherwise. Before this audit only the update cadence was documented.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>V15.2.1</td>
+<td>Pass</td>
+<td>No third-party code ships. <code>bin/check-dist.sh</code> fails on <code>vendor/</code> or <code>node_modules/</code> in the zip, and on any <code>require</code> besides <code>php</code>. Development components were clean on 2026-10-26.</td>
+<td><code>make dist-check</code>; <code>make audit</code>; dependency review</td>
+</tr>
+<tr>
+<td>V15.3.1</td>
+<td>Pass</td>
+<td>Secret fields reach a renderer only as <code>'1'</code> or <code>''</code>. Site Health and the field errors name the key and the source, never the value. <code>Channel_Instance</code> redacts its settings in debug output and in <code>serialize()</code> (#325).</td>
+<td><code>security/test-secrets.php</code>; <code>security/test-hardening-instance-serialize.php</code>; <code>security/test-hardening-custom-field-secrets.php</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="v16-security-logging-and-error-handling">V16 Security Logging and Error Handling<a class="headerlink" href="#v16-security-logging-and-error-handling" title="Permanent link">&para;</a></h3>
+<p>ASVS 5.0 has no Level 1 requirement in this chapter. #228 asks for a note on it all the same:</p>
+<ul>
+<li><strong>Debug log:</strong> when <code>WP_DEBUG</code> is on, a module that throws is logged with its instance id, type and exception class.
+  The message and stack trace are never logged, because a message can hold a webhook URL.</li>
+<li><strong>Delivery results:</strong> they keep a fixed message, plus the exception class.</li>
+<li><strong><code>_doing_it_wrong</code> notices:</strong> they name types and fields, never values.</li>
+<li><strong>Site Health:</strong> it lists rejected configuration keys with their source, never the value.</li>
+<li><strong><code>last_result</code>:</strong> it is shown only to administrators, escaped.</li>
+</ul>
+<p>The proof is <code>security/test-secrets.php::test_a_secret_never_shows</code>. It covers delivery results, stored state, notices,
+every tab, Site Health, <code>print_r</code> and <code>var_dump</code>, configuration problems, <code>_doing_it_wrong</code> messages and the PHP error
+log.</p>
+<p>Two gaps are filed in #329:</p>
+<ul>
+<li><strong>HN6:</strong> a failed send stores the mailer's error text as it is.</li>
+<li><strong>HN8:</strong> a module that throws outside its <code>send()</code> stops the whole check, which is narrower than threat model §6
+  promises.</li>
+</ul>
+<h2 id="wordpress-security-guidance">WordPress security guidance<a class="headerlink" href="#wordpress-security-guidance" title="Permanent link">&para;</a></h2>
+<h3 id="developer-handbooks">Developer handbooks<a class="headerlink" href="#developer-handbooks" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://developer.wordpress.org/plugins/security/checking-user-capabilities/">Capabilities</a></td>
+<td>Pass</td>
+<td>One specific capability through <code>Settings_Page::capability()</code>, with a fail-safe fallback, checked in every handler and again when the page renders.</td>
+<td><code>security/test-capability-matrix.php</code></td>
+</tr>
+<tr>
+<td><a href="https://developer.wordpress.org/apis/security/nonces/">Security tokens</a></td>
+<td>Pass</td>
+<td>One security token per action, bound to the id, mode or type. Every check fails closed. <code>options.php</code> uses core's check.</td>
+<td><code>test-channels-tab.php::test_nonce_and_capability_are_enforced_for_every_action</code>; <code>security/test-capability-matrix.php</code> (wrong action, other channel, other user)</td>
+</tr>
+<tr>
+<td><a href="https://developer.wordpress.org/apis/security/data-validation/">Data validation</a></td>
+<td>Pass</td>
+<td>Allowlists, <code>is_email</code>, the http(s) rule, integer bounds and the id pattern. Unknown ids and types are refused.</td>
+<td><code>test-field-types.php</code>; <code>test-settings-validation.php</code></td>
+</tr>
+<tr>
+<td><a href="https://developer.wordpress.org/apis/security/sanitizing/">Sanitizing</a></td>
+<td>Pass</td>
+<td>Request data is unslashed, then sanitised: <code>sanitize_key</code> for ids, actions and tabs, and the field types for everything else.</td>
+<td><code>security/test-settings-input.php</code></td>
+</tr>
+<tr>
+<td><a href="https://developer.wordpress.org/apis/security/escaping/">Escaping</a></td>
+<td>Pass</td>
+<td>Output is escaped late everywhere. #325 fixed the Settings API titles. Settings error messages are still passed to core unescaped (HN2 in #329); that is trusted input.</td>
+<td><code>security/test-stored-xss.php</code>; <code>security/test-hardening-settings-titles.php</code>; <code>make lint</code></td>
+</tr>
+<tr>
+<td><a href="https://developer.wordpress.org/apis/security/common-vulnerabilities/">Common vulnerabilities: SQL injection</a></td>
+<td>Pass</td>
+<td>There is no SQL. Uninstall uses <code>delete_metadata</code>, which core prepares.</td>
+<td>Review only</td>
+</tr>
+<tr>
+<td>Common vulnerabilities: XSS</td>
+<td>Pass</td>
+<td>Update data, labels, last results, configuration problems, rejected modules and the plugin row are all escaped.</td>
+<td><code>security/test-stored-xss.php</code></td>
+</tr>
+<tr>
+<td>Common vulnerabilities: CSRF</td>
+<td>Pass</td>
+<td>State changes happen only in POST handlers that check the capability and a security token. The GET dismiss checks both too.</td>
+<td>As security tokens; <code>test-slack-notice.php::test_dismissing_needs_a_nonce_and_manage_options</code></td>
+</tr>
+<tr>
+<td>Safe redirects</td>
+<td>Pass</td>
+<td>All four <code>wp_safe_redirect</code> calls are followed by <code>exit</code>, and go to fixed <code>admin_url()</code> targets with a sanitised id. The plugin has no <code>wp_redirect</code>.</td>
+<td>WPCS SafeRedirect; <code>security/test-capability-matrix.php</code></td>
+</tr>
+<tr>
+<td><a href="https://developer.wordpress.org/plugins/http-api/">HTTP API</a></td>
+<td>Pass</td>
+<td>As V12.2.1. The <code>Retry-After</code> parser is strict and capped.</td>
+<td><code>test-retry-after.php</code>; <code>security/test-outbound-requests.php</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="wordpressorg-plugin-guidelines">WordPress.org plugin guidelines<a class="headerlink" href="#wordpressorg-plugin-guidelines" title="Permanent link">&para;</a></h3>
+<p>From the <a href="https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/">detailed plugin guidelines</a>.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Result</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1, 2: GPL</td>
+<td>Pass</td>
+<td>GPL-2.0-or-later in the header, <code>LICENSE</code>, <code>composer.json</code> and the readme (ADR 0001). No third-party code, fonts or images are bundled.</td>
+</tr>
+<tr>
+<td>4: Human-readable code</td>
+<td>Pass</td>
+<td>No obfuscation. The <code>.l10n.php</code> files are WP-CLI output, rebuilt and compared byte for byte by <code>make check-translations</code>. The source and the build tools are public.</td>
+</tr>
+<tr>
+<td>5: No trialware</td>
+<td>Pass</td>
+<td>No locked features, licence key or upsell. The About tab has donate and review links only.</td>
+</tr>
+<tr>
+<td>7: No tracking</td>
+<td>Pass</td>
+<td>No telemetry. Every outbound message is listed under "Outbound messages" below.</td>
+</tr>
+<tr>
+<td>8: No remote code</td>
+<td>Pass</td>
+<td>No remote code, remote assets or iframes. The stylesheet is local. The sandboxed iframe in the Playground demo plugin is not in the zip.</td>
+</tr>
+<tr>
+<td>11: No admin hijacking</td>
+<td>Pass</td>
+<td>No global admin notices. The plugin's notices show only on its own page: the Slack notice can be dismissed, and the configuration notices last only while their condition does. <code>hide_updates</code> hides core's nag only from users who can't update.</td>
+</tr>
+<tr>
+<td>13: Default libraries</td>
+<td>Pass</td>
+<td>No bundled libraries. The plugin uses <code>wp_mail</code>, the Settings API and the HTTP API types.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="outbound-messages">Outbound messages<a class="headerlink" href="#outbound-messages" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>The notification email</strong>, to the recipients an administrator configured. It is sent:</li>
+<li>by the cron event, at the chosen frequency;</li>
+<li>by "Check now" and "Send test", each behind the capability and a security token;</li>
+<li>by <code>sc_wpun_run_check</code>, from trusted code.</li>
+<li><strong>A one-time email about the Slack channel</strong> being removed. It goes to the email channel's recipients, or to the
+   admin email if there are none.</li>
+<li><strong>The deprecated <code>send_email_message()</code></strong>, only when trusted code calls it.</li>
+<li><strong>Core's own update checks to api.wordpress.org</strong>, which the plugin fires before each check. Core rate-limits them
+   itself.</li>
+</ol>
+<h2 id="areas-re-checked">Areas re-checked<a class="headerlink" href="#areas-re-checked" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Result</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>#72 Escaping on the settings screen</td>
+<td>Pass</td>
+<td>Every tab, form, confirmation, error summary and notice, and the About tab. The titles were fixed in #325.</td>
+</tr>
+<tr>
+<td>#164 Keeping and clearing secrets</td>
+<td>Pass</td>
+<td>Renderers see only <code>'1'</code> or <code>''</code>. An empty input keeps the stored value and <code>__clear</code> removes it. Round-trip values drop secrets. Outside values are never written to the database. A secret made only of spaces clears the stored value (HN3 in #329).</td>
+</tr>
+<tr>
+<td>#107 Configuration sources</td>
+<td>Pass on a single site; multisite fixed in #328</td>
+<td>Values are never echoed. Keys always start with <code>SC_WPUN_</code>, and ids allow no double underscore, so no other constant can be read. Environment variables are off unless the site turns them on. The order of sources is documented and add-ons are trusted. On multisite, constants apply to every site (finding M2).</td>
+</tr>
+<tr>
+<td>#165 and #166 Handlers</td>
+<td>Pass</td>
+<td>See "Request handlers" below.</td>
+</tr>
+<tr>
+<td>Email header injection</td>
+<td>Pass</td>
+<td>No header injection through the From name, From address, Reply-To, subject or prefix, recipients, or extra headers. The plugin, core and PHPMailer each strip or refuse CR and LF; the traces are under "Email header injection" below.</td>
+</tr>
+<tr>
+<td><code>uninstall.php</code></td>
+<td>Pass</td>
+<td>It removes every option, the 1.x transients, every user meta key and the cron event, on every site of a network (cross-checked against every writer). Batching large networks is HN10 in #329.</td>
+</tr>
+<tr>
+<td>REST, AJAX and shortcodes</td>
+<td>Pass</td>
+<td>None are registered. There are only <code>admin_post_*</code> hooks, which core runs for logged-in users only.</td>
+</tr>
+<tr>
+<td>Suppressions</td>
+<td>Pass</td>
+<td>16 found, all still justified. Two have no written reason, in files the checker doesn't scan (CI1 in #330). See "Suppressions" below.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="request-handlers">Request handlers<a class="headerlink" href="#request-handlers" title="Permanent link">&para;</a></h3>
+<p>In every handler, the capability is checked first and the security token second, before anything changes. A refusal
+is a 403.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Handler</th>
+<th>Target check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sc_wpun_send_test</code></td>
+<td><code>Channels_Tab::handle_test_send</code></td>
+<td>The id is sanitised and must be listed; the module must support a test.</td>
+</tr>
+<tr>
+<td><code>sc_wpun_channel_toggle</code></td>
+<td><code>Channels_Tab</code></td>
+<td>Listed and not defined in code. An outside <code>enabled</code> is refused. Works on the stored copy.</td>
+</tr>
+<tr>
+<td><code>sc_wpun_channel_duplicate</code></td>
+<td><code>Channels_Tab</code></td>
+<td>As toggle. The new id avoids every taken id.</td>
+</tr>
+<tr>
+<td><code>sc_wpun_channel_delete</code></td>
+<td><code>Channels_Tab</code></td>
+<td>As toggle. The store refuses ids defined in code.</td>
+</tr>
+<tr>
+<td><code>sc_wpun_check_now</code></td>
+<td><code>Check_Now::handle</code></td>
+<td>No target.</td>
+</tr>
+<tr>
+<td><code>sc_wpun_save_channel</code></td>
+<td><code>Channel_Form::handle_save</code></td>
+<td>Mode allowlist; registered module (new) or listed, stored, not code-defined (edit). The security token is bound to the mode and type or id.</td>
+</tr>
+<tr>
+<td><code>sc_wpun_dismiss_slack_notice</code> (GET)</td>
+<td><code>Slack_Notice</code></td>
+<td>No target; only sets the user's own flag.</td>
+</tr>
+<tr>
+<td><code>options.php</code> (<code>sc_wpun_settings</code>)</td>
+<td>Core, through <code>option_page_capability_</code></td>
+<td>Only declared settings are kept.</td>
+</tr>
+</tbody>
+</table>
+<p>Proof:</p>
+<ul>
+<li><code>security/test-capability-matrix.php</code>. It discovers every endpoint, so a new one can't go untested.</li>
+<li><code>test-channels-tab.php</code>, <code>test-channel-form.php</code>, <code>test-check-now.php</code> and <code>test-slack-notice.php</code>.</li>
+</ul>
+<h3 id="email-header-injection">Email header injection<a class="headerlink" href="#email-header-injection" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Control</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>From address</td>
+<td><code>sanitize_email</code> and <code>is_email</code> on save, <code>sanitize_email</code> again at send, then core's validator in <code>setFrom</code>.</td>
+</tr>
+<tr>
+<td>From name</td>
+<td>A translation, which is trusted. PHPMailer's <code>setFrom</code> strips CR and LF and encodes the header.</td>
+</tr>
+<tr>
+<td>Reply-To</td>
+<td><code>sanitize_email</code>, then core's <code>addReplyTo</code> validation.</td>
+</tr>
+<tr>
+<td>Subject and prefix</td>
+<td>The prefix uses <code>sanitize_text_field</code>. On every path PHPMailer's <code>secureHeader</code> strips CR and LF from the subject, including subjects from filters and channels defined in code.</td>
+</tr>
+<tr>
+<td>Recipients</td>
+<td><code>sanitize_email</code> for each address. Payload addresses that contain CR or LF are dropped. PHPMailer validates each one.</td>
+</tr>
+<tr>
+<td>Extra headers</td>
+<td>Lines with CR or LF are dropped, and core's <code>addCustomHeader</code> refuses them too.</td>
+</tr>
+</tbody>
+</table>
+<p>Proof: <code>security/test-settings-input.php::test_a_line_break_in_the_email_settings_adds_no_header</code> and
+<code>test-email-channel.php::test_the_payload_filter_may_only_return_safe_values</code>.</p>
+<h3 id="suppressions">Suppressions<a class="headerlink" href="#suppressions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Where</th>
+<th>Sniff or rule</th>
+<th>Justified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>includes/class-env-source.php:39</code></td>
+<td>ValidatedSanitizedInput</td>
+<td>Yes. <code>$_ENV</code> is trusted configuration, and it is cast and validated like form input.</td>
+</tr>
+<tr>
+<td><code>includes/admin/class-channels-tab.php:230-234</code></td>
+<td>NonceVerification.Recommended</td>
+<td>Yes. It only picks the view, from <code>sanitize_key</code> values.</td>
+</tr>
+<tr>
+<td><code>includes/admin/class-channels-tab.php:441</code></td>
+<td>EscapeOutput</td>
+<td>Yes. Every item is escaped where it is built.</td>
+</tr>
+<tr>
+<td><code>includes/admin/class-settings-page.php:355</code></td>
+<td>NonceVerification.Recommended</td>
+<td>Yes. The tab only picks the display and is checked against the visible tabs.</td>
+</tr>
+<tr>
+<td><code>includes/admin/class-settings-page.php:652</code></td>
+<td>EscapeOutput</td>
+<td>Yes. <code>Field_Renderer</code> escapes every value, and the type, values and bounds are internal.</td>
+</tr>
+<tr>
+<td><code>includes/admin/class-channel-form.php:160</code></td>
+<td>EscapeOutput</td>
+<td>Yes. Every title is escaped by its only caller, and the controls come from <code>Field_Renderer</code>.</td>
+</tr>
+<tr>
+<td><code>includes/admin/class-channel-form.php:728</code></td>
+<td>EscapeOutput</td>
+<td>Yes, on trust. It is a module's own <code>render_settings()</code> markup, and add-ons are trusted (threat model §2).</td>
+</tr>
+<tr>
+<td><code>includes/admin/class-channel-form.php:867</code></td>
+<td>NonceVerification.Missing</td>
+<td>Yes. It reads <code>mode</code>, <code>type</code> and <code>id</code> with <code>sanitize_key</code>, only to build the security token's action.</td>
+</tr>
+<tr>
+<td><code>includes/admin/class-channel-form.php:879-884, 941, 952, 991, 1014</code></td>
+<td>NonceVerification.Missing, InputNotSanitized</td>
+<td>Yes. These run after the security token is checked, and the values go through the field types or the module's validation.</td>
+</tr>
+<tr>
+<td><code>bin/l10n-to-po.php:141</code></td>
+<td>EscapeOutput</td>
+<td>Yes. A command-line tool that isn't shipped.</td>
+</tr>
+<tr>
+<td><code>bin/coverage-check.php:13</code></td>
+<td>EscapeOutput (<code>phpcs:disable</code>)</td>
+<td>Yes, but it has no written reason (CI1 in #330). A command-line tool that isn't shipped.</td>
+</tr>
+<tr>
+<td><code>.wordpress-org/blueprint/mail-catcher.php:102</code></td>
+<td>NonceVerification.Recommended</td>
+<td>Yes, but it has no written reason (CI1 in #330). A read-only <code>absint</code> in the Playground demo, behind <code>manage_options</code>.</td>
+</tr>
+<tr>
+<td><code>nosemgrep</code>, <code>@psalm-suppress Tainted*</code></td>
+<td>None found</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Psalm baseline</td>
+<td>1 entry: <code>TaintedSSRF</code> in <code>examples/</code></td>
+<td>Yes. A URL the administrator sets, sent with <code>wp_safe_remote_post</code>.</td>
+</tr>
+<tr>
+<td>gitleaks allowlists</td>
+<td>5 rules</td>
+<td>Yes. One has no path, against the file's own rule (CI5 in #330).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="supply-chain-and-release">Supply chain and release<a class="headerlink" href="#supply-chain-and-release" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Result</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Workflows</td>
+<td>Pass</td>
+<td>Every action is pinned to a full commit SHA. Permissions default to none or <code>contents: read</code>, and each job raises only what it needs. Every checkout sets <code>persist-credentials: false</code>. No <code>pull_request_target</code> or <code>workflow_run</code> triggers. Untrusted values reach <code>run:</code> only through <code>env:</code>. The release and deploy jobs run in protected environments, and the deploy verifies the attestation against the tag's commit.</td>
+</tr>
+<tr>
+<td>Release zip</td>
+<td>Pass</td>
+<td>60 files, all the plugin's own: the main file, <code>uninstall.php</code>, <code>readme.txt</code>, <code>LICENSE</code>, the stylesheet, <code>includes/</code>, <code>modules/email/</code> and the <code>languages/*.l10n.php</code> files. The build is reproducible (fixed time, modes and order). Provenance and the SBOM are attested and checked before publishing. The tag is signed and checked against <code>.github/release-signers</code>.</td>
+</tr>
+<tr>
+<td>Dependencies</td>
+<td>Pass</td>
+<td>No runtime dependencies (enforced by <code>bin/check-dist.sh</code>). Development dependencies are locked, images are pinned by digest, and the pip requirements carry hashes. Dependabot covers every ecosystem.</td>
+</tr>
+<tr>
+<td>Hardening</td>
+<td>Info</td>
+<td>Five items are filed in #330: remove the signing key straight after signing (CI2), pin the apt packages behind the reproducible-build claim (CI3), move the release-please app key into an environment (CI4), tidy a gitleaks allowlist (CI5), and scan the zip in the release job (CI6).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="owasp-top-102025">OWASP Top 10:2025<a class="headerlink" href="#owasp-top-102025" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Result</th>
+<th>Where it is covered</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A01 Broken Access Control</td>
+<td>Pass on a single site; multisite fixed in #328</td>
+<td>V8, V3.5, request handlers; findings M1 to M3</td>
+</tr>
+<tr>
+<td>A02 Security Misconfiguration</td>
+<td>Pass</td>
+<td>V13.4.1, V12.2.2, repository settings</td>
+</tr>
+<tr>
+<td>A03 Software Supply Chain Failures</td>
+<td>Pass</td>
+<td>V15.2.1, supply chain and release, #330</td>
+</tr>
+<tr>
+<td>A04 Cryptographic Failures</td>
+<td>Pass</td>
+<td>V11, V12</td>
+</tr>
+<tr>
+<td>A05 Injection</td>
+<td>Pass</td>
+<td>V1, email header injection, Psalm taint, Semgrep, ZAP</td>
+</tr>
+<tr>
+<td>A06 Insecure Design</td>
+<td>Pass</td>
+<td>The <a href="../threat-model/">threat model</a>, V2, V15.3.1</td>
+</tr>
+<tr>
+<td>A07 Authentication Failures</td>
+<td>N/A</td>
+<td>Core's (V6, V7)</td>
+</tr>
+<tr>
+<td>A08 Software or Data Integrity Failures</td>
+<td>Pass</td>
+<td>The release zip's provenance, signed tags, the WordPress.org deploy gate, translations rebuilt and compared</td>
+</tr>
+<tr>
+<td>A09 Security Logging and Alerting Failures</td>
+<td>Pass</td>
+<td>V16 note</td>
+</tr>
+<tr>
+<td>A10 Mishandling of Exceptional Conditions</td>
+<td>Pass, with HN8 in #329</td>
+<td><code>Dispatcher</code> contains exceptions in <code>send()</code>, and every security token and capability check fails closed</td>
+</tr>
+</tbody>
+</table>
+<h2 id="findings">Findings<a class="headerlink" href="#findings" title="Permanent link">&para;</a></h2>
+<h3 id="medium-multisite-fixed-in-328">Medium (multisite, fixed in #328)<a class="headerlink" href="#medium-multisite-fixed-in-328" title="Permanent link">&para;</a></h3>
+<p>On multisite, the default capability <code>manage_options</code> let a site administrator who is not a super admin use the
+settings. That gave them three things core does not:</p>
+<ul>
+<li><strong>M1:</strong> a list of the network's pending core, plugin and theme updates, with installed versions, mailed to any
+  address. Core shows that list only to super admins.</li>
+<li><strong>M2:</strong> channel settings set in <code>wp-config.php</code> for another site. Constants apply on every site, so a channel
+  created with the same id picks them up.</li>
+<li><strong>M3:</strong> mail sent through the network's mailer from any From address.</li>
+</ul>
+<p>2.0.0 doesn't support multisite (ADR 0008), and the threat model trusted site administrators. #328 changes the
+default capability on multisite to <code>manage_network_options</code>. Networks that want site administrators to manage the
+plugin can grant it back with the <code>sc_wpun_capability</code> filter.</p>
+<h3 id="low-and-info">Low and Info<a class="headerlink" href="#low-and-info" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Severity</th>
+<th>Issue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HN1 <code>markdown_url()</code> returns the raw input instead of the cleaned URL</td>
+<td>Low</td>
+<td>#329</td>
+</tr>
+<tr>
+<td>HN2 Settings error messages reach core unescaped</td>
+<td>Low</td>
+<td>#329</td>
+</tr>
+<tr>
+<td>HN3 A secret made only of spaces clears the stored value</td>
+<td>Low</td>
+<td>#329</td>
+</tr>
+<tr>
+<td>HN4 to HN7, HN9, HN10 Autocomplete hint, slug pattern, mailer error text, a POST dismiss, an https-only option, uninstall batching</td>
+<td>Info</td>
+<td>#329</td>
+</tr>
+<tr>
+<td>HN8 Exceptions outside <code>send()</code> stop the check (threat model §6)</td>
+<td>Info</td>
+<td>#329</td>
+</tr>
+<tr>
+<td>CI1 to CI6 Suppression checker scope, signing key lifetime, apt pins, release app key, gitleaks allowlist, zip scan in the release job</td>
+<td>Info</td>
+<td>#330</td>
+</tr>
+<tr>
+<td>V15.1.1 No fix times for vulnerable development tools</td>
+<td>Info</td>
+<td>Fixed in this audit (<code>SECURITY.md</code>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="limits">Limits<a class="headerlink" href="#limits" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>This is a source review</strong>, backed by the scripted tools and the tests. No manual penetration test was done, apart
+  from the ZAP scan.</li>
+<li><strong>Core and the host are trusted.</strong> Weaknesses in core's own URL checks, such as DNS rebinding, are out of scope.</li>
+<li><strong>Third-party Actions are taken as pinned.</strong> Their internals were not reviewed.</li>
+<li><strong>The rows are tied to <code>d2f4377</code>.</strong> A later release repeats this audit on its diff, using the same checklists, the
+  threat model and the rubric above.</li>
+</ul>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<h1 id="228-this-audit-229-security-epic-230-and-the-ai-review-325-its-hardening-328">228 (this audit), #229 (security epic), #230 and the <a href="../ai-review-2.0.0/">AI review</a>, #325 (its hardening), #328,<a class="headerlink" href="#228-this-audit-229-security-epic-230-and-the-ai-review-325-its-hardening-328" title="Permanent link">&para;</a></h1>
+  #329 and #330 (this audit's findings).</li>
+<li><a href="https://github.com/OWASP/ASVS/tree/v5.0.0">OWASP ASVS 5.0.0</a>. The Level 1 list is the rows of
+  <code>5.0/docs_en/OWASP_Application_Security_Verification_Standard_5.0.0_en.csv</code> where <code>L</code> is <code>1</code>.</li>
+<li><a href="https://github.com/OWASP/Top10/tree/3a31f35346c3f4e90f350395124382fa53af2afe/2025">OWASP Top 10:2025</a>.</li>
+<li><a href="https://developer.wordpress.org/apis/security/">WordPress Security in the Common APIs Handbook</a>, and
+  <a href="https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/">the detailed plugin guidelines</a>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/l3rady/wp-updates-notifier" target="_blank" rel="noopener" title="WP Updates Notifier on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/javascripts/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>
