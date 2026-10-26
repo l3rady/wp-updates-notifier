@@ -104,40 +104,6 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	// Discovery.
 
 	/**
-	 * Whether a callback belongs to the plugin: a method or invokable object of a plugin class, or a function or
-	 * closure defined in a plugin file (not in the tests).
-	 *
-	 * @param mixed $callback The callback.
-	 * @return string|null What it is, or null if it belongs to somebody else.
-	 */
-	private function plugin_callback( $callback ): ?string {
-		$class_pattern = '/^(WPUN\\\\|WPUN_(?!Test_|Security_)|SC_WP_Updates_Notifier)/';
-
-		if ( is_array( $callback ) ) {
-			$class = is_object( $callback[0] ) ? get_class( $callback[0] ) : (string) $callback[0];
-
-			return 1 === preg_match( $class_pattern, $class ) ? $class . '::' . $callback[1] : null;
-		}
-
-		if ( is_object( $callback ) && ! $callback instanceof Closure ) {
-			$class = get_class( $callback );
-
-			return 1 === preg_match( $class_pattern, $class ) ? $class . '::__invoke' : null;
-		}
-
-		if ( $callback instanceof Closure || ( is_string( $callback ) && function_exists( $callback ) ) ) {
-			$file = (string) ( new ReflectionFunction( $callback ) )->getFileName();
-			$file = (string) realpath( $file );
-			$root = (string) realpath( dirname( SC_WPUN_FILE ) );
-			if ( '' !== $root && 0 === strpos( $file, $root . DIRECTORY_SEPARATOR ) && false === strpos( substr( $file, strlen( $root ) ), DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR ) ) {
-				return ( $callback instanceof Closure ? 'closure' : (string) $callback ) . ' in ' . substr( $file, strlen( $root ) + 1 );
-			}
-		}
-
-		return null;
-	}
-
-	/**
 	 * Every hook of the admin-post and AJAX families that the plugin hooks into.
 	 *
 	 * The family is any hook that starts with `admin_post` or `wp_ajax`, which takes in the `nopriv` variants.

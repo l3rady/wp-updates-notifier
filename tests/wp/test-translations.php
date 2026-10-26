@@ -300,7 +300,9 @@ class Test_Translations extends WPUN_Test_Case {
 	 */
 	public function test_plugin_does_not_set_a_custom_text_domain_path() {
 		$registry = new ReflectionProperty( WP_Textdomain_Registry::class, 'custom_paths' );
-		$registry->setAccessible( true );
+		if ( PHP_VERSION_ID < 80100 ) {
+			$registry->setAccessible( true ); // Needed before PHP 8.1, deprecated in 8.5.
+		}
 
 		$this->assertArrayNotHasKey( self::DOMAIN, $registry->getValue( $this->registry ) );
 	}
