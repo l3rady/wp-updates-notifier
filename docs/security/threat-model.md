@@ -202,7 +202,7 @@ filters, and supply config values. What the plugin still guarantees when an add-
 - payload filters can't inject mail headers (see 5);
 - the capability for the screens comes from one filter, `sc_wpun_capability`, and a non-string or empty value falls back to the default, `manage_options`, or `manage_network_options` on multisite.
 
-Proof: `test-extension-api.php`, `test-dispatcher.php`, `test-channel-api-constraint.php`, `test-api-version.php`,
+Proof: `test-extension-api.php`, `test-dispatcher.php`, `test-check-isolation.php` (the real update check with a module whose fields throw and with a routing callback that throws), `test-channel-api-constraint.php`, `test-api-version.php`,
 `test-contract.php`, `make check-public-api` (modules use only the public API), and `make check-hooks` (every hook is
 documented).
 

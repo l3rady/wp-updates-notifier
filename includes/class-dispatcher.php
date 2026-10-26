@@ -60,25 +60,16 @@ class Dispatcher {
 				continue;
 			}
 
-			$misconfigured = $this->misconfigured( $instance );
-			if ( null !== $misconfigured ) {
-				$results[ $instance->get_id() ] = $this->finish( $misconfigured, $notification, $instance );
-				continue;
+			try {
+				$result = $this->dispatch_one( $notification, $instance );
+			} catch ( \Throwable $e ) {
+				// Not the channel's send() (it has its own guard) but what comes before it: the settings checks, the routing, the lookup.
+				$result = $this->exception_result( $instance, $e, $notification );
 			}
 
-			// An instance routed nothing is skipped, but a test message has no items and always goes.
-			$routed = $this->notification_for( $notification, $instance );
-			if ( ! $routed->is_test() && ! $routed->has_items() ) {
-				continue;
+			if ( null !== $result ) {
+				$results[ $instance->get_id() ] = $result;
 			}
-
-			$channel = $this->registry->get( $instance->get_type() );
-			if ( null === $channel ) {
-				$results[ $instance->get_id() ] = $this->finish( $this->unavailable( $instance ), $routed, $instance );
-				continue;
-			}
-
-			$results[ $instance->get_id() ] = $this->send( $channel, $routed, $instance );
 		}
 
 		/**
@@ -92,6 +83,34 @@ class Dispatcher {
 		do_action( 'sc_wpun_after_dispatch', $results, $notification );
 
 		return $results;
+	}
+
+	/**
+	 * Deliver a notification through one enabled instance of a dispatch.
+	 *
+	 * @param Notification     $notification What to deliver.
+	 * @param Channel_Instance $instance     The instance, switched on.
+	 *
+	 * @return Delivery_Result|null Null when the instance is routed nothing.
+	 */
+	private function dispatch_one( Notification $notification, Channel_Instance $instance ): ?Delivery_Result {
+		$misconfigured = $this->misconfigured( $instance );
+		if ( null !== $misconfigured ) {
+			return $this->finish( $misconfigured, $notification, $instance );
+		}
+
+		// An instance routed nothing is skipped, but a test message has no items and always goes.
+		$routed = $this->notification_for( $notification, $instance );
+		if ( ! $routed->is_test() && ! $routed->has_items() ) {
+			return null;
+		}
+
+		$channel = $this->registry->get( $instance->get_type() );
+		if ( null === $channel ) {
+			return $this->finish( $this->unavailable( $instance ), $routed, $instance );
+		}
+
+		return $this->send( $channel, $routed, $instance );
 	}
 
 	/**
@@ -120,17 +139,21 @@ class Dispatcher {
 			return $this->finish( Delivery_Result::failure( __( 'This channel is switched off.', 'wp-updates-notifier' ), 'disabled' ), $notification, $instance );
 		}
 
-		$misconfigured = $this->misconfigured( $instance );
-		if ( null !== $misconfigured ) {
-			return $this->finish( $misconfigured, $notification, $instance );
-		}
+		try {
+			$misconfigured = $this->misconfigured( $instance );
+			if ( null !== $misconfigured ) {
+				return $this->finish( $misconfigured, $notification, $instance );
+			}
 
-		$channel = $this->registry->get( $instance->get_type() );
-		if ( null === $channel ) {
-			return $this->finish( $this->unavailable( $instance ), $notification, $instance );
-		}
+			$channel = $this->registry->get( $instance->get_type() );
+			if ( null === $channel ) {
+				return $this->finish( $this->unavailable( $instance ), $notification, $instance );
+			}
 
-		return $this->send( $channel, $notification, $instance );
+			return $this->send( $channel, $notification, $instance );
+		} catch ( \Throwable $e ) {
+			return $this->exception_result( $instance, $e, $notification );
+		}
 	}
 
 	/**
@@ -207,8 +230,9 @@ class Dispatcher {
 
 			return $this->finish( $channel->send( $notification, $instance ), $notification, $instance );
 		} catch ( \Throwable $e ) {
-			$this->log_exception( $instance, $e );
 			if ( $e instanceof \TypeError && false !== stripos( $e->getMessage(), 'return value' ) && false !== strpos( $e->getMessage(), 'Delivery_Result' ) ) {
+				$this->log_exception( $instance, $e );
+
 				return $this->finish(
 					Delivery_Result::failure(
 						// translators: %s: Channel type.
@@ -219,22 +243,40 @@ class Dispatcher {
 					$instance
 				);
 			}
-			// The exception's own message can contain request URLs with secrets in them
-			// (some services put tokens in the URL), and results are shown in the admin,
-			// so only the exception class is kept, and only the class is logged too.
-			return $this->finish(
-				Delivery_Result::failure(
-					// translators: %s: Channel type.
-					sprintf( __( 'The "%s" channel failed with an error.', 'wp-updates-notifier' ), $instance->get_type() ),
-					'exception',
-					null,
-					null,
-					array( 'exception' => get_class( $e ) )
-				),
-				$notification,
-				$instance
-			);
+			return $this->exception_result( $instance, $e, $notification );
 		}
+	}
+
+	/**
+	 * The result for an instance that threw, announced to listeners; the exception is logged when debugging.
+	 *
+	 * The exception's own message can contain request URLs with secrets in them
+	 * (some services put tokens in the URL), and results are shown in the admin,
+	 * so only the exception class is kept, and only the class is logged too.
+	 *
+	 * @internal
+	 *
+	 * @param Channel_Instance $instance     The instance.
+	 * @param \Throwable       $e            The exception.
+	 * @param Notification     $notification What was to be delivered.
+	 *
+	 * @return Delivery_Result
+	 */
+	public function exception_result( Channel_Instance $instance, \Throwable $e, Notification $notification ): Delivery_Result {
+		$this->log_exception( $instance, $e );
+
+		return $this->finish(
+			Delivery_Result::failure(
+				// translators: %s: Channel type.
+				sprintf( __( 'The "%s" channel failed with an error.', 'wp-updates-notifier' ), $instance->get_type() ),
+				'exception',
+				null,
+				null,
+				array( 'exception' => get_class( $e ) )
+			),
+			$notification,
+			$instance
+		);
 	}
 
 	/**

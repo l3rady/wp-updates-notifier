@@ -7,6 +7,8 @@
 
 use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
+use WPUN\Channel_Store;
+use WPUN\Delivery_Result;
 use WPUN\Dispatcher;
 use WPUN\Notification;
 use WPUN\Notification_Item;
@@ -192,5 +194,165 @@ class Test_Dispatcher extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'RuntimeException', $this->notices[0] );
 		$this->assertStringNotContainsString( 'It threw.', $this->notices[0], 'The exception message can hold a secret.' );
 		$this->assertStringContainsString( 'throws', $this->notices[0] );
+	}
+
+	/**
+	 * A dispatcher whose store throws when asked about the instance `broken` (an add-on can throw from anywhere the store reaches).
+	 *
+	 * @return Dispatcher
+	 */
+	private function dispatcher_with_throwing_store() {
+		$store = new class( sc_wpun()->config(), $this->registry ) extends Channel_Store {
+			/**
+			 * Throw for one instance.
+			 *
+			 * @param string $id Instance id.
+			 * @return string[]
+			 * @throws RuntimeException For `broken`.
+			 */
+			public function problems( string $id ): array {
+				if ( 'broken' === $id ) {
+					throw new RuntimeException( 'schema blew up with secret-xyz' );
+				}
+				return parent::problems( $id );
+			}
+		};
+
+		return new Dispatcher( $this->registry, $store );
+	}
+
+	/**
+	 * Run a callable and capture the notices the dispatcher raises for exceptions.
+	 *
+	 * @param callable $run What to run.
+	 * @return mixed What it returned.
+	 */
+	private function capturing_notices( callable $run ) {
+		$this->notices = array();
+		set_error_handler( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting,WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Capturing the notice the dispatcher raises under WP_DEBUG.
+			function ( $number, $message ) {
+				$this->notices[] = $message;
+				return true;
+			},
+			E_USER_NOTICE
+		);
+		try {
+			return $run();
+		} finally {
+			restore_error_handler();
+		}
+	}
+
+	/**
+	 * What a failed instance may show: a result of the exception kind, with the class and no message.
+	 *
+	 * @param Delivery_Result $result The result.
+	 * @param string          $exception_class The exception class.
+	 */
+	private function assert_exception_result( $result, $exception_class ) {
+		$this->assertFalse( $result->is_success() );
+		$this->assertSame( 'exception', $result->get_code() );
+		$this->assertSame( array( 'exception' => $exception_class ), $result->get_context() );
+		$this->assertStringNotContainsString( 'secret-xyz', $result->get_message() . wp_json_encode( $result->get_context() ) );
+		$this->assertStringNotContainsString( 'secret-xyz', implode( ' ', $this->notices ) );
+		$this->assertStringContainsString( $exception_class, implode( ' ', $this->notices ) );
+	}
+
+	/**
+	 * A store that throws fails its own instance and no other.
+	 */
+	public function test_a_store_that_throws_does_not_stop_the_check() {
+		$dispatcher = $this->dispatcher_with_throwing_store();
+		$before     = $this->instance( 'before' );
+		$after      = $this->instance( 'after' );
+
+		$results = $this->capturing_notices(
+			fn() => $dispatcher->dispatch( $this->notification(), array( $before, $this->instance( 'broken' ), $after ) )
+		);
+
+		$this->assertSame( array( 'before', 'broken', 'after' ), array_keys( $results ) );
+		$this->assertTrue( $results['before']->is_success() );
+		$this->assertTrue( $results['after']->is_success() );
+		$this->assert_exception_result( $results['broken'], RuntimeException::class );
+		$this->assertArrayHasKey( 'after', $this->channel->received );
+	}
+
+	/**
+	 * A routing callback that throws fails its own instance and no other.
+	 */
+	public function test_a_routing_callback_that_throws_does_not_stop_the_check() {
+		add_filter(
+			'sc_wpun_channel_should_receive_item',
+			static function ( $receive, $item, $instance ) {
+				if ( 'bad_route' === $instance->get_id() ) {
+					throw new LogicException( 'routing blew up with secret-xyz' );
+				}
+				return $receive;
+			},
+			10,
+			3
+		);
+
+		$results = $this->capturing_notices(
+			fn() => $this->dispatcher->dispatch( $this->notification(), array( $this->instance( 'bad_route' ), $this->instance( 'good' ) ) )
+		);
+
+		$this->assertSame( array( 'bad_route', 'good' ), array_keys( $results ) );
+		$this->assert_exception_result( $results['bad_route'], LogicException::class );
+		$this->assertTrue( $results['good']->is_success() );
+		$this->assertArrayNotHasKey( 'bad_route', $this->channel->received, 'The channel was not called for the failed instance.' );
+	}
+
+	/**
+	 * An instance that is routed nothing still returns no result, and a test message is never routed.
+	 */
+	public function test_an_instance_routed_nothing_has_no_result() {
+		add_filter( 'sc_wpun_channel_should_receive_item', '__return_false' );
+
+		$results = $this->dispatcher->dispatch( $this->notification(), array( $this->instance( 'quiet' ) ) );
+
+		$this->assertSame( array(), $results );
+	}
+
+	/**
+	 * A listener hears about the failed instance, as it does about any failure.
+	 */
+	public function test_a_failure_before_sending_is_announced() {
+		$heard = array();
+		add_action(
+			'sc_wpun_notification_failed',
+			static function ( $result, $notification, $instance ) use ( &$heard ) {
+				$heard[] = array( $instance->get_id(), $result->get_code() );
+			},
+			10,
+			3
+		);
+		$dispatcher = $this->dispatcher_with_throwing_store();
+
+		$this->capturing_notices( fn() => $dispatcher->dispatch( $this->notification(), array( $this->instance( 'broken' ) ) ) );
+
+		$this->assertSame( array( array( 'broken', 'exception' ) ), $heard );
+	}
+
+	/**
+	 * Sending through one instance reports a store that throws as a failure too.
+	 */
+	public function test_send_one_reports_a_store_that_throws() {
+		$dispatcher = $this->dispatcher_with_throwing_store();
+
+		$result = $this->capturing_notices( fn() => $dispatcher->send_one( $this->notification(), $this->instance( 'broken' ) ) );
+
+		$this->assert_exception_result( $result, RuntimeException::class );
+	}
+
+	/**
+	 * A channel that throws is still reported once by send_one(), as before.
+	 */
+	public function test_send_one_reports_a_channel_that_throws() {
+		$result = $this->capturing_notices( fn() => $this->dispatcher->send_one( $this->notification(), $this->instance( 'throws', 'throw' ) ) );
+
+		$this->assertSame( 'exception', $result->get_code() );
+		$this->assertSame( array( 'exception' => RuntimeException::class ), $result->get_context() );
+		$this->assertCount( 1, $this->notices, 'Logged once.' );
 	}
 }

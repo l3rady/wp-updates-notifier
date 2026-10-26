@@ -91,7 +91,7 @@ class Channel_Store {
 		$instances = array();
 
 		foreach ( $this->raw_all() as $id => $raw ) {
-			$instances[ $id ] = $this->overlay( $raw )[0];
+			$instances[ $id ] = $this->overlaid( $raw );
 		}
 
 		return $instances;
@@ -109,7 +109,25 @@ class Channel_Store {
 	public function get( string $id ): ?Channel_Instance {
 		$raw = $this->raw( $id );
 
-		return null === $raw ? null : $this->overlay( $raw )[0];
+		return null === $raw ? null : $this->overlaid( $raw );
+	}
+
+	/**
+	 * An instance with the outside values laid over it, or as stored if its channel's fields cannot be read.
+	 *
+	 * The listings and the update check keep working that way. Nothing is delivered through such an
+	 * instance: problems() lets the exception through, and the dispatcher turns it into a failed result.
+	 *
+	 * @param Channel_Instance $raw The instance as stored or defined in code.
+	 *
+	 * @return Channel_Instance
+	 */
+	private function overlaid( Channel_Instance $raw ): Channel_Instance {
+		try {
+			return $this->overlay( $raw )[0];
+		} catch ( \Throwable $e ) {
+			return $raw;
+		}
 	}
 
 	/**
@@ -167,6 +185,8 @@ class Channel_Store {
 	 * @param string $id Identifier.
 	 *
 	 * @return string[] Empty when the instance is fine, or there is none.
+	 *
+	 * @throws \Throwable When the channel's fields cannot be read (add-on code threw).
 	 */
 	public function problems( string $id ): array {
 		$raw = $this->raw( $id );
@@ -356,17 +376,38 @@ class Channel_Store {
 	 * The fields of a channel that can be supplied from outside, by name.
 	 *
 	 * Names that cannot be part of a constant name and the reserved name `enabled` are skipped, with a
-	 * notice to the developer. An instance of a type with no registered channel only has `enabled`.
+	 * notice to the developer. An instance of a type with no registered channel only has `enabled`. When the
+	 * channel's fields cannot be read (it threw), the exception class is reported to the developer once per type,
+	 * never its message, and the exception is thrown on.
 	 *
 	 * @param string $type Channel type.
 	 *
 	 * @return array<string, array<string, mixed>> Field schema by name.
+	 *
+	 * @throws \Throwable When the channel's fields cannot be read.
 	 */
 	private function external_schemas( string $type ): array {
 		$channel = $this->registry->get( $type );
 		$schemas = array();
+		$fields  = array();
 
-		foreach ( null === $channel ? array() : $channel->get_form_fields() as $name => $field ) {
+		if ( null !== $channel ) {
+			try {
+				$fields = $channel->get_form_fields();
+			} catch ( \Throwable $e ) {
+				if ( ! isset( $this->warned[ $type . '|' ] ) ) {
+					$this->warned[ $type . '|' ] = true;
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// Not the message: it can contain a secret.
+						wp_trigger_error( self::class, sprintf( 'The fields of the "%1$s" channel could not be read: %2$s was thrown.', $type, get_class( $e ) ) );
+					}
+				}
+
+				throw $e;
+			}
+		}
+
+		foreach ( $fields as $name => $field ) {
 			$name = (string) $name;
 			if ( 'enabled' === $name || ! $this->is_valid_name( $name ) ) {
 				if ( ! isset( $this->warned[ $type . '|' . $name ] ) ) {
@@ -417,6 +458,7 @@ class Channel_Store {
 	 * instance is listed as misconfigured so that nothing is delivered through it. Add-on code can throw;
 	 * that is reported by the exception class only. `validate_settings()` returns only its first error, so an
 	 * invalid supplied value can go unreported while a stored field fails first.
+	 * A channel whose fields cannot be read throws: see external_schemas() and overlaid().
 	 *
 	 * @param Channel_Instance $raw The instance as stored or defined in code.
 	 *

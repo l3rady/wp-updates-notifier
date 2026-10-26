@@ -33,6 +33,7 @@ require_once __DIR__ . '/wp/class-wpun-test-case.php';
 require_once __DIR__ . '/wp/fixtures/class-test-channel.php';
 require_once __DIR__ . '/wp/fixtures/class-test-config-source.php';
 require_once __DIR__ . '/wp/fixtures/class-test-fields-channel.php';
+require_once __DIR__ . '/wp/fixtures/class-test-throwing-fields-channel.php';
 require_once __DIR__ . '/fixtures/plugins/wpun-test-addon/class-test-form-channel.php';
 // The test add-on's definitions only: nothing is wired until a test calls WPUN_Test_Addon\boot().
 require_once __DIR__ . '/fixtures/plugins/wpun-test-addon/wpun-test-addon.php';

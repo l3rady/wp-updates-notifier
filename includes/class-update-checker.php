@@ -252,7 +252,13 @@ class Update_Checker {
 			$original = $entry;
 
 			// Everything waiting that this instance receives, and the part of it that is new to it.
-			$pending      = $this->items_for_instance( $instance, $notification->get_items() );
+			try {
+				$pending = $this->items_for_instance( $instance, $notification->get_items() );
+			} catch ( \Throwable $e ) {
+				// A routing callback threw: this instance fails and the others still go out. Its state stays as it was.
+				$this->last_results[ $id ] = $this->dispatcher->exception_result( $instance, $e, $notification );
+				continue;
+			}
 			$for_instance = array();
 			foreach ( $pending as $item ) {
 				if ( ( $entry['notified'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version() ) {
