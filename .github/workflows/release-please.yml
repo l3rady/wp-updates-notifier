@@ -154,7 +154,8 @@ jobs:
             --signer-workflow "$REPO/.github/workflows/release-please.yml" \
             --source-ref refs/heads/main --source-digest "$SHA"
 
-      # The key is written to the runner's temp directory for this job only and removed at the end.
+      # The key is written to the runner's temp directory and removed as soon as this step ends, whatever the outcome
+      # (the last step removes it again as a fallback).
       - name: Sign the release tag
         env:
           SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
@@ -162,6 +163,7 @@ jobs:
           TAGGER_EMAIL: ${{ vars.RELEASE_TAGGER_EMAIL }}
         run: |
           key="$RUNNER_TEMP/release-signing-key"
+          trap 'rm -f "$key"' EXIT
           ( umask 077; printf '%s\n' "$SIGNING_KEY" > "$key" )
           git config gpg.format ssh
           git config user.signingkey "$key"
