@@ -113,6 +113,15 @@ final class Channel_Instance {
 	}
 
 	/**
+	 * What serialize() keeps: the settings keys, never the values, which can be resolved secrets.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function __serialize(): array {
+		return $this->__debugInfo();
+	}
+
+	/**
 	 * Identifier.
 	 *
 	 * @since 2.0.0
