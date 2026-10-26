@@ -57,16 +57,25 @@ delete_metadata( 'user', 0, 'sc_wpun_channel_form', '', true );
 
 if ( is_multisite() ) {
 	// Settings, state and the event are kept per site, so clean every site.
-	foreach ( get_sites(
-		array(
-			'fields' => 'ids',
-			'number' => 0,
-		)
-	) as $sc_wpun_site_id ) {
-		switch_to_blog( $sc_wpun_site_id );
-		$sc_wpun_uninstall_site();
-		restore_current_blog();
-	}
+	// A page at a time, so a large network does not load every site id at once.
+	$sc_wpun_batch  = 100;
+	$sc_wpun_offset = 0;
+	do {
+		$sc_wpun_site_ids = get_sites(
+			array(
+				'fields' => 'ids',
+				'number' => $sc_wpun_batch,
+				'offset' => $sc_wpun_offset,
+			)
+		);
+		foreach ( $sc_wpun_site_ids as $sc_wpun_site_id ) {
+			switch_to_blog( $sc_wpun_site_id );
+			$sc_wpun_uninstall_site();
+			restore_current_blog();
+		}
+		$sc_wpun_found   = count( $sc_wpun_site_ids );
+		$sc_wpun_offset += $sc_wpun_batch;
+	} while ( $sc_wpun_found === $sc_wpun_batch );
 } else {
 	$sc_wpun_uninstall_site();
 }
