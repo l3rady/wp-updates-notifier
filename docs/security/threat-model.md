@@ -99,7 +99,7 @@ which `Plugin` registers next to the notice. There are no `admin_post_nopriv_*`,
 | `sc_wpun_channel_delete` | `Channels_Tab::handle_delete` | `sc_wpun_channel_delete_<id>` | POST |
 | `sc_wpun_check_now` | `Check_Now::handle` | `sc_wpun_check_now` | POST |
 | `sc_wpun_save_channel` | `Channel_Form::handle_save` | `sc_wpun_save_channel_<new\|edit>_<type\|id>` | POST |
-| `sc_wpun_dismiss_slack_notice` | `Slack_Notice::handle_dismiss` | `sc_wpun_dismiss_slack_notice` | GET (link) |
+| `sc_wpun_dismiss_slack_notice` | `Slack_Notice::handle_dismiss` | `sc_wpun_dismiss_slack_notice` | POST |
 
 **Trust boundary:** any HTTP client can reach `admin-post.php`. Unauthenticated requests fire only `admin_post_nopriv_*`,
 and the plugin registers none. The Semgrep rule `wpun-no-nopriv-hooks` (`make sast`, #216) fails the build if one is added.
@@ -113,8 +113,8 @@ and the plugin registers none. The Semgrep rule `wpun-no-nopriv-hooks` (`make sa
 | R | An administrator denies changing a channel. | Not addressed. WordPress has no audit log, and the plugin doesn't add one. Accepted for 2.0.0. | n/a |
 | D | Repeated Check now or test sends flood a mail service. | Capability and security token limit this to administrators, who are trusted. | As above. |
 
-The dismiss link is a GET that changes state, but only the current user's own meta (`sc_wpun_dismissed_slack_notice`). It
-still needs the security token and the capability.
+The Slack notice dismiss is a POST form like the other actions. It changes only the current user's own meta
+(`sc_wpun_dismissed_slack_notice`), and it needs the security token and the capability. A GET request is refused with a 403.
 
 ### 2. The settings screen
 

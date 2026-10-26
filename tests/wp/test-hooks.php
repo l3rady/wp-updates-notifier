@@ -209,7 +209,7 @@ class Test_Hooks extends WPUN_Test_Case {
 		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_email' );
 		$_POST['id']       = 'email';
 		$this->assertTrue( sc_wpun()->channels_tab()->process_test_send() );
-		$_GET['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
+		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 		$this->assertTrue( sc_wpun()->slack_notice()->dismiss_request() );
 
 		wp_set_current_user( $author );

@@ -269,7 +269,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		$specs = array(
 			$row(
 				$actions['dismiss'],
-				'GET',
+				'POST',
 				$actions['dismiss'],
 				false,
 				array(),

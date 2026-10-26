@@ -50,7 +50,7 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		unset( $_GET['_wpnonce'] );
+		unset( $_GET['_wpnonce'], $_POST['_wpnonce'] );
 	}
 
 	/**
@@ -58,7 +58,7 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 	 */
 	public function tear_down() {
 		sc_wpun()->channels()->unregister( 'slack' );
-		unset( $_GET['_wpnonce'] );
+		unset( $_GET['_wpnonce'], $_POST['_wpnonce'] );
 
 		parent::tear_down();
 	}
@@ -303,8 +303,14 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 		$html = $this->settings_page_html();
 
 		$this->assertStringContainsString( 'sc-wpun-slack-notice', $html );
-		$this->assertStringContainsString( 'admin-post.php?action=sc_wpun_dismiss_slack_notice', $html );
-		$this->assertMatchesRegularExpression( '/<a href="[^"]*sc_wpun_dismiss_slack_notice[^"]*">Dismiss this notice<\/a>/', $html );
+		$this->assertStringNotContainsString( 'admin-post.php?action=sc_wpun_dismiss_slack_notice', $html, 'The dismiss is not a link.' );
+		$this->assertMatchesRegularExpression( '/<form action="[^"]*admin-post\.php" method="post">\s*<input type="hidden" name="action" value="sc_wpun_dismiss_slack_notice" \/>\s*<input type="hidden" name="_wpnonce" value="[a-f0-9]+" \/>\s*<p><button type="submit" class="button-link">Dismiss this notice<\/button><\/p>/', $html );
+
+		$dom = new DOMDocument();
+		$dom->loadHTML( '<?xml encoding="utf-8"?>' . $html, LIBXML_NOERROR | LIBXML_NOWARNING );
+		$xpath = new DOMXPath( $dom );
+		$this->assertSame( 1, $xpath->query( '//div[contains(@class, "sc-wpun-slack-notice")]//form' )->length );
+		$this->assertSame( 0, $xpath->query( '//div[contains(@class, "sc-wpun-slack-notice")]/ancestor::form' )->length, 'The notice is not inside another form.' );
 		$this->assertSame( 1, has_action( 'admin_post_sc_wpun_dismiss_slack_notice', array( sc_wpun()->slack_notice(), 'handle_dismiss' ) ) ? 1 : 0 );
 		$this->assertFalse( has_action( 'admin_notices', array( sc_wpun()->slack_notice(), 'render' ) ) );
 
@@ -315,7 +321,7 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The dismiss link needs a valid nonce and an administrator.
+	 * The dismiss form needs a valid security token in the request body and an administrator.
 	 */
 	public function test_dismissing_needs_a_nonce_and_manage_options() {
 		$this->save_settings(
@@ -328,17 +334,46 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 
 		wp_set_current_user( self::$admin_id );
 		$this->assertFalse( $notice->dismiss_request(), 'No nonce.' );
-		$_GET['_wpnonce'] = 'bad';
+		$_POST['_wpnonce'] = 'bad';
 		$this->assertFalse( $notice->dismiss_request(), 'Bad nonce.' );
 		$this->assertSame( '', get_user_meta( self::$admin_id, 'sc_wpun_dismissed_slack_notice', true ) );
 
 		wp_set_current_user( self::$editor_id );
-		$_GET['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
+		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 		$this->assertFalse( $notice->dismiss_request(), 'Not an administrator.' );
 		$this->assertSame( '', get_user_meta( self::$editor_id, 'sc_wpun_dismissed_slack_notice', true ) );
 
 		$this->expectException( WPDieException::class );
 		$notice->handle_dismiss();
+	}
+
+	/**
+	 * A valid token in the query string (a link) does not dismiss the notice.
+	 */
+	public function test_a_get_request_does_not_dismiss() {
+		$this->save_settings(
+			array(
+				'slack_notifications' => 1,
+				'slack_webhook_url'   => self::SLACK_URL,
+			)
+		);
+		wp_set_current_user( self::$admin_id );
+		$_GET['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
+
+		$this->assertFalse( sc_wpun()->slack_notice()->dismiss_request() );
+		$this->assertSame( '', get_user_meta( self::$admin_id, 'sc_wpun_dismissed_slack_notice', true ) );
+
+		add_filter(
+			'wp_die_handler',
+			static function () {
+				return static function ( $message, $title, $args ) {
+					throw new WPDieException( 'status ' . absint( $args['response'] ) );
+				};
+			}
+		);
+		$this->expectException( WPDieException::class );
+		$this->expectExceptionMessage( 'status 403' );
+		sc_wpun()->slack_notice()->handle_dismiss();
 	}
 
 	/**
@@ -352,7 +387,7 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 			)
 		);
 		wp_set_current_user( self::$admin_id );
-		$_GET['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
+		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 
 		$this->assertTrue( sc_wpun()->slack_notice()->dismiss_request() );
 		$this->assertStringNotContainsString( 'sc-wpun-slack-notice', $this->settings_page_html() );

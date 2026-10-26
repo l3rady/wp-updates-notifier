@@ -154,15 +154,6 @@ class Slack_Notice {
 	}
 
 	/**
-	 * The URL that dismisses the settings page notice for the current user.
-	 *
-	 * @return string
-	 */
-	public function dismiss_url(): string {
-		return wp_nonce_url( admin_url( 'admin-post.php?action=' . self::DISMISS_ACTION ), self::DISMISS_ACTION );
-	}
-
-	/**
 	 * Whether the current user dismissed the settings page notice.
 	 *
 	 * @return bool
@@ -186,7 +177,11 @@ class Slack_Notice {
 			<?php foreach ( explode( "\n\n", $this->message() ) as $paragraph ) : ?>
 				<p><?php echo esc_html( $paragraph ); ?></p>
 			<?php endforeach; ?>
-			<p><a href="<?php echo esc_url( $this->dismiss_url() ); ?>"><?php esc_html_e( 'Dismiss this notice', 'wp-updates-notifier' ); ?></a></p>
+			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::DISMISS_ACTION ); ?>" />
+				<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( self::DISMISS_ACTION ) ); ?>" />
+				<p><button type="submit" class="button-link"><?php esc_html_e( 'Dismiss this notice', 'wp-updates-notifier' ); ?></button></p>
+			</form>
 		</div>
 		<?php
 	}
@@ -194,13 +189,15 @@ class Slack_Notice {
 	/**
 	 * Check a dismiss request and remember it for the current user.
 	 *
+	 * Only a POST request counts: the token is read from the request body, so a link or an image cannot dismiss the notice.
+	 *
 	 * @return bool False if the user may not manage options or the nonce is not valid.
 	 */
 	public function dismiss_request(): bool {
-		if ( ! current_user_can( Settings_Page::capability() ) || ! isset( $_GET['_wpnonce'] ) || ! is_string( $_GET['_wpnonce'] ) ) {
+		if ( ! current_user_can( Settings_Page::capability() ) || ! isset( $_POST['_wpnonce'] ) || ! is_string( $_POST['_wpnonce'] ) ) {
 			return false;
 		}
-		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_GET['_wpnonce'] ) ), self::DISMISS_ACTION ) ) {
+		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), self::DISMISS_ACTION ) ) {
 			return false;
 		}
 
@@ -210,7 +207,7 @@ class Slack_Notice {
 	}
 
 	/**
-	 * Handle the dismiss link (admin-post.php), then go back to the settings page.
+	 * Handle the dismiss form (admin-post.php), then go back to the settings page.
 	 *
 	 * @return void
 	 */
