@@ -2175,7 +2175,7 @@ which <code>Plugin</code> registers next to the notice. There are no <code>admin
 <td><code>sc_wpun_dismiss_slack_notice</code></td>
 <td><code>Slack_Notice::handle_dismiss</code></td>
 <td><code>sc_wpun_dismiss_slack_notice</code></td>
-<td>GET (link)</td>
+<td>POST</td>
 </tr>
 </tbody>
 </table>
@@ -2229,8 +2229,8 @@ and the plugin registers none. The Semgrep rule <code>wpun-no-nopriv-hooks</code
 </tr>
 </tbody>
 </table>
-<p>The dismiss link is a GET that changes state, but only the current user's own meta (<code>sc_wpun_dismissed_slack_notice</code>). It
-still needs the security token and the capability.</p>
+<p>The Slack notice dismiss is a POST form like the other actions. It changes only the current user's own meta
+(<code>sc_wpun_dismissed_slack_notice</code>), and it needs the security token and the capability. A GET request is refused with a 403.</p>
 <h3 id="2-the-settings-screen">2. The settings screen<a class="headerlink" href="#2-the-settings-screen" title="Permanent link">&para;</a></h3>
 <p>The General tab saves through core's <code>options.php</code> (<code>register_setting</code> with <code>sc_wpun_settings_validate</code>, and
 <code>option_page_capability_sc_wpun_settings</code> returns the same capability). The Channels tab and the channel form use the
@@ -2420,7 +2420,7 @@ filters, and supply config values. What the plugin still guarantees when an add-
 <li>payload filters can't inject mail headers (see 5);</li>
 <li>the capability for the screens comes from one filter, <code>sc_wpun_capability</code>, and a non-string or empty value falls back to the default, <code>manage_options</code>, or <code>manage_network_options</code> on multisite.</li>
 </ul>
-<p>Proof: <code>test-extension-api.php</code>, <code>test-dispatcher.php</code>, <code>test-channel-api-constraint.php</code>, <code>test-api-version.php</code>,
+<p>Proof: <code>test-extension-api.php</code>, <code>test-dispatcher.php</code>, <code>test-check-isolation.php</code> (the real update check with a module whose fields throw and with a routing callback that throws), <code>test-channel-api-constraint.php</code>, <code>test-api-version.php</code>,
 <code>test-contract.php</code>, <code>make check-public-api</code> (modules use only the public API), and <code>make check-hooks</code> (every hook is
 documented).</p>
 <h3 id="7-cron-and-on-demand-runs">7. Cron and on-demand runs<a class="headerlink" href="#7-cron-and-on-demand-runs" title="Permanent link">&para;</a></h3>
@@ -2487,8 +2487,8 @@ of the database sets them in <code>wp-config.php</code> constants or environment
 </table>
 <h3 id="9-build-and-release">9. Build and release<a class="headerlink" href="#9-build-and-release" title="Permanent link">&para;</a></h3>
 <p>The release zip is built by <code>bin/build-dist.sh</code> from the files <code>.distignore</code> doesn't exclude, and the build is
-reproducible. release-please opens the release PR with a GitHub App token and, when it is merged, makes a draft release
-with no tag. The <code>release</code> job then runs in the <code>release</code> environment, which is limited to <code>main</code> and needs the
+reproducible with the same image. release-please opens the release PR with a GitHub App token and, when it is merged, makes a draft release
+with no tag. The app's key is held in environments, not the repository: <code>release-please</code>, which is limited to <code>main</code>, and <code>release</code>. The <code>release</code> job then runs in the <code>release</code> environment, which is limited to <code>main</code> and needs the
 maintainer's approval. It builds the zip and its SBOM, attests the zip's provenance and SBOM, creates a signed annotated tag at the release
 commit, uploads the assets and publishes the release. The WordPress.org deploy (#57, not built yet) will run on the
 published release in the <code>wordpress-org</code> environment, which needs a reviewer.</p>
@@ -2517,7 +2517,7 @@ published release in the <code>wordpress-org</code> environment, which needs a r
 <tr>
 <td>I</td>
 <td>A committed secret.</td>
-<td>Secrets live outside the repo. gitleaks scans the history, the tree and the zip.</td>
+<td>Secrets live outside the repo. gitleaks scans the history, the tree and the zip, and the release job scans the zip it attests.</td>
 <td><code>make secrets</code> (gitleaks, #212).</td>
 </tr>
 <tr>
@@ -2529,7 +2529,7 @@ published release in the <code>wordpress-org</code> environment, which needs a r
 <tr>
 <td>S/T</td>
 <td>A tampered zip on GitHub.</td>
-<td>The zip is reproducible from the tag. The release job attests its build provenance and its SBOM, and checks the attestation before it publishes.</td>
+<td>The zip is reproducible from the tag with the same image (<code>SECURITY.md</code>). The release job attests its build provenance and its SBOM, and checks the attestation before it publishes.</td>
 <td><code>make dist-repro</code> on every PR, <code>gh attestation verify</code> in the release job (#226).</td>
 </tr>
 <tr>
