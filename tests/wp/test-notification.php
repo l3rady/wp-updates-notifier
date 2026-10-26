@@ -265,12 +265,12 @@ class Test_Notification extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Markdown link targets are encoded so they cannot end the link early.
+	 * Markdown link targets are cleaned and encoded so they cannot end the link early.
 	 */
 	public function test_markdown_encodes_link_targets() {
 		$markdown = Notification_Renderer::markdown( $this->notification( array( $this->item( array( 'links' => array( 'details' => 'https://example.org/a b(c)<d>' ) ) ) ) ) );
 
-		$this->assertStringContainsString( '[Hello Dolly details](https://example.org/a%20b%28c%29%3Cd%3E)', $markdown );
+		$this->assertStringContainsString( '[Hello Dolly details](https://example.org/a%20b%28c%29d)', $markdown );
 	}
 
 	/**

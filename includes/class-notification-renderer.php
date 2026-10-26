@@ -406,8 +406,8 @@ final class Notification_Renderer {
 	 * @return string
 	 */
 	private static function markdown_url( string $url ): string {
-		$url = trim( $url );
-		if ( '' === self::web_url( $url ) ) {
+		$url = self::web_url( $url );
+		if ( '' === $url ) {
 			return '';
 		}
 
