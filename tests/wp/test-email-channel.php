@@ -309,7 +309,7 @@ class Test_Email_Channel extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A mail wp_mail() cannot send is a failure with the code, the mailer's message and no recipients in the context.
+	 * A mail wp_mail() cannot send is a failure with the code and no recipients in the context.
 	 */
 	public function test_a_wp_mail_failure_is_reported() {
 		// Another plugin rewrites the recipient to something the mailer rejects, which fails inside wp_mail().
@@ -325,9 +325,9 @@ class Test_Email_Channel extends WPUN_Test_Case {
 
 		$this->assertFalse( $result->is_success() );
 		$this->assertSame( 'wp_mail_failed', $result->get_code() );
-		$this->assertNotSame( '', $result->get_message() );
+		$this->assertSame( 'The email could not be sent (wp_mail_failed).', $result->get_message() );
 		$this->assertSame( 0, $this->sent_mail_count() );
-		$this->assertArrayHasKey( 'error_code', $result->get_context() );
+		$this->assertSame( array( 'error_code' => 'wp_mail_failed' ), $result->get_context() );
 		$this->assertStringNotContainsString( 'ops@example.org', wp_json_encode( $result->get_context() ) );
 		$this->assertFalse( has_action( 'wp_mail_failed' ), 'The listener is removed.' );
 		$this->assertFalse( has_filter( 'wp_mail_content_type' ), 'The content type filter is removed.' );
@@ -469,21 +469,22 @@ class Test_Email_Channel extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A failure carries the message the mailer gave.
+	 * A failure does not carry the text the mailer gave, which can name the mail server or a user.
 	 */
-	public function test_a_failure_carries_the_message_of_the_mailer() {
+	public function test_a_failure_does_not_carry_the_text_of_the_mailer() {
 		add_filter(
-			'wp_mail',
-			static function ( $args ) {
-				$args['to'] = 'not-an-address';
-				return $args;
+			'pre_wp_mail',
+			static function () {
+				do_action( 'wp_mail_failed', new WP_Error( 'smtp_error', 'SMTP connect() failed for smtp-user:s3cret@mail.internal.example' ) );
+				return false;
 			}
 		);
 
 		$result = $this->channel->send( $this->notification(), $this->instance() );
 
-		$this->assertStringContainsString( 'recipient', $result->get_message() );
-		$this->assertNotSame( 'WordPress could not send the email.', $result->get_message() );
+		$this->assertSame( 'The email could not be sent (smtp_error).', $result->get_message() );
+		$this->assertSame( array( 'error_code' => 'smtp_error' ), $result->get_context() );
+		$this->assertStringNotContainsString( 's3cret', $result->get_message() . wp_json_encode( $result->get_context() ) );
 	}
 
 	/**

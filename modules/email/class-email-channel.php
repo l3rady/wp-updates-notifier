@@ -302,8 +302,15 @@ class Email_Channel extends Channel {
 			return Delivery_Result::success();
 		}
 
-		$message = $error instanceof \WP_Error && '' !== $error->get_error_message() ? $error->get_error_message() : __( 'WordPress could not send the email.', 'wp-updates-notifier' );
-		$context = $error instanceof \WP_Error ? array( 'error_code' => (string) $error->get_error_code() ) : array();
+		if ( ! $error instanceof \WP_Error ) {
+			return Delivery_Result::failure( __( 'WordPress could not send the email.', 'wp-updates-notifier' ), 'wp_mail_failed' );
+		}
+
+		// The mailer's own text can name the mail server, a user name or a recipient, and results are shown in the admin, so only
+		// the code is kept. The full error still goes to core's `wp_mail_failed` action, where mail logging plugins pick it up.
+		// translators: %s: Error code, for example "wp_mail_failed".
+		$message = sprintf( __( 'The email could not be sent (%s).', 'wp-updates-notifier' ), (string) $error->get_error_code() );
+		$context = array( 'error_code' => (string) $error->get_error_code() );
 
 		return Delivery_Result::failure( $message, 'wp_mail_failed', null, null, $context );
 	}
