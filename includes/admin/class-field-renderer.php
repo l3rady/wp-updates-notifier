@@ -265,7 +265,7 @@ final class Field_Renderer {
 		if ( $saved ) {
 			$described_by = trim( $id . '-saved ' . $described_by );
 		}
-		$html = '<input type="password" class="regular-text" autocomplete="off" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value=""' . self::common( $disabled, $described_by, $error, self::is_required( $field ) && ! $has_value ) . ' />';
+		$html = '<input type="password" class="regular-text" autocomplete="new-password" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value=""' . self::common( $disabled, $described_by, $error, self::is_required( $field ) && ! $has_value ) . ' />';
 
 		if ( $saved ) {
 			$clear = ']' === substr( $name, -1 ) ? substr( $name, 0, -1 ) . '__clear]' : $name . '__clear';

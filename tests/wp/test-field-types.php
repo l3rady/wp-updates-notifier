@@ -402,7 +402,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 				$this->assertStringNotContainsString( 'S3cr3t', $html );
 				$input = $this->xpath( $html )->query( '//input[@id="i"]' )->item( 0 );
 				$this->assertSame( 'password', $input->getAttribute( 'type' ) );
-				$this->assertSame( 'off', $input->getAttribute( 'autocomplete' ) );
+				$this->assertSame( 'new-password', $input->getAttribute( 'autocomplete' ) );
 				$this->assertSame( 'regular-text', $input->getAttribute( 'class' ) );
 				$this->assertSame( '', $input->getAttribute( 'value' ) );
 			}
