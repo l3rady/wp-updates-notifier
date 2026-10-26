@@ -87,7 +87,7 @@ coverage: ## Line coverage of the plugin by the WordPress suite (pcov, single si
 	@mkdir -p build/coverage
 	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
 
-# Mutation testing with Infection (slow, so it runs nightly in CI and by hand, not on pull requests): it changes the
+# Mutation testing with Infection (slow, so it is run by hand before a release, not in CI): it changes the
 # code and checks that a test fails. THREADS PHPUnit processes run at once, each on tables of its own (TEST_TOKEN).
 # ARGS goes to Infection, e.g. make mutation ARGS="--filter=includes/class-state.php". The floors are in
 # infection.json5; see CONTRIBUTING.md.

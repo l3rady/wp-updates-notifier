@@ -111,7 +111,7 @@ cover the changed line. A mutant that no test fails on has survived: either a te
 nobody can observe.
 
 ```sh
-make mutation                                            # everything: about 35 minutes with the default 4 threads on a 16-core machine, run nightly in CI
+make mutation                                            # everything: about 35 minutes with the default 4 threads on a 16-core machine
 make mutation THREADS=12                                 # more or fewer PHPUnit processes at once (4 by default)
 make mutation ARGS="--filter=includes/class-state.php"   # one file (--filter also takes a directory); a few minutes
 make mutation ARGS="includes/class-state.php includes/class-routing.php"   # several files
@@ -126,11 +126,10 @@ Infection is a pinned PHAR in the `wp-tests-coverage` image (`INFECTION_VERSION`
 `docker/Dockerfile`, with the steps to verify a new release), not a Composer dependency: it needs PHP 8.2, and the
 project's Composer platform is PHP 7.4.
 
-It is slow, so it runs in CI every night and on demand (the `mutation` job of `ci.yml`, **Run workflow**), never on a
-pull request. Like the nightly `wordpress-trunk` job it is listed in `ci-gate` but skipped on pull requests, so it
-never blocks one. The logs are kept as the `mutation-report` artifact for 14 days.
+It is slow (over 45 minutes on a GitHub runner), so CI does not run it. Run it on your machine before a release (see
+[Releases](#releases)), and on the files you changed when you work on the tests.
 
-**The floors.** `infection.json5` sets `minMsi` and `minCoveredMsi`; `make mutation` and the nightly job fail below
+**The floors.** `infection.json5` sets `minMsi` and `minCoveredMsi`; `make mutation` fails below
 them. They are 91 and 92: the scores were 92.98% (MSI) and 93.52% (covered MSI) when set, on 5322 mutants of which
 150 are ignored, and two full runs of the same code differed by about a point (timing under load), so the floors sit
 a point below. MSI counts the mutants of lines no test runs as missed, covered MSI only those the tests run. They
@@ -343,6 +342,11 @@ time zone, and fails if the SHA-256 differs. `make dist` also writes the
 Before merging the Release PR, run the OWASP ZAP scan with `make dast` (about
 11 minutes, Docker only). It is too slow for CI. It must finish with no Medium
 or High alerts. The report is in `security-reports/zap-report.html`.
+
+Run `make mutation` before merging the Release PR too (about 35 minutes, Docker
+only; see [Mutation testing](#mutation-testing)). It is too slow for CI. It must
+pass the floors in `infection.json5`; read the surviving mutants in
+`build/infection/infection.log` and add tests for the ones that matter.
 
 Also run `make e2e-upgrade` before merging the Release PR (about 1 minute, Docker
 and the network: it installs the real 1.6.0 from WordPress.org, so CI does not

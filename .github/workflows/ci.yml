@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-  # Nightly: the suite against WordPress trunk, to notice core changes before a release, and mutation testing.
+  # Nightly: the suite against WordPress trunk, to notice core changes before a release.
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
@@ -301,34 +301,12 @@ jobs:
       - name: Run the tests against trunk
         run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
 
-  # Mutation testing (Infection, on the WordPress suite with pcov): slow, so it runs every night and by hand, never on a
-  # pull request. Fails below the minimums in infection.json5; the logs are kept as an artifact.
-  mutation:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/docker-cache
-      - name: Mutation testing (Infection)
-        run: make mutation
-      - name: Keep the logs
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: mutation-report
-          path: build/infection/
-          if-no-files-found: ignore
-          retention-days: 14
-
   # The only check this workflow requires: it fails unless every job above passed or was skipped. A job the changes
   # job skipped counts as passed, which a required check on the job itself would not. Add every new job to `needs`
   # (tests/bin/test-ci-changes.sh checks it).
   ci-gate:
     if: always()
-    needs: [changes, phpstan, rector, release-scripts, dist, dist-repro, plugin-check, smoke, wordpress, coverage, a11y, e2e, wordpress-trunk, mutation]
+    needs: [changes, phpstan, rector, release-scripts, dist, dist-repro, plugin-check, smoke, wordpress, coverage, a11y, e2e, wordpress-trunk]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

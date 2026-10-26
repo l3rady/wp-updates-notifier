@@ -39,7 +39,7 @@ flowchart LR
     end
 ```
 
-CI runs every target in the diagram on pull requests, except `make dast` and `make mutation`. `make dast` takes about 11 minutes, so you run it yourself before a release. `make mutation` is slow, so CI runs it every night.
+CI runs every target in the diagram on pull requests, except `make dast` and `make mutation`. `make dast` takes about 11 minutes, so you run it yourself before a release. `make mutation` takes about 35 minutes, so you run it yourself before a release too.
 
 ## WordPress tests
 
@@ -63,7 +63,7 @@ CI runs every target in the diagram on pull requests, except `make dast` and `ma
 
 **Floors.** `minMsi` and `minCoveredMsi` in `infection.json5` were 92.98% and 93.52% when set and only go up; [CONTRIBUTING.md](https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md) says how to raise them and how to ignore a mutant that cannot be observed. The code that decides whether a notification is sent has no survivors that are not ignored with a reason.
 
-**CI.** The `mutation` job in `ci.yml` runs `make mutation` every night and on **Run workflow**, never on a pull request, and keeps the log as the `mutation-report` artifact for 14 days. It is not part of `ci-gate`, like the `wordpress-trunk` job.
+**CI.** None: it takes over 45 minutes on a GitHub runner. Run `make mutation` before each release, as the release steps in [CONTRIBUTING.md](https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md#releases) say.
 
 ## Security tests
 

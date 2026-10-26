@@ -18,7 +18,7 @@
 # A path can match several rules and all of them apply. The table below is the single source of truth;
 # tests/bin/test-ci-changes.sh checks it against the workflows. Only the jobs listed in ALL_JOBS are in the map. The
 # jobs that always run (workflows, secrets, commits) and the ones that never run on pull requests (images,
-# wordpress-trunk, mutation, deploy) are not in it.
+# wordpress-trunk, deploy) are not in it.
 set -eu
 
 # Every job the map controls: the job ids of the workflows, which are unique across them.
@@ -142,7 +142,7 @@ bin/build-assets.sh       -
 bin/coverage-check.php    coverage phpcs smoke
 tests/bin/test-coverage-check.sh coverage
 
-# make mutation (Infection) runs nightly and by hand, never on a pull request, so its settings affect no pull request job.
+# make mutation (Infection) runs by hand before a release, never in CI, so its settings affect no job.
 infection.json5           -
 docker/infection-bootstrap.php -
 
