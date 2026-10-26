@@ -78,8 +78,7 @@
                 ".*\\$given = array\\( \\(string\\) \\$value \\);.*",
                 ".*\\$item = trim\\( \\(string\\) \\$item \\);.*",
                 ".*\\$admin_email = \\(string\\) get_option\\( 'admin_email' \\);.*",
-                // Known limitation, reported with the mutation testing work: an enum option named with digits (a schedule
-                // such as "7200") comes back from outside as a rejected value, so this cast never sees a number.
+                // Enum_Field::cast_external() already returns the key as a string, so this cast never sees a number.
                 ".*\\$settings\\['frequency'\\] = \\(string\\) \\$frequency->get_value\\(\\);.*"
             ]
         },

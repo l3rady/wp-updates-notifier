@@ -253,4 +253,21 @@ class Test_Frequencies extends WPUN_Test_Case {
 
 		$this->assertSame( 7200, \WPUN\Frequencies::all()['every_two_hours']['interval'] );
 	}
+
+	/**
+	 * A schedule named with digits is never offered: wp_get_schedules() merges with array_merge(), which renumbers
+	 * its key, so WordPress cannot schedule it either.
+	 */
+	public function test_a_schedule_named_with_digits_is_not_offered() {
+		$this->register_schedule( '7200', 7200 );
+		add_filter(
+			'sc_wpun_frequencies',
+			static function () {
+				return array( 'hourly', '7200' );
+			}
+		);
+
+		$this->assertArrayNotHasKey( '7200', wp_get_schedules() );
+		$this->assertSame( array( 'hourly' ), array_keys( \WPUN\Frequencies::all() ) );
+	}
 }
