@@ -250,18 +250,11 @@ final class Field_Types {
 					continue;
 				}
 				if ( self::is_empty( $value ) ) {
-					if ( array_key_exists( $name, $stored ) ) {
-						// Nothing new was typed: the saved value stays as it is.
-						$value = $stored[ $name ];
-						if ( $required && self::is_empty( $value ) ) {
-							return self::required_error( $name, $field );
-						}
-						$clean[ $name ] = $value;
-						continue;
+					$kept = self::keep_secret( $name, $field, $stored );
+					if ( $kept instanceof \WP_Error ) {
+						return $kept;
 					}
-					if ( $required ) {
-						return self::required_error( $name, $field );
-					}
+					$clean = array_merge( $clean, $kept );
 					continue;
 				}
 			} elseif ( ! $present ) {
@@ -292,6 +285,16 @@ final class Field_Types {
 			$value = call_user_func( $handler['sanitize'], $value, $schema );
 			if ( $value instanceof \WP_Error ) {
 				return self::with_field( $value, $name );
+			}
+
+			// A secret that is nothing once cleaned (only spaces, say) is the same as nothing typed, when there is a stored value to keep.
+			if ( self::is_secret( $field ) && self::is_empty( $value ) && array_key_exists( $name, $stored ) ) {
+				$kept = self::keep_secret( $name, $field, $stored );
+				if ( $kept instanceof \WP_Error ) {
+					return $kept;
+				}
+				$clean = array_merge( $clean, $kept );
+				continue;
 			}
 
 			if ( $required && self::is_empty( $value ) ) {
@@ -625,6 +628,29 @@ final class Field_Types {
 	 */
 	private static function is_empty( $value ): bool {
 		return '' === $value || null === $value || array() === $value;
+	}
+
+	/**
+	 * What a secret becomes when nothing was typed for it: its stored value stays.
+	 *
+	 * @param string               $name   Name.
+	 * @param array<string, mixed> $field  Field schema.
+	 * @param array<string, mixed> $stored The settings stored for the instance.
+	 *
+	 * @return array<string, mixed>|\WP_Error The stored value by name, or nothing when none is stored. A required error when the field is required and has no value.
+	 */
+	private static function keep_secret( string $name, array $field, array $stored ) {
+		$required = true === ( $field['required'] ?? false );
+
+		if ( array_key_exists( $name, $stored ) ) {
+			if ( $required && self::is_empty( $stored[ $name ] ) ) {
+				return self::required_error( $name, $field );
+			}
+
+			return array( $name => $stored[ $name ] );
+		}
+
+		return $required ? self::required_error( $name, $field ) : array();
 	}
 
 	/**

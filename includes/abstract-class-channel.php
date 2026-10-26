@@ -51,7 +51,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `textarea`: a string, shown as a textarea.
  * - `url`: a string, shown as a URL input. Empty, or an http or https address with a host (no `javascript:`, `ftp:` or relative URLs).
  * - `email_list`: addresses separated by commas, shown as a text input. One bad address makes the field invalid. Stored joined with `,`.
- * - `secret`: a string, shown as a password input, trimmed and with control characters removed. The saved value is never output. Submitting nothing keeps the saved value, and a
+ * - `secret`: a string, shown as a password input, trimmed and with control characters removed. The saved value is never output. Submitting nothing (or only blanks) keeps the saved value, and a
  *   `<name>__clear` setting that is true (the "Clear" checkbox of the form) empties it. `'secret' => true` does the same for the other
  *   types.
  * - `number`: a whole number, shown as a number input, within `min` and `max`. An empty value is left out, so the stored value or the
@@ -207,7 +207,7 @@ abstract class Channel {
 	 * WP_Error naming the field; unknown keys in a list are dropped. The other types are checked
 	 * as described in the class description, and `required` and `validate_callback` are enforced.
 	 * A field missing from the submission stays missing, unless it is required and nothing is stored.
-	 * A secret keeps its stored value when nothing is submitted for it, and is emptied by a true
+	 * A secret keeps its stored value when nothing (or only blanks) is submitted for it, and is emptied by a true
 	 * `<name>__clear` setting, which is never part of the result. A field of a type nothing handles is dropped.
 	 * A channel can override it to check more, and return a WP_Error whose error data names the field
 	 * at fault. The fields are those of get_form_fields(), so a field added by the `sc_wpun_channel_fields`
