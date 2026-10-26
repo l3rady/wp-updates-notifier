@@ -1,0 +1,2677 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentation for WP Updates Notifier, the WordPress plugin that tells you when updates are waiting.">
+      
+      
+      
+        <link rel="canonical" href="https://wpun.cariss.dev/latest/developers/writing-a-module/">
+      
+      
+        <link rel="prev" href="../translations/">
+      
+      
+        <link rel="next" href="../item-types-and-routing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/brand/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Writing a module - WP Updates Notifier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#writing-a-notification-module" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="WP Updates Notifier" class="md-header__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            WP Updates Notifier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Writing a module
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="solarized-dark" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="solarized-light" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="WP Updates Notifier" class="md-nav__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    WP Updates Notifier
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../users/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/channels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/how-notifications-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How notifications work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings-in-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests and checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../translations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing a module
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing a module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-plugin-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. The plugin file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-the-channel-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. The channel class
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. The channel class">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#declare-the-api-version-you-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declare the API version you need
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-settings-the-field-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Settings: the field schema
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Settings: the field schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reminders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reminders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secrets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-field-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom field types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-delivering-send" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Delivering: send()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Delivering: send()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The message
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rate-limits-and-retries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits and retries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#length-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Length limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-deliveries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate deliveries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Testing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Testing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#checking-your-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checking your code
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accessibility
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Accessibility">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prefer-schema-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefer schema fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-you-draw-your-own-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you draw your own fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#errors-from-custom-markup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors from custom markup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#choosing-a-display" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing a display
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#labels-and-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Labels and text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checking
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../item-types-and-routing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Item types and routing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hook reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stability and deprecation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../decisions/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Decisions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0001-licence-gpl-2-or-later/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0001 Licence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0002-php-7-4-and-wordpress-6-7-minimums/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0002 PHP and WordPress minimums
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0003-rename-main-file-without-a-migration-stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0003 Main file rename
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0004-public-module-api-and-dogfooding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0004 Module API and dogfooding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0005-settings-state-and-channels-in-separate-options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0005 Separate options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0006-drop-slack-in-2-0-0-and-keep-its-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0006 Slack dropped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0007-settings-and-secrets-from-outside-the-database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0007 Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0008-single-sites-only-in-2-0-0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0008 Single sites only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0009-no-lock-against-overlapping-update-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0009 No update check lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0010-leave-wordpress-auto-update-emails-alone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0010 WordPress update emails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0011-accessibility-wcag-2-2-aa-without-javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0011 Accessibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0012-security-tooling-is-free-deterministic-and-scripted/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0012 Security tooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0013-verifiable-release-artefacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0013 Verifiable releases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0014-documentation-site-on-a-custom-subdomain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0014 Documentation site
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0015-conventional-commits-and-linear-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0015 Commits and history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0017-bundle-l10n-php-translations-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0017 Bundled translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0018-generate-readme-at-build-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0018 Generated readme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/ai-review-2.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI review for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/audit-2.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security audit for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-plugin-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. The plugin file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-the-channel-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. The channel class
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. The channel class">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#declare-the-api-version-you-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declare the API version you need
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-settings-the-field-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Settings: the field schema
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Settings: the field schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reminders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reminders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secrets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-field-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom field types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-delivering-send" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Delivering: send()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Delivering: send()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The message
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rate-limits-and-retries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits and retries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#length-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Length limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-deliveries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate deliveries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Testing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Testing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#checking-your-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checking your code
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accessibility
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Accessibility">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prefer-schema-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefer schema fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-you-draw-your-own-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you draw your own fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#errors-from-custom-markup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors from custom markup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#choosing-a-display" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing a display
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#labels-and-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Labels and text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checking
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="writing-a-notification-module">Writing a notification module<a class="headerlink" href="#writing-a-notification-module" title="Permanent link">&para;</a></h1>
+<p>A notification module adds a channel type: a new way of delivering update notifications, such as a chat service, an SMS gateway or a ticketing system. Site owners then create any number of instances of it on the <strong>Channels</strong> tab, each with its own settings and routing.</p>
+<p>This guide builds one step by step. The finished result is the example add-on in <a href="https://github.com/l3rady/wp-updates-notifier/tree/main/examples/wpun-example-channel/"><code>examples/wpun-example-channel/</code></a>, which posts to a chat webhook. Copy it as a starting point. Two more references:</p>
+<ul>
+<li><a href="https://github.com/l3rady/wp-updates-notifier/tree/main/modules/email/"><code>modules/email/</code></a>: the built-in email channel. It is written exactly like an add-on, using only the public API.</li>
+<li><a href="https://github.com/l3rady/wp-updates-notifier/tree/main/tests/fixtures/plugins/wpun-test-addon/"><code>tests/fixtures/plugins/wpun-test-addon/</code></a>: the test add-on, which exercises every extension point (custom field types, configuration sources, short-circuited sends).</li>
+</ul>
+<h2 id="1-the-plugin-file">1. The plugin file<a class="headerlink" href="#1-the-plugin-file" title="Permanent link">&para;</a></h2>
+<p>A module is an ordinary WordPress plugin. Its header declares the dependency, so WordPress 6.5 and later will not activate it without WP Updates Notifier:</p>
+<div class="highlight"><pre><span></span><code><span class="x">/**</span>
+<span class="x"> * Plugin Name:       My Chat Channel</span>
+<span class="x"> * Requires at least: 6.7</span>
+<span class="x"> * Requires PHP:      7.4</span>
+<span class="x"> * Requires Plugins:  wp-updates-notifier</span>
+<span class="x"> * Requires WPUN API: ^1.0</span>
+<span class="x"> */</span>
+</code></pre></div>
+<p><code>Requires WPUN API</code> is optional. It takes the same constraint syntax as <code>sc_wpun_api_satisfies()</code>, and WP Updates Notifier shows a notice below the add-on on the <strong>Plugins</strong> screen, before and after activation, when the site's API version does not satisfy it or the value cannot be read. It does not block activation.</p>
+<p><code>Requires Plugins</code> makes WordPress check that WP Updates Notifier is active, not its version. Three checks cover the version: the header (the Plugins screen notice), the boot check below (code outside the channel, with your own notice) and <code>get_api_constraint()</code> (the channel itself, enforced by the registry, see <a href="#declare-the-api-version-you-need">Declare the API version you need</a>). Check the API version before using anything, and register the channel on the <code>sc_wpun_register_channels</code> action:</p>
+<div class="highlight"><pre><span></span><code><span class="x">namespace My_Chat_Channel;</span>
+
+<span class="x">function boot(): void {</span>
+<span class="x">    if ( ! function_exists( 'sc_wpun_api_satisfies' ) || ! \sc_wpun_api_satisfies( '^1.0' ) ) {</span>
+<span class="x">        add_action( 'admin_notices', __NAMESPACE__ . '\\api_notice' );</span>
+<span class="x">        return;</span>
+<span class="x">    }</span>
+
+<span class="x">    require_once __DIR__ . '/class-my-chat-channel.php';</span>
+
+<span class="x">    add_action(</span>
+<span class="x">        'sc_wpun_register_channels',</span>
+<span class="x">        static function ( \WPUN\Channel_Registry $registry ) {</span>
+<span class="x">            $registry-&gt;register( new My_Chat_Channel() );</span>
+<span class="x">        }</span>
+<span class="x">    );</span>
+<span class="x">}</span>
+<span class="x">add_action( 'plugins_loaded', __NAMESPACE__ . '\\boot' );</span>
+</code></pre></div>
+<p><code>sc_wpun_api_satisfies( '^1.0' )</code> is true for any 1.x API from 1.0.0 on. Ask for the oldest version that has everything you use, and use a wider constraint such as <code>&gt;=1.0 &lt;3.0</code> only for versions you have tested. See <a href="../stability/">Stability and deprecation</a>.</p>
+<p>The check in <code>boot()</code> is for everything outside the channel. The registry already checks the channel itself (see the next step), but only your code knows what else it does: hooks your add-on adds on its own, or its own settings screen, would still run against an API that is too old. Keep the explicit <code>sc_wpun_api_satisfies()</code> check for those, and for showing your own notice.</p>
+<p>Do the work on <code>plugins_loaded</code>, not when the file is included. By then every active plugin is loaded, whatever order WordPress loaded them in.</p>
+<h2 id="2-the-channel-class">2. The channel class<a class="headerlink" href="#2-the-channel-class" title="Permanent link">&para;</a></h2>
+<p>Extend <code>WPUN\Channel</code>. Three methods are required:</p>
+<div class="highlight"><pre><span></span><code><span class="x">use WPUN\Channel;</span>
+<span class="x">use WPUN\Channel_Instance;</span>
+<span class="x">use WPUN\Delivery_Result;</span>
+<span class="x">use WPUN\Notification;</span>
+
+<span class="x">class My_Chat_Channel extends Channel {</span>
+
+<span class="x">    public function get_type(): string {</span>
+<span class="x">        return 'my_chat';</span>
+<span class="x">    }</span>
+
+<span class="x">    public function get_label(): string {</span>
+<span class="x">        return __( 'My Chat', 'my-chat-channel' );</span>
+<span class="x">    }</span>
+
+<span class="x">    public function send( Notification $notification, Channel_Instance $instance ): Delivery_Result {</span>
+<span class="x">        // See step 4.</span>
+<span class="x">    }</span>
+<span class="x">}</span>
+</code></pre></div>
+<ul>
+<li><code>get_type()</code> is the unique key of the channel: lower case letters, digits and underscores. Instances are stored under it, so never change it once people use your module. Registration fails (returns false) for an invalid or duplicate type.</li>
+<li><code>get_label()</code> is the name site owners pick from when adding a channel.</li>
+</ul>
+<p>The optional methods:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Default</th>
+<th>Override to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_description()</code></td>
+<td>empty</td>
+<td>Describe the channel in one sentence on the "Add channel" screen.</td>
+</tr>
+<tr>
+<td><code>get_fields()</code></td>
+<td>no fields</td>
+<td>Describe the settings of an instance. See step 3.</td>
+</tr>
+<tr>
+<td><code>get_api_constraint()</code></td>
+<td>empty: no check</td>
+<td>Declare the API versions the channel needs, for example <code>'^1.0'</code>. The registry refuses the channel on a site whose API does not satisfy it. See "Declare the API version you need" below.</td>
+</tr>
+<tr>
+<td><code>supports( $feature )</code></td>
+<td>false</td>
+<td>Return true for <code>test_message</code> to get a "Send test message" button.</td>
+</tr>
+<tr>
+<td><code>validate_settings( $settings, $stored )</code></td>
+<td>checks every field against its schema</td>
+<td>Add checks that span several fields. Call <code>parent::validate_settings()</code> first.</td>
+</tr>
+<tr>
+<td><code>render_settings( $instance )</code></td>
+<td>null: the form is drawn from the schema</td>
+<td>Draw the fields yourself. Rarely needed, and you then take over the accessibility of the fields: see <a href="#accessibility">Accessibility</a>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="declare-the-api-version-you-need">Declare the API version you need<a class="headerlink" href="#declare-the-api-version-you-need" title="Permanent link">&para;</a></h3>
+<p>Override <code>get_api_constraint()</code> to say which API versions the channel works with. It takes the same constraint syntax as <code>sc_wpun_api_satisfies()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="x">public function get_api_constraint(): string {</span>
+<span class="x">    return '^1.0';</span>
+<span class="x">}</span>
+</code></pre></div>
+<p>When the channel is registered, the registry checks the constraint against <code>sc_wpun_api_version()</code>. If it is not satisfied, or cannot be read, <code>register()</code> returns false, the channel is not available, and the <code>sc_wpun_channel_rejected</code> action fires. Site owners see "Unavailable: ..." for the channel's instances on the <strong>Channels</strong> tab, a notice on the plugin's settings page and a Site Health recommendation. Their settings are kept, so everything works again once WP Updates Notifier is updated. See <a href="../stability/#the-api-version">Stability and deprecation</a>.</p>
+<h2 id="3-settings-the-field-schema">3. Settings: the field schema<a class="headerlink" href="#3-settings-the-field-schema" title="Permanent link">&para;</a></h2>
+<p><code>get_fields()</code> returns an array keyed by setting name. The plugin draws the form on the Channels tab, validates what is submitted, stores it and supplies it to <code>send()</code> through the instance. You write no form, security token or saving code.</p>
+<div class="highlight"><pre><span></span><code><span class="x">public function get_fields(): array {</span>
+<span class="x">    return array(</span>
+<span class="x">        'webhook_url' =&gt; array(</span>
+<span class="x">            'type'        =&gt; 'url',</span>
+<span class="x">            'label'       =&gt; __( 'Webhook address', 'my-chat-channel' ),</span>
+<span class="x">            'description' =&gt; __( 'The address the chat service gave you.', 'my-chat-channel' ),</span>
+<span class="x">            'required'    =&gt; true,</span>
+<span class="x">            'secret'      =&gt; true,</span>
+<span class="x">        ),</span>
+<span class="x">        'username'    =&gt; array(</span>
+<span class="x">            'type'  =&gt; 'text',</span>
+<span class="x">            'label' =&gt; __( 'Name to post as', 'my-chat-channel' ),</span>
+<span class="x">        ),</span>
+<span class="x">    );</span>
+<span class="x">}</span>
+</code></pre></div>
+<p>The types are <code>text</code>, <code>textarea</code>, <code>url</code>, <code>email_list</code>, <code>secret</code>, <code>number</code>, <code>boolean</code> and <code>enum</code> (with <code>checkbox</code> and <code>select</code> as aliases). The full list of keys (<code>default</code>, <code>required</code>, <code>secret</code>, <code>show_external</code>, <code>options</code>, <code>multiple</code>, <code>display</code>, <code>min</code>, <code>max</code>, <code>sanitize_callback</code>, <code>validate_callback</code> and more) is documented on the <code>WPUN\Channel</code> class in <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/includes/abstract-class-channel.php"><code>includes/abstract-class-channel.php</code></a>.</p>
+<p>A field with <code>'required' =&gt; true</code> is also marked in the form: "(required)" after its label (not for a <code>boolean</code>, which is always valid) and <code>aria-required="true"</code> on its control. For a group of radio buttons the fieldset gets <code>role="radiogroup"</code> to carry it; a group of checkboxes has only the text. A <code>secret</code> that already has a saved value keeps the text but not the attribute, as leaving it empty is valid. A custom field type registered with <code>sc_wpun_field_types</code> receives the schema in its <code>render</code> callable, so read <code>required</code> there and do the same.</p>
+<p>Every instance also has a label, an on/off switch and routing (including the choice of reminders, see below). The plugin adds these; don't put them in <code>get_fields()</code>.</p>
+<h3 id="reminders">Reminders<a class="headerlink" href="#reminders" title="Permanent link">&para;</a></h3>
+<p>A site owner can ask for reminders of updates that are still waiting (the <code>remind</code> routing key). Your <code>send()</code> then receives a <code>Notification</code> whose <code>is_reminder()</code> is true. It lists every update that is still waiting for the instance, so most of its items were delivered before.</p>
+<ul>
+<li>Don't drop an item because you have sent it already. If your channel de-duplicates by item, skip that check when <code>is_reminder()</code> is true.</li>
+<li>The built-in renderers only change the first line. If you build your own message, say that it is a reminder, for example in the title.</li>
+<li>In every other way a reminder is a normal notification. <code>is_test()</code> is false.</li>
+</ul>
+<h3 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h3>
+<p>The default <code>validate_settings()</code> runs, for every field: its <code>sanitize_callback</code>, the sanitiser of its type, then <code>required</code> and its <code>validate_callback</code>. An error is a <code>WP_Error</code> whose data names the field, and the form shows it next to that field. Override <code>validate_settings()</code> only for rules that involve several fields:</p>
+<div class="highlight"><pre><span></span><code><span class="x">public function validate_settings( array $settings, array $stored = array() ) {</span>
+<span class="x">    $clean = parent::validate_settings( $settings, $stored );</span>
+<span class="x">    if ( is_wp_error( $clean ) ) {</span>
+<span class="x">        return $clean;</span>
+<span class="x">    }</span>
+<span class="x">    if ( '' !== ( $clean['username'] ?? '' ) &amp;&amp; '' === ( $clean['icon_url'] ?? '' ) ) {</span>
+<span class="x">        return new \WP_Error( 'invalid_field', __( 'Set an icon when you set a name.', 'my-chat-channel' ), array( 'field' =&gt; 'icon_url' ) );</span>
+<span class="x">    }</span>
+<span class="x">    return $clean;</span>
+<span class="x">}</span>
+</code></pre></div>
+<h3 id="secrets">Secrets<a class="headerlink" href="#secrets" title="Permanent link">&para;</a></h3>
+<p>Mark anything that grants access as secret: API tokens, passwords, and webhook URLs that carry a token. Use the <code>secret</code> type, or <code>'secret' =&gt; true</code> on a field of any type, including a custom one. A secret:</p>
+<ul>
+<li>is never written back into the form once saved. The form shows that a value is saved, leaving the field empty keeps it, and a "Clear" checkbox empties it;</li>
+<li>is never handed to the field's renderer: a custom type's <code>render</code> callable gets <code>'1'</code> as the value when one is saved and <code>''</code> when not;</li>
+<li>is still stored in the database in plain text, like other plugin settings. Site owners who want it out of the database can supply it from <code>wp-config.php</code>, an environment variable or a secrets service instead. See <a href="../configuration-sources/">Configuration sources</a>. Your fields support this automatically, for example <code>SC_WPUN_CHANNEL_OPS_CHAT__WEBHOOK_URL</code>.</li>
+</ul>
+<p>A value that comes from outside the database (a constant, an environment variable or a source) is not printed on the edit screen unless the field sets <code>'show_external' =&gt; true</code>: the screen then only says "Set by ...". This holds for every type except <code>number</code>, <code>boolean</code> and <code>enum</code>, so a custom type registered with <code>sc_wpun_field_types</code> is not given the value either. Flag secrets with <code>secret</code>, and set <code>show_external</code> only for harmless values such as an address or a name.</p>
+<p>Instances that reach hooks and your <code>send()</code> hold the resolved settings, secrets included. <code>var_dump()</code>, <code>print_r()</code> and <code>serialize()</code> of a <code>Channel_Instance</code> show the setting names with <code>[redacted]</code> values (<code>var_export()</code> and Reflection don't), but don't log or dump the settings yourself.</p>
+<p>Your own code must keep secrets secret too. Never put one in a <code>Delivery_Result</code> message, an admin notice or a log. Results are shown to administrators and stored. The error messages of the HTTP API can contain the URL that was requested, so don't pass them on as they are.</p>
+<h3 id="custom-field-types">Custom field types<a class="headerlink" href="#custom-field-types" title="Permanent link">&para;</a></h3>
+<p>If none of the types fits, register one with the <code>sc_wpun_field_types</code> filter. Each entry has a <code>render</code> callable that returns the escaped markup of the control and a <code>sanitize</code> callable that returns the clean value or a <code>WP_Error</code>. The test add-on's <code>test_colour</code> type in <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/tests/fixtures/plugins/wpun-test-addon/class-test-form-channel.php"><code>class-test-form-channel.php</code></a> is a complete example, and the <a href="../hooks/#sc_wpun_field_types">hook reference</a> documents both signatures.</p>
+<p>Other plugins can add fields to your channel with <code>sc_wpun_channel_fields</code>. The fields your code receives are those of <code>get_form_fields()</code>, which applies that filter, so read settings by name and don't assume the list is only yours.</p>
+<h2 id="4-delivering-send">4. Delivering: <code>send()</code><a class="headerlink" href="#4-delivering-send" title="Permanent link">&para;</a></h2>
+<p><code>send()</code> is called once per enabled instance, with a <code>WPUN\Notification</code> holding only the items routed to that instance and not yet delivered to it. Read the instance's settings with <code>$instance-&gt;get_setting( 'name', $fallback )</code>.</p>
+<p>It must always return a <code>WPUN\Delivery_Result</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="x">return Delivery_Result::success();</span>
+
+<span class="x">return Delivery_Result::failure( $message, $code, $http_status, $retry_after, $context );</span>
+</code></pre></div>
+<p>On success, the plugin records the items as delivered to this instance. On failure it records nothing, so the same items go out again on the next scheduled check. Other instances are not affected. The message of the latest result, success or failure, is shown on the Channels tab, so write it for the site owner: say what happened, in a sentence.</p>
+<p>If <code>send()</code> throws, the dispatcher catches the exception, records a failure with the code <code>exception</code> and goes on with the other instances. Don't rely on it: catch what you expect and return a failure with a message the site owner can act on.</p>
+<h3 id="the-message">The message<a class="headerlink" href="#the-message" title="Permanent link">&para;</a></h3>
+<p><code>$notification</code> gives you the site name and URL, the link to the Updates screen, the items (<code>get_items()</code>, each a <code>WPUN\Notification_Item</code> with name, versions, links and notes), and <code>is_test()</code> for a test message. <code>WPUN\Notification_Renderer</code> turns a notification into <code>plain_text()</code>, <code>markdown()</code> or <code>html()</code>, with the values escaped for that format. Use it unless your service needs something special. <code>markdown()</code> targets CommonMark (backslash escapes). A service with its own dialect, for example Slack mrkdwn, which ignores backslashes and needs <code>&amp;</code>, <code>&lt;</code> and <code>&gt;</code> turned into entities, must escape for that dialect itself; a Slack renderer comes with the Slack module, not in 2.0.0. Links whose URL is not http or https are rendered as plain text. Site code can change the plain text with <code>sc_wpun_message_text</code>.</p>
+<p>Pass what you are about to send through <code>$this-&gt;filter_payload( $payload, $notification, $instance )</code>. It applies the <code>sc_wpun_channel_payload</code> and <code>sc_wpun_channel_payload_{type}</code> filters, so site code can adjust your payload without forking your module. A filter can return anything, so check the result still has the shape you need. Document the shape of your payload for your users.</p>
+<h3 id="http">HTTP<a class="headerlink" href="#http" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Use <code>wp_safe_remote_post()</code> for any address a site owner typed in. It refuses addresses on the server's own network, which stops your webhook field from being used to reach internal services. Use <code>wp_remote_post()</code> only for your service's fixed API address. It also refuses ports other than 80, 443 and 8080. To try your module against a receiver on a local network, allow that host on your development site with the <code>http_request_host_is_external</code> filter. Don't ship that filter.</li>
+<li>Set a short <code>timeout</code> (10 seconds or less). The check delivers to every instance in turn, during a cron request.</li>
+<li>Check the HTTP status. A <code>WP_Error</code> or a status outside 2xx is a failure.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="x">$response = wp_safe_remote_post(</span>
+<span class="x">    $url,</span>
+<span class="x">    array(</span>
+<span class="x">        'timeout' =&gt; 10,</span>
+<span class="x">        'headers' =&gt; array( 'Content-Type' =&gt; 'application/json' ),</span>
+<span class="x">        'body'    =&gt; wp_json_encode( $payload ),</span>
+<span class="x">    )</span>
+<span class="x">);</span>
+
+<span class="x">if ( is_wp_error( $response ) ) {</span>
+<span class="x">    return Delivery_Result::failure( __( 'The request to the webhook failed.', 'my-chat-channel' ), 'http_error' );</span>
+<span class="x">}</span>
+
+<span class="x">$status = (int) wp_remote_retrieve_response_code( $response );</span>
+<span class="x">if ( $status &lt; 200 || $status &gt;= 300 ) {</span>
+<span class="x">    return Delivery_Result::failure( sprintf( __( 'The webhook answered with HTTP %d.', 'my-chat-channel' ), $status ), 'bad_status', $status );</span>
+<span class="x">}</span>
+
+<span class="x">return Delivery_Result::success();</span>
+</code></pre></div>
+<h3 id="rate-limits-and-retries">Rate limits and retries<a class="headerlink" href="#rate-limits-and-retries" title="Permanent link">&para;</a></h3>
+<p>When the service answers HTTP 429, return a failure with the status and the wait from the <code>Retry-After</code> header. <code>Delivery_Result::retry_after_from_response( $response )</code> reads it, as seconds or as an HTTP date, and gives null if there is none or it is not usable:</p>
+<div class="highlight"><pre><span></span><code><span class="x">if ( 429 === $status ) {</span>
+<span class="x">    return Delivery_Result::failure(</span>
+<span class="x">        __( 'The webhook is limiting requests.', 'my-chat-channel' ),</span>
+<span class="x">        'rate_limited',</span>
+<span class="x">        429,</span>
+<span class="x">        Delivery_Result::retry_after_from_response( $response )</span>
+<span class="x">    );</span>
+<span class="x">}</span>
+</code></pre></div>
+<p>A failure with a <code>retry_after</code> defers the instance: update checks skip it until that long after the failure, and its items stay unsent and go out on the first check after. Other instances are not affected, and nothing extra is scheduled. The plugin caps the wait at 7 days. A test send ignores the deferral and does not set it, and a later success, or a failure without <code>retry_after</code>, clears it. Without a <code>retry_after</code>, the items are retried on the next scheduled check, which is at least an hour away. Don't retry inside <code>send()</code>, and don't sleep.</p>
+<h3 id="length-limits">Length limits<a class="headerlink" href="#length-limits" title="Permanent link">&para;</a></h3>
+<p>Most services limit the size of a message. Respect the limit by sending a summary rather than a message the service will refuse. <code>Notification_Renderer</code> does this for you: pass the limits to <code>plain_text()</code>, <code>markdown()</code> or <code>html()</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="x">$text = Notification_Renderer::plain_text( $notification, 4000, 50 );</span>
+</code></pre></div>
+<ul>
+<li><code>$max_length</code> is the longest result in characters, and <code>$max_items</code> the most items to list. 0 (the default) means no limit. Output is the same as without limits when everything fits.</li>
+<li>The renderer lists the largest number of items that fits and adds a line "…and N more" (translatable, with a plural form) when some are left out. The line sits before the closing "Please visit…" line; in Markdown it follows the list after a blank line, in HTML it is a paragraph after the list. Nothing is added when no item is left out.</li>
+<li>If even a message without any item is longer than <code>$max_length</code>, it is returned anyway (title, "more" line and closing line), never an empty string, so the result can then exceed the limit.</li>
+<li>Lengths are characters (<code>mb_strlen()</code>). Some services count bytes or UTF-16 code units, so leave a margin or measure the result yourself.</li>
+<li>Site code can change the "more" line with the <code>sc_wpun_more_items_text</code> filter (return plain text, it is escaped for the format). The <code>sc_wpun_message_text</code> filter still applies to plain text, and the length is measured after it. With a limit, it may run several times per message and receives the number of items left out as its third argument.</li>
+</ul>
+<p>The example channel's <code>message()</code> method does this.</p>
+<p>Bear in mind that a successful send counts every item as delivered, including the ones summarised as "…and N more". They are not sent again.</p>
+<h3 id="duplicate-deliveries">Duplicate deliveries<a class="headerlink" href="#duplicate-deliveries" title="Permanent link">&para;</a></h3>
+<p>The plugin does not lock update checks against each other. If a check started with <code>sc_wpun_run_check</code> overlaps a scheduled one, both can send the same update before either records it, so a notification can occasionally arrive twice. For update notices that is a fair trade for a simpler plugin. If your service must never receive the same message twice, keep your own record in <code>send()</code>, for example the notification's item keys and versions per instance, and skip what you already sent.</p>
+<h2 id="5-testing">5. Testing<a class="headerlink" href="#5-testing" title="Permanent link">&para;</a></h2>
+<p>The plugin's own tests show how to test a module with WordPress's PHPUnit test suite and mocked HTTP. <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php"><code>tests/wp/test-example-channel.php</code></a> tests the example add-on:</p>
+<ul>
+<li>It loads the add-on's main file the way WordPress would, calls <code>boot()</code>, and registers the channel.</li>
+<li>It answers HTTP requests with the <code>pre_http_request</code> filter, so no request leaves the machine, and it checks what was sent.</li>
+<li>It covers success, an error status, a <code>WP_Error</code>, a 429 with and without <code>Retry-After</code>, the summary of a long list (by count and by length), and that no failure message contains the webhook URL.</li>
+<li>It runs a whole update check to show a failed send is retried on the next run.</li>
+</ul>
+<p>A minimal mocked request in your own tests:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'pre_http_request',</span>
+<span class="x">    function ( $pre, $args, $url ) use ( &amp;$sent ) {</span>
+<span class="x">        $sent = array( 'url' =&gt; $url, 'body' =&gt; json_decode( $args['body'], true ) );</span>
+<span class="x">        return array(</span>
+<span class="x">            'headers'  =&gt; array(),</span>
+<span class="x">            'body'     =&gt; '',</span>
+<span class="x">            'response' =&gt; array( 'code' =&gt; 200, 'message' =&gt; 'OK' ),</span>
+<span class="x">            'cookies'  =&gt; array(),</span>
+<span class="x">            'filename' =&gt; null,</span>
+<span class="x">        );</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+
+<span class="x">$result = ( new My_Chat_Channel() )-&gt;send( $notification, $instance );</span>
+<span class="x">$this-&gt;assertTrue( $result-&gt;is_success() );</span>
+</code></pre></div>
+<p>Return a <code>WP_Error</code> from the filter to test a failed connection.</p>
+<h3 id="checking-your-code">Checking your code<a class="headerlink" href="#checking-your-code" title="Permanent link">&para;</a></h3>
+<p>You can run the plugin's own checks on your add-on:</p>
+<ul>
+<li><strong>Coding standards.</strong> Copy <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/examples/wpun-example-channel/phpcs.xml.dist"><code>examples/wpun-example-channel/phpcs.xml.dist</code></a> and change the text domain and prefixes. It is the WordPress ruleset, including the escaping, security token and sanitising sniffs, with the same PHP and WordPress versions as the plugin.</li>
+<li><strong>Semgrep.</strong> Run Semgrep CE with the plugin's rules on your code: <code>semgrep scan --config path/to/wp-updates-notifier/.semgrep/ --metrics=off your-addon/</code>. The rules ban <code>eval</code>, <code>unserialize</code>, <code>$_REQUEST</code> and unprepared <code>$wpdb</code> queries, and they require <code>wp_safe_remote_*</code> for HTTP. Your fixed API address may use <code>wp_remote_post()</code> with <code>// nosemgrep: wpun-outbound-http-safe-only -- &lt;reason&gt;</code>. The rules are GPL, like the plugin.</li>
+</ul>
+<h2 id="accessibility">Accessibility<a class="headerlink" href="#accessibility" title="Permanent link">&para;</a></h2>
+<p>The settings screen is checked against WCAG 2.2 AA, and a module is part of it.</p>
+<h3 id="prefer-schema-fields">Prefer schema fields<a class="headerlink" href="#prefer-schema-fields" title="Permanent link">&para;</a></h3>
+<p>Fields drawn from <code>get_fields()</code> get the accessible markup for free:</p>
+<ul>
+<li>a label for each control, or a fieldset with a legend for a group of radio buttons or checkboxes;</li>
+<li>the <code>description</code> tied to the control with <code>aria-describedby</code>;</li>
+<li>"(required)" after the label of a required field, and <code>aria-required="true"</code> on its control (a group of checkboxes only has the text; a saved secret keeps the text but not the attribute);</li>
+<li>on an error, <code>aria-invalid="true"</code>, the message under the field with a bold "Error:", and a summary at the top of the form with a link to each field. The link goes to the first control of a group of radio buttons or checkboxes;</li>
+<li>a note on a saved secret ("A value is saved. Leave this empty to keep it, ..."), a clear checkbox named after the field, and a "Set by ..." note, tied to the control, for a value that comes from a constant or an environment variable.</li>
+</ul>
+<p>A page title that starts with "Error:" after a failed save and the headings are the plugin's job too. Use <code>render_settings()</code> only when no schema field can do it.</p>
+<h3 id="if-you-draw-your-own-fields">If you draw your own fields<a class="headerlink" href="#if-you-draw-your-own-fields" title="Permanent link">&para;</a></h3>
+<p>Your markup gets none of the above, so it has to do it:</p>
+<ul>
+<li>Give every control a <code>&lt;label for="..."&gt;</code>. For a group of radio buttons or checkboxes use a <code>&lt;fieldset&gt;</code> with a <code>&lt;legend&gt;</code> instead.</li>
+<li>Tie help text to its control with <code>aria-describedby</code>.</li>
+<li>Start headings at <code>&lt;h4&gt;</code>: your markup sits under the form's <code>&lt;h3&gt;Settings&lt;/h3&gt;</code>.</li>
+<li>Never carry meaning by colour alone: say "Error:" or "(required)" in text. Check that the text is readable in forced-colours mode.</li>
+</ul>
+<h3 id="errors-from-custom-markup">Errors from custom markup<a class="headerlink" href="#errors-from-custom-markup" title="Permanent link">&para;</a></h3>
+<p>Return errors from <code>validate_settings()</code> as a <code>WP_Error</code> keyed by field, as with schema fields (see <a href="#validation">Validation</a>). The summary at the top of the form lists every message. It can only link to a control it knows, and with <code>render_settings()</code> it knows none, so the messages are listed <strong>without a link</strong>. Make your own controls show and announce the error: put the message next to the control, set <code>aria-invalid="true"</code> and point <code>aria-describedby</code> at the message.</p>
+<h3 id="choosing-a-display">Choosing a display<a class="headerlink" href="#choosing-a-display" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Use <code>checkboxes</code> rather than a <code>select</code> with <code>multiple</code> for a choice of several: a multiple select is hard to use with a keyboard and a screen reader.</li>
+<li>Use radio buttons for a single choice of up to five options. The plugin does this by default and falls back to a select above five.</li>
+</ul>
+<h3 id="labels-and-text">Labels and text<a class="headerlink" href="#labels-and-text" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Labels are short, unique within the form and visible. Never use a placeholder as the label: it disappears when the user types.</li>
+<li>In notification text avoid symbols such as arrows (read out as "right arrow" or not at all), and give a link a name that makes sense out of context, such as "Akismet changelog" rather than "Details". <code>Notification_Renderer</code> already writes "Akismet from version 5.6 to 5.7.2" and links named after the item; use it for the message, as the <a href="https://github.com/l3rady/wp-updates-notifier/tree/main/examples/wpun-example-channel/">example channel</a> does.</li>
+</ul>
+<h3 id="checking">Checking<a class="headerlink" href="#checking" title="Permanent link">&para;</a></h3>
+<p><code>make a11y</code> in the plugin repository runs axe and keyboard checks of the settings screen on a throwaway site, including a form with every field type. Also tab through your form and listen to it with a screen reader.</p>
+<h2 id="checklist">Checklist<a class="headerlink" href="#checklist" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The header has <code>Requires Plugins: wp-updates-notifier</code> and <code>Requires WPUN API</code> with the constraint, and <code>boot()</code> checks <code>sc_wpun_api_satisfies( '^1.0' )</code> for code outside the channel.</li>
+<li><code>get_api_constraint()</code> returns the API versions the channel needs.</li>
+<li>The type is unique and never changes.</li>
+<li>Every credential is a secret field, and no secret reaches a message, notice or log.</li>
+<li><code>send()</code> always returns a <code>Delivery_Result</code> and never retries or sleeps.</li>
+<li>HTTP uses <code>wp_safe_remote_post()</code> for user-supplied addresses, a short timeout and a status check.</li>
+<li>429 returns a failure with <code>Retry-After</code>.</li>
+<li>Fields are schema fields where possible; custom markup has labels, described help text and its own error display (see <a href="#accessibility">Accessibility</a>).</li>
+<li>Long messages are summarised with "…and N more".</li>
+<li>The payload goes through <code>filter_payload()</code>.</li>
+<li>Only the public API is used: nothing tagged <code>@internal</code>, not <code>sc_wpun()</code>, and not the plugin's options directly.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/l3rady/wp-updates-notifier" target="_blank" rel="noopener" title="WP Updates Notifier on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/javascripts/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>

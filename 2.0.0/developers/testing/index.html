@@ -1,0 +1,2083 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentation for WP Updates Notifier, the WordPress plugin that tells you when updates are waiting.">
+      
+      
+      
+        <link rel="canonical" href="https://wpun.cariss.dev/latest/developers/testing/">
+      
+      
+        <link rel="prev" href="../architecture/">
+      
+      
+        <link rel="next" href="../translations/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/brand/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Tests and checks - WP Updates Notifier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tests-and-checks" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="WP Updates Notifier" class="md-header__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            WP Updates Notifier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tests and checks
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="solarized-dark" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="solarized-light" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="WP Updates Notifier" class="md-nav__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    WP Updates Notifier
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../users/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/channels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/how-notifications-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How notifications work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings-in-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests and checks
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests and checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#wordpress-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WordPress tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mutation-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mutation testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-bug-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known-bug tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contract-and-extension-api-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contract and extension API tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#static-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Static analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packaging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#browser-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Browser checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-tooling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security tooling
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../translations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../writing-a-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing a module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../item-types-and-routing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Item types and routing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hook reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stability and deprecation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../decisions/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Decisions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0001-licence-gpl-2-or-later/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0001 Licence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0002-php-7-4-and-wordpress-6-7-minimums/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0002 PHP and WordPress minimums
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0003-rename-main-file-without-a-migration-stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0003 Main file rename
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0004-public-module-api-and-dogfooding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0004 Module API and dogfooding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0005-settings-state-and-channels-in-separate-options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0005 Separate options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0006-drop-slack-in-2-0-0-and-keep-its-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0006 Slack dropped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0007-settings-and-secrets-from-outside-the-database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0007 Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0008-single-sites-only-in-2-0-0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0008 Single sites only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0009-no-lock-against-overlapping-update-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0009 No update check lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0010-leave-wordpress-auto-update-emails-alone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0010 WordPress update emails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0011-accessibility-wcag-2-2-aa-without-javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0011 Accessibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0012-security-tooling-is-free-deterministic-and-scripted/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0012 Security tooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0013-verifiable-release-artefacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0013 Verifiable releases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0014-documentation-site-on-a-custom-subdomain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0014 Documentation site
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0015-conventional-commits-and-linear-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0015 Commits and history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0017-bundle-l10n-php-translations-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0017 Bundled translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0018-generate-readme-at-build-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0018 Generated readme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/ai-review-2.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI review for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/audit-2.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security audit for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#wordpress-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WordPress tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mutation-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mutation testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-bug-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known-bug tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contract-and-extension-api-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contract and extension API tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#static-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Static analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packaging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#browser-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Browser checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-tooling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security tooling
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="tests-and-checks">Tests and checks<a class="headerlink" href="#tests-and-checks" title="Permanent link">&para;</a></h1>
+<p>The plugin has several layers of tests and checks. Each one catches a different kind of mistake, and each one runs with a <code>make</code> target in Docker, so you need only Docker and <code>make</code>. <code>make test</code> runs the WordPress suites (single site and multisite) and the release script tests. The other layers have their own targets.</p>
+<pre class="mermaid"><code>flowchart LR
+    change["A change"] --&gt; static
+    change --&gt; wp
+    change --&gt; pkg
+    change --&gt; browser
+    change --&gt; sec
+
+    subgraph static["Static analysis"]
+        lint["make lint&lt;br&gt;coding standards"]
+        stan["make stan&lt;br&gt;types"]
+        rector["make rector&lt;br&gt;PHP 7.4 syntax"]
+        api["make check-public-api&lt;br&gt;make check-hooks&lt;br&gt;make check-translations&lt;br&gt;public API, hook docs and bundled translations"]
+    end
+    subgraph wp["WordPress tests (PHP 7.4 to 8.5)"]
+        suite["make test-wp&lt;br&gt;make test-wp-ms&lt;br&gt;behaviour"]
+        secTests["Security tests&lt;br&gt;capabilities, security tokens, escaping"]
+        contract["Contract and extension API tests&lt;br&gt;what add-ons rely on"]
+        bugs["make test-known-bugs&lt;br&gt;open bugs"]
+        mutation["make mutation&lt;br&gt;would the tests notice a change"]
+    end
+    subgraph pkg["The zip"]
+        dist["make dist-check&lt;br&gt;make dist-repro&lt;br&gt;contents, same bytes"]
+        install["make test-dist&lt;br&gt;make plugin-check&lt;br&gt;installs, WordPress.org rules"]
+    end
+    subgraph browser["Browser"]
+        a11y["make a11y&lt;br&gt;settings screen"]
+        flows["make e2e&lt;br&gt;settings, channels, a real update check"]
+        upgrade["make e2e-upgrade&lt;br&gt;update from 1.6.0, before a release"]
+        docsa11y["make docs-a11y&lt;br&gt;make docs-links&lt;br&gt;documentation site"]
+    end
+    subgraph sec["Security tooling"]
+        scan["make security&lt;br&gt;workflows, secrets, dependencies, code"]
+        dast["make dast&lt;br&gt;running site, before a release"]
+    end</code></pre>
+<p>CI runs every target in the diagram on pull requests, except <code>make dast</code> and <code>make mutation</code>. <code>make dast</code> takes about 11 minutes, so you run it yourself before a release. <code>make mutation</code> takes about 35 minutes, so you run it yourself before a release too.</p>
+<h2 id="wordpress-tests">WordPress tests<a class="headerlink" href="#wordpress-tests" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> Behaviour of the plugin inside a real WordPress: the update check, scheduling, settings and validation, channels and routing, the email channel, the settings screen markup, upgrades from older versions and uninstall. WordPress, its test library and a database come from the Docker setup. Mail and HTTP are faked.</p>
+<p><strong>Lives in.</strong> <code>tests/wp/</code>, one <code>test-*.php</code> file per area, on <code>tests/wp/class-wpun-test-case.php</code>. Add a file there and it runs: they are found by name.</p>
+<p><strong>Run it.</strong> <code>make test-wp</code> for a single site, <code>make test-wp-ms</code> for multisite. Pass PHPUnit options with <code>ARGS</code>, for example <code>make test-wp ARGS="--filter Test_Routing"</code>. <code>PHP_VERSION</code> and <code>WP_VERSION</code> pick the versions.</p>
+<p><strong>Coverage.</strong> <code>make coverage</code> runs the same suite (single site) in an image with pcov, prints the summary and the five least covered files, writes <code>build/coverage/clover.xml</code> and <code>build/coverage/html/</code>, and fails when line coverage of the shipped code (<code>wp-updates-notifier.php</code>, <code>uninstall.php</code>, <code>includes/</code>, <code>modules/</code>; files no test loads count as uncovered) is below <code>COVERAGE_MIN</code> in the <code>Makefile</code>. It is a floor that only goes up: raise it, rounded down to a whole number, when a change raises the coverage. The aim is 90% or more. <code>bin/coverage-check.php</code> computes the percentage from the Clover report, and <code>tests/bin/test-coverage-check.sh</code> tests it. The pcov image is a separate Docker stage, so <code>make test-wp</code> is unchanged. Multisite-only code paths are not measured.</p>
+<p><strong>CI.</strong> The <code>coverage</code> job in <code>ci.yml</code> runs <code>make coverage</code> on PHP 8.3 and WordPress 7.1.3 for every pull request that changes code, tests or <code>phpunit.xml.dist</code>, and keeps the report as the <code>coverage-report</code> artifact for 14 days. It is in <code>ci-gate</code>, the required check, so a pull request below the floor cannot merge. The <code>wordpress</code> job in <code>ci.yml</code> runs PHP 7.4 to 8.5 on WordPress 7.1.3, single site and multisite, and PHP 7.4 and 8.3 on WordPress 6.7.9, the oldest supported. The <code>wordpress-trunk</code> job runs the suite against WordPress trunk every night, on PHP 7.4 and 8.5.</p>
+<h2 id="mutation-testing">Mutation testing<a class="headerlink" href="#mutation-testing" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> Whether the WordPress tests would fail if the shipped code were wrong. <a href="https://infection.github.io/">Infection</a> changes the code one small step at a time (a comparison, a <code>continue</code>, a removed call), runs the tests that cover the changed line, and reports the changes no test fails on. Coverage says a line ran; this says a test would notice if it were wrong.</p>
+<p><strong>Lives in.</strong> <code>infection.json5</code> at the root: the shipped code (<code>wp-updates-notifier.php</code>, <code>uninstall.php</code>, <code>includes/</code>, <code>modules/</code>), the default mutators, the floors, and the mutants that are ignored with a reason. <code>docker/mutation.sh</code> runs it in the <code>wp-tests-coverage</code> image, where Infection is a pinned and checked PHAR. The tests are the WordPress suite, so it needs no tests of its own; a surviving mutant is fixed with a test in <code>tests/wp/</code>.</p>
+<p><strong>Run it.</strong> <code>make mutation</code> for everything (about 35 minutes on 4 threads), <code>make mutation ARGS="--filter=includes/class-state.php"</code> for one file. <code>THREADS</code> sets how many PHPUnit processes run at once. Each gets its own table prefix from Infection's <code>TEST_TOKEN</code>, so the processes share the one test database. The log, with the diff of every survivor, is <code>build/infection/infection.log</code>.</p>
+<p><strong>Floors.</strong> <code>minMsi</code> and <code>minCoveredMsi</code> in <code>infection.json5</code> were 92.98% and 93.52% when set and only go up; <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> says how to raise them and how to ignore a mutant that cannot be observed. The code that decides whether a notification is sent has no survivors that are not ignored with a reason.</p>
+<p><strong>CI.</strong> None: it takes over 45 minutes on a GitHub runner. Run <code>make mutation</code> before each release, as the release steps in <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md#releases">CONTRIBUTING.md</a> say.</p>
+<h2 id="security-tests">Security tests<a class="headerlink" href="#security-tests" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> Hostile input and access control: the capability and security token matrix for every admin action, stored and reflected cross-site scripting through names, versions, URLs and settings, secrets that must never reach the page or a log, malformed settings input, and outbound requests. These tests back the <a href="../../security/threat-model/">threat model</a>.</p>
+<p><strong>Lives in.</strong> <code>tests/wp/security/</code>, in the <code>security</code> PHPUnit group. They are found automatically, so a new admin action or setting gets a new test in this folder, not a change to a list.</p>
+<p><strong>Run it.</strong> They run with the rest of the WordPress tests. To run only them: <code>make test-wp ARGS="--group security"</code>.</p>
+<p><strong>CI.</strong> The same <code>wordpress</code> jobs as above.</p>
+<h2 id="known-bug-tests">Known-bug tests<a class="headerlink" href="#known-bug-tests" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> A bug that is open and has a test. The test asserts the correct behaviour, so it fails until the bug is fixed.</p>
+<p><strong>Lives in.</strong> <code>tests/wp/test-known-bugs.php</code>. A test is tagged <code>@group known-bug</code> while its bug is open. <code>phpunit.xml.dist</code> leaves that group out of the normal run, so CI stays green. The fix removes the tag, and the test then runs with everything else and guards against the bug coming back. The group can be empty, which means no known bug has a test waiting.</p>
+<p><strong>Run it.</strong> <code>make test-known-bugs</code> runs only the tagged tests. They are expected to fail.</p>
+<p><strong>CI.</strong> No. They are excluded on purpose.</p>
+<h2 id="contract-and-extension-api-tests">Contract and extension API tests<a class="headerlink" href="#contract-and-extension-api-tests" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> What other code depends on. The contract tests pin the names and behaviour that existing sites and add-ons use: option names, hook names, the public classes. The extension API tests load a fixture add-on that uses every extension point (channels, item types, routing, configuration sources, the API version check) and the example channel from <code>examples/</code>, so the documented way to extend the plugin is exercised as an add-on author would use it. Changing one of these tests needs an upgrade path and a changelog entry.</p>
+<p><strong>Lives in.</strong> <code>tests/wp/test-contract.php</code>, <code>tests/wp/test-extension-api.php</code> and <code>tests/wp/test-example-channel.php</code>. The fixture add-on is in <code>tests/fixtures/plugins/wpun-test-addon/</code>.</p>
+<p>Two checks guard the same boundary without WordPress. <code>make check-public-api</code> fails if a module, the example channel or the fixture add-on uses anything that is not public API. <code>make check-hooks</code> fails if a hook the plugin fires has no doc block with <code>@since</code>, or if the <a href="../hooks/">hook reference</a> is stale (<code>make hook-docs</code> rewrites it). Both have their own tests in <code>tests/bin/</code>, which the targets run first, so a checker that stopped finding problems would fail too.</p>
+<p><code>make check-translations</code> guards the bundled translations: it fails if a <code>.l10n.php</code> file has a string of the code untranslated, a fuzzy or obsolete entry, a broken placeholder, wrong plural forms, or is not byte for byte what the translations and the code build (a hand edit, or a changed string). It also fails when WP-CLI warns about a string, and on any other file in <code>languages/</code>. So a change to a string needs a translation session before CI is green. Its exporter has its own test in <code>tests/bin/</code>, which the target runs first. See <a href="../translations/">Translations</a>.</p>
+<p><strong>CI.</strong> The tests run in the <code>wordpress</code> jobs. The checks run in the <code>phpcs</code> job of <code>lint.yml</code>.</p>
+<h2 id="static-analysis">Static analysis<a class="headerlink" href="#static-analysis" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> Mistakes found without running the code.</p>
+<ul>
+<li><code>make lint</code> runs PHP_CodeSniffer with the WordPress Coding Standards on the plugin, the example add-on and the field showcase. Warnings fail it too.</li>
+<li><code>make stan</code> runs PHPStan with the WordPress stubs. <code>phpstan-baseline.neon</code> lists the findings that are accepted for now. It may only shrink: fix a new finding, or annotate it with a reason.</li>
+<li><code>make rector</code> is a dry run that shows any PHP 7.4 syntax upgrade Rector would make. It changes nothing. It fails when the code is behind.</li>
+<li><code>make taint</code> (Psalm) and <code>make sast</code> (Semgrep) are in <a href="#security-tooling">security tooling</a>.</li>
+</ul>
+<p><strong>Lives in.</strong> <code>phpcs.xml.dist</code>, <code>phpstan.neon.dist</code>, <code>rector.php</code> and <code>phpstan-baseline.neon</code> in the repository root.</p>
+<p><strong>CI.</strong> <code>phpcs</code> in <code>lint.yml</code> (with the two checks above), and the <code>phpstan</code> and <code>rector</code> jobs in <code>ci.yml</code>.</p>
+<h2 id="packaging">Packaging<a class="headerlink" href="#packaging" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> The zip that users install, as opposed to the repository.</p>
+<ul>
+<li><code>make smoke</code> checks PHP, the <code>mysqli</code> extension and that every PHP file lints. <code>make matrix</code> does it on every supported PHP version.</li>
+<li><code>make dist</code> builds <code>build/wp-updates-notifier-&lt;version&gt;.zip</code> with the runtime files only. <code>make dist-check</code> fails if the contents are not on the allowlist, a required file is missing or the version is wrong.</li>
+<li><code>make dist-repro</code> builds the zip twice from fresh clones, with a different umask, file times and time zone, and fails if the SHA-256 differs.</li>
+<li><code>make test-dist</code> installs the zip into a fresh WordPress, then activates, deactivates and uninstalls it.</li>
+<li><code>make plugin-check</code> runs WordPress.org's Plugin Check on the zip. <code>make check-headers</code> generates <code>readme.txt</code> (it is not committed; edit <code>.wordpress-org/readme/</code>, <code>docs/users/troubleshooting.md</code> and <code>CHANGELOG.md</code>, see <code>make readme</code>) and checks that it agrees with the plugin header and follows WordPress.org's rules. <code>make test-readme</code> tests the generator and those checks.</li>
+<li><code>make blueprint</code> generates the WordPress Playground blueprint (the WordPress.org Live Preview, <code>build/blueprint.json</code>; it is not committed) from <code>.wordpress-org/blueprint/</code> with <code>bin/blueprint.php</code>. <code>make check-blueprint</code> validates it against the Playground blueprint schema vendored in <code>tests/bin/blueprint/</code> (Ajv in a pinned node image) and checks that the landing page is the settings screen and no <code>@file:</code> placeholder is left. <code>make test-blueprint</code> tests the generator (deterministic, missing and unused files) and that the schema check rejects broken blueprints.</li>
+<li><code>make wporg-assets</code> assembles <code>build/wporg-assets/</code>, the directory the release deploys to the SVN <code>assets/</code> of WordPress.org: the top-level files of <code>.wordpress-org/</code> (not <code>src/</code>, <code>readme/</code> or <code>blueprint/</code>) plus the generated <code>blueprints/blueprint.json</code>. <code>make wporg-assets-check</code> fails on a file name WordPress.org does not use, a format that differs from the extension, a wrong size (icons 128x128 and 256x256, banners 772x250 and 1544x500), an icon or banner over 1 MB or a screenshot over 10 MB (our limits: WordPress.org publishes none), screenshots that are not numbered 1..N or whose number differs from the captions of the generated readme, an <code>icon.svg</code> with a script, event attribute, <code>foreignObject</code> or external reference, and a blueprint that fails the schema check. <code>make test-wporg-assets</code> tests the checker against a clean set and each kind of mistake. <code>make dist-check</code> also fails if the zip contains any of these files.</li>
+<li><code>make test-release</code> rehearses the scripts the release workflow runs: the copyright year and the signed commit request.</li>
+</ul>
+<p><strong>Lives in.</strong> <code>bin/</code> for the scripts, <code>tests/bin/test-release-scripts.sh</code> for the release rehearsal.</p>
+<p><strong>CI.</strong> <code>ci.yml</code> has a job for each: <code>smoke</code> (every PHP version), <code>dist</code> (PHP 7.4 and 8.5, which also runs <code>make test-dist</code>), <code>dist-repro</code>, <code>plugin-check</code> (with <code>check-headers</code>, <code>test-blueprint</code>, <code>check-blueprint</code>, <code>test-wporg-assets</code> and <code>wporg-assets-check</code>) and <code>release-scripts</code>.</p>
+<h2 id="browser-checks">Browser checks<a class="headerlink" href="#browser-checks" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> Accessibility in a real browser, with Playwright and axe: WCAG 2.2 A and AA, and keyboard use. And the flows a person goes through, from the browser to the mail they get.</p>
+<ul>
+<li><code>make a11y</code> checks the settings screen on a throwaway WordPress site (its own Compose project, so it never touches <code>make up</code>). Specs are in <code>tests/e2e/specs/</code>.</li>
+<li><code>make e2e</code> drives the plugin the way a user sees it, on a throwaway site of its own (compose project <code>wpun-flows</code>, files in <code>tests/flows/</code>, never touches <code>make up</code>, <code>make a11y</code> or <code>make screenshots</code>). It uses the offline fake pending updates of <code>.wordpress-org/blueprint/fake-updates.php</code> (shared with the screenshots and the Playground blueprint) and Mailpit to catch the mail. The cases, one spec file each in <code>tests/flows/specs/</code>: activation schedules the update check; the General tab saves, shows an invalid value's error on its own field and logs no console error; an email channel is added, edited, tested (the test message arrives), duplicated, disabled, enabled and deleted; a real <code>wp cron event run sc_wpun_update_check</code> sends the expected email (subject, every item, no HTML entities), a core-only channel gets only the WordPress item, a second run sends nothing, <strong>Check for updates and notify now</strong> shows the right notice, and a due daily reminder repeats what is waiting; a value set by a constant is read-only on the form and is the one used when sending; and the fixture add-on (<code>tests/fixtures/plugins/wpun-test-addon</code>) appears in the module picker. The Playwright image has no WP-CLI, so the specs call a small server in the WP-CLI container (<code>tests/flows/control.php</code>, on the private network only) that runs real <code>wp</code> commands. Each test starts by putting the site back to a known state (<code>resetSite</code> in <code>tests/flows/specs/helpers.js</code>: it clears the run state, stores the channels and settings the test names, removes <code>SC_WPUN_</code> constants from <code>wp-config.php</code>, restores the plugins and empties Mailpit), so the specs do not depend on each other or on the time of day. Mail is polled in Mailpit with a timeout, never waited for with a sleep. <code>E2E_KEEP=1 make e2e</code> leaves the site up to look at; <code>FLOWS_ARGS=runs.spec.js make e2e</code> runs one file.</li>
+<li><code>make e2e-upgrade</code> updates the real 1.6.0 from WordPress.org to the zip of <code>make dist</code> (#89, #90), because the main file was renamed and there is no migration stub. It has its own site (compose project <code>wpun-upgrade</code>, files in <code>tests/flows/upgrade/</code>, never touches <code>make up</code>) that does not mount the repository: <code>setup.sh</code> installs WordPress and 1.6.0 from WordPress.org (so it needs the network), and <code>package.php</code> copies the zip of <code>make dist</code> with its Version header raised to 2.0.0 (only the copy; the repository's header is not edited) to where the web server serves it. A must-use plugin offers that copy as the update of <code>wp-updates-notifier/class-sc-wp-updates-notifier.php</code>, as WordPress.org would, and WordPress's own updater does the rest. Each test starts from a fresh, configured 1.6.0 (<code>reset.php</code>: the 1.x options <code>notify_to</code>, <code>notify_from</code>, Slack on, a daily check) and updates it one way: <code>wp plugin update</code> (WP-CLI, <code>Plugin_Upgrader</code>), "update now" on the Plugins screen (admin-ajax) and the background auto-updater (<code>wp_maybe_auto_update()</code>, which can roll an update back in WordPress 6.6 and later). It checks that the plugin ends at 2.0.0 and deactivated (the Plugins screen says so), with no PHP fatal error and no rollback, then activates it again with <code>wp plugin activate</code> and checks that the email settings became the <code>email</code> channel with the same address, the Slack settings are kept, the Slack notice shows and its email is sent once, the leftover 1.x update check event is kept as the one daily event (not doubled, not stuck in the past), and a real run mails the migrated address. Run it before merging a Release PR; CI does not, because it downloads from WordPress.org. <code>E2E_KEEP=1</code> leaves the site up; <code>FLOWS_ARGS=update-cli.spec.js</code> runs one file.</li>
+<li><code>make screenshots</code> is not a test: it regenerates the WordPress.org screenshots (<code>.wordpress-org/screenshot-1.png</code> to <code>4</code>) on a throwaway site of its own (compose project <code>wpun-shots</code>, files in <code>tests/screenshots/</code>), with made-up data and the update email caught by Mailpit. It fails if the update check did not send. Run it before a release; CI does not.</li>
+<li><code>make blueprint-smoke</code> runs the generated Playground blueprint in WordPress Playground CLI (compose project <code>wpun-playground</code>, files in <code>tests/blueprint-smoke/</code>; it never touches <code>make up</code>), with the plugin taken from the zip of <code>make dist</code> instead of WordPress.org. Playwright then checks that the settings screen shows the demo notice, the Channels tab shows two deliveries as sent, and Tools → Demo emails lists the update emails with the made-up plugins. Playground downloads WordPress on every run, so it needs the network. Run it before a release; CI does not.</li>
+<li><code>make docs-a11y</code> builds this documentation site and checks every page in the dark and the light scheme: axe, no request to a third party, visible keyboard focus, and that every Mermaid diagram parses. A syntax error in a diagram fails it, because Mermaid would otherwise draw an error image and the page would still load. Specs are in <code>tests/e2e/docs/specs/</code>.</li>
+<li><code>make docs-links</code> checks the links in the built site and in <code>README.md</code>, the generated <code>readme.txt</code> and <code>CONTRIBUTING.md</code> with lychee, including links to other sites. Internal links and anchors are already checked by the strict <code>make docs</code> build.</li>
+</ul>
+<p><strong>CI.</strong> The <code>a11y</code> and <code>e2e</code> jobs in <code>ci.yml</code>. The <code>docs</code> and <code>links</code> jobs in <code>docs.yml</code>. The <code>links</code> job also runs every week, because links to other sites break without a change here.</p>
+<h2 id="security-tooling">Security tooling<a class="headerlink" href="#security-tooling" title="Permanent link">&para;</a></h2>
+<p><strong>Covers.</strong> The things the PHP tests cannot see: the workflows, committed secrets, vulnerable dependencies, unsafe code patterns and the running site.</p>
+<p><code>make security</code> runs all of these (except <code>make dast</code>), each also a job in <code>security.yml</code>:</p>
+<ul>
+<li><code>make check-workflows</code>: actionlint (with shellcheck) and zizmor, job <code>workflows</code>.</li>
+<li><code>make secrets</code>: gitleaks over the history, the working tree and the built zip, job <code>secrets</code>.</li>
+<li><code>make audit</code>: <code>composer audit</code> and OSV-Scanner over every lockfile, job <code>dependencies</code>.</li>
+<li><code>make sast</code>: Semgrep with the plugin's own rules in <code>.semgrep/</code>, with tests for the rules and a check that every suppression gives a reason, job <code>sast</code>.</li>
+<li><code>make taint</code>: Psalm taint analysis from untrusted sources to unsafe output, job <code>taint</code>.</li>
+</ul>
+<p>CI also runs a dependency review on pull requests and Trivy over the images (<code>make audit-images</code>, report only). The workflow runs weekly too, because new advisories appear without a change here.</p>
+<p><code>make dast</code> runs OWASP ZAP against a throwaway copy of the site and fails on any Medium or High alert. It takes about 11 minutes, so CI does not run it. Run it before merging a Release PR. Its files are in <code>tests/dast/</code>.</p>
+<p>See <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md">CONTRIBUTING</a> for the rules on suppressions, baselines and pinned tools.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/l3rady/wp-updates-notifier" target="_blank" rel="noopener" title="WP Updates Notifier on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/javascripts/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>

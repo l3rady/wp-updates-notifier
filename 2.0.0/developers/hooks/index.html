@@ -1,0 +1,4331 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentation for WP Updates Notifier, the WordPress plugin that tells you when updates are waiting.">
+      
+      
+      
+        <link rel="canonical" href="https://wpun.cariss.dev/latest/developers/hooks/">
+      
+      
+        <link rel="prev" href="../configuration-sources/">
+      
+      
+        <link rel="next" href="../stability/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/brand/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Hook reference - WP Updates Notifier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#hook-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="WP Updates Notifier" class="md-header__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            WP Updates Notifier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Hook reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="solarized-dark" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="solarized-light" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="WP Updates Notifier" class="md-nav__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    WP Updates Notifier
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../users/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/channels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/how-notifications-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How notifications work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings-in-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests and checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../translations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../writing-a-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing a module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../item-types-and-routing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Item types and routing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hook reference
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hook reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#update-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update check
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Update check">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_after_update_check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_after_update_check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_before_update_check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_before_update_check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_frequencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_frequencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#items-and-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Items and routing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Items and routing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_should_receive_item" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_should_receive_item
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_core_needs_update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_core_needs_update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_item_types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_item_types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_notification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_plugins_need_update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_plugins_need_update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_should_notify_item" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_should_notify_item
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_themes_need_update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_themes_need_update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_update_items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_update_items
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delivery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delivery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Delivery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_after_dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_after_dispatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_payload_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_payload_{type}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_email_content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_email_content
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_email_subject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_email_subject
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_message_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_message_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_more_items_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_more_items_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_notification_failed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_notification_failed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_notification_sent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_notification_sent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_pre_send" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_pre_send
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#channels-and-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Channels and fields
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Channels and fields">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_deleted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_deleted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_rejected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_rejected
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channels_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channels_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_field_types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_field_types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_register_channels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_register_channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_config_sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_config_sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_config_value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_config_value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_default_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_default_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_get_options_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_get_options_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_load_from_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_load_from_env
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_put_options_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_put_options_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings screen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings screen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_after_channel_form" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_after_channel_form
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_before_channel_form" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_before_channel_form
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_capability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_capability
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_settings_tab_tab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_settings_tab_{tab}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_settings_tabs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_settings_tabs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifecycle-and-legacy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle and legacy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lifecycle and legacy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_disable_cron" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_disable_cron
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_loaded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_loaded
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#actions-you-can-fire" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actions you can fire
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Actions you can fire">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_enable_cron" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_enable_cron
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_run_check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_run_check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stability and deprecation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../decisions/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Decisions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0001-licence-gpl-2-or-later/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0001 Licence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0002-php-7-4-and-wordpress-6-7-minimums/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0002 PHP and WordPress minimums
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0003-rename-main-file-without-a-migration-stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0003 Main file rename
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0004-public-module-api-and-dogfooding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0004 Module API and dogfooding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0005-settings-state-and-channels-in-separate-options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0005 Separate options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0006-drop-slack-in-2-0-0-and-keep-its-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0006 Slack dropped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0007-settings-and-secrets-from-outside-the-database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0007 Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0008-single-sites-only-in-2-0-0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0008 Single sites only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0009-no-lock-against-overlapping-update-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0009 No update check lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0010-leave-wordpress-auto-update-emails-alone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0010 WordPress update emails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0011-accessibility-wcag-2-2-aa-without-javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0011 Accessibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0012-security-tooling-is-free-deterministic-and-scripted/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0012 Security tooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0013-verifiable-release-artefacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0013 Verifiable releases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0014-documentation-site-on-a-custom-subdomain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0014 Documentation site
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0015-conventional-commits-and-linear-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0015 Commits and history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0017-bundle-l10n-php-translations-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0017 Bundled translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0018-generate-readme-at-build-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0018 Generated readme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/ai-review-2.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI review for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/audit-2.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security audit for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#update-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update check
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Update check">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_after_update_check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_after_update_check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_before_update_check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_before_update_check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_frequencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_frequencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#items-and-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Items and routing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Items and routing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_should_receive_item" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_should_receive_item
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_core_needs_update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_core_needs_update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_item_types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_item_types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_notification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_plugins_need_update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_plugins_need_update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_should_notify_item" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_should_notify_item
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_themes_need_update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_themes_need_update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_update_items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_update_items
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delivery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delivery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Delivery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_after_dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_after_dispatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_payload_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_payload_{type}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_email_content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_email_content
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_email_subject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_email_subject
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_message_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_message_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_more_items_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_more_items_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_notification_failed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_notification_failed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_notification_sent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_notification_sent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_pre_send" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_pre_send
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#channels-and-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Channels and fields
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Channels and fields">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_deleted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_deleted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_rejected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_rejected
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channels_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channels_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_field_types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_field_types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_register_channels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_register_channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_config_sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_config_sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_config_value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_config_value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_default_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_default_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_get_options_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_get_options_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_load_from_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_load_from_env
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_put_options_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_put_options_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings screen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings screen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_after_channel_form" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_after_channel_form
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_before_channel_form" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_before_channel_form
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_capability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_capability
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_settings_tab_tab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_settings_tab_{tab}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_settings_tabs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_settings_tabs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifecycle-and-legacy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle and legacy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lifecycle and legacy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_disable_cron" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_disable_cron
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_loaded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_loaded
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#actions-you-can-fire" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actions you can fire
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Actions you can fire">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_enable_cron" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_enable_cron
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_run_check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_run_check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="hook-reference">Hook reference<a class="headerlink" href="#hook-reference" title="Permanent link">&para;</a></h1>
+<!-- This file is generated by `make hook-docs` from the doc blocks in the code. Do not edit it by hand. -->
+
+<blockquote>
+<p>This file is generated from the doc blocks of the hooks the plugin fires. To change it, edit the doc block in the source and run <code>make hook-docs</code>. <code>make check-hooks</code> (part of the lint workflow) fails when this file is out of date.</p>
+</blockquote>
+<p>Every hook is prefixed <code>sc_wpun_</code>. A name with a part in braces, such as <code>sc_wpun_channel_payload_{type}</code>, is dynamic: the part in braces is replaced when the hook fires.</p>
+<ul>
+<li><a href="#update-check">Update check</a></li>
+<li><a href="#items-and-routing">Items and routing</a></li>
+<li><a href="#delivery">Delivery</a></li>
+<li><a href="#channels-and-fields">Channels and fields</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#settings-screen">Settings screen</a></li>
+<li><a href="#lifecycle-and-legacy">Lifecycle and legacy</a></li>
+<li><a href="#actions-you-can-fire">Actions you can fire</a></li>
+</ul>
+<h2 id="update-check">Update check<a class="headerlink" href="#update-check" title="Permanent link">&para;</a></h2>
+<h3 id="sc_wpun_after_update_check"><code>sc_wpun_after_update_check</code><a class="headerlink" href="#sc_wpun_after_update_check" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires when an update check has finished, after the state was saved.</p>
+<p>It fires even if nothing was sent, with an empty <code>$results</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>The notification of the check, with every item that was waiting.</td>
+</tr>
+<tr>
+<td><code>$results</code></td>
+<td><code>array&lt;string, Delivery_Result&gt;</code></td>
+<td>Result by channel instance id, for the instances something was sent to.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
+<h3 id="sc_wpun_before_update_check"><code>sc_wpun_before_update_check</code><a class="headerlink" href="#sc_wpun_before_update_check" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires when an update check starts, before anything is looked up.</p>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
+<h3 id="sc_wpun_frequencies"><code>sc_wpun_frequencies</code><a class="headerlink" href="#sc_wpun_frequencies" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the names of the cron schedules offered as check frequencies.</p>
+<p>Each must be a registered schedule (see the <code>cron_schedules</code> filter) of at
+least an hour.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$names</code></td>
+<td><code>string[]</code></td>
+<td>Schedule names. Default hourly, twicedaily, daily and weekly.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-frequencies.php</code>.</p>
+<h2 id="items-and-routing">Items and routing<a class="headerlink" href="#items-and-routing" title="Permanent link">&para;</a></h2>
+<h3 id="sc_wpun_channel_should_receive_item"><code>sc_wpun_channel_should_receive_item</code><a class="headerlink" href="#sc_wpun_channel_should_receive_item" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters whether a channel instance receives an item, for rules of your own.</p>
+<p>Runs after the instance's own rules, so it can veto an item the rules let through and
+allow one they blocked.</p>
+<p>Example, send only plugins named "security" to the instance called "security_team":</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_channel_should_receive_item',</span>
+<span class="x">    function ( $receive, $item, $instance ) {</span>
+<span class="x">        if ( 'security_team' === $instance-&gt;get_id() &amp;&amp; 'plugin' === $item-&gt;get_type() ) {</span>
+<span class="x">            return false !== stripos( $item-&gt;get_name(), 'security' );</span>
+<span class="x">        }</span>
+<span class="x">        return $receive;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$receive</code></td>
+<td><code>bool</code></td>
+<td>Whether the instance receives the item.</td>
+</tr>
+<tr>
+<td><code>$item</code></td>
+<td><code>Notification_Item</code></td>
+<td>The item.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-routing.php</code>.</p>
+<h3 id="sc_wpun_core_needs_update"><code>sc_wpun_core_needs_update</code><a class="headerlink" href="#sc_wpun_core_needs_update" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters whether a WordPress core update is reported, like the plugin and theme filters do for theirs.</p>
+<p>The default follows the "Notify about WordPress updates?" setting: true, or with "only major
+releases" whether the update is a major.minor change. Returning false reports no core item.
+What was already notified about core is kept while the update is waiting.</p>
+<p>Example, ignore release candidates:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_core_needs_update',</span>
+<span class="x">    function ( $needs, $new_version ) {</span>
+<span class="x">        return $needs &amp;&amp; false === strpos( $new_version, '-RC' );</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$needs</code></td>
+<td><code>bool</code></td>
+<td>Whether to report the update. Default true, or whether it is a major release with "only major releases".</td>
+</tr>
+<tr>
+<td><code>$new_version</code></td>
+<td><code>string</code></td>
+<td>The version WordPress offers.</td>
+</tr>
+<tr>
+<td><code>$current_version</code></td>
+<td><code>string</code></td>
+<td>The installed version.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
+<h3 id="sc_wpun_item_types"><code>sc_wpun_item_types</code><a class="headerlink" href="#sc_wpun_item_types" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the item types, to register types of your own.</p>
+<p>A type is a key of lower case letters, digits and underscores, with a label. Invalid
+entries are dropped, and core, plugin and theme cannot be removed or renamed away.</p>
+<p>Example, register a type for PHP end-of-life warnings:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_item_types',</span>
+<span class="x">    function ( $types ) {</span>
+<span class="x">        $types['php'] = __( 'PHP', 'my-addon' );</span>
+<span class="x">        return $types;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$types</code></td>
+<td><code>array&lt;string, string&gt;</code></td>
+<td>Type =&gt; label.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-item-types.php</code>.</p>
+<h3 id="sc_wpun_notification"><code>sc_wpun_notification</code><a class="headerlink" href="#sc_wpun_notification" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the notification built by the update check, before any channel instance gets its share.</p>
+<p>Must return a Notification; anything else is ignored. Each instance then receives the
+items of the returned notification that its routing allows.</p>
+<p>Example, drop the notes of every item:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_notification',</span>
+<span class="x">    function ( $notification ) {</span>
+<span class="x">        return $notification-&gt;with_items( my_strip_notes( $notification-&gt;get_items() ) );</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>The notification, with every item that is waiting.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
+<h3 id="sc_wpun_plugins_need_update"><code>sc_wpun_plugins_need_update</code><a class="headerlink" href="#sc_wpun_plugins_need_update" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 1.0.0</p>
+<p>Filters the plugins that are waiting for an update and will be reported.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$plugins_need_update</code></td>
+<td><code>array&lt;string, object&gt;</code></td>
+<td>Update data from WordPress by plugin file (for example <code>hello.php</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
+<h3 id="sc_wpun_should_notify_item"><code>sc_wpun_should_notify_item</code><a class="headerlink" href="#sc_wpun_should_notify_item" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters whether an item is reported at all, to every channel instance.</p>
+<p>An item that is vetoed is not sent and not recorded, but still counts as waiting for an update.</p>
+<p>Example, never report one plugin:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_should_notify_item',</span>
+<span class="x">    function ( $notify, $item ) {</span>
+<span class="x">        return 'noisy/noisy.php' === $item-&gt;get_key() ? false : $notify;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$notify</code></td>
+<td><code>bool</code></td>
+<td>Whether to report the item. Default true.</td>
+</tr>
+<tr>
+<td><code>$item</code></td>
+<td><code>Notification_Item</code></td>
+<td>The item.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
+<h3 id="sc_wpun_themes_need_update"><code>sc_wpun_themes_need_update</code><a class="headerlink" href="#sc_wpun_themes_need_update" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 1.0.0</p>
+<p>Filters the themes that are waiting for an update and will be reported.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$themes_need_update</code></td>
+<td><code>array&lt;string, array&lt;string, mixed&gt;&gt;</code></td>
+<td>Update data from WordPress by theme stylesheet.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
+<h3 id="sc_wpun_update_items"><code>sc_wpun_update_items</code><a class="headerlink" href="#sc_wpun_update_items" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the items found by the check, to add, remove or change items.</p>
+<p>Runs after core, plugins and themes were collected and before the global settings'
+routing. Only Notification_Item objects are kept. An item type other than core,
+plugin and theme must be registered with the <code>sc_wpun_item_types</code> filter for its
+history to be kept up to date: once no item of a registered type is returned,
+what was notified about it is forgotten.</p>
+<p>Example, report an item of your own:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_update_items',</span>
+<span class="x">    function ( $items ) {</span>
+<span class="x">        $items[] = new \WPUN\Notification_Item(</span>
+<span class="x">            array(</span>
+<span class="x">                'type'            =&gt; 'php',</span>
+<span class="x">                'key'             =&gt; 'php',</span>
+<span class="x">                'name'            =&gt; 'PHP',</span>
+<span class="x">                'current_version' =&gt; PHP_VERSION,</span>
+<span class="x">                'new_version'     =&gt; '8.4',</span>
+<span class="x">            )</span>
+<span class="x">        );</span>
+<span class="x">        return $items;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$items</code></td>
+<td><code>Notification_Item[]</code></td>
+<td>The items found, in the order of the message.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
+<h2 id="delivery">Delivery<a class="headerlink" href="#delivery" title="Permanent link">&para;</a></h2>
+<h3 id="sc_wpun_after_dispatch"><code>sc_wpun_after_dispatch</code><a class="headerlink" href="#sc_wpun_after_dispatch" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires when a round of delivery has finished: a dispatch, or an update check that sent something.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$results</code></td>
+<td><code>array&lt;string, Delivery_Result&gt;</code></td>
+<td>Result by channel instance id.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>The notification that was delivered.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-dispatcher.php</code>, <code>includes/class-update-checker.php</code>.</p>
+<h3 id="sc_wpun_channel_payload"><code>sc_wpun_channel_payload</code><a class="headerlink" href="#sc_wpun_channel_payload" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the payload of any channel just before it is sent.</p>
+<p>The shape of the payload is up to the channel; see its documentation. The email
+channel uses <code>array( 'to' =&gt; string[], 'subject' =&gt; string, 'message' =&gt; string, 'headers' =&gt; string[] )</code>.</p>
+<p>Example, add a recipient to every email:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_channel_payload',</span>
+<span class="x">    function ( $payload, $notification, $instance ) {</span>
+<span class="x">        if ( 'email' === $instance-&gt;get_type() ) {</span>
+<span class="x">            $payload['to'][] = 'archive@example.org';</span>
+<span class="x">        }</span>
+<span class="x">        return $payload;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$payload</code></td>
+<td><code>mixed</code></td>
+<td>The payload.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>What is being delivered.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance it is delivered through.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/abstract-class-channel.php</code>.</p>
+<h3 id="sc_wpun_channel_payload_type"><code>sc_wpun_channel_payload_{type}</code><a class="headerlink" href="#sc_wpun_channel_payload_type" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the payload of the channels of one type just before it is sent.</p>
+<p>The dynamic part, <code>$type</code>, is the channel type, for example <code>email</code>. The arguments are the
+same as for <code>sc_wpun_channel_payload</code>.</p>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$payload</code></td>
+<td><code>mixed</code></td>
+<td>The payload.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>What is being delivered.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance it is delivered through.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/abstract-class-channel.php</code>.</p>
+<h3 id="sc_wpun_email_content"><code>sc_wpun_email_content</code><a class="headerlink" href="#sc_wpun_email_content" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 1.4.3. Since 2.0.0 also receives the notification and the instance, and is not HTML-escaped.</p>
+<p>Filters the body of the email.</p>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$body</code></td>
+<td><code>string</code></td>
+<td>Body: plain text, or HTML if the instance is set to HTML. An HTML body is a fragment: it is wrapped in a document with the language, direction and title after this filter.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>The notification.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance sending it.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-notifier.php</code>, <code>modules/email/class-email-channel.php</code>.</p>
+<h3 id="sc_wpun_email_subject"><code>sc_wpun_email_subject</code><a class="headerlink" href="#sc_wpun_email_subject" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 1.4.3. Since 2.0.0 also receives the notification and the instance.</p>
+<p>Filters the subject of the email.</p>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$subject</code></td>
+<td><code>string</code></td>
+<td>Subject, including the prefix.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>The notification.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance sending it.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-notifier.php</code>, <code>modules/email/class-email-channel.php</code>.</p>
+<h3 id="sc_wpun_message_text"><code>sc_wpun_message_text</code><a class="headerlink" href="#sc_wpun_message_text" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the plain text of a notification, which channels use as the message.</p>
+<p>When a length limit is given to the renderer, the filter may run more than once for one message, and the
+length is measured on what the filter returns. <code>$notification</code> is then a copy with only the items shown
+when the message was shortened.</p>
+<p>Example, add a line at the end:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_message_text',</span>
+<span class="x">    function ( $text, $notification ) {</span>
+<span class="x">        return $text . "\n\n-- Sent by my agency";</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$text</code></td>
+<td><code>string</code></td>
+<td>The plain text.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>The notification it was made from.</td>
+</tr>
+<tr>
+<td><code>$hidden</code></td>
+<td><code>int</code></td>
+<td>How many items were left out of the text, 0 when none.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-notification-renderer.php</code>.</p>
+<h3 id="sc_wpun_more_items_text"><code>sc_wpun_more_items_text</code><a class="headerlink" href="#sc_wpun_more_items_text" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the line that says how many items were left out of a shortened message.</p>
+<p>Return plain text: it is escaped for the format (Markdown, HTML) where needed. The line only exists
+when at least one item was left out.</p>
+<p>Example, say it in another way:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_more_items_text',</span>
+<span class="x">    function ( $text, $hidden ) {</span>
+<span class="x">        return sprintf( '(%d more not shown)', $hidden );</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$text</code></td>
+<td><code>string</code></td>
+<td>The line, for example "…and 3 more".</td>
+</tr>
+<tr>
+<td><code>$hidden</code></td>
+<td><code>int</code></td>
+<td>How many items were left out.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>The notification, with all its items.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-notification-renderer.php</code>.</p>
+<h3 id="sc_wpun_notification_failed"><code>sc_wpun_notification_failed</code><a class="headerlink" href="#sc_wpun_notification_failed" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires when delivering a notification through a channel instance failed.</p>
+<p>Also fires for an instance that is switched off or whose channel is not available,
+when a delivery to it was asked for.</p>
+<p>A result with a <code>retry_after</code> defers the instance: update checks skip it until then (at most 7 days).</p>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$result</code></td>
+<td><code>Delivery_Result</code></td>
+<td>The result, with the reason in its code and message.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>What was to be delivered.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-dispatcher.php</code>.</p>
+<h3 id="sc_wpun_notification_sent"><code>sc_wpun_notification_sent</code><a class="headerlink" href="#sc_wpun_notification_sent" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires when a notification was delivered through a channel instance.</p>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$result</code></td>
+<td><code>Delivery_Result</code></td>
+<td>The result.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>What was delivered.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance it was delivered through.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-dispatcher.php</code>.</p>
+<h3 id="sc_wpun_pre_send"><code>sc_wpun_pre_send</code><a class="headerlink" href="#sc_wpun_pre_send" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters a delivery before it happens, to replace it with a result of your own.</p>
+<p>Return a Delivery_Result to skip the channel and use that result; any other
+value sends as normal. Runs for every instance that is switched on and whose
+channel is available.</p>
+<p>Example, hold all deliveries during maintenance:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_pre_send',</span>
+<span class="x">    function ( $pre, $notification, $instance ) {</span>
+<span class="x">        return my_maintenance_mode()</span>
+<span class="x">            ? \WPUN\Delivery_Result::failure( 'Held back.', 'maintenance' )</span>
+<span class="x">            : $pre;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$pre</code></td>
+<td><code>null\|Delivery_Result</code></td>
+<td>Null. Return a Delivery_Result to short-circuit.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>What is being delivered.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance it is delivered through.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-dispatcher.php</code>.</p>
+<h2 id="channels-and-fields">Channels and fields<a class="headerlink" href="#channels-and-fields" title="Permanent link">&para;</a></h2>
+<h3 id="sc_wpun_channel_deleted"><code>sc_wpun_channel_deleted</code><a class="headerlink" href="#sc_wpun_channel_deleted" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires after a channel instance was deleted.</p>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$id</code></td>
+<td><code>string</code></td>
+<td>Identifier of the deleted instance.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The deleted instance.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-channel-store.php</code>.</p>
+<h3 id="sc_wpun_channel_fields"><code>sc_wpun_channel_fields</code><a class="headerlink" href="#sc_wpun_channel_fields" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the settings fields of a channel type.</p>
+<p>The fields are drawn on the add and edit forms, checked by the default Channel::validate_settings() and can be
+supplied from outside the database. Same schema as Channel::get_fields().</p>
+<p>A channel that overrides validate_settings() decides for itself what it keeps, so a field added to it here is
+drawn but may not be saved. The email channel is one: it keeps only its own fields. Changing the texts of
+existing fields is always safe.</p>
+<p>Example, change the help text of the email channel's recipients:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_channel_fields',</span>
+<span class="x">    function ( $fields, $type ) {</span>
+<span class="x">        if ( 'email' === $type &amp;&amp; isset( $fields['to'] ) ) {</span>
+<span class="x">            $fields['to']['description'] = 'Use the team mailing list.';</span>
+<span class="x">        }</span>
+<span class="x">        return $fields;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$fields</code></td>
+<td><code>array&lt;string, array&lt;string, mixed&gt;&gt;</code></td>
+<td>The field schemas by name.</td>
+</tr>
+<tr>
+<td><code>$type</code></td>
+<td><code>string</code></td>
+<td>The channel type.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/abstract-class-channel.php</code>.</p>
+<h3 id="sc_wpun_channel_rejected"><code>sc_wpun_channel_rejected</code><a class="headerlink" href="#sc_wpun_channel_rejected" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires when a channel is refused because the API version of the site does not satisfy what it needs.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_channel_rejected',</span>
+<span class="x">    function ( $type, $reason, $channel ) {</span>
+<span class="x">        error_log( sprintf( 'Channel "%s" was refused: %s', $type, $reason ) );</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$type</code></td>
+<td><code>string</code></td>
+<td>The channel type.</td>
+</tr>
+<tr>
+<td><code>$reason</code></td>
+<td><code>string</code></td>
+<td>Why it was refused, as plain text.</td>
+</tr>
+<tr>
+<td><code>$channel</code></td>
+<td><code>Channel</code></td>
+<td>The channel that was refused.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-channel-registry.php</code>.</p>
+<h3 id="sc_wpun_channels"><code>sc_wpun_channels</code><a class="headerlink" href="#sc_wpun_channels" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the channel instances defined in code.</p>
+<p>Starts with the instances of the <code>SC_WPUN_CHANNELS</code> constant. Entries are Channel_Instance objects or
+arrays with the keys <code>id</code>, <code>type</code>, <code>label</code>, <code>enabled</code>, <code>settings</code> and <code>routing</code>. An instance defined here
+replaces a stored one with the same id, is read-only in the admin and works like any other for delivery.
+Invalid entries are reported and skipped.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_channels',</span>
+<span class="x">    function ( $channels ) {</span>
+<span class="x">        $channels[] = array(</span>
+<span class="x">            'id'       =&gt; 'ops_email',</span>
+<span class="x">            'type'     =&gt; 'email',</span>
+<span class="x">            'label'    =&gt; 'Operations',</span>
+<span class="x">            'enabled'  =&gt; true,</span>
+<span class="x">            'settings' =&gt; array( 'to' =&gt; 'ops@example.org' ),</span>
+<span class="x">        );</span>
+<span class="x">        return $channels;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$channels</code></td>
+<td><code>array&lt;int\|string, Channel_Instance\|array&lt;string, mixed&gt;&gt;</code></td>
+<td>The instances.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-channel-store.php</code>.</p>
+<h3 id="sc_wpun_channels_json"><code>sc_wpun_channels_json</code><a class="headerlink" href="#sc_wpun_channels_json" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the JSON text of the <code>SC_WPUN_CHANNELS</code> constant, which defines channel instances in code.</p>
+<p>Null when the constant is not defined. A filter can supply the JSON itself, for example from a secrets
+service. The text is a JSON array of objects with the keys <code>id</code>, <code>type</code>, <code>label</code>, <code>enabled</code>, <code>settings</code>
+and <code>routing</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$json</code></td>
+<td><code>string\|null</code></td>
+<td>The JSON text, or null.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-channel-store.php</code>.</p>
+<h3 id="sc_wpun_field_types"><code>sc_wpun_field_types</code><a class="headerlink" href="#sc_wpun_field_types" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the field types the settings screen can draw and settings can be checked with.</p>
+<p>The array is keyed by type. Each entry is an array with a <code>render</code> and a <code>sanitize</code> callable. The built-in
+types (<code>text</code>, <code>textarea</code>, <code>url</code>, <code>email_list</code>, <code>secret</code>, <code>number</code>, <code>boolean</code> and <code>enum</code>) are in it in the
+same shape, so an add-on can replace one. <code>checkbox</code> and <code>select</code> are aliases of <code>boolean</code> and <code>enum</code>.
+An entry that is not an array of two callables is dropped, with a notice to the developer.</p>
+<p><code>render( $field, $name, $id, $value, $disabled, $described_by, $error )</code> returns the escaped markup of the
+control. <code>$field</code> is the field schema, <code>$name</code> the <code>name</code> attribute, <code>$id</code> the <code>id</code>, <code>$value</code> the current
+value, <code>$disabled</code> whether the control is read-only and <code>$described_by</code> the ids of the elements that
+describe it. <code>$error</code> is the message of an error to show, or an empty string; the error text itself is
+drawn by the caller, so the control only needs to be marked invalid.</p>
+<p>For a field with <code>secret</code> set, <code>$value</code> is <code>'1'</code> when a value is saved and <code>''</code> when not: the real value is
+never passed to the callable.</p>
+<p><code>sanitize( $value, $field )</code> returns the clean value, or a WP_Error when the value is not valid. <code>$field</code>
+is the field schema, with its <code>name</code> added. The error is reported against the field.</p>
+<p>Example, add a colour type:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_field_types',</span>
+<span class="x">    function ( $types ) {</span>
+<span class="x">        $types['colour'] = array(</span>
+<span class="x">            'render'   =&gt; function ( $field, $name, $id, $value ) {</span>
+<span class="x">                return '&lt;input type="color" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '" /&gt;';</span>
+<span class="x">            },</span>
+<span class="x">            'sanitize' =&gt; function ( $value ) {</span>
+<span class="x">                return sanitize_hex_color( $value ) ? sanitize_hex_color( $value ) : new WP_Error( 'invalid_colour', 'Enter a colour.' );</span>
+<span class="x">            },</span>
+<span class="x">        );</span>
+<span class="x">        return $types;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$types</code></td>
+<td><code>array&lt;string, array{render: callable, sanitize: callable}&gt;</code></td>
+<td>Field types by name.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-field-types.php</code>.</p>
+<h3 id="sc_wpun_register_channels"><code>sc_wpun_register_channels</code><a class="headerlink" href="#sc_wpun_register_channels" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires when the notification channels are first needed, for modules and add-ons to register theirs.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_register_channels',</span>
+<span class="x">    function ( \WPUN\Channel_Registry $registry ) {</span>
+<span class="x">        $registry-&gt;register( new My_Channel() );</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$registry</code></td>
+<td><code>Channel_Registry</code></td>
+<td>The registry to register channels with.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-channel-registry.php</code>.</p>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
+<h3 id="sc_wpun_config_sources"><code>sc_wpun_config_sources</code><a class="headerlink" href="#sc_wpun_config_sources" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the configuration sources, in the order they are asked.</p>
+<p>The first source to return a value wins. By default constants come first, then environment
+variables if enabled. Add your own to read from a secrets service, or reorder the list.
+Entries that are not Config_Source objects are dropped.</p>
+<p>Example, ask a source of your own after the constants:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_config_sources',</span>
+<span class="x">    function ( $sources ) {</span>
+<span class="x">        $sources[] = new My_Vault_Source();</span>
+<span class="x">        return $sources;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$sources</code></td>
+<td><code>Config_Source[]</code></td>
+<td>The sources.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-config.php</code>.</p>
+<h3 id="sc_wpun_config_value"><code>sc_wpun_config_value</code><a class="headerlink" href="#sc_wpun_config_value" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the value of a setting or channel field, the last word before the database is used.</p>
+<p>Receives what the configuration sources supplied, or null if none did. Return a value
+to override it, or null to use the saved value from the database. Values are scalars
+and are cast to the type of the setting or field. Do not log the value: it can be a secret.</p>
+<p>Example, take the check frequency from a site option of your own:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_config_value',</span>
+<span class="x">    function ( $value, $context, $source ) {</span>
+<span class="x">        if ( 'frequency' === $context-&gt;get_setting() ) {</span>
+<span class="x">            return get_site_option( 'my_frequency', $value );</span>
+<span class="x">        }</span>
+<span class="x">        return $value;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$value</code></td>
+<td><code>string\|bool\|int\|float\|null</code></td>
+<td>The value the sources supplied, or null.</td>
+</tr>
+<tr>
+<td><code>$context</code></td>
+<td><code>Config_Context</code></td>
+<td>What is asked for, and the site.</td>
+</tr>
+<tr>
+<td><code>$source</code></td>
+<td><code>string\|null</code></td>
+<td>Where the value came from, or null.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-config.php</code>.</p>
+<h3 id="sc_wpun_default_settings"><code>sc_wpun_default_settings</code><a class="headerlink" href="#sc_wpun_default_settings" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the settings a new install starts with, and the values used for settings that are missing.</p>
+<p>Only the keys below are used, and values are cast to the type shown. Anything else
+is ignored, as is a return value that is not an array. A notify setting that is not
+one of its keys falls back to the built-in default.</p>
+<p>Example, check daily by default:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_default_settings',</span>
+<span class="x">    function ( $defaults ) {</span>
+<span class="x">        $defaults['frequency'] = 'daily';</span>
+<span class="x">        return $defaults;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$defaults</code></td>
+<td><code>array&lt;string, mixed&gt;</code></td>
+<td>The default settings.<br>- <code>string</code> <code>$frequency</code> Name of a cron schedule.<br>- <code>string</code> <code>$notify_core</code> <code>none</code>, <code>all</code> or <code>major</code> (major releases only).<br>- <code>string</code> <code>$notify_plugins</code> <code>none</code>, <code>all</code> or <code>active</code> (active plugins only).<br>- <code>string</code> <code>$notify_themes</code> <code>none</code>, <code>all</code> or <code>active</code> (active themes only).<br>- <code>bool</code> <code>$hide_updates</code> True to hide the WordPress update notice from users who cannot update.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-settings.php</code>.</p>
+<h3 id="sc_wpun_get_options_filter"><code>sc_wpun_get_options_filter</code><a class="headerlink" href="#sc_wpun_get_options_filter" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 1.4.0</p>
+<p>Filters a setting option of the plugin after it is read.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$value</code></td>
+<td><code>mixed</code></td>
+<td>The stored value.</td>
+</tr>
+<tr>
+<td><code>$field</code></td>
+<td><code>string</code></td>
+<td>The name of the option.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-channel-store.php</code>, <code>includes/class-settings.php</code>, <code>includes/class-state.php</code>.</p>
+<h3 id="sc_wpun_load_from_env"><code>sc_wpun_load_from_env</code><a class="headerlink" href="#sc_wpun_load_from_env" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters whether configuration is also read from environment variables.</p>
+<p>Off unless the environment variable SC_WPUN_LOAD_FROM_ENV is set to an "on" value (1, true,
+yes or on), so variables a host happens to set never change the plugin's behaviour by surprise.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$load_from_env</code></td>
+<td><code>bool</code></td>
+<td>Whether to read environment variables.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-config.php</code>.</p>
+<h3 id="sc_wpun_put_options_filter"><code>sc_wpun_put_options_filter</code><a class="headerlink" href="#sc_wpun_put_options_filter" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 1.4.0</p>
+<p>Filters a setting option of the plugin before it is stored.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$value</code></td>
+<td><code>mixed</code></td>
+<td>The value about to be stored.</td>
+</tr>
+<tr>
+<td><code>$field</code></td>
+<td><code>string</code></td>
+<td>The name of the option.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-channel-store.php</code>, <code>includes/class-settings.php</code>, <code>includes/class-state.php</code>.</p>
+<h2 id="settings-screen">Settings screen<a class="headerlink" href="#settings-screen" title="Permanent link">&para;</a></h2>
+<h3 id="sc_wpun_after_channel_form"><code>sc_wpun_after_channel_form</code><a class="headerlink" href="#sc_wpun_after_channel_form" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires inside the add and edit form of a channel, after its last section and before the buttons.</p>
+<p>On the form of a new channel the instance is a provisional, unsaved one: the id it would get from the
+prefilled label, the type, the label of the module, switched off, with the default settings.</p>
+<p>Example, add a note:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_after_channel_form',</span>
+<span class="x">    function ( $instance, $channel ) {</span>
+<span class="x">        echo '&lt;p&gt;' . esc_html( $instance-&gt;get_id() ) . '&lt;/p&gt;';</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance being edited, or the provisional one of a new channel.</td>
+</tr>
+<tr>
+<td><code>$channel</code></td>
+<td><code>Channel</code></td>
+<td>The module of the instance.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/admin/class-channel-form.php</code>.</p>
+<h3 id="sc_wpun_before_channel_form"><code>sc_wpun_before_channel_form</code><a class="headerlink" href="#sc_wpun_before_channel_form" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires inside the add and edit form of a channel, before its first section.</p>
+<p>Output extra markup here. The plugin does not save extra inputs. On the form of a new channel
+the instance is a provisional, unsaved one: the id it would get from the prefilled label, the type,
+the label of the module, switched off, with the default settings.</p>
+<p>Example, add a note:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_before_channel_form',</span>
+<span class="x">    function ( $instance, $channel ) {</span>
+<span class="x">        echo '&lt;p&gt;' . esc_html( $channel-&gt;get_label() ) . '&lt;/p&gt;';</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance being edited, or the provisional one of a new channel.</td>
+</tr>
+<tr>
+<td><code>$channel</code></td>
+<td><code>Channel</code></td>
+<td>The module of the instance.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/admin/class-channel-form.php</code>.</p>
+<h3 id="sc_wpun_capability"><code>sc_wpun_capability</code><a class="headerlink" href="#sc_wpun_capability" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the capability needed to use the plugin's settings page.</p>
+<p>It decides who sees the settings page, saves the settings, sends a test message
+and dismisses the plugin's notice. An empty or non-string value is ignored and
+the default is used.</p>
+<p>The default is <code>manage_options</code>, or <code>manage_network_options</code> on multisite, which
+only super admins have, as with core's update screens.</p>
+<p>Lowering it hands every user with the capability control over where the plugin's
+notifications go. Such a user can:</p>
+<ul>
+<li>send the update notifications, a list of the site's outdated and possibly
+  vulnerable plugins and themes, to any address;</li>
+<li>send test messages to any address;</li>
+<li>change the From and Reply-To addresses;</li>
+<li>add, edit, switch off, duplicate and delete channels;</li>
+<li>hide the core update notice and run the update check on demand;</li>
+<li>see the values of channel settings set in <code>wp-config.php</code> or by the environment
+  when the field is not secret and its schema sets <code>show_external</code>.</li>
+</ul>
+<p>Example, let editors manage the plugin:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter( 'sc_wpun_capability', fn() =&gt; 'edit_pages' );</span>
+</code></pre></div>
+<p>Example, let the administrators of the sites of a network manage the plugin:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter( 'sc_wpun_capability', fn() =&gt; 'manage_options' );</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$capability</code></td>
+<td><code>string</code></td>
+<td>Capability. Default <code>manage_options</code>, or <code>manage_network_options</code> on multisite.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/admin/class-settings-page.php</code>.</p>
+<h3 id="sc_wpun_settings_tab_tab"><code>sc_wpun_settings_tab_{tab}</code><a class="headerlink" href="#sc_wpun_settings_tab_tab" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Draws a tab of the settings screen.</p>
+<p>The dynamic part, <code>$tab</code>, is the tab's slug. Add the tab with the <code>sc_wpun_settings_tabs</code> filter;
+it is listed only while something is hooked here. Output inside the screen's wrapper.</p>
+<p>Fired in <code>includes/admin/class-settings-page.php</code>.</p>
+<h3 id="sc_wpun_settings_tabs"><code>sc_wpun_settings_tabs</code><a class="headerlink" href="#sc_wpun_settings_tabs" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 2.0.0</p>
+<p>Filters the tabs of the settings screen.</p>
+<p>A tab is shown only if something is hooked on <code>sc_wpun_settings_tab_{$tab}</code> to draw it. Entries
+whose slug is not a string equal to its <code>sanitize_key()</code> form, or whose label is not a string,
+are ignored. The General tab cannot be removed.</p>
+<p>Example, add a tab:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter( 'sc_wpun_settings_tabs', fn( $tabs ) =&gt; $tabs + array( 'mine' =&gt; 'Mine' ) );</span>
+<span class="x">add_action( 'sc_wpun_settings_tab_mine', fn() =&gt; print '&lt;p&gt;Hello&lt;/p&gt;' );</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$tabs</code></td>
+<td><code>array&lt;string, string&gt;</code></td>
+<td>Tab labels keyed by slug. Default <code>general</code>, <code>channels</code> and <code>about</code>. The About tab is always moved last, and is hidden by the <code>show_about</code> setting (code only).</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/admin/class-settings-page.php</code>.</p>
+<h2 id="lifecycle-and-legacy">Lifecycle and legacy<a class="headerlink" href="#lifecycle-and-legacy" title="Permanent link">&para;</a></h2>
+<h3 id="sc_wpun_disable_cron"><code>sc_wpun_disable_cron</code><a class="headerlink" href="#sc_wpun_disable_cron" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 1.0.0</p>
+<p>Fires when the plugin is deactivated, to turn the scheduled check off.</p>
+<p>Fired in <code>includes/class-plugin.php</code>, <code>includes/class-scheduler.php</code>.</p>
+<h3 id="sc_wpun_loaded"><code>sc_wpun_loaded</code><a class="headerlink" href="#sc_wpun_loaded" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Fires when the plugin has loaded and its hooks are registered.</p>
+<p>Add-ons can use it as the moment to start talking to the plugin's API.</p>
+<p>Fired in <code>includes/class-plugin.php</code>.</p>
+<h2 id="actions-you-can-fire">Actions you can fire<a class="headerlink" href="#actions-you-can-fire" title="Permanent link">&para;</a></h2>
+<p>The plugin listens to these actions but does not fire them itself. Call them with <code>do_action()</code>.</p>
+<h3 id="sc_wpun_enable_cron"><code>sc_wpun_enable_cron</code><a class="headerlink" href="#sc_wpun_enable_cron" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 1.0.0</p>
+<p>Schedules the update check. Handled by the <code>Scheduler</code> class.</p>
+<p>Kept from 1.x. Schedules the check at the saved frequency, unless it is already scheduled at it.
+The plugin does this itself on every request (on <code>init</code>), so there is rarely a reason to call it.
+Pass a frequency to schedule at it instead of the saved one; <code>manual</code> stops the checks, as
+<code>sc_wpun_disable_cron</code> does.</p>
+<div class="highlight"><pre><span></span><code><span class="x">do_action( 'sc_wpun_enable_cron' );</span>
+<span class="x">do_action( 'sc_wpun_enable_cron', 'daily' );</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$frequency</code></td>
+<td><code>string</code></td>
+<td>Optional. A frequency key from <code>sc_wpun_frequencies</code>, such as <code>daily</code>, or <code>manual</code>. Default is the saved frequency.</td>
+</tr>
+</tbody>
+</table>
+<p>Handled in <code>includes/class-plugin.php</code>.</p>
+<h3 id="sc_wpun_run_check"><code>sc_wpun_run_check</code><a class="headerlink" href="#sc_wpun_run_check" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 2.0.0</p>
+<p>Runs the update check now.</p>
+<p>It works as a scheduled run does: same routing, per-instance dedupe, delivery state and
+hooks, so items an instance was already told about are not sent again. The notification
+source is <code>manual</code> and the schedule is not changed. Use it from a deploy script, or from
+a system cron when <code>DISABLE_WP_CRON</code> is set, for example
+<code>wp eval "do_action( 'sc_wpun_run_check' );"</code>.</p>
+<p>There is no lock: a run that overlaps another check, scheduled or manual, can send an
+update the other is also sending, so it may arrive twice. A channel that must never
+deliver twice can keep its own record of what it sent.</p>
+<div class="highlight"><pre><span></span><code><span class="x">do_action( 'sc_wpun_run_check' );</span>
+</code></pre></div>
+<p>There is no capability check. Before firing it from anything a user can reach, check
+<code>current_user_can()</code> with the capability from the <code>sc_wpun_capability</code> filter.</p>
+<p>Handled in <code>includes/class-plugin.php</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/l3rady/wp-updates-notifier" target="_blank" rel="noopener" title="WP Updates Notifier on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/javascripts/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>

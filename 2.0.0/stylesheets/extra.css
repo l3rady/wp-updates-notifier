@@ -1,0 +1,283 @@
+/*
+ * Solarized colour schemes for the documentation site (selected in mkdocs.yml: solarized-dark, solarized-light).
+ *
+ * Both are defined through Material's CSS variables. Plain Solarized fails WCAG 2.2 AA in several places, so text
+ * uses the adjusted pairings agreed on issue #156 and every pairing is checked by `make docs-a11y` (axe, both
+ * schemes). Untouched Solarized values are used only for decoration (borders, rules, backgrounds).
+ *
+ * Solarized: base03 #002b36, base02 #073642, base01 #586e75, base00 #657b83, base0 #839496, base1 #93a1a1,
+ * base2 #eee8d5, base3 #fdf6e3.
+ */
+
+/* ---------- Dark ---------- */
+[data-md-color-scheme="solarized-dark"] {
+	color-scheme: dark;
+
+	/* Page: base03 background, base1 text (5.6:1). Secondary text is base0, which only passes on the page itself (4.75:1). */
+	--md-default-bg-color: #002b36;
+	--md-default-bg-color--light: #002b36b3;
+	--md-default-bg-color--lighter: #002b364d;
+	--md-default-bg-color--lightest: #002b361f;
+	--md-default-fg-color: #93a1a1;
+	--md-default-fg-color--light: #839496;
+	--md-default-fg-color--lighter: #586e75;
+	--md-default-fg-color--lightest: #073642;
+	--md-typeset-color: #93a1a1;
+
+	/* Header bar: base02 with base2 text (10.6:1). Material draws it with the primary colours. */
+	--md-primary-fg-color: #073642;
+	--md-primary-fg-color--light: #073642;
+	--md-primary-fg-color--dark: #002b36;
+	--md-primary-bg-color: #eee8d5;
+	--md-primary-bg-color--light: #93a1a1;
+
+	/* Links, hover and the focus ring: Solarized blue lightened to 5.4:1 on the page, orange lightened to 5.3:1. */
+	--md-typeset-a-color: #4ea2e1;
+	--md-accent-fg-color: #ed7a3d;
+	--md-accent-fg-color--transparent: #ed7a3d1a;
+	--md-accent-bg-color: #002b36;
+	--md-accent-bg-color--light: #002b36b3;
+
+	/* Code: base02 background. Plain Solarized accents are 2.8 to 4.1:1 there, so each token colour is lightened to 4.5:1 or more. */
+	--md-code-bg-color: #073642;
+	--md-code-bg-color--light: #073642b3;
+	--md-code-bg-color--lighter: #0736424d;
+	--md-code-fg-color: #93a1a1;
+	--md-code-hl-color: #4ea2e1;
+	--md-code-hl-color--light: #4ea2e126;
+	--md-code-hl-number-color: #ed7a3d;
+	--md-code-hl-special-color: #ea74b0;
+	--md-code-hl-function-color: #4ea2e1;
+	--md-code-hl-constant-color: #9ba3e0;
+	--md-code-hl-keyword-color: #a3ab00;
+	--md-code-hl-string-color: #3fb4aa;
+	--md-code-hl-name-color: #93a1a1;
+	--md-code-hl-operator-color: #93a1a1;
+	--md-code-hl-punctuation-color: #93a1a1;
+	--md-code-hl-comment-color: #93a1a1;
+	--md-code-hl-generic-color: #93a1a1;
+	--md-code-hl-variable-color: #c5a000;
+
+	--md-typeset-kbd-color: #073642;
+	--md-typeset-kbd-accent-color: #002b36;
+	--md-typeset-kbd-border-color: #586e75;
+	--md-typeset-table-color: #073642;
+	--md-typeset-table-color--light: #07364280;
+	--md-typeset-mark-color: #b5890059;
+	--md-admonition-fg-color: #93a1a1;
+	--md-admonition-bg-color: #002b36;
+	--md-warning-fg-color: #93a1a1;
+	--md-warning-bg-color: #073642;
+
+	--md-footer-fg-color: #eee8d5;
+	--md-footer-fg-color--light: #93a1a1;
+	--md-footer-fg-color--lighter: #93a1a1;
+	--md-footer-bg-color: #073642;
+	--md-footer-bg-color--dark: #002b36;
+}
+
+/* ---------- Light ---------- */
+[data-md-color-scheme="solarized-light"] {
+	color-scheme: light;
+
+	/* Page: base3 background, base01 text (5.0:1). Secondary text is base01 too: base00 is only 4.1:1. */
+	--md-default-bg-color: #fdf6e3;
+	--md-default-bg-color--light: #fdf6e3b3;
+	--md-default-bg-color--lighter: #fdf6e34d;
+	--md-default-bg-color--lightest: #fdf6e31f;
+	--md-default-fg-color: #586e75;
+	--md-default-fg-color--light: #586e75;
+	--md-default-fg-color--lighter: #93a1a1;
+	--md-default-fg-color--lightest: #eee8d5;
+	--md-typeset-color: #586e75;
+
+	/* Header bar: base2 with base02 text (10.6:1), so the focus ring colour also passes on it. */
+	--md-primary-fg-color: #eee8d5;
+	--md-primary-fg-color--light: #eee8d5;
+	--md-primary-fg-color--dark: #e4ddc7;
+	--md-primary-bg-color: #073642;
+	--md-primary-bg-color--light: #4a5f66;
+
+	/* Links, hover and the focus ring: Solarized blue darkened to 5.3:1 on the page, magenta darkened to 5.2:1. */
+	--md-typeset-a-color: #1b6aa6;
+	--md-accent-fg-color: #bd2971;
+	--md-accent-fg-color--transparent: #bd29711a;
+	--md-accent-bg-color: #fdf6e3;
+	--md-accent-bg-color--light: #fdf6e3b3;
+
+	/* Code: base2 background. Text is base02 (10.6:1, base01 would be 4.4:1); every token colour is darkened to 4.5:1 or more. */
+	--md-code-bg-color: #eee8d5;
+	--md-code-bg-color--light: #eee8d5b3;
+	--md-code-bg-color--lighter: #eee8d54d;
+	--md-code-fg-color: #073642;
+	--md-code-hl-color: #1b6aa6;
+	--md-code-hl-color--light: #1b6aa626;
+	--md-code-hl-number-color: #a33f10;
+	--md-code-hl-special-color: #bd2971;
+	--md-code-hl-function-color: #1b6aa6;
+	--md-code-hl-constant-color: #5a5fb0;
+	--md-code-hl-keyword-color: #566700;
+	--md-code-hl-string-color: #106a63;
+	--md-code-hl-name-color: #073642;
+	--md-code-hl-operator-color: #4a5f66;
+	--md-code-hl-punctuation-color: #4a5f66;
+	--md-code-hl-comment-color: #4f6469;
+	--md-code-hl-generic-color: #4a5f66;
+	--md-code-hl-variable-color: #7d5f00;
+
+	--md-typeset-kbd-color: #eee8d5;
+	--md-typeset-kbd-accent-color: #fdf6e3;
+	--md-typeset-kbd-border-color: #93a1a1;
+	--md-typeset-table-color: #93a1a1;
+	--md-typeset-table-color--light: #eee8d580;
+	--md-typeset-mark-color: #b5890059;
+	--md-admonition-fg-color: #586e75;
+	--md-admonition-bg-color: #fdf6e3;
+	--md-warning-fg-color: #586e75;
+	--md-warning-bg-color: #eee8d5;
+
+	--md-footer-fg-color: #073642;
+	--md-footer-fg-color--light: #4a5f66;
+	--md-footer-fg-color--lighter: #4a5f66;
+	--md-footer-bg-color: #eee8d5;
+	--md-footer-bg-color--dark: #e4ddc7;
+}
+
+/* Headings are lighter (dark) or darker (light) than the body text. */
+[data-md-color-scheme="solarized-dark"] .md-typeset h1,
+[data-md-color-scheme="solarized-dark"] .md-typeset h2,
+[data-md-color-scheme="solarized-dark"] .md-typeset h3,
+[data-md-color-scheme="solarized-dark"] .md-typeset h4 {
+	color: #eee8d5;
+}
+
+[data-md-color-scheme="solarized-light"] .md-typeset h1,
+[data-md-color-scheme="solarized-light"] .md-typeset h2,
+[data-md-color-scheme="solarized-light"] .md-typeset h3,
+[data-md-color-scheme="solarized-light"] .md-typeset h4 {
+	color: #073642;
+}
+
+/* Comments are the same colour as the code (the lowest-contrast Solarized comment colour fails), so set them apart in italics. */
+.md-typeset .highlight .c,
+.md-typeset .highlight .c1,
+.md-typeset .highlight .cm,
+.md-typeset .highlight .cs {
+	font-style: italic;
+}
+
+/* Links inside text are underlined: the blue alone is not 3:1 against the body text (WCAG 1.4.1, axe link-in-text-block). */
+.md-typeset a:not(.headerlink):not(.md-button) {
+	text-decoration: underline;
+	text-underline-offset: 0.15em;
+}
+
+/* Material removes the outline from the search field (input { outline: none }) and shows no other focus indicator, so the form around it gets one. */
+.md-search__form:focus-within {
+	outline: 2px solid var(--md-accent-fg-color);
+	outline-offset: 1px;
+}
+
+/* Home page (docs/index.md). */
+.md-typeset .wpun-lead {
+	font-size: 1.25em;
+	line-height: 1.5;
+	color: var(--md-default-fg-color);
+}
+
+/* The developer's photo beside the text, stacked on narrow screens. */
+.md-typeset .wpun-author {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.5rem;
+	align-items: flex-start;
+}
+
+.md-typeset .wpun-author > div {
+	flex: 1 1 20rem;
+}
+
+.md-typeset .wpun-author h3 {
+	margin-top: 0;
+}
+
+.md-typeset .wpun-author__avatar {
+	flex: none;
+	border-radius: 50%;
+}
+
+/* Wallet addresses are long unbroken strings: let them wrap on a phone rather than scroll the page. */
+.md-typeset .wpun-address {
+	word-break: break-all;
+}
+
+/* Buttons. Material draws them in the primary colour, which here is the header's (base02 / base2) and nearly
+   disappears on the page. They use the link colour instead: outlined, or filled for the primary button and on hover,
+   with the page background as the text colour. The link colour passes 4.5:1 against the page in both schemes. */
+.md-typeset .md-button {
+	color: var(--md-typeset-a-color);
+	border-color: var(--md-typeset-a-color);
+}
+
+.md-typeset .md-button--primary,
+.md-typeset .md-button:hover,
+.md-typeset .md-button:focus-visible {
+	color: var(--md-default-bg-color);
+	background-color: var(--md-typeset-a-color);
+	border-color: var(--md-typeset-a-color);
+}
+
+/* ---------- Brand ---------- */
+
+/* The header logo is two images (docker/docs/overrides/partials/logo.html); the palette toggle decides which shows.
+ * The selector is as specific as Material's own for the drawer logo (display: block), which comes first. */
+:is(.md-header__button, .md-nav__title .md-nav__button).md-logo img.wpun-logo--dark,
+[data-md-color-scheme="solarized-dark"] :is(.md-header__button, .md-nav__title .md-nav__button).md-logo img.wpun-logo--light {
+	display: none;
+}
+
+[data-md-color-scheme="solarized-dark"] :is(.md-header__button, .md-nav__title .md-nav__button).md-logo img.wpun-logo--dark {
+	display: block;
+}
+
+/* The home page banner shows the name, so the H1 stays for the page structure and screen readers only. */
+.md-typeset .wpun-visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* The banner is two images, #only-light and #only-dark in docs/index.md. Material only switches those for its own
+ * default and slate schemes, so the Solarized ones do it here. */
+.md-typeset .wpun-banner {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.md-typeset .wpun-banner[src$="#only-dark"],
+[data-md-color-scheme="solarized-dark"] .md-typeset .wpun-banner[src$="#only-light"] {
+	display: none;
+}
+
+[data-md-color-scheme="solarized-dark"] .md-typeset .wpun-banner[src$="#only-dark"] {
+	display: block;
+}
+
+/* Admonition titles sit on a 10% tint of their type's colour, where base01 is only 4.49:1: use base02 (about 10:1). */
+[data-md-color-scheme="solarized-light"] .md-typeset .admonition-title,
+[data-md-color-scheme="solarized-light"] .md-typeset summary {
+	color: #073642;
+}
+
+/* Navigation links are 18px tall in Material. Once the sidebar is long enough to scroll, axe finds them closer than
+   24px to their neighbours (WCAG 2.5.8 target size), so give every link a 24px minimum height. */
+.md-nav__link {
+	min-height: 24px;
+}

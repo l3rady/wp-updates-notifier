@@ -1,0 +1,2401 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentation for WP Updates Notifier, the WordPress plugin that tells you when updates are waiting.">
+      
+      
+      
+        <link rel="canonical" href="https://wpun.cariss.dev/latest/security/ai-review-2.0.0/">
+      
+      
+        <link rel="prev" href="../threat-model/">
+      
+      
+        <link rel="next" href="../audit-2.0.0/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/brand/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>AI review for 2.0.0 - WP Updates Notifier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ai-assisted-security-review-for-200" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="WP Updates Notifier" class="md-header__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            WP Updates Notifier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              AI review for 2.0.0
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="solarized-dark" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="solarized-light" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="WP Updates Notifier" class="md-nav__button md-logo" aria-label="WP Updates Notifier" data-md-component="logo">
+      
+  <img class="wpun-logo wpun-logo--light" src="../../assets/brand/logo.svg" alt="" width="24" height="24">
+  <img class="wpun-logo wpun-logo--dark" src="../../assets/brand/logo-dark.svg" alt="" width="24" height="24">
+
+    </a>
+    WP Updates Notifier
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../users/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/channels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/how-notifications-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How notifications work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/settings-in-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../developers/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests and checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/translations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/writing-a-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing a module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/item-types-and-routing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Item types and routing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/configuration-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hook reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/stability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stability and deprecation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../decisions/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Decisions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0001-licence-gpl-2-or-later/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0001 Licence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0002-php-7-4-and-wordpress-6-7-minimums/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0002 PHP and WordPress minimums
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0003-rename-main-file-without-a-migration-stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0003 Main file rename
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0004-public-module-api-and-dogfooding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0004 Module API and dogfooding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0005-settings-state-and-channels-in-separate-options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0005 Separate options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0006-drop-slack-in-2-0-0-and-keep-its-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0006 Slack dropped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0007-settings-and-secrets-from-outside-the-database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0007 Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0008-single-sites-only-in-2-0-0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0008 Single sites only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0009-no-lock-against-overlapping-update-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0009 No update check lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0010-leave-wordpress-auto-update-emails-alone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0010 WordPress update emails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0011-accessibility-wcag-2-2-aa-without-javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0011 Accessibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0012-security-tooling-is-free-deterministic-and-scripted/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0012 Security tooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0013-verifiable-release-artefacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0013 Verifiable releases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0014-documentation-site-on-a-custom-subdomain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0014 Documentation site
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0015-conventional-commits-and-linear-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0015 Commits and history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0016-pending-update-reminders-per-channel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0016 Pending update reminders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0017-bundle-l10n-php-translations-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0017 Bundled translations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0018-generate-readme-at-build-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0018 Generated readme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI review for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI review for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#triage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Triage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#earlier-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Earlier run
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit-2.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security audit for 2.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#triage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Triage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#earlier-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Earlier run
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="ai-assisted-security-review-for-200">AI-assisted security review for 2.0.0<a class="headerlink" href="#ai-assisted-security-review-for-200" title="Permanent link">&para;</a></h1>
+<p>A bounded, read-only source review of the 2.0.0 release candidate, done with the
+<a href="https://github.com/wpultimatesecurity/WordPress-Security-Skills">WordPress Security Skills</a> pack (#230). It is advisory:
+it is not a certification, it gives no release sign-off and it never gates CI. The scripted tools in the security epic
+and the manual audit sign-off (#228) remain the release gates, and #228 reads this report as one of its inputs.</p>
+<p><strong>Result: no confirmed findings and nothing that needs validation.</strong> 33 candidates were rejected, each with the control
+that stops it. Five hardening recommendations were triaged by hand and all five are tracked in #325.</p>
+<p>To compare a later run with this one, use the same skills pack commit and the <a href="../threat-model/">threat model</a>, and run
+the <code>quick</code> profile on the diff since <code>1002e36</code> before each later release.</p>
+<h2 id="triage">Triage<a class="headerlink" href="#triage" title="Permanent link">&para;</a></h2>
+<p>Done by hand by the maintainer on 2026-10-26.</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Verdict</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Confirmed findings</td>
+<td>none</td>
+<td>Nothing to file, so no new regression is needed.</td>
+</tr>
+<tr>
+<td>Needs validation</td>
+<td>none</td>
+<td>Nothing to run on a local site.</td>
+</tr>
+<tr>
+<td><a href="#hardening-recommendations">H1</a> Escape the General tab's Settings API titles</td>
+<td>hardening</td>
+<td>Fixed in #325; regression in <code>tests/wp/security/test-hardening-settings-titles.php</code>.</td>
+</tr>
+<tr>
+<td><a href="#hardening-recommendations">H2</a> Read files only for installed plugins and themes</td>
+<td>hardening</td>
+<td>Fixed in #325; regression in <code>tests/wp/security/test-hardening-installed-items.php</code>.</td>
+</tr>
+<tr>
+<td><a href="#hardening-recommendations">H3</a> Treat external values as secret for custom field types</td>
+<td>hardening</td>
+<td>Fixed in #325; regression in <code>tests/wp/security/test-hardening-custom-field-secrets.php</code>.</td>
+</tr>
+<tr>
+<td><a href="#hardening-recommendations">H4</a> Redact <code>Channel_Instance</code> when serialized</td>
+<td>hardening</td>
+<td>Fixed in #325; regression in <code>tests/wp/security/test-hardening-instance-serialize.php</code>.</td>
+</tr>
+<tr>
+<td><a href="#hardening-recommendations">H5</a> Apply the http(s)-only link rule to plain text</td>
+<td>hardening</td>
+<td>Fixed in #325; regression in <code>tests/wp/security/test-hardening-plain-text-links.php</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The maintainer's session checked the report's claims about the earlier fixes (#231, #232, #233, #235) against the code
+at <code>1002e36</code>, and they hold. Each of those fixes already has a deterministic regression in <code>tests/wp/</code>: <code>d708b81</code>
+(#231), <code>7562bab</code> (#232) and <code>88e5b27</code> (#233) added them.</p>
+<h2 id="earlier-run">Earlier run<a class="headerlink" href="#earlier-run" title="Permanent link">&para;</a></h2>
+<p>The first full run, on 2026-10-18, reviewed <code>main</code> at <code>1f65557</code> with the same agent, skills pack and <code>standard</code> profile.
+It found no confirmed or needs-validation items and rejected 24 candidates. Its hardening was raised and fixed as #231
+(Markdown link schemes and control characters), #232 (resolved secrets in debug output, edit forms and custom field
+types), #233 (settings page capability, capability docs, autoloader, <code>SECURITY.md</code>) and #234 (local Docker ports on
+loopback only). It also found a correctness bug, #235, that was not a security issue. Its full report was not kept, so
+this run derived every candidate afresh. This run is the one done on the release candidate, as #230 asked, after #57,</p>
+<h1 id="86-87-88-and-286">86, #87, #88 and #286.<a class="headerlink" href="#86-87-88-and-286" title="Permanent link">&para;</a></h1>
+<h2 id="review-context">Review context<a class="headerlink" href="#review-context" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Target</td>
+<td>WP Updates Notifier (<code>l3rady/wp-updates-notifier</code>), the 2.0.0 release candidate</td>
+</tr>
+<tr>
+<td>Revision</td>
+<td><code>1002e3619f1520c3dd3b9a8d6c6ac92e326691a3</code> on <code>main</code>, with a clean working tree. The plugin header and <code>SC_WPUN_VERSION</code> still say <code>1.6.0</code> (<code>wp-updates-notifier.php:17</code>, <code>:59</code>) because release-please bumps them at release, so the revision is identified by the commit, not the version.</td>
+</tr>
+<tr>
+<td>Reviewer</td>
+<td>The read-only <code>wordpress-security-reviewer</code> agent from the maintainer's dotfiles, on Claude Opus 5.5 (<code>claude-opus-5-5</code>), launched by the maintainer's Claude Code session</td>
+</tr>
+<tr>
+<td>Review date</td>
+<td>2026-10-26</td>
+</tr>
+<tr>
+<td>Profile</td>
+<td><code>standard</code>, full review mode</td>
+</tr>
+<tr>
+<td>In scope</td>
+<td><code>includes/</code> (43 files), <code>modules/</code> (2 files), <code>uninstall.php</code> and <code>wp-updates-notifier.php</code>: 13,784 lines</td>
+</tr>
+<tr>
+<td>Excluded</td>
+<td><code>vendor/</code>, <code>tests/</code>, <code>docker/</code>, <code>bin/</code>, <code>build/</code>, <code>docs/</code>, <code>examples/</code> (including the example HTTP add-on), the shipped <code>languages/*.l10n.php</code> translation files, and multisite network-level behaviour. Multisite observations are noted below but were not audited.</td>
+</tr>
+<tr>
+<td>Platform assumptions</td>
+<td>WordPress 6.7 or newer and PHP 7.4 or newer (plugin header). Single sites only, per <a href="../../decisions/0008-single-sites-only-in-2-0-0/">ADR 0008</a>.</td>
+</tr>
+<tr>
+<td>Trust model</td>
+<td>The <a href="../threat-model/">threat model</a> at this commit. Trusted: WordPress core, administrators with the settings capability (<code>manage_options</code>, or whatever the <code>sc_wpun_capability</code> filter returns), and code in the same PHP process (add-ons, the theme, <code>wp-config.php</code>, filter callbacks). Untrusted: every other role, visitors, request parameters, third-party plugin and theme headers, api.wordpress.org data and responses from services.</td>
+</tr>
+<tr>
+<td>Skills pack</td>
+<td>Commit <code>a0ba3ab3d524f033e2c985a771f22577b6f4bda8</code>. The maintainer's session checked that the archive at that commit has the pinned sha256 <code>d9df4b04ab0328454bbea2f41e546b7c66a27ab106226047045c6f085afc60ab</code>.</td>
+</tr>
+<tr>
+<td>Skills loaded</td>
+<td><code>security-auditing-code-review</code> (<code>SKILL.md</code>, <code>full-audit-workflow.md</code>, <code>report-template.md</code>, <code>audit-checklist.md</code>, <code>attack-classes.md</code>, <code>resource-exhaustion.md</code>, <code>severity-anchors.md</code>), plus the checklists of <code>nonces-csrf-protection</code>, <code>capability-permission-checks</code>, <code>output-escaping</code>, <code>settings-options-security</code>, <code>cron-background-job-security</code>, <code>secrets-credentials-management</code> and <code>filesystem-security</code>. Skills for features the plugin doesn't use (WooCommerce, blocks, REST, AJAX, shortcodes, uploads, WP-CLI, LLM integration, headers and CSP) were not loaded.</td>
+</tr>
+<tr>
+<td>Methods</td>
+<td>Manual source review: every in-scope file was read, and each candidate was re-read from its entry point before a verdict. The pack's heuristic sink inventory (<code>scan-security-sinks.sh</code>) was run. Targeted searches covered entry points, sinks, dynamic execution, magic methods, outbound HTTP, SQL, the filesystem, redirects, and "obvious things" such as TODOs, keys and credentials.</td>
+</tr>
+<tr>
+<td>Active testing</td>
+<td>None. No PHP, test suite, Docker, WP-CLI or HTTP request was run against any site.</td>
+</tr>
+<tr>
+<td>Limitations</td>
+<td>Static proof only. WordPress core source was not available to the agent, so core behaviour is cited from its documented API, and a plugin-side control is cited as the governing one wherever it matters.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="confirmed-findings">Confirmed findings<a class="headerlink" href="#confirmed-findings" title="Permanent link">&para;</a></h2>
+<p>None.</p>
+<h2 id="needs-validation">Needs validation<a class="headerlink" href="#needs-validation" title="Permanent link">&para;</a></h2>
+<p>None.</p>
+<h2 id="rejected-candidates">Rejected candidates<a class="headerlink" href="#rejected-candidates" title="Permanent link">&para;</a></h2>
+<p>Each candidate is disproved by the control cited. Line numbers refer to commit <code>1002e36</code>. Candidates with the same root
+cause are merged.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Candidate claim</th>
+<th>Governing control (file:line)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>A visitor who is not logged in triggers a plugin action through <code>admin-post.php</code>.</td>
+<td>Only <code>admin_post_*</code> hooks are registered (<code>includes/class-plugin.php:506</code>, <code>:542-547</code>). No <code>admin_post_nopriv_*</code>, <code>wp_ajax_*</code> or REST route exists in scope, and core fires only <code>admin_post_nopriv_*</code> for logged-out requests.</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>A logged-in user without the settings capability (a subscriber or editor) sends a test, or toggles, duplicates or deletes a channel.</td>
+<td><code>Channels_Tab::authorise()</code> requires <code>current_user_can( Settings_Page::capability() )</code>, then a security token for <code>&lt;action&gt;_&lt;id&gt;</code> (<code>includes/admin/class-channels-tab.php:588-599</code>). A refusal returns 403 before any change (<code>:830-833</code>).</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>A user without the capability adds or edits a channel through <code>sc_wpun_save_channel</code>.</td>
+<td>The capability, then a security token bound to the mode and the type or id (<code>includes/admin/class-channel-form.php:894-906</code>). A refusal returns 403 (<code>:1105-1109</code>).</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>A user without the capability runs "Check now" and makes the site send mail.</td>
+<td>The capability and a security token are checked before anything runs (<code>includes/admin/class-check-now.php:116-122</code>, <code>:129-131</code>). A refusal returns 403 (<code>:210-213</code>). Only <code>$_POST</code> is read, so a GET can't pass.</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>A cross-site GET on the Slack notice's "Dismiss" link changes state.</td>
+<td>The capability and a security token (<code>includes/class-slack-notice.php:199-205</code>). The only effect is a meta flag on the current user (<code>:207</code>).</td>
+</tr>
+<tr>
+<td>R6</td>
+<td>A lower role opens the settings page by URL.</td>
+<td>The menu capability (<code>includes/admin/class-settings-page.php:204</code>), plus a fresh check with a 403 at render (<code>:376-380</code>).</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>A lower role saves the General settings through <code>options.php</code>.</td>
+<td>Core's <code>options.php</code> checks <code>option_page_capability_sc_wpun_settings</code>, which is filtered to the same capability (<code>includes/class-plugin.php:541</code>), and the settings group's security token printed by <code>settings_fields()</code> (<code>includes/admin/class-settings-page.php:456</code>).</td>
+</tr>
+<tr>
+<td>R8</td>
+<td>An administrator's security token for one channel or form is replayed against another channel, mode or type.</td>
+<td>Token actions name the target: <code>&lt;action&gt;_&lt;id&gt;</code> (<code>includes/admin/class-channels-tab.php:462</code>, <code>:594</code>) and <code>sc_wpun_save_channel_&lt;mode&gt;_&lt;type\|id&gt;</code> (<code>includes/admin/class-channel-form.php:372</code>, <code>:904</code>).</td>
+</tr>
+<tr>
+<td>R9</td>
+<td>A capability filter returns junk (not a string, empty, or a meta capability) and opens the screens.</td>
+<td><code>Settings_Page::capability()</code> falls back to <code>manage_options</code> for anything but a non-empty string (<code>includes/admin/class-settings-page.php:160-162</code>). A meta capability checked without an object fails closed in core's <code>map_meta_cap</code>.</td>
+</tr>
+<tr>
+<td>R10</td>
+<td>Reflected XSS through the <code>tab</code>, <code>action</code>, <code>id</code> or <code>type</code> query parameters.</td>
+<td><code>sanitize_key( wp_unslash() )</code> (<code>includes/admin/class-settings-page.php:355</code>; <code>includes/admin/class-channels-tab.php:231-233</code>), allowlists (<code>class-settings-page.php:357</code>, <code>class-channels-tab.php:236</code>), and <code>esc_attr</code> or <code>esc_url</code> on every output (for example <code>class-channels-tab.php:359</code>, <code>:405</code>; <code>class-channel-form.php:371</code>).</td>
+</tr>
+<tr>
+<td>R11</td>
+<td>Stored XSS through a channel label, including the admin <code>&lt;title&gt;</code> built by the <code>admin_title</code> filter.</td>
+<td>Labels use the text field type, <code>sanitize_text_field</code> (<code>includes/class-field-types.php:310-316</code>, applied at <code>includes/admin/class-channel-form.php:943</code>), and are escaped at every HTML output (<code>class-channels-tab.php:323</code>, <code>:361</code>, <code>:480-484</code>; <code>class-notices.php:79</code>). The <code>&lt;title&gt;</code> path (<code>class-settings-page.php:229-259</code>) receives text without tags.</td>
+</tr>
+<tr>
+<td>R12</td>
+<td>Stored XSS through a channel's last delivery result or a failure message from a remote service.</td>
+<td><code>esc_html</code> at <code>includes/admin/class-channels-tab.php:379</code> (the list) and <code>includes/admin/class-notices.php:79</code> (notices, including the Check now summaries built at <code>class-check-now.php:168-203</code>).</td>
+</tr>
+<tr>
+<td>R13</td>
+<td>Stored XSS through field values, error messages or the form values kept after a failed save.</td>
+<td>Every built-in renderer escapes for its context (<code>includes/admin/class-field-renderer.php:66-93</code>, <code>:140</code>, <code>:219</code>, <code>:240-241</code>, <code>:268-280</code>, <code>:306</code>, <code>:372-396</code>). The error summary uses <code>esc_html</code> (<code>includes/admin/class-channel-form.php:461-463</code>). Kept values go back through the same renderers (<code>:345-358</code>).</td>
+</tr>
+<tr>
+<td>R14</td>
+<td>XSS in HTML email or admin output through third-party plugin and theme headers or api.wordpress.org data (names, versions, URLs).</td>
+<td><code>esc_html</code> and <code>esc_url</code> on every value in <code>Notification_Renderer::render_html()</code> (<code>includes/class-notification-renderer.php:313-339</code>). The update nag and Site Health print no item data. The plugins screen row escapes the third-party API header (<code>includes/admin/class-plugin-requirements.php:83-91</code>).</td>
+</tr>
+<tr>
+<td>R15</td>
+<td>A <code>javascript:</code>, <code>data:</code> or <code>file:</code> link reaches a Markdown notification (#231).</td>
+<td><code>markdown_url()</code> allows only explicit <code>http(s)</code> schemes that also pass <code>esc_url_raw</code>, and encodes spaces, parentheses and angle brackets (<code>includes/class-notification-renderer.php:390-399</code>). Text is Markdown-escaped (<code>:408-410</code>).</td>
+</tr>
+<tr>
+<td>R16</td>
+<td>Control characters or new lines in item values inject extra lines or headers into messages (#231).</td>
+<td><code>Notification_Item::single_line()</code> collapses <code>\x00-\x1F\x7F</code> in the name, versions, notes and link labels (<code>includes/class-notification-item.php:112-114</code>, <code>:119</code>, <code>:126</code>, <code>:145-147</code>), and control characters are stripped from link URLs (<code>:119</code>). The <code>key</code> is used only as a state array key and is never rendered.</td>
+</tr>
+<tr>
+<td>R17</td>
+<td>Mail header injection through the From or Reply-To settings, a translated From name, or a payload filter.</td>
+<td>The settings are validated with <code>sanitize_email</code> and <code>is_email</code> (<code>modules/email/class-email-channel.php:163-172</code>) and cleaned again before use (<code>:257-264</code>). After the filters, any header line containing CR or LF is dropped (<code>:337-342</code>).</td>
+</tr>
+<tr>
+<td>R18</td>
+<td>Recipient injection through the payload filters.</td>
+<td>Recipients that contain CR or LF, or aren't strings, are dropped, falling back to the validated list (<code>modules/email/class-email-channel.php:328-333</code>, <code>:348</code>). Stored recipients pass <code>email_list</code> and channel validation (<code>includes/class-field-types.php:391-414</code>; <code>class-email-channel.php:145-160</code>).</td>
+</tr>
+<tr>
+<td>R19</td>
+<td>A stored secret is printed on the channel form.</td>
+<td>A secret's renderer is told only whether a value is saved (<code>includes/admin/class-field-renderer.php:122-125</code>), and the password input always has <code>value=""</code> (<code>:268</code>). Text, URL, email-list and textarea inputs route secrets there (<code>:236-238</code>, <code>:302-304</code>).</td>
+</tr>
+<tr>
+<td>R20</td>
+<td>A secret from <code>wp-config.php</code> or the environment is shown on the edit form through a text field not marked secret (#232).</td>
+<td><code>Channel_Form::control()</code> blanks external values of text-like fields unless the schema sets <code>show_external</code> (<code>includes/admin/class-channel-form.php:569-572</code>).</td>
+</tr>
+<tr>
+<td>R21</td>
+<td>Saving, toggling or duplicating a channel writes an external (constant or environment) secret into the database.</td>
+<td><code>Channel_Store::save()</code> restores the previous stored value, or removes the key, for every externally supplied field (<code>includes/class-channel-store.php:221-229</code>). Toggle and duplicate start from the stored instance, not the effective one (<code>includes/admin/class-channels-tab.php:672</code>, <code>:709</code>).</td>
+</tr>
+<tr>
+<td>R22</td>
+<td>Secrets persist in user meta when the form keeps values after a failed save.</td>
+<td><code>without_secrets()</code> removes secret fields and <code>__clear</code> flags before <code>remember()</code> (<code>includes/admin/class-channel-form.php:993</code>, <code>:1066-1075</code>). The kept values are scoped to the user, the site and five minutes (<code>:780-791</code>).</td>
+</tr>
+<tr>
+<td>R23</td>
+<td>Secrets leak through <code>var_dump</code>, <code>print_r</code>, exception messages or debug logs (#232).</td>
+<td><code>Channel_Instance::__debugInfo()</code> redacts settings values (<code>includes/class-channel-instance.php:104-113</code>). <code>Config_Value</code> exposes only the key and source in debug output and serialization (<code>includes/class-config-value.php:98-112</code>). The Dispatcher keeps and logs only the exception class (<code>includes/class-dispatcher.php:209-237</code>, <code>:346-353</code>), and so does a failing config source (<code>includes/class-config.php:74-79</code>).</td>
+</tr>
+<tr>
+<td>R24</td>
+<td>Configuration problems shown in the admin notice or Site Health disclose the supplied value.</td>
+<td>Reports carry only the key, source label and a fixed message (<code>includes/class-config-report.php:84</code>, <code>:117</code>). A JSON error reports only <code>json_last_error_msg()</code> (<code>includes/class-channel-store.php:563-567</code>).</td>
+</tr>
+<tr>
+<td>R25</td>
+<td>An administrator picks a channel id that makes the plugin read an arbitrary constant or environment variable (a database password, say) and use or show it.</td>
+<td>Keys always start <code>SC_WPUN_SETTING_</code> or <code>SC_WPUN_CHANNEL_&lt;ID&gt;__&lt;FIELD&gt;</code> (<code>includes/class-config-context.php:167-173</code>). Ids are limited to <code>[a-z0-9_]</code> (<code>includes/class-channel-instance.php:84-86</code>). Environment variables are read only after an explicit opt-in (<code>includes/class-config.php:306-320</code>, <code>:346</code>).</td>
+</tr>
+<tr>
+<td>R26</td>
+<td>An open redirect after a handler.</td>
+<td>Every redirect is <code>wp_safe_redirect()</code> to a fixed admin URL built from <code>admin_url()</code> and <code>sanitize_key</code>-ed values (<code>includes/admin/class-channels-tab.php:835</code>; <code>includes/admin/class-channel-form.php:998</code>, <code>:1028</code>, <code>:1111</code>; <code>includes/admin/class-check-now.php:215</code>; <code>includes/class-slack-notice.php:222</code>).</td>
+</tr>
+<tr>
+<td>R27</td>
+<td>Duplicating or adding a channel overwrites an existing, code-defined or unavailable channel.</td>
+<td>New ids skip every stored and code-defined id (<code>includes/admin/class-channels-tab.php:715-721</code>; <code>includes/admin/class-channel-form.php:811-813</code>, <code>:840-857</code>).</td>
+</tr>
+<tr>
+<td>R28</td>
+<td>A code-defined channel, or one whose module is unavailable, is changed through the handlers or the form.</td>
+<td><code>changeable()</code> refuses ids that are unlisted or code-defined (<code>includes/admin/class-channels-tab.php:772-785</code>), and the form makes the same checks (<code>includes/admin/class-channel-form.php:917-932</code>). The store refuses to save or delete code-defined ids (<code>includes/class-channel-store.php:209-214</code>, <code>:278-282</code>).</td>
+</tr>
+<tr>
+<td>R29</td>
+<td>Local file inclusion through a crafted class name reaching the autoloader (#233).</td>
+<td>Only the <code>WPUN\</code> prefix is accepted, and each namespace part must match <code>^[A-Za-z0-9_]+$</code> (<code>includes/class-autoloader.php:59-70</code>). Paths are built under <code>includes/</code> only (<code>:74-86</code>).</td>
+</tr>
+<tr>
+<td>R30</td>
+<td>Path traversal through the locale in the translation loader.</td>
+<td><code>lang_dir()</code> returns only the plugin's fixed <code>languages/</code> directory, never a path containing the locale (<code>includes/class-translations.php:70-77</code>). <code>load_pack_first()</code> acts only on core's own <code>.mo</code> path for this text domain under that directory (<code>:90-102</code>).</td>
+</tr>
+<tr>
+<td>R31</td>
+<td>Path traversal through <code>update_plugins</code> or <code>update_themes</code> transient keys (api.wordpress.org data is untrusted) reaching <code>get_plugin_data()</code> and <code>wp_get_theme()</code> (<code>includes/class-update-checker.php:656</code>, <code>:716</code>).</td>
+<td>Rejected on impact. These calls only read named header fields from a file, and the result goes only into notifications for recipients an administrator chose, so whoever controls the response gets nothing back. No file is written, included or returned to the requester. See H2.</td>
+</tr>
+<tr>
+<td>R32</td>
+<td>ReDoS or markup injection through a third-party plugin's <code>Requires WPUN API</code> header.</td>
+<td>The parser uses linear patterns with no nested quantifiers (<code>includes/class-version-constraint.php:135</code>, <code>:166-221</code>). Output uses <code>esc_html</code> and <code>esc_attr</code> (<code>includes/admin/class-plugin-requirements.php:83-91</code>).</td>
+</tr>
+<tr>
+<td>R33</td>
+<td>Visitors exhaust resources or flood api.wordpress.org through WP-Cron or <code>init</code>.</td>
+<td><code>init</code> only checks the schedule (<code>includes/class-scheduler.php:102-113</code>). Frequencies under one hour are never offered (<code>includes/class-frequencies.php:54</code>). Visitors have no on-demand path: <code>sc_wpun_run_check</code> can be reached only from trusted code, and the deactivation hook clears the event (<code>includes/class-scheduler.php:121-123</code>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="hardening-recommendations">Hardening recommendations<a class="headerlink" href="#hardening-recommendations" title="Permanent link">&para;</a></h2>
+<p>None of these is a demonstrated vulnerability. Each is defence in depth, and all five are tracked in #325.</p>
+<p><strong>H1. Escape the translated Settings API titles on the General tab.</strong> <code>includes/admin/class-settings-page.php:491</code> passes
+a translated section title, and <code>:503</code> a field label, to <code>add_settings_section()</code> and <code>add_settings_field()</code>. Core's
+<code>do_settings_sections()</code> and <code>do_settings_fields()</code> print titles as given, and translations, language packs included,
+are a supply-chain input. The channel form already escapes its row titles (<code>class-channel-form.php:621</code>, <code>:662</code>, <code>:751</code>).</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_settings_section( 'sc_wpun_settings_main', esc_html__( 'Settings', 'wp-updates-notifier' ), null, 'wp-updates-notifier' );</span>
+<span class="x">// ...</span>
+<span class="x">$title = esc_html( isset( $schema['label'] ) &amp;&amp; is_string( $schema['label'] ) ? $schema['label'] : $name )</span>
+<span class="x">    . ( Field_Renderer::is_required( $schema ) ? Field_Renderer::required_marker() : '' );</span>
+</code></pre></div>
+<p><strong>H2. Read files only for installed plugins and themes.</strong> <code>includes/class-update-checker.php:656</code> builds
+<code>WP_PLUGIN_DIR . '/' . $key</code> from transient keys, which come from api.wordpress.org data or an add-on filter, and <code>:716</code>
+passes theme keys to <code>wp_get_theme()</code>. Before the loops, keep only installed plugins with
+<code>array_intersect_key( $plugins_need_update, get_plugins() )</code>, and skip themes where <code>! wp_get_theme( $key )-&gt;exists()</code>.
+Foreign or traversal keys then never reach a file read, and stray filter entries can't produce empty items.</p>
+<p><strong>H3. Treat external values as secret by default for custom field types.</strong> <code>includes/admin/class-channel-form.php:569</code>
+blanks external values only for the built-in text-like types. A custom type registered through <code>sc_wpun_field_types</code>
+that receives a constant or environment value, without <code>secret =&gt; true</code> or <code>show_external</code>, is passed the resolved value
+by its add-on renderer. The add-on is trusted and the behaviour is documented (#232), but the safe default depends on
+the add-on author. Blank external values for every type outside the built-in set unless <code>show_external</code> is true.</p>
+<p><strong>H4. Redact <code>Channel_Instance</code> when it is serialized.</strong> <code>Config_Value</code> redacts in <code>__serialize()</code>
+(<code>includes/class-config-value.php:110-112</code>), but <code>Channel_Instance</code> redacts only in <code>__debugInfo()</code>
+(<code>includes/class-channel-instance.php:104-113</code>). Instances reach public hooks (<code>sc_wpun_channel_deleted</code>,
+<code>sc_wpun_notification_sent</code>, <code>sc_wpun_notification_failed</code>), where a logging plugin that serializes hook arguments would
+capture resolved secrets. A <code>__serialize()</code> that returns the same redacted array closes that path. <code>var_export()</code>, array
+casts and Reflection still bypass it.</p>
+<p><strong>H5. Apply the http(s)-only link rule to plain text.</strong> <code>includes/class-notification-renderer.php:217-219</code> writes link
+URLs into plain-text messages with only control characters removed. Markdown already allows only <code>http(s)</code>, and HTML
+uses <code>esc_url</code>. Skip links that <code>markdown_url()</code> rejects, so a third-party update server's <code>javascript:</code> or <code>data:</code> URL
+never reaches a channel as text that a client might turn into a link.</p>
+<h2 id="status-of-earlier-hardening-fixes">Status of earlier hardening fixes<a class="headerlink" href="#status-of-earlier-hardening-fixes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Issue</th>
+<th>What it fixed</th>
+<th>Status at <code>1002e36</code></th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>#231</td>
+<td>Markdown link schemes, and control characters in notification items</td>
+<td>Holds</td>
+<td>The <code>markdown_url()</code> scheme allowlist and encoding (<code>includes/class-notification-renderer.php:390-399</code>). <code>single_line()</code> on the name, versions, notes and link labels, and control characters stripped from link URLs (<code>includes/class-notification-item.php:112-126</code>, <code>:145-147</code>). Introduced in <code>d708b81</code>.</td>
+</tr>
+<tr>
+<td>#232</td>
+<td>Resolved channel secrets in debug output, edit forms and custom field types</td>
+<td>Holds</td>
+<td><code>Channel_Instance::__debugInfo()</code> (<code>includes/class-channel-instance.php:104-113</code>). External text-like values blanked on the form (<code>includes/admin/class-channel-form.php:569-572</code>). <code>secret =&gt; true</code> honoured on any type (<code>includes/class-field-types.php:190-194</code>), and the renderer told only whether a value is saved (<code>includes/admin/class-field-renderer.php:122-125</code>). Dispatcher logs carry only the class (<code>includes/class-dispatcher.php:346-353</code>). Introduced in <code>7562bab</code> and refined in <code>4cca643</code>. The remaining trade-off is H3.</td>
+</tr>
+<tr>
+<td>#233</td>
+<td>Settings page capability check, capability docs, autoloader hardening, <code>SECURITY.md</code></td>
+<td>Holds</td>
+<td>The render-time check with a 403 (<code>includes/admin/class-settings-page.php:376-380</code>). The capability fallback (<code>:160-162</code>), used by every handler and by <code>options.php</code> (<code>includes/class-plugin.php:541</code>). The autoloader's identifier allowlist (<code>includes/class-autoloader.php:59-70</code>). <code>SECURITY.md:26-28</code> and the threat model's Scope section document <code>manage_options</code> and <code>sc_wpun_capability</code>. Introduced in <code>88e5b27</code>.</td>
+</tr>
+<tr>
+<td>#235</td>
+<td>The auto-update email used a disabled email instance</td>
+<td>Holds (superseded)</td>
+<td>Fixed in <code>63771ca</code>, then the feature was removed in <code>21ed806</code>: the plugin no longer redirects core's auto-update emails. <code>SC_WP_Updates_Notifier::filter_auto_core_update_email()</code> is a deprecated pass-through (<code>wp-updates-notifier.php:281-285</code>), and nothing in scope hooks <code>auto_core_update_email</code>. The remaining senders use enabled email instances only (<code>includes/class-notifier.php:51-55</code>, <code>includes/class-slack-notice.php:92-95</code>). The Slack notice falls back to <code>admin_email</code> when no email channel is enabled (<code>:143-146</code>), on purpose, so the site owner learns that Slack is no longer supported.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="multisite-observations-not-audited">Multisite observations (not audited)<a class="headerlink" href="#multisite-observations-not-audited" title="Permanent link">&para;</a></h2>
+<p>2.0.0 supports single sites only (<a href="../../decisions/0008-single-sites-only-in-2-0-0/">ADR 0008</a>). These points are kept
+for the 3.0.0 network work (#85) and were not reviewed in depth.</p>
+<ul>
+<li><strong>Network constants apply to every site.</strong> <code>Constant_Source</code> and <code>Env_Source</code> ignore the site id in the context
+  (<code>includes/class-constant-source.php:33-35</code>, <code>includes/class-env-source.php:33-41</code>). A site administrator who creates
+  a channel whose id matches network-wide <code>SC_WPUN_CHANNEL_&lt;ID&gt;__*</code> constants picks up those values. Secrets are used
+  but not shown, and <code>show_external</code> fields (<code>to</code>, <code>from</code>, <code>reply_to</code>, <code>subject_prefix</code>) are shown read-only to that
+  site's administrators.</li>
+<li><strong>Test sends reach recipients defined for the network.</strong> "Send test" is offered on code-defined channels
+  (<code>includes/admin/class-channels-tab.php:407</code>). On a network, a site administrator can send fixed-content test mail to
+  recipients defined at network level, and can point their own channels at any address through the network's mailer.</li>
+<li><strong>Site administrators without <code>unfiltered_html</code> reach the forms.</strong> Every stored value is sanitised and escaped on
+  output, and no raw-HTML write was found.</li>
+<li><strong>Per-site scoping is already in place.</strong> Notices and the values kept after a failed save are scoped per site
+  (<code>includes/admin/class-notices.php:54</code>, <code>includes/admin/class-channel-form.php:783</code>).</li>
+<li><strong>Uninstall on large networks.</strong> <code>uninstall.php:60-69</code> goes through every site with <code>number =&gt; 0</code>, which may be slow
+  on large networks.</li>
+</ul>
+<h2 id="coverage">Coverage<a class="headerlink" href="#coverage" title="Permanent link">&para;</a></h2>
+<p>Profile <code>standard</code>, a full review of the agreed scope. No budget limit was set, and every unit was reviewed in this run.</p>
+<table>
+<thead>
+<tr>
+<th>Unit (entry point × trust boundary × attack class)</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>admin-post:sc_wpun_send_test</code> × visitor or lower role → channels × access control, CSRF</td>
+<td>covered</td>
+</tr>
+<tr>
+<td><code>admin-post:sc_wpun_channel_toggle</code> × visitor or lower role → channels × access control, CSRF</td>
+<td>covered</td>
+</tr>
+<tr>
+<td><code>admin-post:sc_wpun_channel_duplicate</code> × visitor or lower role → channels × access control, CSRF, business logic (id collision, secret copy)</td>
+<td>covered</td>
+</tr>
+<tr>
+<td><code>admin-post:sc_wpun_channel_delete</code> × visitor or lower role → channels × access control, CSRF</td>
+<td>covered</td>
+</tr>
+<tr>
+<td><code>admin-post:sc_wpun_check_now</code> × visitor or lower role → mail and outbound × access control, CSRF, resource use</td>
+<td>covered</td>
+</tr>
+<tr>
+<td><code>admin-post:sc_wpun_save_channel</code> × visitor or lower role → channels × access control, CSRF</td>
+<td>covered</td>
+</tr>
+<tr>
+<td><code>admin-post:sc_wpun_save_channel</code> × administrator input → store × validation, secret persistence, second-order output</td>
+<td>covered</td>
+</tr>
+<tr>
+<td><code>admin-post:sc_wpun_dismiss_slack_notice</code> (GET) × lower role → user meta × access control, CSRF</td>
+<td>covered</td>
+</tr>
+<tr>
+<td><code>options.php</code> <code>sc_wpun_settings</code> × lower role → settings × access control, CSRF, validation</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Settings screen (General, Channels, About, add-on tabs) × lower role → page × access control</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Settings screen × request parameters → markup × reflected XSS</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Settings screen and notices × stored data → markup × stored XSS (labels, results, config problems, rejected modules)</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Channel edit form × stored and external secrets → markup × disclosure</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Update data (headers, transients) → HTML, plain-text and Markdown renderers × injection</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Update data → <code>get_plugin_data()</code> and <code>wp_get_theme()</code> × path traversal</td>
+<td>candidate, rejected (R31)</td>
+</tr>
+<tr>
+<td>Email channel × settings and payload filters → <code>wp_mail</code> × header and recipient injection</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Config sources (constants, environment, filters, <code>SC_WPUN_CHANNELS</code> JSON) × secret leak, arbitrary key read, malformed values</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Site Health tests × disclosure, XSS</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Plugins screen row (<code>Plugin_Requirements</code>) × third-party header → markup</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Removal of the update nag × access control</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Cron <code>sc_wpun_update_check</code> and the Slack notice mail × visitor trigger, resource use, <code>current_user_can</code> in cron</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Actions for trusted code (<code>sc_wpun_run_check</code>, <code>sc_wpun_enable_cron</code>, <code>sc_wpun_disable_cron</code>) × reachable from a request</td>
+<td>covered (no request path)</td>
+</tr>
+<tr>
+<td>Legacy facade <code>SC_WP_Updates_Notifier</code> × reachable from a request</td>
+<td>covered (no request hooks)</td>
+</tr>
+<tr>
+<td>Autoloader × file inclusion</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Translation loader × path traversal</td>
+<td>covered</td>
+</tr>
+<tr>
+<td><code>uninstall.php</code> and direct file access × running outside WordPress</td>
+<td>covered (<code>uninstall.php:33-35</code>; every in-scope PHP file has an <code>ABSPATH</code> guard)</td>
+</tr>
+<tr>
+<td>Public add-on API (<code>Field_Types</code>, <code>Channel</code>, <code>Dispatcher</code> isolation, API version gate) × safe when used as documented</td>
+<td>covered</td>
+</tr>
+<tr>
+<td>Outbound HTTP and SSRF</td>
+<td>covered: no sink in scope (no <code>wp_remote_*</code>, cURL, <code>file_get_contents</code> or sockets)</td>
+</tr>
+<tr>
+<td>SQL injection</td>
+<td>covered: no <code>$wpdb</code> or SQL in scope</td>
+</tr>
+<tr>
+<td>Deserialization, code execution, file writes and deletes</td>
+<td>covered: no <code>unserialize</code>, <code>eval</code>, <code>extract</code>, file writes or deletes in scope. <code>call_user_func</code> targets only schema and filter callbacks from trusted code.</td>
+</tr>
+<tr>
+<td>"Obvious things" (hard-coded credentials, TODOs on auth, debug toggles, committed artefacts)</td>
+<td>covered: none found</td>
+</tr>
+<tr>
+<td>JavaScript</td>
+<td>covered: none ships (<code>assets/</code> holds only <code>css/admin.css</code>)</td>
+</tr>
+<tr>
+<td>Multisite network-level behaviour</td>
+<td>out of scope (observations above)</td>
+</tr>
+<tr>
+<td><code>languages/*.l10n.php</code> (PHP that core includes at runtime)</td>
+<td>out of scope</td>
+</tr>
+<tr>
+<td><code>vendor/</code>, <code>tests/</code>, <code>docker/</code>, <code>bin/</code>, <code>build/</code>, <code>docs/</code>, <code>examples/</code></td>
+<td>out of scope</td>
+</tr>
+</tbody>
+</table>
+<p>In total: 32 units covered, 1 candidate resolved as rejected, none blocked or deferred, and 3 out of scope. All 30
+in-scope files that changed between <code>1f65557</code> and <code>1002e36</code> were read in full, including the new <code>class-about-tab.php</code>
+and <code>class-translations.php</code>.</p>
+<p>After the hunt, a coverage pass over the hook registrations looked for entry points or roles without a unit:
+<code>extra_plugin_headers</code>, <code>plugin_action_links_*</code>, <code>plugin_row_meta</code>, <code>after_plugin_row</code>, <code>switch_blog</code>,
+<code>load_textdomain</code>, <code>lang_dir_for_domain</code>, the <code>sc_wpun_channel_deleted</code> and <code>sc_wpun_notification_*</code> listeners, and
+<code>site_status_tests</code>. It also went through the cron, secrets and filesystem checklists and the attack classes (access
+control, business logic, feature abuse, second-order, resource exhaustion, wildcard, obvious things). It found no
+material gap.</p>
+<h2 id="residual-limitations">Residual limitations<a class="headerlink" href="#residual-limitations" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Static review only.</strong> Core behaviour, such as the capability handling in <code>options.php</code>, Settings API title output
+  and the escaping of the admin title, is cited from its documented contract. Where it mattered, a plugin-side control
+  is cited as the governing one.</li>
+<li><strong>Not reviewed in this run:</strong> multisite network behaviour, the shipped translation PHP files, the example add-on, the
+  build and release pipeline, and dependencies. The threat model covers them separately.</li>
+<li><strong>Add-on and same-process code is trusted</strong> by the threat model. Custom renderers, field types, config sources and
+  filter callbacks were reviewed only for what the plugin guarantees when its API is used as documented.</li>
+<li>An empty confirmed set means no vulnerability was confirmed in the recorded scope. It does not mean the plugin is
+  secure.</li>
+</ul>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../threat-model/">Threat model</a>, <code>SECURITY.md</code> and <a href="../../decisions/0008-single-sites-only-in-2-0-0/">ADR 0008</a>.</li>
+<li><a href="https://developer.wordpress.org/plugins/security/">Plugin security</a> in the Plugin Handbook.</li>
+<li><a href="https://developer.wordpress.org/apis/security/escaping/">Escaping data</a> and
+  <a href="https://developer.wordpress.org/apis/security/data-validation/">data validation</a>.</li>
+<li><a href="https://developer.wordpress.org/plugins/settings/settings-api/">Settings API</a>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/l3rady/wp-updates-notifier" target="_blank" rel="noopener" title="WP Updates Notifier on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/javascripts/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>
