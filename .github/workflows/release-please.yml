@@ -130,6 +130,11 @@ jobs:
           make sbom
           make dist-check
           ls -l build/
+      # The zip is built with zip, rsync and git from Debian's apt, which the image does not pin, so the log records
+      # the versions this build used (see "Verifying a release" in SECURITY.md).
+      - name: Log the versions of the build tools
+        run: docker compose run --rm -T php sh -c 'zip -v | sed -n 2p; rsync --version | head -n 1; git --version'
+
 
       - name: Attest the build provenance of the zip
         if: ${{ env.REHEARSE != 'true' }}

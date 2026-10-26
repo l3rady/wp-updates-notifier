@@ -105,8 +105,11 @@ command above to check that attestation.
 
 The zip is reproducible: check out the release tag, run `make dist` and compare
 the SHA-256 of `build/wp-updates-notifier-<version>.zip` with the one you
-downloaded. The two are identical. CI checks this on every pull request with
-`make dist-repro`.
+downloaded. The two are identical when built with the same image. The base
+images are pinned by digest, but zip, rsync and git come from Debian's apt and
+are not pinned, so a later rebuild of the image can differ. The release run's
+log records the versions it used. CI checks that two builds in one image match
+on every pull request with `make dist-repro`.
 
 Release tags (`vX.Y.Z`) are annotated and signed with a dedicated SSH key. The
 `v*` tag ruleset stops them from being moved or deleted. GitHub shows them as

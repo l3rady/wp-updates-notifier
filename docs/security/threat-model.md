@@ -232,7 +232,7 @@ of the database sets them in `wp-config.php` constants or environment variables 
 ### 9. Build and release
 
 The release zip is built by `bin/build-dist.sh` from the files `.distignore` doesn't exclude, and the build is
-reproducible. release-please opens the release PR with a GitHub App token and, when it is merged, makes a draft release
+reproducible with the same image. release-please opens the release PR with a GitHub App token and, when it is merged, makes a draft release
 with no tag. The `release` job then runs in the `release` environment, which is limited to `main` and needs the
 maintainer's approval. It builds the zip and its SBOM, attests the zip's provenance and SBOM, creates a signed annotated tag at the release
 commit, uploads the assets and publishes the release. The WordPress.org deploy (#57, not built yet) will run on the
@@ -244,7 +244,7 @@ published release in the `wordpress-org` environment, which needs a reviewer.
 | T | A vulnerable dependency. | Runtime code has no dependencies (`make dist-check` enforces it). Development dependencies are audited. | `make audit` (composer audit, OSV-Scanner), dependency review on PRs, `make audit-images` (Trivy), all #214. |
 | I | A committed secret. | Secrets live outside the repo. gitleaks scans the history, the tree and the zip. | `make secrets` (gitleaks, #212). |
 | T | Unreviewed changes on `main`. | Branch protection: PRs, signed commits, linear history and the required checks. | Scorecard Branch-Protection (#224). The accepted gaps are in `SECURITY.md`. |
-| S/T | A tampered zip on GitHub. | The zip is reproducible from the tag. The release job attests its build provenance and its SBOM, and checks the attestation before it publishes. | `make dist-repro` on every PR, `gh attestation verify` in the release job (#226). |
+| S/T | A tampered zip on GitHub. | The zip is reproducible from the tag with the same image (`SECURITY.md`). The release job attests its build provenance and its SBOM, and checks the attestation before it publishes. | `make dist-repro` on every PR, `gh attestation verify` in the release job (#226). |
 | S/T | A forged or moved release tag. | Tags are annotated and signed with a dedicated SSH key, held in the `release` environment. The `v*` ruleset forbids updating or deleting them. A re-run reuses the tag only if it points at the release commit and its signature checks out against `.github/release-signers`. | `make test-release` (`bin/sign-release-tag.sh`), the `release tags` ruleset (#224, #226). |
 | S/T | A tampered zip on WordPress.org. | **Not yet.** Planned: the deploy runs only after the attestation of the zip it deploys checks out. | #57. |
 
