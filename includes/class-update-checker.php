@@ -881,7 +881,7 @@ class Update_Checker {
 
 		$slug = '' !== $slug ? $slug : basename( $id );
 
-		return 1 === preg_match( '/^[a-z0-9-]+$/', $slug ) ? $slug : '';
+		return 1 === preg_match( '/^[a-z0-9-]+$/D', $slug ) ? $slug : '';
 	}
 
 	/**
