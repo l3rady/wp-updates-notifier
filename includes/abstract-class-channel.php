@@ -31,8 +31,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   control. A custom field type's renderer gets the schema and can read `required` to do the same.
  * - `secret` (bool): the value is never shown again once saved, like a `secret`. Works for every type, including added ones, whose renderer then
  *   only gets `'1'` (a value is saved) or `''`.
- * - `show_external` (bool): for `text`, `textarea`, `url` and `email_list`, show the value on the edit screen when it comes from outside the
- *   database (a constant, an environment variable or a source). By default such a value is not printed, only "Set by ...". Don't use it for secrets.
+ * - `show_external` (bool): show the value on the edit screen when it comes from outside the database (a constant, an environment variable or a
+ *   source). By default such a value is not printed, only "Set by ...", for every type except `number`, `boolean` and `enum`, added types included.
+ *   Don't use it for secrets.
  * - `options` (array): key => label, for `enum` and `select`.
  * - `multiple` (bool): for `enum`, true when any number of the options can be chosen. The value is then a list of keys.
  * - `display` (string): for `boolean`, `checkbox` (default), `radio` or `select`. For `enum`, `select`, `radio` or

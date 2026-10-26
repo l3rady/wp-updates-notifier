@@ -25,9 +25,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Field_Types {
 
 	/**
-	 * Types whose value is text. An externally supplied value of one is not shown on the edit form unless the schema sets `show_external`.
+	 * Types whose externally supplied value is always shown on the edit form: the ones that cannot hold a secret.
+	 * The value of every other type, built in or added, is withheld unless the schema sets `show_external`.
 	 */
-	const TEXT_LIKE = array( 'text', 'textarea', 'url', 'email_list', 'secret' );
+	const EXTERNAL_SHOWN = array( 'number', 'boolean', 'enum' );
 
 	/**
 	 * Types and problems already complained about.
@@ -191,6 +192,20 @@ final class Field_Types {
 		$type = self::canonical( $field['type'] ?? null );
 
 		return 'secret' === $type || true === ( $field['secret'] ?? false );
+	}
+
+	/**
+	 * Whether the edit form blanks a field's value that comes from outside the database.
+	 *
+	 * True unless the type is a number, boolean or enum, or the schema sets `show_external`. A secret is not
+	 * blanked here: the field renderer already tells its control only whether a value is saved.
+	 *
+	 * @param array<string, mixed> $field Field schema.
+	 *
+	 * @return bool
+	 */
+	public static function hides_external( array $field ): bool {
+		return true !== ( $field['show_external'] ?? false ) && ! self::is_secret( $field ) && ! in_array( self::canonical( $field['type'] ?? null ), self::EXTERNAL_SHOWN, true );
 	}
 
 	/**

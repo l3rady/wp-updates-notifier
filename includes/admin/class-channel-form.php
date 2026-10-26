@@ -566,7 +566,7 @@ class Channel_Form {
 	 */
 	private function control( array $schema, string $name, string $id, $value, string $error, ?string $external = null ): string {
 		$description = isset( $schema['description'] ) && is_string( $schema['description'] ) && '' !== $schema['description'] ? $schema['description'] : '';
-		if ( null !== $external && true !== ( $schema['show_external'] ?? false ) && ! Field_Types::is_secret( $schema ) && in_array( Field_Types::canonical( $schema['type'] ?? null ), Field_Types::TEXT_LIKE, true ) ) {
+		if ( null !== $external && Field_Types::hides_external( $schema ) ) {
 			// A value from outside the database may be a secret the schema forgot to flag: don't print it.
 			$value = '';
 		}
