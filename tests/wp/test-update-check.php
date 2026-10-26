@@ -420,16 +420,34 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 * A theme whose folder name is a number is still the active theme.
 	 */
 	public function test_a_theme_named_with_digits_is_active() {
-		update_option( 'stylesheet', '2020' );
-		update_option( 'template', '2020' );
-		remove_all_actions( 'wp_update_themes' ); // Core would ask api.wordpress.org about a theme that is not installed.
-		$this->save_settings();
-		$this->set_updates( null, array(), array( '2020' => array( 'new_version' => '3.0' ) ) );
+		// Updates are only read for installed themes, so install one in a directory of its own.
+		$root = trailingslashit( get_temp_dir() ) . 'wpun-digit-themes';
+		$dir  = $root . '/2020';
+		mkdir( $dir, 0777, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- A fixture.
+		file_put_contents( $dir . '/style.css', "/*\nTheme Name: Digits\nVersion: 1.0\n*/\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- A fixture.
+		file_put_contents( $dir . '/index.php', "<?php\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- A fixture.
+		register_theme_directory( $root );
+		wp_clean_themes_cache();
+		$this->assertArrayHasKey( '2020', wp_get_themes(), 'WordPress does not see the theme.' );
+		try {
+			update_option( 'stylesheet', '2020' );
+			update_option( 'template', '2020' );
+			remove_all_actions( 'wp_update_themes' ); // Core would refresh the update data from api.wordpress.org.
+			$this->save_settings();
+			$this->set_updates( null, array(), array( '2020' => array( 'new_version' => '3.0' ) ) );
 
-		$items = $this->checked_items();
+			$items = $this->checked_items();
 
-		$this->assertSame( '2020', $items[0]->get_key() );
-		$this->assertTrue( $items[0]->get_flags()['active'] );
+			$this->assertSame( '2020', $items[0]->get_key() );
+			$this->assertTrue( $items[0]->get_flags()['active'] );
+		} finally {
+			unlink( $dir . '/style.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- A fixture.
+			unlink( $dir . '/index.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- A fixture.
+			rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- A fixture.
+			rmdir( $root ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- A fixture.
+			$GLOBALS['wp_theme_directories'] = array_values( array_diff( (array) $GLOBALS['wp_theme_directories'], array( $root ) ) );
+			wp_clean_themes_cache();
+		}
 	}
 
 	/**

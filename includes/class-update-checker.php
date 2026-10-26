@@ -647,10 +647,11 @@ class Update_Checker {
 			 * @param array<string, object> $plugins_need_update Update data from WordPress by plugin file (for example `hello.php`).
 			 */
 			$plugins_need_update = $this->normalise_plugin_updates( apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ) ); // additional filtering of plugins need update; filters may return anything.
+			if ( ! function_exists( 'get_plugins' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php'; // Not loaded in cron requests.
+			}
+			$plugins_need_update = array_intersect_key( $plugins_need_update, get_plugins() ); // Only read the files of installed plugins, whatever the transient or a filter holds.
 			if ( count( $plugins_need_update ) >= 1 ) { // any plugins need updating after all the filtering gone on above?
-				if ( ! function_exists( 'get_plugin_data' ) ) {
-					require_once ABSPATH . 'wp-admin/includes/plugin.php'; // Not loaded in cron requests.
-				}
 				$active_plugins = $this->active_plugins();
 				foreach ( $plugins_need_update as $key => $data ) { // loop through the plugins that need updating.
 					$plugin_info = get_plugin_data( WP_PLUGIN_DIR . '/' . $key, false, false ); // get local plugin info.
@@ -711,6 +712,7 @@ class Update_Checker {
 			 * @param array<string, array<string, mixed>> $themes_need_update Update data from WordPress by theme stylesheet.
 			 */
 			$themes_need_update = $this->normalise_theme_updates( apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ) ); // additional filtering of themes need update; filters may return anything.
+			$themes_need_update = array_intersect_key( $themes_need_update, wp_get_themes( array( 'errors' => null ) ) ); // Only read the files of installed themes, whatever the transient or a filter holds.
 			if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 				foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating.
 					$theme_info = wp_get_theme( $key ); // get theme info.
