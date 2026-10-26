@@ -30,6 +30,8 @@ keywords = ["SC_WPUN_"]
 [[rules.allowlists]]
 # A list of constant names (for example in a test of the config problems), not a credential.
 description = "A value that is itself an SC_WPUN_ constant name"
+condition = "AND"
+paths = ['''^(?:/app/)?tests/wp/''']
 regexes = ['''^SC_WPUN_[A-Z0-9_]+$''']
 regexTarget = "secret"
 
