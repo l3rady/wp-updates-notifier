@@ -488,7 +488,7 @@ class Settings_Page {
 		register_setting( Settings::OPT_FIELD, Settings::OPT_FIELD, array( $this, 'sc_wpun_settings_validate' ) ); // Register Settings.
 
 		// Make settings main section.
-		add_settings_section( 'sc_wpun_settings_main', __( 'Settings', 'wp-updates-notifier' ), null, 'wp-updates-notifier' );  // @phpstan-ignore argument.type (Core accepts no callback: the sections have no intro text.)
+		add_settings_section( 'sc_wpun_settings_main', esc_html__( 'Settings', 'wp-updates-notifier' ), null, 'wp-updates-notifier' );  // @phpstan-ignore argument.type (Core accepts no callback: the sections have no intro text.)
 		foreach ( $this->settings->schemas() as $name => $schema ) {
 			if ( false === ( $schema['storage'] ?? true ) ) {
 				continue; // Code-only settings have no field.
@@ -499,8 +499,8 @@ class Settings_Page {
 			if ( $this->is_select( $schema ) ) {
 				$args['label_for'] = $id;
 			}
-			// Core prints the title as it is, so the marker is added here.
-			$title = ( isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name ) . ( Field_Renderer::is_required( $schema ) ? Field_Renderer::required_marker() : '' );
+			// Core prints the title as it is, so the label is escaped and the marker (trusted markup) is added here.
+			$title = esc_html( isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name ) . ( Field_Renderer::is_required( $schema ) ? Field_Renderer::required_marker() : '' );
 			add_settings_field( $id, $title, array( $this, 'render_setting' ), 'wp-updates-notifier', 'sc_wpun_settings_main', $args );
 		}
 	}
