@@ -70,6 +70,14 @@ jobs:
         url: 'http://wordpress:8080/wp-admin/options-general\.php.*'
         urlRegex: true
 
+      # Known-vulnerable server software (20020), which reads the PHP version from `X-Powered-By`. That header describes
+      # the throwaway site's PHP image, not the plugin, and the image runs the newest patch release of its branch: the
+      # rule assumes any version it has no advisory for is affected. PHP bumps come through Dependabot instead.
+      - ruleId: 20020
+        ruleName: Server Side Technology Version with Known Vulnerabilities
+        newRisk: False Positive
+        context: wpun
+
   - type: passiveScan-config
     parameters:
       maxAlertsPerRule: 10
