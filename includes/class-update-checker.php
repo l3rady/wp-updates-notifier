@@ -669,6 +669,9 @@ class Update_Checker {
 					} elseif ( '' !== $data->url ) {
 						$links['details'] = $data->url;
 					}
+					if ( !empty($data->package) ) {
+						$links['download'] = $data->package;
+					}
 					$items[] = new Notification_Item(
 						array(
 							'type'            => 'plugin',
@@ -722,6 +725,13 @@ class Update_Checker {
 			if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 				foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating.
 					$theme_info = wp_get_theme( $key ); // get theme info.
+					$links = array();
+					if ( !empty($data['url']) ) {
+						$links['details'] = $data['url'];
+					}
+					if ( !empty($data['package']) ) {
+						$links['download'] = $data['package'];
+					}
 					$items[]    = new Notification_Item(
 						array(
 							'type'            => 'theme',
@@ -729,7 +739,7 @@ class Update_Checker {
 							'name'            => $theme_info['Name'],
 							'current_version' => $theme_info['Version'],
 							'new_version'     => $data['new_version'],
-							'links'           => '' !== $data['url'] ? array( 'details' => $data['url'] ) : array(),
+							'links'           => $links,
 							'flags'           => array( 'active' => in_array( (string) $key, $active_themes, true ) ),
 						)
 					);
@@ -765,7 +775,7 @@ class Update_Checker {
 			}
 
 			$entry->new_version = (string) $entry->new_version;
-			foreach ( array( 'url', 'slug', 'id' ) as $property ) {
+			foreach ( array( 'url', 'slug', 'id', 'package' ) as $property ) {
 				$entry->$property = isset( $entry->$property ) && is_scalar( $entry->$property ) ? (string) $entry->$property : '';
 			}
 
@@ -792,7 +802,9 @@ class Update_Checker {
 			}
 
 			$entry['new_version'] = (string) $entry['new_version'];
-			$entry['url']         = isset( $entry['url'] ) && is_scalar( $entry['url'] ) ? (string) $entry['url'] : '';
+			foreach ( array( 'url', 'package' ) as $property ) {
+				$entry[$property] = isset( $entry[$property] ) && is_scalar( $entry[$property] ) ? (string) $entry[$property] : '';
+			}
 
 			$updates[ (string) $stylesheet ] = $entry;
 		}
