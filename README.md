@@ -28,7 +28,7 @@ Then open **Settings → Updates Notifier** to choose where notifications go.
 
 **Try it first:** the [Live Preview on WordPress.org](https://wordpress.org/plugins/wp-updates-notifier/?preview=1) opens the plugin in [WordPress Playground](https://wordpress.github.io/wordpress-playground/), a throwaway site in your browser with made-up pending updates and two email channels already set up. Emails are caught, not sent: Tools → Demo emails shows them. The button appears once the blueprint is deployed with the assets of 2.0.0.
 
-Checks run on WP-Cron, which only runs when the site gets visits. On a quiet site, or with `DISABLE_WP_CRON`, set up a real cron job that calls `wp-cron.php`.
+Checks run on WP-Cron, which only runs when the site gets visits. On a quiet site, set `DISABLE_WP_CRON` and run `wp updates-notifier check` from a real cron job. The [documentation](https://wpun.cariss.dev/) has the details.
 
 ## Help, bugs and security
 

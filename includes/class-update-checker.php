@@ -18,8 +18,20 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @internal
  * @phpstan-import-type Channel_State from State
+ * @phpstan-type Instance_Plan array{status: string, items: Notification_Item[], notification: ?Notification, result: ?Delivery_Result, retry_at: int, pending: Notification_Item[]}
  */
 class Update_Checker {
+	/**
+	 * The statuses of an instance in the plan of a check. A real run turns a send that failed into `failed`.
+	 */
+	const STATUS_DISABLED = 'disabled'; // Switched off.
+	const STATUS_WAITING  = 'waiting';  // Told to wait (Retry-After), see `retry_at`.
+	const STATUS_FAILED   = 'failed';   // The routing threw or the send failed.
+	const STATUS_SKIP     = 'skip';     // Items recorded without sending (or, with the module unavailable, the flag kept and nothing recorded).
+	const STATUS_REMINDER = 'reminder'; // A reminder with everything pending is (to be) sent.
+	const STATUS_SEND     = 'send';     // The new items are (to be) sent.
+	const STATUS_NOTHING  = 'nothing';  // Nothing new.
+
 	/**
 	 * Settings.
 	 *
@@ -83,7 +95,7 @@ class Update_Checker {
 	 * @return void
 	 */
 	public function do_update_check() {
-		$this->check( 'cron' );
+		$this->check( 'cron', false, false );
 	}
 
 	/**
@@ -92,7 +104,37 @@ class Update_Checker {
 	 * @return void
 	 */
 	public function run_manual_check() {
-		$this->check( 'manual' );
+		$this->check( 'manual', false, false );
+	}
+
+	/**
+	 * Runs the check for the WP-CLI commands, and tells what each instance got or would get.
+	 *
+	 * A dry run does everything but change anything: it sends nothing, saves no state (no pruning,
+	 * no reminder clock, no cleared skip, no `last_check_time`), fires neither `sc_wpun_after_dispatch`
+	 * nor `sc_wpun_after_update_check`, and leaves last_results() and last_notification() as they were.
+	 * Collecting still refreshes WordPress's update data and runs the filters, and a reminder is
+	 * reported as due if a real run would send one now.
+	 *
+	 * A forced run only skips the "already told" test: everything waiting that the instance's routing
+	 * gives it is sent as a normal message (never a reminder, whose clock is left as it is), also
+	 * while a skip is pending, which a successful send clears. Switched-off and waiting (Retry-After)
+	 * instances, routing, the veto and a missing module are respected. A dry run can be forced too.
+	 *
+	 * @internal
+	 *
+	 * @param string $source  What started the check, kept in the notification context.
+	 * @param bool   $dry_run Report only: send and change nothing.
+	 * @param bool   $force   Send everything waiting again, whatever was notified.
+	 *
+	 * @return array<string, Instance_Plan> By instance id, for every instance. `items` are those of the
+	 *                                      message (for `skip` those recorded), `notification` the one sent
+	 *                                      or to be sent, `result` its result (real runs), `retry_at` the
+	 *                                      time a `waiting` instance may be tried again,
+	 *                                      `pending` everything waiting that its routing gives it.
+	 */
+	public function run_check( string $source, bool $dry_run = false, bool $force = false ): array {
+		return $this->check( $source, $dry_run, $force );
 	}
 
 	/**
@@ -108,11 +150,13 @@ class Update_Checker {
 	 * nothing does. A due reminder replaces the message of new items of that run; new items
 	 * between reminders are sent at once as usual. A failed reminder does not restart the interval.
 	 *
-	 * @param string $source What started the check, kept in the notification context.
+	 * @param string $source  What started the check, kept in the notification context.
+	 * @param bool   $dry_run Whether to only report, see run_check().
+	 * @param bool   $force   Whether to send what was notified again, see run_check().
 	 *
-	 * @return void
+	 * @return array<string, Instance_Plan>
 	 */
-	private function check( string $source ) {
+	private function check( string $source, bool $dry_run, bool $force ): array {
 		/**
 		 * Fires when an update check starts, before anything is looked up.
 		 *
@@ -223,8 +267,12 @@ class Update_Checker {
 
 		$checked = $this->add_pending_keys( $checked, $notification->get_items() );
 
-		$this->last_notification = $notification;
-		$this->last_results      = array();
+		if ( ! $dry_run ) {
+			$this->last_notification = $notification;
+			$this->last_results      = array();
+		}
+		$results = array(); // Delivery results of the instances sent to, kept apart so a dry run leaves last_results() alone.
+		$plan    = array();
 
 		$instances = $this->channels->all();
 		$channels  = $this->state_for_instances( $state, $instances );
@@ -239,10 +287,15 @@ class Update_Checker {
 		}
 
 		foreach ( $instances as $id => $instance ) {
+			$plan[ $id ] = $this->plan_entry( self::STATUS_NOTHING );
 			if ( ! $instance->is_enabled() ) {
+				$plan[ $id ]['status'] = self::STATUS_DISABLED;
 				continue; // Switched off: nothing is sent or recorded, and a pending skip waits.
 			}
-			if ( ( $channels[ $id ]['retry_at'] ?? 0 ) > time() ) {
+			$retry_at = (int) ( $channels[ $id ]['retry_at'] ?? 0 );
+			if ( $retry_at > time() ) {
+				$plan[ $id ]['status']   = self::STATUS_WAITING;
+				$plan[ $id ]['retry_at'] = $retry_at;
 				continue; // Told to wait (Retry-After): nothing is sent or recorded, its items go out on the first check after, and a pending skip waits.
 			}
 			$entry    = $channels[ $id ] ?? array(
@@ -256,12 +309,17 @@ class Update_Checker {
 				$pending = $this->items_for_instance( $instance, $notification->get_items() );
 			} catch ( \Throwable $e ) {
 				// A routing callback threw: this instance fails and the others still go out. Its state stays as it was.
-				$this->last_results[ $id ] = $this->dispatcher->exception_result( $instance, $e, $notification );
+				$plan[ $id ]['status'] = self::STATUS_FAILED;
+				if ( ! $dry_run ) { // A dry run reports the failure without the result's hooks and stored last result.
+					$plan[ $id ]['result'] = $this->dispatcher->exception_result( $instance, $e, $notification );
+					$results[ $id ]        = $plan[ $id ]['result'];
+				}
 				continue;
 			}
-			$for_instance = array();
+			$plan[ $id ]['pending'] = $pending;
+			$for_instance           = array();
 			foreach ( $pending as $item ) {
-				if ( ( $entry['notified'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version() ) {
+				if ( $force || ( $entry['notified'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version() ) {
 					$for_instance[] = $item;
 				}
 			}
@@ -274,18 +332,21 @@ class Update_Checker {
 			} elseif ( ! isset( $entry['last_reminder'] ) ) {
 				$entry['last_reminder'] = time(); // Starts now: the first reminder comes one interval after items start waiting.
 			} else {
-				$due = ! $entry['skip_pending'] && $this->reminder_is_due( $entry['last_reminder'], $interval, $options );
+				$due = ! $force && ! $entry['skip_pending'] && $this->reminder_is_due( $entry['last_reminder'], $interval, $options );
 			}
 
-			if ( $entry['skip_pending'] ) {
+			$store = true; // Whether the entry is kept in the state, which an unchanged "nothing new" is not.
+			if ( $entry['skip_pending'] && ( ! $force || ! $this->dispatcher->is_available( $instance ) ) ) {
+				$plan[ $id ]['status'] = self::STATUS_SKIP;
 				if ( ! $this->dispatcher->is_available( $instance ) ) {
 					continue; // Keep the flag until the channel is there.
 				}
+				$plan[ $id ]['items']  = $for_instance;
 				$entry['skip_pending'] = false;
 				$entry['notified']     = $this->record( $entry['notified'], $for_instance );
 			} elseif ( $due ) {
 				// One message with everything waiting, new items included, instead of a second message.
-				$reminder                  = new Notification(
+				$send                  = new Notification(
 					$notification->get_site_name(),
 					$notification->get_site_url(),
 					$notification->get_updates_url(),
@@ -295,24 +356,46 @@ class Update_Checker {
 						'source'      => $notification->get_source(),
 					)
 				);
-				$result                    = $this->dispatcher->send_one( $reminder, $instance );
-				$this->last_results[ $id ] = $result;
-				if ( $result->is_success() ) {
-					$entry['notified']      = $this->record( $entry['notified'], $pending );
-					$entry['last_reminder'] = time();
-				}
+				$plan[ $id ]['status'] = self::STATUS_REMINDER;
+				$plan[ $id ]['items']  = $pending;
 			} elseif ( array() !== $for_instance ) {
-				$result                    = $this->dispatcher->send_one( $this->last_notification->with_items( $for_instance ), $instance );
-				$this->last_results[ $id ] = $result;
-				if ( $result->is_success() ) {
-					$entry['notified'] = $this->record( $entry['notified'], $for_instance );
-				}
-			} elseif ( $entry === $original ) {
-				continue; // Nothing new and the clock did not change.
+				$send                  = $notification->with_items( $for_instance );
+				$plan[ $id ]['status'] = self::STATUS_SEND;
+				$plan[ $id ]['items']  = $for_instance;
+			} else {
+				$store = $entry !== $original; // Nothing new, and unless the clock changed there is nothing to keep.
 			}
 
-			$channels[ $id ] = $entry;
+			if ( isset( $send ) ) {
+				$plan[ $id ]['notification'] = $send;
+				if ( ! $dry_run ) {
+					$result = $this->dispatcher->send_one( $send, $instance );
+
+					$plan[ $id ]['result'] = $result;
+					$results[ $id ]        = $result;
+					if ( $result->is_success() ) {
+						$entry['notified']     = $this->record( $entry['notified'], $plan[ $id ]['items'] );
+						$entry['skip_pending'] = false; // A forced message replaces the skip.
+						if ( self::STATUS_REMINDER === $plan[ $id ]['status'] ) {
+							$entry['last_reminder'] = time();
+						}
+					} else {
+						$plan[ $id ]['status'] = self::STATUS_FAILED; // A failed reminder does not restart the interval either.
+					}
+				}
+				unset( $send );
+			}
+
+			if ( $store ) {
+				$channels[ $id ] = $entry;
+			}
 		}
+
+		if ( $dry_run ) {
+			return $plan; // Nothing is saved and no hook fires: the state stays exactly as it was.
+		}
+
+		$this->last_results = $results;
 
 		// Sending saved each instance's last result and retry time in the stored state, which the copy read at the start lacks.
 		$fresh = $this->state->get()['channels'];
@@ -331,9 +414,9 @@ class Update_Checker {
 		unset( $state['legacy_notified'] ); // Every instance that existed has taken its share; later ones start clean.
 		$this->state->save( $state );
 
-		if ( array() !== $this->last_results ) {
+		if ( array() !== $results ) {
 			/** This action is documented in includes/class-dispatcher.php */
-			do_action( 'sc_wpun_after_dispatch', $this->last_results, $notification );
+			do_action( 'sc_wpun_after_dispatch', $results, $notification );
 		}
 
 		/**
@@ -346,7 +429,27 @@ class Update_Checker {
 		 * @param Notification                $notification The notification of the check, with every item that was waiting.
 		 * @param array<string, Delivery_Result> $results      Result by channel instance id, for the instances something was sent to.
 		 */
-		do_action( 'sc_wpun_after_update_check', $notification, $this->last_results );
+		do_action( 'sc_wpun_after_update_check', $notification, $results );
+
+		return $plan;
+	}
+
+	/**
+	 * A fresh entry of the plan of a check.
+	 *
+	 * @param string $status One of the STATUS_ constants.
+	 *
+	 * @return Instance_Plan
+	 */
+	private function plan_entry( string $status ): array {
+		return array(
+			'status'       => $status,
+			'items'        => array(),
+			'notification' => null,
+			'result'       => null,
+			'retry_at'     => 0,
+			'pending'      => array(),
+		);
 	}
 
 	/**

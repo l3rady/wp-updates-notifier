@@ -15,4 +15,5 @@ parameters:
         - tests/fixtures/plugins
     scanFiles:
         - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+        - tests/stubs/wp-cli.php
     treatPhpDocTypesAsCertain: false

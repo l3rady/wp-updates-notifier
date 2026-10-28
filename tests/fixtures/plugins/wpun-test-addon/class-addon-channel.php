@@ -82,6 +82,16 @@ class Addon_Channel extends Channel {
 	}
 
 	/**
+	 * The add-on can send a test message.
+	 *
+	 * @param string $feature Feature name.
+	 * @return bool
+	 */
+	public function supports( string $feature ): bool {
+		return 'test_message' === $feature;
+	}
+
+	/**
 	 * The settings form, drawn by the add-on.
 	 *
 	 * @param Channel_Instance $instance Instance.

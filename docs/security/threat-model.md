@@ -215,6 +215,7 @@ documented).
 | --- | --- | --- | --- |
 | D/T | Overlapping runs, such as cron and Check now together, deliver the same update twice. | **Accepted trade-off:** there is no lock. A duplicate message is harmless, and a lock adds failure modes, such as a stale lock that silences notifications. | n/a (recorded decision) |
 | E | Anyone triggers a run. | Visitors can only trigger WP-Cron at its schedule, never on demand. `sc_wpun_run_check` is an action for trusted code only. | `test-run-check.php`, `test-scheduling.php`, `test-check-now.php`. |
+| E/I | The WP-CLI commands (`wp updates-notifier`) run checks, send test messages and print the configuration. | WP-CLI needs shell access to the site, which is already full control of it. The commands only register under WP-CLI. `status` shows a secret field only as `set` or `not set`, in every format, and shows no fields of an instance whose module is not registered. `check --dry-run` and `status` send and save nothing. | `test-cli-commands.php`, `test-cli-check.php`, `tests/flows/specs/cli.spec.js`. |
 
 ### 8. Stored data
 

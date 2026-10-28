@@ -7,12 +7,16 @@
  */
 
 use WPUN\Admin\Channel_Form;
+use WPUN\CLI\Channels_Command;
+use WPUN\CLI\Updates_Notifier_Command;
 use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
 use WPUN\Delivery_Result;
 use WPUN\Notification;
 use WPUN_Test_Addon\Addon;
 use WPUN_Test_Addon\Addon_Channel;
+
+require_once __DIR__ . '/fixtures/wp-cli.php';
 
 /**
  * Registering a module, its form, routing, delivery and results, configuration from outside, and the hook reference.
@@ -566,5 +570,74 @@ class Test_Extension_Api extends WPUN_Test_Case {
 				$this->assertMatchesRegularExpression( '/[\'"]' . preg_quote( substr( $hook, 0, $dynamic ), '/' ) . '/', $tests, $hook . ' is not named by any test.' );
 			}
 		}
+	}
+
+	// WP-CLI (#79).
+
+	/**
+	 * The add-on's instances are listed with their module and last result, and the status shows their fields.
+	 */
+	public function test_cli_lists_the_add_on_instances() {
+		WP_CLI::reset();
+		$good = $this->add_instance( 'Good' );
+		$bad  = $this->add_instance( 'Bad', array( 'note' => 'fail' ) );
+		$this->run_check( '99.0.0' );
+
+		( new Channels_Command() )->list_( array(), array() );
+		$out = WP_CLI::text();
+		$this->assertStringContainsString( $good . "\tGood\t" . Addon_Channel::TYPE . "\tavailable\tyes\tno\tsuccess, ", $out );
+		$this->assertStringContainsString( 'Received 1 items.', $out );
+		$this->assertStringContainsString( $bad . "\tBad\t" . Addon_Channel::TYPE . "\tavailable\tyes\tno\tfailure, ", $out );
+		$this->assertStringContainsString( 'The add-on refused.', $out );
+
+		WP_CLI::reset();
+		( new Updates_Notifier_Command() )->status( array(), array() );
+		$this->assertStringContainsString( "name\tName\tdatabase", WP_CLI::text() );
+		$this->assertStringContainsString( "note\tfail\tdatabase", WP_CLI::text() );
+	}
+
+	/**
+	 * A test message goes through the add-on, with its filter and its events.
+	 */
+	public function test_cli_test_delivers_through_the_add_on() {
+		WP_CLI::reset();
+		$id        = $this->add_instance( 'Tested' );
+		$pre_sends = 0;
+		add_filter(
+			'sc_wpun_pre_send',
+			static function ( $pre, $notification ) use ( &$pre_sends ) {
+				$pre_sends += $notification->is_test() ? 1 : 0;
+				return $pre;
+			},
+			5,
+			2
+		);
+
+		( new Updates_Notifier_Command() )->test( array(), array( 'channel' => $id ) );
+
+		$this->assertStringContainsString( 'Success: Test message sent through Tested.', WP_CLI::text() );
+		$this->assertSame( 1, $pre_sends );
+		$this->assertSame( array( array( 'sent', $id, 'success' ) ), Addon::$events );
+	}
+
+	/**
+	 * With the module unregistered its instances are unavailable and a test is refused.
+	 */
+	public function test_cli_reports_the_add_on_unavailable_when_deactivated() {
+		WP_CLI::reset();
+		$id = $this->add_instance( 'Gone' );
+		sc_wpun()->channels()->unregister( Addon_Channel::TYPE );
+
+		( new Channels_Command() )->list_( array(), array() );
+		$this->assertStringContainsString( $id . "\tGone\t" . Addon_Channel::TYPE . "\tunknown module\tyes", WP_CLI::text() );
+
+		try {
+			( new Updates_Notifier_Command() )->test( array(), array( 'channel' => $id ) );
+			$this->fail( 'The test must be refused.' );
+		} catch ( Test_Cli_Error $e ) {
+			$this->assertSame( 'Gone cannot be used: unknown module.', $e->getMessage() );
+		}
+		$this->assertSame( array(), Addon::$events );
+		$this->assertSame( array(), Addon::$received );
 	}
 }

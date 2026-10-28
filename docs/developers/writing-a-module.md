@@ -264,7 +264,7 @@ Bear in mind that a successful send counts every item as delivered, including th
 
 ### Duplicate deliveries
 
-The plugin does not lock update checks against each other. If a check started with `sc_wpun_run_check` overlaps a scheduled one, both can send the same update before either records it, so a notification can occasionally arrive twice. For update notices that is a fair trade for a simpler plugin. If your service must never receive the same message twice, keep your own record in `send()`, for example the notification's item keys and versions per instance, and skip what you already sent.
+The plugin does not lock update checks against each other. If a check started with `sc_wpun_run_check` or `wp updates-notifier check` overlaps a scheduled one, both can send the same update before either records it, so a notification can occasionally arrive twice. For update notices that is a fair trade for a simpler plugin. If your service must never receive the same message twice, keep your own record in `send()`, for example the notification's item keys and versions per instance, and skip what you already sent.
 
 ## 5. Testing
 

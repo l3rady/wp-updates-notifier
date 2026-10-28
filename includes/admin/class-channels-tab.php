@@ -16,7 +16,6 @@ use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
 use WPUN\Channel_Store;
 use WPUN\Dispatcher;
-use WPUN\Notification;
 use WPUN\Routing;
 use WPUN\State;
 
@@ -615,26 +614,12 @@ class Channels_Tab {
 			return true;
 		}
 
-		$channel = $this->registry->get( $instance->get_type() );
-		if ( null === $channel || ! $channel->supports( 'test_message' ) ) {
+		$result = $this->dispatcher->send_test( $instance );
+
+		if ( 'unsupported' === $result->get_code() ) {
 			// translators: %s: Label of the channel.
 			$this->notices->add( false, sprintf( __( '%s cannot send a test message.', 'wp-updates-notifier' ), $instance->get_label() ) );
-			return true;
-		}
-
-		$notification = new Notification(
-			get_bloginfo(),
-			home_url(),
-			admin_url( 'update-core.php' ),
-			array(),
-			array(
-				'is_test' => true,
-				'source'  => 'test',
-			)
-		);
-		$result       = $this->dispatcher->send_one( $notification, $instance );
-
-		if ( $result->is_success() ) {
+		} elseif ( $result->is_success() ) {
 			// translators: %s: Name of the channel.
 			$this->notices->add( true, sprintf( __( 'Test message sent through %s.', 'wp-updates-notifier' ), $instance->get_label() ) );
 		} else {

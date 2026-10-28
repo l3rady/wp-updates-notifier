@@ -1029,9 +1029,9 @@ Runs the update check now.
 
 It works as a scheduled run does: same routing, per-instance dedupe, delivery state and
 hooks, so items an instance was already told about are not sent again. The notification
-source is `manual` and the schedule is not changed. Use it from a deploy script, or from
-a system cron when `DISABLE_WP_CRON` is set, for example
-`wp eval "do_action( 'sc_wpun_run_check' );"`.
+source is `manual` and the schedule is not changed. Use it from a deploy script. From a
+system cron, run `wp updates-notifier check` instead: it has a dry run, a force option and an
+exit status.
 
 There is no lock: a run that overlaps another check, scheduled or manual, can send an
 update the other is also sending, so it may arrive twice. A channel that must never

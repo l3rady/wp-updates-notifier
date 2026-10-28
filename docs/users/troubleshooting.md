@@ -26,42 +26,50 @@ Reminders are optional and per channel. Check these in turn:
 
 The schedule is run by WP-Cron. WP-Cron is not a real clock. WordPress only looks for due tasks when a page is requested, so on a site that few people visit, a check due at 03:00 can wait until someone arrives at 09:00. A forum user put it as "I only receive emails after someone has logged in".
 
-To fix it, run WP-Cron from the server's own clock. See [How do I run the check from a system cron?](#how-do-i-run-the-check-from-a-system-cron).
+To fix it, run WP-Cron from the server's own clock. See [How do I run the check from a system cron or WP-CLI?](#how-do-i-run-the-check-from-a-system-cron-or-wp-cli).
 
-## How do I run the check from a system cron?
+## How do I run the check from a system cron or WP-CLI?
 
-There are two ways. Use the first unless you have a reason not to.
+Use the server's own clock instead of WP-Cron. There are two ways.
 
-### Request wp-cron.php
+### Run the WP-CLI command
 
-Stop WordPress starting WP-Cron on page loads by adding this to `wp-config.php`:
+This is the way we suggest. Stop WordPress starting WP-Cron on page loads by adding this to `wp-config.php`:
 
 ```php
 define( 'DISABLE_WP_CRON', true );
 ```
 
-Then have the server request `wp-cron.php` on a regular schedule, for example every 15 minutes:
+Then have the server run the check, for example every hour:
+
+```
+0 * * * * wp updates-notifier check --path=/var/www/example.com --quiet
+```
+
+The command runs the same check as the schedule, and anything already reported is not sent again. It exits with an error if a channel failed, so your cron can tell you. It does not use WP-Cron, so **Next check** on the **General** tab shows nothing. The time of your cron entry is the schedule.
+
+Other commands help you set it up:
+
+- `wp updates-notifier check --dry-run` shows what would be sent and changes nothing.
+- `wp updates-notifier test` sends a test message through each channel.
+- `wp updates-notifier status` shows the settings, the schedule, the channels and what is waiting.
+
+Run `wp help updates-notifier` for all of them.
+
+Things to know:
+
+- The plugin does not lock checks against each other. If this overlaps another run, the same update can be sent twice. This is a known trade-off, and rare. See [How notifications work](how-notifications-work.md#overlapping-checks).
+- A check started this way is not a WP-Cron run, so WordPress lets plugin and theme data get up to 12 hours old before it refreshes it. A check started by `wp-cron.php` allows 2 hours. See [Why is the update data hours old?](#why-is-the-update-data-hours-old).
+
+### Request wp-cron.php
+
+If you can not use WP-CLI, keep `DISABLE_WP_CRON` and have the server request `wp-cron.php` on a regular schedule, for example every 15 minutes:
 
 ```
 */15 * * * * curl -fsS https://example.com/wp-cron.php > /dev/null
 ```
 
 WP-Cron then runs the plugin's check at the **Frequency to check** you chose, and WordPress's own update tasks too.
-
-### Fire the check yourself
-
-The plugin's check can also be started from code with the `sc_wpun_run_check` action. For example, with WP-CLI:
-
-```
-*/30 * * * * cd /path/to/site && wp eval "do_action( 'sc_wpun_run_check' );"
-```
-
-This runs the same check as the schedule, and anything already reported is not sent again. It does not move the WP-Cron schedule, so **Next check** on the **General** tab does not change. If you rely on this alone, the time of your cron entry is the schedule.
-
-Things to know:
-
-- The plugin does not lock checks against each other. If this overlaps another run, the same update can be sent twice. This is a known trade-off, and rare. See [How notifications work](how-notifications-work.md#overlapping-checks).
-- A check started this way is not a WP-Cron run, so WordPress lets plugin and theme data get up to 12 hours old before it refreshes it. A check started by `wp-cron.php` allows 2 hours. See [Why is the update data hours old?](#why-is-the-update-data-hours-old).
 
 ## Why is the update data hours old?
 
@@ -70,7 +78,7 @@ On every check the plugin asks WordPress to refresh what it knows about updates.
 | How the check started | Core updates | Plugins and themes |
 | --- | --- | --- |
 | The schedule, or `wp-cron.php` | 1 minute | 2 hours |
-| **Check for updates and notify now**, or `wp eval` | 1 minute | 12 hours |
+| **Check for updates and notify now**, or `wp updates-notifier check` | 1 minute | 12 hours |
 
 So a scheduled check can see plugin and theme data up to two hours old, and a manual check up to twelve. WordPress also asks again early if the plugins or themes you have installed, or their versions, have changed.
 

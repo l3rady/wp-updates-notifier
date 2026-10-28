@@ -62,13 +62,13 @@ A test message ignores the wait.
 
 ## Overlapping checks
 
-The plugin does not lock checks against each other. If you click **Check for updates and notify now**, or something fires `sc_wpun_run_check`, while a scheduled check is running, both can send the same update before either records it. You then get the same notification twice. This is rare and harmless for update notices, so the plugin accepts it rather than adding a lock.
+The plugin does not lock checks against each other. If you click **Check for updates and notify now**, or something fires `sc_wpun_run_check` or runs `wp updates-notifier check`, while a scheduled check is running, both can send the same update before either records it. You then get the same notification twice. This is rare and harmless for update notices, so the plugin accepts it rather than adding a lock.
 
 ## Where the checks come from
 
 - **The schedule.** WP-Cron runs the check at the frequency you chose. See [Settings](settings.md#frequency-to-check).
 - **The button.** **Check for updates and notify now** runs the same check straight away and does not change the schedule.
-- **Your own trigger.** A system cron can start the check. See [How do I run the check from a system cron?](troubleshooting.md#how-do-i-run-the-check-from-a-system-cron).
+- **Your own trigger.** A system cron can run `wp updates-notifier check`. See [How do I run the check from a system cron or WP-CLI?](troubleshooting.md#how-do-i-run-the-check-from-a-system-cron-or-wp-cli).
 
 All three send only what is new.
 

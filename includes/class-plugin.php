@@ -15,6 +15,8 @@ use WPUN\Admin\Notices;
 use WPUN\Admin\Settings_Page;
 use WPUN\Admin\Plugin_Requirements;
 use WPUN\Admin\Update_Nag;
+use WPUN\CLI\Channels_Command;
+use WPUN\CLI\Updates_Notifier_Command;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Not loaded by WordPress.
@@ -212,6 +214,15 @@ class Plugin {
 		$this->notices ??= new Notices();
 
 		return $this->notices;
+	}
+
+	/**
+	 * The data of the WP-CLI status and channels commands.
+	 *
+	 * @return Status_Report
+	 */
+	public function status_report(): Status_Report {
+		return new Status_Report( $this->settings, $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->update_checker );
 	}
 
 	/**
@@ -483,9 +494,9 @@ class Plugin {
 		 *
 		 * It works as a scheduled run does: same routing, per-instance dedupe, delivery state and
 		 * hooks, so items an instance was already told about are not sent again. The notification
-		 * source is `manual` and the schedule is not changed. Use it from a deploy script, or from
-		 * a system cron when `DISABLE_WP_CRON` is set, for example
-		 * `wp eval "do_action( 'sc_wpun_run_check' );"`.
+		 * source is `manual` and the schedule is not changed. Use it from a deploy script. From a
+		 * system cron, run `wp updates-notifier check` instead: it has a dry run, a force option and an
+		 * exit status.
 		 *
 		 * There is no lock: a run that overlaps another check, scheduled or manual, can send an
 		 * update the other is also sending, so it may arrive twice. A channel that must never
@@ -511,6 +522,9 @@ class Plugin {
 		if ( is_admin() ) {
 			$this->register_admin_hooks();
 		}
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$this->register_cli();
+		}
 
 		/**
 		 * Fires when the plugin has loaded and its hooks are registered.
@@ -520,6 +534,18 @@ class Plugin {
 		 * @since 2.0.0
 		 */
 		do_action( 'sc_wpun_loaded' );
+	}
+
+	/**
+	 * Register the WP-CLI commands. Only WP-CLI requests need them, so other requests never load their classes.
+	 *
+	 * @internal
+	 *
+	 * @return void
+	 */
+	public function register_cli(): void {
+		\WP_CLI::add_command( 'updates-notifier', Updates_Notifier_Command::class );
+		\WP_CLI::add_command( 'updates-notifier channels', Channels_Command::class );
 	}
 
 	/**

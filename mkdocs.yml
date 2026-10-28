@@ -27,6 +27,7 @@ nav:
       - Channels: users/channels.md
       - How notifications work: users/how-notifications-work.md
       - Settings in code: users/settings-in-code.md
+      - WP-CLI: users/wp-cli.md
       - Troubleshooting: users/troubleshooting.md
   - Developers:
       - developers/README.md

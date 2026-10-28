@@ -62,7 +62,7 @@ final class Notification {
 	private $is_reminder;
 
 	/**
-	 * What started the notification, for example "cron".
+	 * What started the notification, for example `cron`, `manual` (the sc_wpun_run_check action), `cli` (WP-CLI) or `test`.
 	 *
 	 * @var string
 	 */

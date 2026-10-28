@@ -203,4 +203,27 @@ class Test_Test_Send extends WPUN_Test_Case {
 		$this->expectException( WPDieException::class );
 		$page->handle_test_send();
 	}
+
+	/**
+	 * The dispatcher sends a test message with no items, and refuses a channel that cannot send one.
+	 */
+	public function test_the_dispatcher_sends_a_test_message() {
+		$result = sc_wpun()->dispatcher()->send_test( sc_wpun_channels()->get( 'email' ) );
+
+		$this->assertTrue( $result->is_success() );
+		$this->assertSame( 1, $this->sent_mail_count() );
+
+		$channel = new Test_Channel( 'notest' );
+		sc_wpun()->channels()->register( $channel );
+		$instance = new WPUN\Channel_Instance( 'notest', 'notest', 'No test', true );
+		$refused  = sc_wpun()->dispatcher()->send_test( $instance );
+		sc_wpun()->channels()->unregister( 'notest' );
+
+		$this->assertFalse( $refused->is_success() );
+		$this->assertSame( 'unsupported', $refused->get_code() );
+		$this->assertSame( array(), $channel->received );
+
+		$missing = sc_wpun()->dispatcher()->send_test( $instance );
+		$this->assertSame( 'unsupported', $missing->get_code() );
+	}
 }

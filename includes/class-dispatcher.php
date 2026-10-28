@@ -125,6 +125,38 @@ class Dispatcher {
 	}
 
 	/**
+	 * Send a test message through an instance, for the Channels tab and WP-CLI.
+	 *
+	 * The message has no items. A channel that does not support test messages, or whose module is
+	 * not registered, is reported as a failure with the code `unsupported`.
+	 *
+	 * @internal
+	 *
+	 * @param Channel_Instance $instance The instance to test.
+	 *
+	 * @return Delivery_Result
+	 */
+	public function send_test( Channel_Instance $instance ): Delivery_Result {
+		$channel = $this->registry->get( $instance->get_type() );
+		if ( null === $channel || ! $channel->supports( 'test_message' ) ) {
+			return Delivery_Result::failure( __( 'This channel cannot send a test message.', 'wp-updates-notifier' ), 'unsupported' );
+		}
+
+		$notification = new Notification(
+			get_bloginfo(),
+			home_url(),
+			admin_url( 'update-core.php' ),
+			array(),
+			array(
+				'is_test' => true,
+				'source'  => 'test',
+			)
+		);
+
+		return $this->send_one( $notification, $instance );
+	}
+
+	/**
 	 * Deliver a notification through one instance, for example a test message.
 	 *
 	 * Unlike dispatch(), a switched-off or unavailable instance is reported as a failure.
