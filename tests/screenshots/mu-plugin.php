@@ -14,3 +14,17 @@ add_filter(
 	},
 	20
 );
+
+// A mute set in code, as an agency might in an mu-plugin: shown as "Set in code" on the Muted tab (screenshot 4).
+add_filter(
+	'sc_wpun_mutes',
+	static function ( $mutes ) {
+		$mutes[] = new \WPUN\Mute(
+			array(
+				'type' => 'plugin',
+				'key'  => 'example-licence-manager/example-licence-manager.php',
+			)
+		);
+		return $mutes;
+	}
+);

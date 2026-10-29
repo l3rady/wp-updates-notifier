@@ -92,8 +92,9 @@ Please don't post it in the support forum or in a public GitHub issue. Report it
 1. The General tab: when the last and next check run, a button to check now, and the settings.
 2. The Channels tab: each channel with what it receives and when it last delivered.
 3. Editing an email channel; a value set in code is shown as read-only.
-4. An update email listing the updates that are waiting.
-5. Site Health: the problems the plugin reports, such as checks that are not running or a channel that failed to deliver.
+4. The Muted tab: the plugins and themes muted for good, for one version, or in code, and a form to mute another.
+5. An update email listing the updates that are waiting.
+6. Site Health: the problems the plugin reports, such as checks that are not running or a channel that failed to deliver.
 
 == Changelog ==
 

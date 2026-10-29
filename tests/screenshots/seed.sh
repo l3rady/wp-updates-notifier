@@ -26,6 +26,13 @@ make_plugin() {
 make_plugin example-contact-forms 'Example Contact Forms' 3.4.1 active
 make_plugin example-gallery 'Example Gallery' 2.1.0 active
 make_plugin example-backup 'Example Backup' 1.8.3 inactive
+# No update is waiting for it; mu-plugin.php mutes it in code (screenshot 4).
+make_plugin example-licence-manager 'Example Licence Manager' 4.0.2 active
+
+# A theme to mute (screenshot 4).
+mkdir -p wp-content/themes/example-agency
+printf '/*\nTheme Name: Example Agency\nVersion: 1.2.0\nAuthor: Example Author\n*/\n' >wp-content/themes/example-agency/style.css
+printf '<?php\n' >wp-content/themes/example-agency/index.php
 
 # A value set in code shows as read-only on the channel's form (screenshot 3).
 wp config set SC_WPUN_CHANNEL_OFFICE__FROM updates@example.com --type=constant --quiet

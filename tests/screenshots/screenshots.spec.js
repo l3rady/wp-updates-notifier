@@ -1,7 +1,7 @@
-// The WordPress.org screenshots: .wordpress-org/screenshot-1.png to screenshot-5.png, in the order of SHOTS. The
+// The WordPress.org screenshots: .wordpress-org/screenshot-1.png to screenshot-6.png, in the order of SHOTS. The
 // captions are the `== Screenshots ==` list of .wordpress-org/readme/template.txt, in the same order: change both
-// together. Screenshot 5 (Site Health) is taken in a second run, after seed-health.sh has broken the site; run.sh
-// selects it by its name ("screenshot 5").
+// together. Screenshot 6 (Site Health) is taken in a second run, after seed-health.sh has broken the site; run.sh
+// selects it by its name ("screenshot 6").
 const path = require( 'path' );
 const { test, expect } = require( '@playwright/test' );
 
@@ -9,6 +9,7 @@ const OUT = process.env.SHOTS_OUT || '/out';
 const MAILPIT = process.env.MAILPIT_URL || 'http://mailpit:8025';
 const SETTINGS = '/wp-admin/options-general.php?page=wp-updates-notifier';
 const CHANNELS = `${ SETTINGS }&tab=channels`;
+const MUTED = `${ SETTINGS }&tab=muted`;
 
 // The id of the newest message sent to an address, from Mailpit's API.
 async function messageTo( request, address ) {
@@ -21,6 +22,7 @@ const SHOTS = [
 	{ name: 'General tab', url: SETTINGS, ready: 'h1' },
 	{ name: 'Channels list', url: CHANNELS, ready: '.wp-list-table' },
 	{ name: 'Edit channel form', url: `${ CHANNELS }&action=edit&id=office`, ready: 'form' },
+	{ name: 'Muted tab', url: MUTED, ready: '.sc-wpun-muted' },
 	{ name: 'Update email in Mailpit', mail: 'office@example.com' },
 	{ name: 'Site Health', url: '/wp-admin/site-health.php', health: true },
 ];
