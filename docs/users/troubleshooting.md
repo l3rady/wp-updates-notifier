@@ -4,12 +4,13 @@
 
 Check these in turn:
 
-1. **Was it already reported?** Each channel is told about each version once. See [How notifications work](how-notifications-work.md).
-2. **Is the channel on?** On the **Channels** tab, **Enabled** must say **On**.
-3. **Does a setting leave it out?** On the **General** tab, the setting for that kind of update must not be **No**, and if it is limited to active plugins or themes, the plugin or theme must be active. Check the channel's **Routing** column too.
-4. **Did the send fail?** **Last delivery** shows **Failed** and the reason.
-5. **Has the check run?** **Last checked** on the **General** tab says when. If it is old, see the next entry.
-6. **Is the data old?** See [Why is the update data hours old?](#why-is-the-update-data-hours-old).
+1. **What does Site Health say?** Open **Tools → Site Health**. Under **Status**, the plugin reports whether the update check is scheduled and has run lately, whether WP-Cron is switched off, whether a channel is on and able to send, whether the module of each channel is available, and whether the last delivery of each channel failed. It makes no request to WordPress.org to do this. **Info → WP Updates Notifier** lists your settings (and where each comes from), the schedule and the channels, ready to paste into a support request. Secrets only show as set or not set, and email addresses are replaced.
+2. **Was it already reported?** Each channel is told about each version once. See [How notifications work](how-notifications-work.md).
+3. **Is the channel on?** On the **Channels** tab, **Enabled** must say **On**.
+4. **Does a setting leave it out?** On the **General** tab, the setting for that kind of update must not be **No**, and if it is limited to active plugins or themes, the plugin or theme must be active. Check the channel's **Routing** column too.
+5. **Did the send fail?** **Last delivery** shows **Failed** and the reason.
+6. **Has the check run?** **Last checked** on the **General** tab says when. If it is old, see the next entry.
+7. **Is the data old?** See [Why is the update data hours old?](#why-is-the-update-data-hours-old).
 
 ## Why did no reminder arrive?
 

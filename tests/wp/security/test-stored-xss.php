@@ -504,9 +504,9 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 	}
 
 	/**
-	 * The plugin adds nothing to Site Health's debug data, so neither update data nor a secret can reach it (the
-	 * secret routes are in test-secrets.php). Core's own sections list installed plugins and are not the plugin's,
-	 * and core hooks the filter itself since the Secrets API.
+	 * The only thing the plugin adds to Site Health's debug data is its own section (Site_Health), which holds no
+	 * update data and no secret (test-site-health.php, test-secrets.php). Core's own sections list installed plugins
+	 * and are not the plugin's, and core hooks the filter itself since the Secrets API.
 	 */
 	public function test_the_plugin_adds_no_debug_data() {
 		$this->offer_updates( self::payloads()['script'] );
@@ -521,9 +521,11 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 				}
 			}
 		}
-		$this->assertSame( array(), array_filter( $ours ), 'Something adds to the debug data. Add its secrets and payloads to the tests.' );
+		$this->assertSame( array( 'WPUN\\Site_Health::add_debug_info' ), array_values( array_filter( $ours ) ), 'Something else adds to the debug data. Add its secrets and payloads to the tests.' );
 		foreach ( array_keys( WP_Debug_Data::debug_data() ) as $section ) {
-			$this->assertDoesNotMatchRegularExpression( '/wpun|updates-notifier/i', (string) $section );
+			if ( WPUN\Site_Health::SECTION !== $section ) {
+				$this->assertDoesNotMatchRegularExpression( '/wpun|updates-notifier/i', (string) $section );
+			}
 		}
 	}
 }

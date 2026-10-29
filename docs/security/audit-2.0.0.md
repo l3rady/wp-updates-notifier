@@ -230,7 +230,7 @@ ASVS 5.0 has no Level 1 requirement in this chapter. #228 asks for a note on it 
   The message and stack trace are never logged, because a message can hold a webhook URL.
 - **Delivery results:** they keep a fixed message, plus the exception class.
 - **`_doing_it_wrong` notices:** they name types and fields, never values.
-- **Site Health:** it lists rejected configuration keys with their source, never the value.
+- **Site Health:** it lists rejected configuration keys with their source, never the value. The plugin's section of the site info (#80) shows secret fields as set or not set and replaces every email address, so it is safe to paste into a public forum (`test-site-health.php`: `test_debug_info_never_shows_a_secret`, `test_debug_info_masks_email_addresses`; `test-extension-api.php`: `test_debug_info_lists_the_add_on_instances_without_their_secret`).
 - **`last_result`:** it is shown only to administrators, escaped.
 
 The proof is `security/test-secrets.php::test_a_secret_never_shows`. It covers delivery results, stored state, notices,

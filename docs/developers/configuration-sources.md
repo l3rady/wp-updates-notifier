@@ -36,7 +36,7 @@ Sources return scalars: a string, bool, int or float. The plugin casts the value
 
 ## On the settings screen
 
-A value supplied from outside is read-only on the settings screen, which names where it came from ("Set by ..."). The screen never prints the value of a secret field, nor of any field of a type other than `number`, `boolean` and `enum` (the text types and the types add-ons register), unless that field sets `'show_external' => true`. The built-in email channel does this for its recipients, From address, Reply-To and subject prefix. Booleans, numbers and enum choices are shown. Duplicating an instance doesn't copy secrets that came from outside the database. Reports and Site Health name the source of a rejected value, never the value.
+A value supplied from outside is read-only on the settings screen, which names where it came from ("Set by ..."). The screen never prints the value of a secret field, nor of any field of a type other than `number`, `boolean` and `enum` (the text types and the types add-ons register), unless that field sets `'show_external' => true`. The built-in email channel does this for its recipients, From address, Reply-To and subject prefix. Booleans, numbers and enum choices are shown. Duplicating an instance doesn't copy secrets that came from outside the database. Reports and Site Health name the source of a rejected value, never the value. **Tools → Site Health → Info → WP Updates Notifier** shows where each setting and channel field comes from (`database`, or the constant, environment variable or source), with secrets only as set or not set.
 
 ## Hiding the About tab
 

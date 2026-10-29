@@ -766,7 +766,7 @@ class Test_Hooks extends WPUN_Test_Case {
 	 * Booting registers each hook of the plugin at its priority, so the cron, the delivery state and the checks are wired.
 	 */
 	public function test_boot_registers_the_hooks() {
-		$this->clear_hooks( array( 'switch_blog', 'site_status_tests', 'sc_wpun_channel_deleted', 'sc_wpun_notification_sent', 'sc_wpun_notification_failed', 'sc_wpun_enable_cron', 'sc_wpun_disable_cron', 'sc_wpun_run_check', 'sc_wpun_update_check', 'admin_post_sc_wpun_dismiss_slack_notice', 'init', 'update_option_sc_wpun_settings', 'lang_dir_for_domain', 'load_textdomain' ) );
+		$this->clear_hooks( array( 'switch_blog', 'site_status_tests', 'debug_information', 'sc_wpun_channel_deleted', 'sc_wpun_notification_sent', 'sc_wpun_notification_failed', 'sc_wpun_enable_cron', 'sc_wpun_disable_cron', 'sc_wpun_run_check', 'sc_wpun_update_check', 'admin_post_sc_wpun_dismiss_slack_notice', 'init', 'update_option_sc_wpun_settings', 'lang_dir_for_domain', 'load_textdomain' ) );
 		\SC_WP_Updates_Notifier::$did_init = false;
 		$plugin                            = new WPUN\Plugin();
 
@@ -778,6 +778,8 @@ class Test_Hooks extends WPUN_Test_Case {
 			array( 'site_status_tests', 'WPUN\Config_Report', 'add_site_health_test', 10, 1 ),
 			array( 'site_status_tests', 'WPUN\Rejected_Channels', 'add_site_health_test', 10, 1 ),
 			array( 'site_status_tests', 'WPUN\Slack_Notice', 'add_site_health_test', 10, 1 ),
+			array( 'site_status_tests', 'WPUN\Site_Health', 'add_tests', 10, 1 ),
+			array( 'debug_information', 'WPUN\Site_Health', 'add_debug_info', 10, 1 ),
 			array( 'sc_wpun_channel_deleted', 'WPUN\State', 'forget_channel', 10, 1 ),
 			array( 'sc_wpun_notification_sent', 'WPUN\State', 'record_delivery', 10, 3 ),
 			array( 'sc_wpun_notification_failed', 'WPUN\State', 'record_delivery', 10, 3 ),

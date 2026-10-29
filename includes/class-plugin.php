@@ -247,6 +247,13 @@ class Plugin {
 	private $config_report;
 
 	/**
+	 * Site Health tests and debug information.
+	 *
+	 * @var Site_Health
+	 */
+	private $site_health;
+
+	/**
 	 * Report of modules refused for needing a newer API.
 	 *
 	 * @var Rejected_Channels
@@ -277,6 +284,7 @@ class Plugin {
 		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store );
 		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store );
 		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
+		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->channels, $this->config, $this->status_report() );
 	}
 
 	/**
@@ -516,6 +524,8 @@ class Plugin {
 		add_action( Scheduler::CRON_NAME, array( $this->slack_notice, 'maybe_send_email' ), 5 ); // Tell the admin once that Slack is no longer supported, before the check.
 		add_action( 'admin_post_' . Slack_Notice::DISMISS_ACTION, array( $this->slack_notice, 'handle_dismiss' ) ); // Dismiss the notice on the settings page.
 		add_filter( 'site_status_tests', array( $this->slack_notice, 'add_site_health_test' ) ); // Site Health test while Slack settings are stored but unused.
+		add_filter( 'site_status_tests', array( $this->site_health, 'add_tests' ) ); // Site Health tests of the update check and the channels.
+		add_filter( 'debug_information', array( $this->site_health, 'add_debug_info' ) ); // Settings, schedule and channels in the site info, without secrets or addresses.
 		add_action( 'init', array( $this->scheduler, 'maybe_schedule' ) ); // Put the check back on the schedule if it is missing.
 		add_action( 'update_option_' . Settings::OPT_FIELD, array( $this->scheduler, 'settings_updated' ), 10, 2 ); // Reschedule when the frequency changes.
 

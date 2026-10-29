@@ -52,7 +52,7 @@ class Addon_Channel extends Channel {
 	}
 
 	/**
-	 * Fields: a code of the add-on's own field type, a name, the one item type to receive, and a note.
+	 * Fields: a code of the add-on's own field type, a name, the one item type to receive, a note, and an optional secret token.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
@@ -77,6 +77,11 @@ class Addon_Channel extends Channel {
 			'note'     => array(
 				'type'  => 'text',
 				'label' => 'Note',
+			),
+			'token'    => array(
+				'type'   => 'text',
+				'label'  => 'Token',
+				'secret' => true,
 			),
 		);
 	}

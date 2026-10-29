@@ -572,6 +572,73 @@ class Test_Extension_Api extends WPUN_Test_Case {
 		}
 	}
 
+	// Site Health (#80).
+
+	/**
+	 * The Site Health result of a test.
+	 *
+	 * @param string $name Test name.
+	 * @return array
+	 */
+	private function health( $name ) {
+		$tests = apply_filters( 'site_status_tests', array( 'direct' => array() ) );
+
+		return call_user_func( $tests['direct'][ $name ]['test'] );
+	}
+
+	/**
+	 * A failed delivery of an add-on instance shows as that instance's failure; the one that worked does not.
+	 */
+	public function test_site_health_reports_the_failed_delivery_of_an_add_on_instance() {
+		$this->add_instance( 'Good one' );
+		$this->add_instance( 'Bad one', array( 'note' => 'fail' ) );
+		$this->assertSame( 'good', $this->health( 'sc_wpun_channel_delivery' )['status'] );
+
+		$this->run_check( '99.0.0' );
+
+		$result = $this->health( 'sc_wpun_channel_delivery' );
+		$this->assertSame( 'recommended', $result['status'] );
+		$this->assertStringContainsString( 'Bad one', $result['description'] );
+		$this->assertStringContainsString( 'The add-on refused.', $result['description'] );
+		$this->assertStringNotContainsString( 'Good one', $result['description'] );
+	}
+
+	/**
+	 * With the module unregistered while its instance is on, the module test lists the instance and the channel test stops counting it.
+	 */
+	public function test_site_health_reports_an_add_on_that_was_deactivated() {
+		$this->add_instance( 'Gone' );
+		$this->assertSame( 'good', $this->health( 'sc_wpun_channel_modules' )['status'] );
+		$this->assertSame( 'good', $this->health( 'sc_wpun_channels' )['status'] );
+
+		sc_wpun()->channels()->unregister( Addon_Channel::TYPE );
+
+		$result = $this->health( 'sc_wpun_channel_modules' );
+		$this->assertSame( 'recommended', $result['status'] );
+		$this->assertStringContainsString( 'Gone', $result['description'] );
+		$this->assertStringContainsString( 'unknown module', $result['description'] );
+		$this->assertSame( 'recommended', $this->health( 'sc_wpun_channels' )['status'], 'The only channel on cannot send.' );
+	}
+
+	/**
+	 * The debug info lists the add-on's instances with the add-on's secret field redacted.
+	 */
+	public function test_debug_info_lists_the_add_on_instances_without_their_secret() {
+		$secret = 'addon-SECRET-token-456';
+		$one    = $this->add_instance( 'One', array( 'token' => $secret ) );
+		$two    = $this->add_instance( 'Two' );
+		$this->assertSame( $secret, $this->instance_setting( $one, 'token' ), 'The secret is stored.' );
+
+		$section = apply_filters( 'debug_information', array() )[ WPUN\Site_Health::SECTION ];
+		$text    = wp_json_encode( $section );
+
+		$this->assertStringContainsString( 'module: ' . Addon_Channel::TYPE, $section['fields'][ 'channel_' . $one ]['value'] );
+		$this->assertStringContainsString( 'token: set (database)', $section['fields'][ 'channel_' . $one ]['value'] );
+		$this->assertStringContainsString( 'token: not set (database)', $section['fields'][ 'channel_' . $two ]['value'] );
+		$this->assertStringContainsString( 'name: Name (database)', $section['fields'][ 'channel_' . $one ]['value'] );
+		$this->assertStringNotContainsString( $secret, $text );
+	}
+
 	// WP-CLI (#79).
 
 	/**
