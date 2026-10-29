@@ -272,7 +272,7 @@ e2e: ## End-to-end flows in a browser on a throwaway site with fake updates and 
 e2e-upgrade: dist ## Update the real 1.6.0 from WordPress.org to the zip of make dist three ways (WP-CLI, Plugins screen, auto-update); needs the network, local only (own compose project wpun-upgrade, never touches make up)
 	@./tests/flows/upgrade/run.sh
 
-screenshots: ## Regenerate .wordpress-org/screenshot-1.png to 4 from a throwaway site with made-up data (own compose project wpun-shots, never touches make up)
+screenshots: ## Regenerate .wordpress-org/screenshot-1.png to 5 from a throwaway site with made-up data (own compose project wpun-shots, never touches make up)
 	@./tests/screenshots/run.sh
 
 assets: ## Render the plugin icon, banner and docs site brand files from the SVG sources in .wordpress-org/src (docker/assets)

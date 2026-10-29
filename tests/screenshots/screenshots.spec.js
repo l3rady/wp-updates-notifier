@@ -1,6 +1,7 @@
-// The WordPress.org screenshots: .wordpress-org/screenshot-1.png to screenshot-4.png, in the order of SHOTS. The
+// The WordPress.org screenshots: .wordpress-org/screenshot-1.png to screenshot-5.png, in the order of SHOTS. The
 // captions are the `== Screenshots ==` list of .wordpress-org/readme/template.txt, in the same order: change both
-// together.
+// together. Screenshot 5 (Site Health) is taken in a second run, after seed-health.sh has broken the site; run.sh
+// selects it by its name ("screenshot 5").
 const path = require( 'path' );
 const { test, expect } = require( '@playwright/test' );
 
@@ -21,6 +22,7 @@ const SHOTS = [
 	{ name: 'Channels list', url: CHANNELS, ready: '.wp-list-table' },
 	{ name: 'Edit channel form', url: `${ CHANNELS }&action=edit&id=office`, ready: 'form' },
 	{ name: 'Update email in Mailpit', mail: 'office@example.com' },
+	{ name: 'Site Health', url: '/wp-admin/site-health.php', health: true },
 ];
 
 test.describe.configure( { mode: 'serial' } );
@@ -54,11 +56,32 @@ SHOTS.forEach( ( shot, index ) => {
 			return;
 		}
 		await page.goto( shot.url );
-		await expect( page.locator( shot.ready ).first() ).toBeVisible();
+		if ( shot.health ) {
+			// The tests run in the browser: wait for the critical list, then open the plugin's items (its badge is in the
+			// button). Core's own items, many of them only there because the throwaway site is offline, stay closed.
+			await expect( page.locator( '#health-check-issues-critical .health-check-accordion-trigger' ).first() ).toBeVisible();
+			await expect( page.locator( '.site-health-progress-wrapper:not(.loading)' ) ).toBeVisible();
+			const ours = page.locator( '#health-check-issues-critical, #health-check-issues-recommended' ).locator( '.health-check-accordion-trigger' ).filter( { hasText: 'Updates Notifier' } );
+			await expect( ours, 'not checking, WP-Cron off, a missing module and a failed delivery' ).toHaveCount( 4 );
+			for ( const trigger of await ours.all() ) {
+				await trigger.click();
+			}
+			await expect( ours.and( page.locator( '[aria-expanded="false"]' ) ) ).toHaveCount( 0 );
+			// No focus ring on the last item opened.
+			await page.evaluate( () => document.activeElement.blur() );
+		} else {
+			await expect( page.locator( shot.ready ).first() ).toBeVisible();
+		}
 		// The viewport as tall as the page (at least 800): a full-page shot would stop the fixed admin menu's background
 		// at the height of the window.
 		const height = await page.evaluate( () => document.documentElement.scrollHeight );
 		await page.setViewportSize( { width: 1280, height: Math.max( 800, height ) } );
+		if ( shot.health ) {
+			// From the top of the screen down to the end of the recommended list; the passed tests stay closed.
+			const list = ( await page.locator( '#health-check-issues-recommended' ).boundingBox() );
+			await page.screenshot( { path: file, clip: { x: 0, y: 0, width: 1280, height: Math.ceil( list.y + list.height ) + 24 } } );
+			return;
+		}
 		await page.screenshot( { path: file } );
 	} );
 } );

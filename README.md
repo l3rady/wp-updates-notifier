@@ -123,7 +123,7 @@ make test-known-bugs             # tests documenting open bugs: they are expecte
 make a11y                        # axe and keyboard checks of the settings screen in a browser (about 40 seconds)
 make e2e                         # end-to-end flows in a browser on a throwaway site: settings, channels, a real update check and its mail (about 1 minute)
 make e2e-upgrade                 # update the real 1.6.0 from WordPress.org to the local zip three ways; needs the network, run before a release (about 1 minute)
-make screenshots                 # regenerate .wordpress-org/screenshot-1.png to 4 from a throwaway site (about 30 seconds)
+make screenshots                 # regenerate .wordpress-org/screenshot-1.png to 5 from a throwaway site (about 30 seconds)
 make test-wp WP_VERSION=6.7.9 PHP_VERSION=7.4   # pick versions (WP_VERSION is a wordpress-develop tag or trunk)
 ```
 
@@ -135,7 +135,7 @@ The suite runs on WordPress's own test library with a real database, no real net
 
 `make e2e-upgrade` is the upgrade test (#89): it builds the zip with `make dist`, installs the real 1.6.0 from WordPress.org on its own throwaway site (compose project `wpun-upgrade`, from `tests/flows/upgrade/compose.yml`) and updates it to the zip (with a 2.0.0 header, in a copy) with WP-CLI, from the Plugins screen and as a background auto-update. The plugin must end deactivated with no fatal error, and activating it again must keep the settings. It needs the network, so CI does not run it: run it before each release.
 
-`make screenshots` writes the WordPress.org screenshots (`.wordpress-org/screenshot-1.png` to `screenshot-4.png`). It builds its own throwaway site (compose project `wpun-shots`, from `tests/screenshots/compose.yml`; it touches neither `make up` nor `make a11y`) with made-up data: example.com addresses, fake plugins whose updates and the offline update data come from `.wordpress-org/blueprint/fake-updates.php` (shared with the Playground blueprint), and Mailpit to catch the update email. It runs the update check once from WP-CLI before the browser opens any page, then photographs the General tab, the Channels list, a channel's form and the email. The captions are in `.wordpress-org/readme/template.txt`, in the same order as `SHOTS` in `tests/screenshots/screenshots.spec.js`. Dates and times in the files are those of the run. CI does not run it.
+`make screenshots` writes the WordPress.org screenshots (`.wordpress-org/screenshot-1.png` to `screenshot-5.png`). It builds its own throwaway site (compose project `wpun-shots`, from `tests/screenshots/compose.yml`; it touches neither `make up` nor `make a11y`) with made-up data: example.com addresses, fake plugins whose updates and the offline update data come from `.wordpress-org/blueprint/fake-updates.php` (shared with the Playground blueprint), and Mailpit to catch the update email. It runs the update check once from WP-CLI before the browser opens any page, then photographs the General tab, the Channels list, a channel's form and the email. A second run then breaks the site on purpose (`tests/screenshots/seed-health.sh`: an overdue check, a failed delivery, a channel without its module, WP-Cron off) and photographs Tools → Site Health. The captions are in `.wordpress-org/readme/template.txt`, in the same order as `SHOTS` in `tests/screenshots/screenshots.spec.js`. Dates and times in the files are those of the run. CI does not run it.
 
 ### Local site
 

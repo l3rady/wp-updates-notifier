@@ -89,6 +89,7 @@ Please don't post it in the support forum or in a public GitHub issue. Report it
 2. The Channels tab: each channel with what it receives and when it last delivered.
 3. Editing an email channel; a value set in code is shown as read-only.
 4. An update email listing the updates that are waiting.
+5. Site Health: the problems the plugin reports, such as checks that are not running or a channel that failed to deliver.
 
 == Changelog ==
 

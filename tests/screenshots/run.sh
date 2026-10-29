@@ -1,7 +1,8 @@
 #!/bin/sh
 #
 # `make screenshots`: build a throwaway site with made-up data, send it one update email and photograph the settings
-# screens and the email into .wordpress-org/screenshot-1.png to screenshot-4.png.
+# screens and the email into .wordpress-org/screenshot-1.png to screenshot-4.png, then break the site on purpose
+# (seed-health.sh) and photograph Site Health into screenshot-5.png.
 #
 # Runs as its own compose project (wpun-shots) with no published ports and no shared volumes or container names, so
 # neither a running `make up` site nor `make a11y` is touched. The project is removed, volumes included, when the
@@ -39,11 +40,19 @@ compose run --rm -T --entrypoint sh wp-cli /usr/local/bin/wpun-shots-seed
 # the background while a screen is being photographed. It must send the email, or there is nothing to photograph.
 compose run --rm -T wp-cli cron event run sc_wpun_update_check
 
+# Screenshots 1 to 4, which need the delivery to have worked.
 status=0
-compose run --rm -T playwright || status=$?
+compose run --rm -T -e PLAYWRIGHT_ARGS='--grep-invert=screenshot.5' playwright || status=$?
+
+# Then the failures Site Health reports. No page has been loaded since the seed, and it switches WP-Cron off, so the
+# overdue check cannot run in the background.
+if [ "$status" -eq 0 ]; then
+	compose run --rm -T --entrypoint sh wp-cli /usr/local/bin/wpun-shots-seed-health
+	compose run --rm -T -e PLAYWRIGHT_ARGS='--grep=screenshot.5' playwright || status=$?
+fi
 
 case "$status" in
-0) echo 'SCREENSHOTS: .wordpress-org/screenshot-1.png to screenshot-4.png written.' ;;
+0) echo 'SCREENSHOTS: .wordpress-org/screenshot-1.png to screenshot-5.png written.' ;;
 *) echo "SCREENSHOTS: failed (Playwright exit status $status). See the output above." >&2 ;;
 esac
 exit "$status"

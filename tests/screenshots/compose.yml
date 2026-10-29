@@ -68,8 +68,9 @@ services:
       timeout: 5s
       retries: 40
 
-  # WP-CLI: installs the site with docker/site-setup.sh (SITE_MODE=e2e), then tests/screenshots/seed.sh. It has the
-  # same mu-plugins as the web server, because the update check (and so wp_mail) runs here.
+  # WP-CLI: installs the site with docker/site-setup.sh (SITE_MODE=e2e), then tests/screenshots/seed.sh, and once
+  # screenshots 1 to 4 are taken, seed-health.sh. It has the same mu-plugins as the web server, because the update check
+  # (and so wp_mail) runs here.
   wp-cli:
     <<: *site
     user: "33:33"
@@ -80,6 +81,7 @@ services:
       - wp:/var/www/html
       - ../../docker/site-setup.sh:/usr/local/bin/wpun-site-setup:ro
       - ./seed.sh:/usr/local/bin/wpun-shots-seed:ro
+      - ./seed-health.sh:/usr/local/bin/wpun-shots-seed-health:ro
       - ../..:/var/www/html/wp-content/plugins/wp-updates-notifier:ro
       - ../../docker/dev-plugins/wpun-field-showcase:/var/www/html/wp-content/plugins/wpun-field-showcase:ro
       - ../../docker/mu-plugins/mailpit.php:/var/www/html/wp-content/mu-plugins/mailpit.php:ro
@@ -116,7 +118,8 @@ services:
       - ../e2e:/e2e
       - .:/shots
       - ../../.wordpress-org:/out
-    command: ["sh", "-c", "(cd /e2e && npm ci --no-fund --no-audit) && /e2e/node_modules/.bin/playwright test"]
+    # run.sh runs it twice, with the options of each run in PLAYWRIGHT_ARGS (no spaces in them).
+    command: ["sh", "-c", "(cd /e2e && npm ci --no-fund --no-audit) && exec /e2e/node_modules/.bin/playwright test $$PLAYWRIGHT_ARGS"]
 
 volumes:
   wp:
