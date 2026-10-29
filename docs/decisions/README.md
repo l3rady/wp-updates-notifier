@@ -40,3 +40,4 @@ The date is when the decision was made, not when the record was written.
 | [0016](0016-pending-update-reminders-per-channel.md) | Remind about pending updates, per channel | Accepted | 2026-10-23 |
 | [0017](0017-bundle-l10n-php-translations-only.md) | Bundle translations as `.l10n.php` files only | Accepted | 2026-10-24 |
 | [0018](0018-generate-readme-at-build-time.md) | Generate readme.txt at build time and do not commit it | Accepted | 2026-10-25 |
+| [0019](0019-mutes-in-their-own-option-through-the-global-veto.md) | Store mutes in their own option and apply them through the global veto | Accepted | 2026-10-29 |

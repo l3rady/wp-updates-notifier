@@ -17,6 +17,7 @@ Each kind of data has its own option:
 | `sc_wpun_settings` | The global settings | Versioned by `sc_wpun_settings_ver`, which drives upgrades. |
 | `sc_wpun_state` | The run state | Not autoloaded, written once per run. |
 | `sc_wpun_channels` | The channel instances | Not autoloaded. |
+| `sc_wpun_muted` | The muted plugins and themes | Not autoloaded. Added in 3.0.0, see [0019](0019-mutes-in-their-own-option-through-the-global-veto.md). |
 
 The 1.x email and Slack settings are migrated into channel instances once, and removed from `sc_wpun_settings`. The option names stay as they were wherever one existed, so older data and tools keep working.
 

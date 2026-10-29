@@ -31,6 +31,7 @@ class Test_Uninstall extends WPUN_Test_Case {
 	 */
 	private function leave_traces() {
 		$this->save_settings();
+		update_option( 'sc_wpun_muted', array( 'plugin' => array( 'hello.php' => array( 'until' => null ) ) ), false );
 		$this->save_channel_state( 'email', array( 'core' => array( 'core' => '99.0.0' ) ) );
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 		wp_schedule_event( time(), 'daily', 'sc_wpun_update_check' );
@@ -47,7 +48,7 @@ class Test_Uninstall extends WPUN_Test_Case {
 	 * @param string $where Label for failure messages.
 	 */
 	private function assert_no_traces( $where ) {
-		foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state', 'sc_wpun_channels' ) as $option ) {
+		foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state', 'sc_wpun_channels', 'sc_wpun_muted' ) as $option ) {
 			$this->assertFalse( get_option( $option ), "$where: $option" );
 		}
 		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ), "$where: cron event" );

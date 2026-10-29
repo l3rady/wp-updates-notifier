@@ -268,6 +268,13 @@ class Plugin {
 	private $translations;
 
 	/**
+	 * Storage of the mutes.
+	 *
+	 * @var Mute_Store
+	 */
+	private $mute_store;
+
+	/**
 	 * Build the components. Nothing is hooked until register() runs.
 	 */
 	public function __construct() {
@@ -282,7 +289,8 @@ class Plugin {
 		$this->scheduler         = new Scheduler( $this->settings );
 		$this->notifier          = new Notifier( $this->channel_store );
 		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store );
-		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store );
+		$this->mute_store        = new Mute_Store();
+		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store );
 		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
 		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->channels, $this->config, $this->status_report() );
 	}
@@ -303,6 +311,15 @@ class Plugin {
 	 */
 	public function channel_store(): Channel_Store {
 		return $this->channel_store;
+	}
+
+	/**
+	 * Mute storage.
+	 *
+	 * @return Mute_Store
+	 */
+	public function mute_store(): Mute_Store {
+		return $this->mute_store;
 	}
 
 	/**
@@ -475,6 +492,8 @@ class Plugin {
 		add_action( 'switch_blog', array( $this->config, 'flush' ) ); // Values are resolved per site.
 		add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
 		add_filter( 'site_status_tests', array( $this->rejected_channels, 'add_site_health_test' ) ); // Site Health test while a module is refused for needing a newer API.
+		add_action( 'deleted_plugin', array( $this->mute_store, 'plugin_deleted' ), 10, 2 ); // Deleting a plugin removes its mute.
+		add_action( 'deleted_theme', array( $this->mute_store, 'theme_deleted' ), 10, 2 ); // Deleting a theme removes its mute.
 		add_action( 'sc_wpun_channel_deleted', array( $this->state, 'forget_channel' ) ); // Deleting an instance deletes its delivery state.
 		add_action( 'sc_wpun_notification_sent', array( $this->state, 'record_delivery' ), 10, 3 ); // Remember each instance's latest delivery result.
 		add_action( 'sc_wpun_notification_failed', array( $this->state, 'record_delivery' ), 10, 3 );

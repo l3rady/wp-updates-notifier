@@ -61,6 +61,13 @@ class Update_Checker {
 	private $channels;
 
 	/**
+	 * Mute storage.
+	 *
+	 * @var Mute_Store
+	 */
+	private $mutes;
+
+	/**
 	 * The notification built by the last check.
 	 *
 	 * @var Notification|null
@@ -81,8 +88,10 @@ class Update_Checker {
 	 * @param State         $state    Run state.
 	 * @param Dispatcher    $dispatcher Dispatcher.
 	 * @param Channel_Store $channels Channel instance storage.
+	 * @param Mute_Store    $mutes    Mute storage.
 	 */
-	public function __construct( Settings $settings, State $state, Dispatcher $dispatcher, Channel_Store $channels ) {
+	public function __construct( Settings $settings, State $state, Dispatcher $dispatcher, Channel_Store $channels, Mute_Store $mutes ) {
+		$this->mutes      = $mutes;
 		$this->settings   = $settings;
 		$this->state      = $state;
 		$this->dispatcher = $dispatcher;
@@ -233,6 +242,9 @@ class Update_Checker {
 				}
 			}
 		}
+
+		// Mutes a newer version has ended, to report once. Recorded in the state, never in the mutes.
+		$ended = $this->find_ended_mutes( $items, $state );
 
 		// The global veto comes after, so a vetoed item still counts as waiting.
 		$items = array_values( array_filter( $items, array( $this, 'should_notify' ) ) );
@@ -412,7 +424,30 @@ class Update_Checker {
 		$state['channels']        = $channels;
 		$state['last_check_time'] = time();
 		unset( $state['legacy_notified'] ); // Every instance that existed has taken its share; later ones start clean.
+		if ( array() !== $ended['recorded'] ) {
+			$state['ended_mutes'] = $ended['recorded'];
+		} else {
+			unset( $state['ended_mutes'] );
+		}
 		$this->state->save( $state );
+
+		foreach ( $ended['fire'] as [$mute, $item] ) {
+			/**
+			 * Fires once when a "skip this version" mute stops applying because a newer version is offered.
+			 *
+			 * The check records the ended mute in the run state, not in the stored mutes, so the action does
+			 * not fire on later runs. It never fires in a dry run. If two checks overlap, it can fire twice;
+			 * see ADR 0009. It can also not fire at all: saving or removing any mute drops the ended ones, so
+			 * if that happens after WordPress offered the newer version and before the next check, the end is
+			 * not reported.
+			 *
+			 * @since 3.0.0
+			 *
+			 * @param Mute              $mute The mute that ended.
+			 * @param Notification_Item $item The item with the newer version.
+			 */
+			do_action( 'sc_wpun_mute_ended', $mute, $item );
+		}
 
 		if ( array() !== $results ) {
 			/** This action is documented in includes/class-dispatcher.php */
@@ -432,6 +467,50 @@ class Update_Checker {
 		do_action( 'sc_wpun_after_update_check', $notification, $results );
 
 		return $plan;
+	}
+
+	/**
+	 * Find the "skip this version" mutes that a newer version has ended, and those not reported yet.
+	 *
+	 * @param Notification_Item[]  $items The items found.
+	 * @param array<string, mixed> $state The run state.
+	 *
+	 * @return array{recorded: array<string, array<string, string>>, fire: array<int, array{0: Mute, 1: Notification_Item}>}
+	 */
+	private function find_ended_mutes( array $items, array $state ): array {
+		/**
+		 * Item type => key => the version of the ended mute.
+		 *
+		 * @var array<string, array<string, string>> $recorded
+		 */
+		$recorded = array();
+		$known    = is_array( $state['ended_mutes'] ?? null ) ? $state['ended_mutes'] : array();
+		foreach ( $known as $type => $keys ) {
+			foreach ( $keys as $key => $until ) {
+				$mute = $this->mutes->find( (string) $type, (string) $key );
+				if ( null !== $mute && $mute->get_until() === $until ) {
+					$recorded[ (string) $type ][ (string) $key ] = (string) $until;
+				}
+			}
+		}
+
+		$fire = array();
+		foreach ( $items as $item ) {
+			$mute = $this->mutes->find( $item->get_type(), $item->get_key() );
+			if ( null === $mute || $mute->is_always() || $mute->applies_to( $item->get_new_version() ) ) {
+				continue;
+			}
+			$until = (string) $mute->get_until();
+			if ( ( $recorded[ $item->get_type() ][ $item->get_key() ] ?? null ) !== $until ) {
+				$recorded[ $item->get_type() ][ $item->get_key() ] = $until;
+				$fire[] = array( $mute, $item );
+			}
+		}
+
+		return array(
+			'recorded' => $recorded,
+			'fire'     => $fire,
+		);
 	}
 
 	/**
@@ -467,6 +546,9 @@ class Update_Checker {
 		 *
 		 * An item that is vetoed is not sent and not recorded, but still counts as waiting for an update.
 		 *
+		 * Since 3.0.0 the default is false when the item is muted (see `sc_wpun_mutes()`), so a callback
+		 * that returns true whatever it is given unmutes everything. Pass `$notify` on instead.
+		 *
 		 * Example, never report one plugin:
 		 *
 		 *     add_filter(
@@ -480,10 +562,10 @@ class Update_Checker {
 		 *
 		 * @since 2.0.0
 		 *
-		 * @param bool              $notify Whether to report the item. Default true.
+		 * @param bool              $notify Whether to report the item. Default true, false when the item is muted (changed in 3.0.0).
 		 * @param Notification_Item $item   The item.
 		 */
-		return (bool) apply_filters( 'sc_wpun_should_notify_item', true, $item );
+		return (bool) apply_filters( 'sc_wpun_should_notify_item', ! $this->mutes->is_muted( $item ), $item );
 	}
 
 	/**

@@ -11,6 +11,7 @@ Every hook is prefixed `sc_wpun_`. A name with a part in braces, such as `sc_wpu
 - [Delivery](#delivery)
 - [Channels and fields](#channels-and-fields)
 - [Configuration](#configuration)
+- [Muting](#muting)
 - [Settings screen](#settings-screen)
 - [Lifecycle and legacy](#lifecycle-and-legacy)
 - [Actions you can fire](#actions-you-can-fire)
@@ -194,6 +195,9 @@ Filters whether an item is reported at all, to every channel instance.
 
 An item that is vetoed is not sent and not recorded, but still counts as waiting for an update.
 
+Since 3.0.0 the default is false when the item is muted (see `sc_wpun_mutes()`), so a callback
+that returns true whatever it is given unmutes everything. Pass `$notify` on instead.
+
 Example, never report one plugin:
 
 ```php
@@ -209,7 +213,7 @@ add_filter(
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `$notify` | `bool` | Whether to report the item. Default true. |
+| `$notify` | `bool` | Whether to report the item. Default true, false when the item is muted (changed in 3.0.0). |
 | `$item` | `Notification_Item` | The item. |
 
 Fired in `includes/class-update-checker.php`.
@@ -803,7 +807,7 @@ Filters a setting option of the plugin after it is read.
 | `$value` | `mixed` | The stored value. |
 | `$field` | `string` | The name of the option. |
 
-Fired in `includes/class-channel-store.php`, `includes/class-settings.php`, `includes/class-state.php`.
+Fired in `includes/class-channel-store.php`, `includes/class-mute-store.php`, `includes/class-settings.php`, `includes/class-state.php`.
 
 ### `sc_wpun_load_from_env`
 
@@ -831,7 +835,160 @@ Filters a setting option of the plugin before it is stored.
 | `$value` | `mixed` | The value about to be stored. |
 | `$field` | `string` | The name of the option. |
 
-Fired in `includes/class-channel-store.php`, `includes/class-settings.php`, `includes/class-state.php`.
+Fired in `includes/class-channel-store.php`, `includes/class-mute-store.php`, `includes/class-settings.php`, `includes/class-state.php`.
+
+## Muting
+
+### `sc_wpun_item_muted`
+
+*Action*, since 3.0.0
+
+Fires after an item was muted.
+
+It fires again when a mute is replaced, for example "skip this version" by "always". Use it to log
+who muted what, or to keep other sites in step.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$mute` | `Mute` | The mute that was saved. |
+| `$source` | `string` | Where the change came from: `plugins_screen`, `settings`, `cli` or `api`. |
+
+Fired in `includes/class-mute-store.php`.
+
+### `sc_wpun_item_unmuted`
+
+*Action*, since 3.0.0
+
+Fires after an item was unmuted, or its plugin or theme was deleted.
+
+`$source` is `plugins_screen`, `settings`, `cli` or `api` for an unmute, and `deleted` when the
+plugin or theme was deleted.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$previous` | `Mute` | The mute that was removed. |
+| `$source` | `string` | Where the change came from. |
+
+Fired in `includes/class-mute-store.php`.
+
+### `sc_wpun_mute_ended`
+
+*Action*, since 3.0.0
+
+Fires once when a "skip this version" mute stops applying because a newer version is offered.
+
+The check records the ended mute in the run state, not in the stored mutes, so the action does
+not fire on later runs. It never fires in a dry run. If two checks overlap, it can fire twice;
+see ADR 0009. It can also not fire at all: saving or removing any mute drops the ended ones, so
+if that happens after WordPress offered the newer version and before the next check, the end is
+not reported.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$mute` | `Mute` | The mute that ended. |
+| `$item` | `Notification_Item` | The item with the newer version. |
+
+Fired in `includes/class-update-checker.php`.
+
+### `sc_wpun_mutes`
+
+*Filter*, since 3.0.0
+
+Filters the mutes, to define mutes in code.
+
+Receives the stored mutes. Add a `WPUN\Mute` to mute an item from code, for example in an
+mu-plugin managed by an agency or by Composer. A mute added here applies like a stored one, is
+listed with it and is marked as set in code (`Mute::is_from_code()`), and nobody can unmute it
+through the store. It replaces a stored mute of the same item. Values that are not a `Mute`, mutes
+of the `core` type and mutes of a type that is not registered with `sc_wpun_item_types` are dropped.
+When two mutes are for the same item, the later one wins. A stored mute cannot be hidden: one
+the returned list leaves out is put back, so use `sc_wpun_should_notify_item` to report an item
+that is muted.
+
+Example, mute a plugin for good:
+
+```php
+add_filter(
+    'sc_wpun_mutes',
+    function ( $mutes ) {
+        $mutes[] = new \WPUN\Mute(
+            array(
+                'type' => 'plugin',
+                'key'  => 'noisy/noisy.php',
+            )
+        );
+        return $mutes;
+    }
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$mutes` | `Mute[]` | The stored mutes. |
+
+Fired in `includes/class-mute-store.php`.
+
+### `sc_wpun_pre_mute`
+
+*Filter*, since 3.0.0
+
+Filters a mute before it is saved, to apply a policy.
+
+Receives the mute, or the `WP_Error` that says why it is refused. Return a `WP_Error` to refuse
+it; the message is shown on the screen or by WP-CLI. A returned mute must be for the same item,
+and a refusal cannot be turned into a mute. Return a changed mute to, for example, cap how long
+a mute lasts.
+
+Example, refuse muting a security plugin:
+
+```php
+add_filter(
+    'sc_wpun_pre_mute',
+    function ( $mute ) {
+        if ( $mute instanceof \WPUN\Mute && 'security/security.php' === $mute->get_key() ) {
+            return new \WP_Error( 'my_policy', 'Security updates must be reported.' );
+        }
+        return $mute;
+    }
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$mute` | `Mute\|WP_Error` | The mute, or the error that refuses it. |
+| `$source` | `string` | Where the change came from: `plugins_screen`, `settings`, `cli` or `api`. |
+
+Fired in `includes/class-mute-store.php`.
+
+### `sc_wpun_pre_unmute`
+
+*Filter*, since 3.0.0
+
+Filters whether a mute may be removed, to apply a policy.
+
+Return a `WP_Error` to refuse; the message is shown on the screen or by WP-CLI. Anything else
+than true refuses too. Deleting the plugin or theme removes its mute without asking.
+
+Example, keep the mutes the site's maintainer set:
+
+```php
+add_filter(
+    'sc_wpun_pre_unmute',
+    function ( $allow, $mute ) {
+        return 'maintained/maintained.php' === $mute->get_key() ? new \WP_Error( 'my_policy', 'Ask the maintainer.' ) : $allow;
+    },
+    10,
+    2
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$allow` | `true\|WP_Error` | Whether to unmute. Default true. |
+| `$mute` | `Mute` | The mute. |
+| `$source` | `string` | Where the change came from: `plugins_screen`, `settings`, `cli` or `api`. |
+
+Fired in `includes/class-mute-store.php`.
 
 ## Settings screen
 

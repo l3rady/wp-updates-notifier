@@ -5,8 +5,8 @@ From 2.0.0, the hooks and the module API are public API. This page says what tha
 ## What is public
 
 - Every hook in the [hook reference](hooks.md): its name, its arguments and what its return value does.
-- The functions `sc_wpun_register_channel()`, `sc_wpun_channels()`, `sc_wpun_api_version()`, `sc_wpun_api_satisfies()` and `sc_wpun_api_supports()`, and the `SC_WPUN_API_VERSION` constant.
-- The classes and methods in the `WPUN` namespace that are documented with `@since` and not tagged `@internal`. These include `Channel`, `Channel_Instance`, `Channel_Registry`, `Channel_Store`, `Delivery_Result`, `Notification`, `Notification_Item`, `Notification_Renderer`, `Routing`, `Item_Types`, `Version_Constraint`, `Config_Source`, `Config_Context` and `Config_Value`.
+- The functions `sc_wpun_register_channel()`, `sc_wpun_channels()`, `sc_wpun_mutes()`, `sc_wpun_api_version()`, `sc_wpun_api_satisfies()` and `sc_wpun_api_supports()`, and the `SC_WPUN_API_VERSION` constant.
+- The classes and methods in the `WPUN` namespace that are documented with `@since` and not tagged `@internal`. These include `Channel`, `Channel_Instance`, `Channel_Registry`, `Channel_Store`, `Delivery_Result`, `Mute`, `Mute_Store`, `Notification`, `Notification_Item`, `Notification_Renderer`, `Routing`, `Item_Types`, `Version_Constraint`, `Config_Source`, `Config_Context` and `Config_Value`.
 - The names that configuration can be supplied under: `SC_WPUN_SETTING_*`, `SC_WPUN_CHANNEL_<ID>__<FIELD>`, `SC_WPUN_CHANNELS` and `SC_WPUN_LOAD_FROM_ENV`.
 - The field schema keys and field types described on `WPUN\Channel`, including `'secret' => true` on a field of any type and `show_external`.
 - The security behaviour that add-ons rely on:

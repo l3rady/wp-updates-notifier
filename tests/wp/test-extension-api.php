@@ -179,6 +179,25 @@ class Test_Extension_Api extends WPUN_Test_Case {
 		);
 	}
 
+	/**
+	 * The add-on mutes its own item type through the filter: nothing is sent and it cannot be unmuted.
+	 */
+	public function test_the_addon_mutes_its_own_item_type() {
+		$this->report_a_note();
+		$option         = get_option( Addon::OPTION );
+		$option['mute'] = array( 'note-1' );
+		update_option( Addon::OPTION, $option );
+
+		$mute = sc_wpun_mutes()->get( Addon::ITEM_TYPE, 'note-1' );
+		$this->assertInstanceOf( WPUN\Mute::class, $mute );
+		$this->assertTrue( $mute->is_from_code() );
+		$this->assertWPError( sc_wpun_mutes()->unmute( Addon::ITEM_TYPE, 'note-1' ) );
+
+		$this->set_updates();
+		sc_wpun()->update_checker()->do_update_check();
+		$this->assertCount( 0, sc_wpun()->update_checker()->last_notification()->get_items(), 'Muted, so left out of the message.' );
+	}
+
 	// The module and its form.
 
 	/**

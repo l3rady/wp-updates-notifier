@@ -64,7 +64,7 @@ defined( 'SC_WPUN_VERSION' ) || define( 'SC_WPUN_VERSION', '2.0.0' );
  * Semver: a minor release adds API, a major release removes or changes some. Add-ons check
  * it with sc_wpun_api_satisfies().
  */
-defined( 'SC_WPUN_API_VERSION' ) || define( 'SC_WPUN_API_VERSION', '1.0.0' );
+defined( 'SC_WPUN_API_VERSION' ) || define( 'SC_WPUN_API_VERSION', '1.1.0' );
 
 require_once __DIR__ . '/includes/class-autoloader.php';
 \WPUN\Autoloader::register();
@@ -508,6 +508,20 @@ if ( ! function_exists( 'sc_wpun_channels' ) ) {
 		return sc_wpun()->channel_store();
 	}
 }
+
+if ( ! function_exists( 'sc_wpun_mutes' ) ) {
+	/**
+	 * The store of the mutes: plugins, themes and other items whose notifications are switched off.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return \WPUN\Mute_Store
+	 */
+	function sc_wpun_mutes(): \WPUN\Mute_Store {
+		return sc_wpun()->mute_store();
+	}
+}
+
 if ( ! function_exists( 'sc_wpun_api_version' ) ) {
 	/**
 	 * The version of the public API, for add-ons to check what they can use.

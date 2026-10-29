@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @phpstan-type Legacy_Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
  * @phpstan-type Last_Result array{success: bool, message: string, time: int}
  * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, last_result?: Last_Result, retry_at?: int, last_reminder?: int}
- * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified}
+ * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified, ended_mutes?: Generic_Notified}
  */
 class State {
 	const OPT_FIELD = 'sc_wpun_state';
@@ -105,6 +105,11 @@ class State {
 			$normalised['legacy_notified'] = $this->normalise_legacy( $state['legacy_notified'] );
 		} elseif ( ! isset( $state['channels'] ) && isset( $state['notified'] ) && is_array( $state['notified'] ) ) {
 			$normalised['legacy_notified'] = $this->normalise_legacy( $state['notified'] );
+		}
+
+		$ended = $this->normalise_generic( $state['ended_mutes'] ?? array() ); // Item type => key => the version of the mute that ended.
+		if ( array() !== $ended ) {
+			$normalised['ended_mutes'] = $ended;
 		}
 
 		return $normalised;

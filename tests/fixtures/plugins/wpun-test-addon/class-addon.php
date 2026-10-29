@@ -10,6 +10,7 @@ namespace WPUN_Test_Addon;
 use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
 use WPUN\Delivery_Result;
+use WPUN\Mute;
 use WPUN\Notification;
 use WPUN\Notification_Item;
 
@@ -79,6 +80,7 @@ class Addon {
 		add_filter( 'sc_wpun_field_types', array( self::class, 'field_types' ) );
 		add_filter( 'sc_wpun_item_types', array( self::class, 'item_types' ) );
 		add_filter( 'sc_wpun_update_items', array( self::class, 'update_items' ) );
+		add_filter( 'sc_wpun_mutes', array( self::class, 'mutes' ) );
 		add_filter( 'sc_wpun_channel_should_receive_item', array( self::class, 'should_receive_item' ), 10, 3 );
 		add_filter( 'sc_wpun_pre_send', array( self::class, 'pre_send' ), 10, 3 );
 		add_action( 'sc_wpun_notification_sent', array( self::class, 'on_sent' ), 10, 3 );
@@ -133,6 +135,26 @@ class Addon {
 		$types[ self::ITEM_TYPE ] = 'Add-on notes';
 
 		return $types;
+	}
+
+	/**
+	 * Mute the add-on's own items listed under `mute` in its data.
+	 *
+	 * @param array<int, mixed> $mutes Mutes.
+	 * @return array<int, mixed>
+	 */
+	public static function mutes( $mutes ) {
+		$keys = self::data( 'mute' );
+		foreach ( is_array( $keys ) ? $keys : array() as $key ) {
+			$mutes[] = new Mute(
+				array(
+					'type' => self::ITEM_TYPE,
+					'key'  => (string) $key,
+				)
+			);
+		}
+
+		return $mutes;
 	}
 
 	/**

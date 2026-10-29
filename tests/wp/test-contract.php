@@ -101,6 +101,8 @@ class Test_Contract extends WPUN_Test_Case {
 		$this->assertFalse( has_filter( 'sc_wpun_plugins_need_update' ) );
 		$this->assertFalse( has_filter( 'sc_wpun_themes_need_update' ) );
 		$this->assertNotFalse( has_action( 'sc_wpun_channel_deleted' ) );
+		$this->assertNotFalse( has_action( 'deleted_plugin' ), 'Deleting a plugin removes its mute.' );
+		$this->assertNotFalse( has_action( 'deleted_theme' ), 'Deleting a theme removes its mute.' );
 	}
 
 	/**
