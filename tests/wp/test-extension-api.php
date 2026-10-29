@@ -632,7 +632,7 @@ class Test_Extension_Api extends WPUN_Test_Case {
 		$section = apply_filters( 'debug_information', array() )[ WPUN\Site_Health::SECTION ];
 		$text    = wp_json_encode( $section );
 
-		$this->assertStringContainsString( 'module: ' . Addon_Channel::TYPE, $section['fields'][ 'channel_' . $one ]['value'] );
+		$this->assertStringContainsString( 'module: ' . Addon_Channel::TYPE, $section['fields'][ 'channel_' . $one ]['debug'] );
 		$this->assertStringContainsString( 'token: set (database)', $section['fields'][ 'channel_' . $one ]['value'] );
 		$this->assertStringContainsString( 'token: not set (database)', $section['fields'][ 'channel_' . $two ]['value'] );
 		$this->assertStringContainsString( 'name: Name (database)', $section['fields'][ 'channel_' . $one ]['value'] );

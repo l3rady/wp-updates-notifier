@@ -400,8 +400,10 @@ class Test_Site_Health extends WPUN_Test_Case {
 		$this->assertSame( 'hourly', $section['fields']['schedule_frequency']['value'] );
 		$this->assertStringNotContainsString( 'never', $section['fields']['schedule_last']['value'] );
 		$this->assertContains( $section['fields']['wp_cron_disabled']['debug'], array( 'true', 'false' ) );
-		$channel = $section['fields']['channel_email']['value'];
-		$this->assertStringContainsString( 'module: email', $channel );
+		$this->assertStringContainsString( 'Module: email', $section['fields']['channel_email']['value'], 'Shown in the site language.' );
+		$this->assertStringContainsString( 'Enabled: Yes', $section['fields']['channel_email']['value'] );
+		$channel = $section['fields']['channel_email']['debug'];
+		$this->assertStringContainsString( 'module: email', $channel, 'Copied in English.' );
 		$this->assertStringContainsString( 'availability: available', $channel );
 		$this->assertStringContainsString( 'enabled: yes', $channel );
 		$this->assertStringContainsString( 'failure', $channel );

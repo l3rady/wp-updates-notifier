@@ -299,7 +299,8 @@ class Site_Health {
 		foreach ( $this->report->channels() as $row ) {
 			$fields[ 'channel_' . $row['id'] ] = array(
 				'label' => $row['label'],
-				'value' => $this->describe_channel( $row ),
+				'value' => $this->describe_channel( $row, true ),
+				'debug' => $this->describe_channel( $row, false ),
 			);
 		}
 
@@ -341,19 +342,40 @@ class Site_Health {
 	/**
 	 * One channel instance as a line of text.
 	 *
+	 * Site Health shows `value` in the site's language and copies `debug`, so the copy is in English for a support forum.
+	 * The availability and the last result come from the report, already translated.
+	 *
 	 * @param array{id: string, label: string, module: string, availability: string, enabled: bool, code_defined: bool, last_result: ?array{success: bool, message: string, time: string}, last_failure: ?array{success: bool, message: string, time: string}, retry_at: ?string, fields: array<int, array{field: string, value: string, source: string}>} $row The instance from the report.
+	 * @param bool                                                                                                                                                                                                                                                                                                                                         $translate Whether to use the site's language.
 	 *
 	 * @return string
 	 */
-	private function describe_channel( array $row ): string {
-		$parts = array(
-			sprintf( 'module: %s', $row['module'] ),
-			sprintf( 'availability: %s', $row['availability'] ),
-			sprintf( 'enabled: %s', $row['enabled'] ? 'yes' : 'no' ),
-			sprintf( 'code-defined: %s', $row['code_defined'] ? 'yes' : 'no' ),
-			sprintf( 'last result: %s', '' === Status_Report::describe_last( $row['last_result'] ) ? '-' : Status_Report::describe_last( $row['last_result'] ) ),
-			sprintf( 'retry at: %s', $row['retry_at'] ?? '-' ),
+	private function describe_channel( array $row, bool $translate ): string {
+		$yes  = $translate ? __( 'Yes', 'wp-updates-notifier' ) : 'yes';
+		$no   = $translate ? __( 'No', 'wp-updates-notifier' ) : 'no';
+		$last = Status_Report::describe_last( $row['last_result'] );
+
+		$labels = array(
+			'module'       => $translate ? __( 'Module', 'wp-updates-notifier' ) : 'module',
+			'availability' => $translate ? __( 'Availability', 'wp-updates-notifier' ) : 'availability',
+			'enabled'      => $translate ? __( 'Enabled', 'wp-updates-notifier' ) : 'enabled',
+			'code_defined' => $translate ? __( 'Defined in code', 'wp-updates-notifier' ) : 'code-defined',
+			'last_result'  => $translate ? __( 'Last delivery', 'wp-updates-notifier' ) : 'last result',
+			'retry_at'     => $translate ? __( 'Next try after', 'wp-updates-notifier' ) : 'retry at',
 		);
+		$values = array(
+			'module'       => $row['module'],
+			'availability' => $row['availability'],
+			'enabled'      => $row['enabled'] ? $yes : $no,
+			'code_defined' => $row['code_defined'] ? $yes : $no,
+			'last_result'  => '' === $last ? '-' : $last,
+			'retry_at'     => $row['retry_at'] ?? '-',
+		);
+
+		$parts = array();
+		foreach ( $labels as $key => $label ) {
+			$parts[] = sprintf( '%s: %s', $label, $values[ $key ] );
+		}
 		foreach ( $row['fields'] as $field ) {
 			$parts[] = sprintf( '%s: %s (%s)', $field['field'], $field['value'], $field['source'] );
 		}
@@ -421,7 +443,7 @@ class Site_Health {
 	 */
 	private function schedule_details( array $schedule ): string {
 		return '<ul><li>' . esc_html( sprintf( /* translators: %s: Name of the check frequency, for example hourly. */ __( 'Frequency: %s', 'wp-updates-notifier' ), $schedule['frequency'] ) )
-			. '</li><li>' . esc_html( sprintf( /* translators: %s: A date and time, or "not scheduled". */ __( 'Next check: %s', 'wp-updates-notifier' ), $schedule['next_run'] ) )
+			. '</li><li>' . esc_html( sprintf( /* translators: %s: Date and time of the next check. */ __( 'Next check: %s', 'wp-updates-notifier' ), $schedule['next_run'] ) )
 			. '</li><li>' . esc_html( sprintf( /* translators: %s: A date and time, or "never". */ __( 'Last check: %s', 'wp-updates-notifier' ), $schedule['last_check'] ) )
 			. '</li></ul>';
 	}
