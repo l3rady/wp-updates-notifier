@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://wpun.cariss.dev/latest/users/how-notifications-work/">
       
       
-        <link rel="prev" href="../channels/">
+        <link rel="prev" href="../muting/">
       
       
         <link rel="next" href="../settings-in-code/">
@@ -295,6 +295,8 @@
       
         
       
+        
+      
     
     
     
@@ -420,6 +422,34 @@
     
   
     Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../muting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting a plugin or theme
   
 
     
@@ -694,6 +724,8 @@
       
         
       
+        
+      
     
     
     
@@ -895,6 +927,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../developers/muting-from-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting from code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../developers/configuration-sources/" class="md-nav__link">
         
   
@@ -990,6 +1050,8 @@
       
         
           
+        
+      
         
       
         
@@ -1586,6 +1648,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0019-mutes-in-their-own-option-through-the-global-veto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0019 Mutes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1860,6 +1950,7 @@
 <li>The plugin remembers, for each channel, the version of each plugin, theme and WordPress it has reported. If the update is still waiting at the next check, nothing is sent.</li>
 <li>A newer version is a new update. If a plugin goes from 2.0 to 2.1 and then 2.2 is released before you update, you are told about 2.2 as well.</li>
 <li>Once an update is no longer waiting, for example because you installed it, the plugin forgets it.</li>
+<li>A <a href="../muting/">muted</a> plugin or theme is left out of the message, but it still counts as waiting. Unmuting it does not send an update the channel was already told about, and sends one it was never told about at the next check.</li>
 <li>Each channel keeps its own record. Adding a channel does not cause the others to send again.</li>
 </ul>
 <p>A check sends one message to each channel, listing everything that is new to that channel. It does not send one message per update. If nothing is new, nothing is sent.</p>
@@ -1867,6 +1958,7 @@
 <h2 id="reminders">Reminders<a class="headerlink" href="#reminders" title="Permanent link">&para;</a></h2>
 <p>A channel can repeat the updates you have not installed yet. Set <strong>Reminders</strong> to <strong>Daily</strong> or <strong>Weekly</strong> in the channel's <a href="../channels/#reminders">routing</a>. The default is <strong>Never</strong>.</p>
 <ul>
+<li>A <a href="../muting/">muted</a> plugin or theme is not in a reminder.</li>
 <li>The reminder is one message listing all updates still waiting for that channel, not only the ones that were reported before. It is marked as a reminder (see below).</li>
 <li>New updates are not held back. They are sent at once, as a normal message.</li>
 <li>If a new update is found in the same check as a reminder that is due, you get one message: the reminder, with the new update in it. You never get two.</li>

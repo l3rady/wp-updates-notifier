@@ -295,6 +295,8 @@
       
         
       
+        
+      
     
     
     
@@ -420,6 +422,34 @@
     
   
     Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../muting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting a plugin or theme
   
 
     
@@ -589,6 +619,39 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mute
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unmute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unmute
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#muted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        muted
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#channels-list" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -665,6 +728,8 @@
       
         
           
+        
+      
         
       
         
@@ -884,6 +949,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../developers/muting-from-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting from code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../developers/configuration-sources/" class="md-nav__link">
         
   
@@ -979,6 +1072,8 @@
       
         
           
+        
+      
         
       
         
@@ -1575,6 +1670,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0019-mutes-in-their-own-option-through-the-global-veto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0019 Mutes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1793,6 +1916,39 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mute
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unmute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unmute
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#muted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        muted
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#channels-list" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1832,7 +1988,7 @@
 
 
 <h1 id="wp-cli">WP-CLI<a class="headerlink" href="#wp-cli" title="Permanent link">&para;</a></h1>
-<p>The plugin adds commands to <a href="https://wp-cli.org/">WP-CLI</a> under <code>wp updates-notifier</code>. Use them to run the check from a system cron, to see what a check would do, to test your channels and to see the state of the plugin.</p>
+<p>The plugin adds commands to <a href="https://wp-cli.org/">WP-CLI</a> under <code>wp updates-notifier</code>. Use them to run the check from a system cron, to see what a check would do, to test your channels, to mute plugins and themes and to see the state of the plugin.</p>
 <p>Run them from the site's directory, or add <code>--path=/path/to/site</code>.</p>
 <h2 id="check">check<a class="headerlink" href="#check" title="Permanent link">&para;</a></h2>
 <p>Runs the update check now, as the schedule does. Each channel instance gets the updates it has not been told about yet, and each line says what happened.</p>
@@ -1891,7 +2047,7 @@ Success: Dry run finished, nothing was sent or changed. 1 channel instance would
 </code></pre></div>
 <p><strong>Exit codes.</strong> 0 when every test message was sent. 1 when the id is unknown, the channel is switched off, its module is not available (the message says why), it can not send test messages, or the send failed. Without <code>--channel</code>, 1 also when no channel could be tested.</p>
 <h2 id="status">status<a class="headerlink" href="#status" title="Permanent link">&para;</a></h2>
-<p>Shows the settings, the schedule, the channels and the updates that are waiting.</p>
+<p>Shows the settings, the schedule, the channels, the mutes and the updates that are waiting.</p>
 <div class="highlight"><pre><span></span><code>wp updates-notifier status [--format=&lt;table|json&gt;]
 </code></pre></div>
 <p>It shows:</p>
@@ -1899,6 +2055,7 @@ Success: Dry run finished, nothing was sent or changed. 1 channel instance would
 <li><strong>Settings.</strong> The value of each setting and where it comes from: <code>database</code>, or for example a constant.</li>
 <li><strong>Schedule.</strong> The frequency, when the next check is due and when the last one ran, in the site's time zone.</li>
 <li><strong>Channels.</strong> For each channel instance: the module, whether the module is available, whether it is switched on, whether it is defined in code, the last delivery result, the last failure and the time it must wait until. Then its settings, each with its source.</li>
+<li><strong>Muted.</strong> The plugins and themes that are <a href="../muting/">muted</a>, as <code>muted</code> lists them.</li>
 <li><strong>Pending updates.</strong> For each channel instance, what is waiting for it, and which of that is new to it and which it was told about already.</li>
 </ul>
 <p>Sample output:</p>
@@ -1916,10 +2073,50 @@ office  Office  email   available     yes      no            success, 2026-01-01
 </code></pre></div>
 <p><strong>Secrets are never shown.</strong> A secret setting, such as an API token or a webhook address, shows only <code>set</code> or <code>not set</code>, in the table and in the JSON. If the module of a channel instance is not available, its settings are not shown at all, because without the module the plugin can not tell which ones are secret.</p>
 <p><strong>Exit code.</strong> 0.</p>
+<p>In the JSON the sections are <code>settings</code>, <code>schedule</code>, <code>channels</code>, <code>muted</code> and <code>pending</code>. <code>muted</code> is a list with one entry for each mute, with the keys <code>type</code>, <code>key</code>, <code>name</code> (null if the item is not installed), <code>until</code> (null for an always-on mute), <code>from_code</code>, <code>time</code>, <code>user</code> (a user id, 0 if none) and <code>offered</code> (the version waiting, or null).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>To find what is waiting, <code>status</code> does a dry run of the check. It sends and saves nothing, but it asks WordPress to refresh its update data, as <code>check --dry-run</code> does.</p>
 </div>
+<h2 id="mute">mute<a class="headerlink" href="#mute" title="Permanent link">&para;</a></h2>
+<p>Mutes plugins or themes, so the notifications leave them out. See <a href="../muting/">Muting a plugin or theme</a> for what that does.</p>
+<div class="highlight"><pre><span></span><code>wp updates-notifier mute &lt;plugin|theme&gt; &lt;name&gt;... [--until-next-version]
+</code></pre></div>
+<p>A plugin is named as for <code>wp plugin</code>: its directory name, its file for a single-file plugin, or its full file path from the plugins directory. A theme is named by its stylesheet. Names must be installed.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--until-next-version</code></td>
+<td>Skips only the version that is waiting now, so a newer version is notified again. It fails for an item with no update waiting.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>wp updates-notifier mute plugin akismet hello.php
+wp updates-notifier mute theme twentytwentyfive --until-next-version
+</code></pre></div>
+<p>Muting an item that is already muted the same way is a warning, not an error. Every name is handled even if one fails. A mute that is set in code, or that a site's code refuses, is an error with the reason.</p>
+<p><strong>Exit codes.</strong> 0 when every name was handled. 1 when a name is not installed, there is no update to skip, or a mute was refused. The last line then says how many names failed.</p>
+<h2 id="unmute">unmute<a class="headerlink" href="#unmute" title="Permanent link">&para;</a></h2>
+<p>Turns notifications on again.</p>
+<div class="highlight"><pre><span></span><code>wp updates-notifier unmute &lt;plugin|theme&gt; &lt;name&gt;...
+</code></pre></div>
+<p>Unmuting an item that is not muted is a warning. A mute that is set in code, or that a site's code refuses to remove, is an error. Names and exit codes are as for <code>mute</code>.</p>
+<h2 id="muted">muted<a class="headerlink" href="#muted" title="Permanent link">&para;</a></h2>
+<p>Lists the muted plugins and themes, including the ones set in code.</p>
+<div class="highlight"><pre><span></span><code>wp updates-notifier muted [--format=&lt;table|json|csv|yaml|count&gt;]
+</code></pre></div>
+<p>The columns are <code>type</code>, <code>name</code>, <code>key</code>, <code>mute</code> (<code>always</code> or <code>version X</code>), <code>set_in_code</code>, <code>muted_by</code> (a user name, empty if not known), <code>muted_at</code> and <code>update</code> (the version waiting, if any). <code>--format=count</code> prints only the number.</p>
+<div class="highlight"><pre><span></span><code>type    name         key                           mute          set_in_code  muted_by  muted_at                 update
+plugin  Akismet      akismet/akismet.php           always        no           admin     2026-01-01 08:00:01 UTC
+plugin  Hello Dolly  hello.php                     version 1.7.3 no           admin     2026-01-01 08:05:12 UTC  1.7.3
+</code></pre></div>
+<p><strong>Exit code.</strong> 0.</p>
 <h2 id="channels-list">channels list<a class="headerlink" href="#channels-list" title="Permanent link">&para;</a></h2>
 <p>Lists the channel instances.</p>
 <div class="highlight"><pre><span></span><code>wp updates-notifier channels list [--format=&lt;table|json|csv|yaml&gt;] [--fields=&lt;fields&gt;]

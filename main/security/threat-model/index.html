@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://wpun.cariss.dev/latest/security/threat-model/">
       
       
-        <link rel="prev" href="../../decisions/0018-generate-readme-at-build-time/">
+        <link rel="prev" href="../../decisions/0019-mutes-in-their-own-option-through-the-global-veto/">
       
       
         <link rel="next" href="../ai-review-2.0.0/">
@@ -293,6 +293,8 @@
       
         
       
+        
+      
     
     
     
@@ -438,6 +440,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../users/muting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting a plugin or theme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../users/how-notifications-work/" class="md-nav__link">
         
   
@@ -561,6 +591,8 @@
       
         
           
+        
+      
         
       
         
@@ -780,6 +812,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../developers/muting-from-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting from code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../developers/configuration-sources/" class="md-nav__link">
         
   
@@ -875,6 +935,8 @@
       
         
           
+        
+      
         
       
         
@@ -1458,6 +1520,34 @@
     
   
     0018 Generated readme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0019-mutes-in-their-own-option-through-the-global-veto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0019 Mutes
   
 
     
@@ -2207,6 +2297,36 @@ which <code>Plugin</code> registers next to the notice. There are no <code>admin
 <td><code>sc_wpun_dismiss_slack_notice</code></td>
 <td>POST</td>
 </tr>
+<tr>
+<td><code>sc_wpun_mute</code></td>
+<td><code>Plugins_Screen_Mutes::handle_mute</code></td>
+<td><code>sc_wpun_mute_plugin_&lt;file&gt;</code></td>
+<td>GET</td>
+</tr>
+<tr>
+<td><code>sc_wpun_unmute</code></td>
+<td><code>Plugins_Screen_Mutes::handle_unmute</code></td>
+<td><code>sc_wpun_unmute_plugin_&lt;file&gt;</code></td>
+<td>GET</td>
+</tr>
+<tr>
+<td><code>sc_wpun_skip</code></td>
+<td><code>Plugins_Screen_Mutes::handle_skip</code></td>
+<td><code>sc_wpun_skip_plugin_&lt;file&gt;_&lt;version&gt;</code></td>
+<td>GET</td>
+</tr>
+<tr>
+<td><code>sc_wpun_muted_add</code></td>
+<td><code>Muted_Tab::handle_add</code></td>
+<td><code>sc_wpun_muted_add</code></td>
+<td>POST</td>
+</tr>
+<tr>
+<td><code>sc_wpun_muted_remove</code></td>
+<td><code>Muted_Tab::handle_remove</code></td>
+<td><code>sc_wpun_muted_remove_&lt;type&gt;_&lt;key&gt;</code></td>
+<td>POST</td>
+</tr>
 </tbody>
 </table>
 <p><strong>Trust boundary:</strong> any HTTP client can reach <code>admin-post.php</code>. Unauthenticated requests fire only <code>admin_post_nopriv_*</code>,
@@ -2225,7 +2345,7 @@ and the plugin registers none. The Semgrep rule <code>wpun-no-nopriv-hooks</code
 <td>E</td>
 <td>A user without the capability changes channels, sends messages or runs the check.</td>
 <td>Each handler checks <code>current_user_can( Settings_Page::capability() )</code> first, and refuses with a 403 and no change.</td>
-<td><code>test-channels-tab.php</code> (<code>test_nonce_and_capability_are_enforced_for_every_action</code>), <code>test-channel-form.php</code> (<code>test_nonce_and_capability_are_required</code>, <code>test_refusals_change_nothing</code>, <code>test_the_handler_answers_403_when_refused</code>), <code>test-check-now.php</code> (<code>test_a_refused_request_runs_nothing</code>), <code>test-test-send.php</code>, <code>test-slack-notice.php</code>. <code>security/test-capability-matrix.php</code> (#220): discovers every <code>admin_post_*</code>/<code>wp_ajax_*</code> hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests (eleven on multisite): logged out, subscriber, editor, administrator without <code>manage_options</code>, on multisite a site administrator who is not a super admin, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (<code>make dast</code>, #222).</td>
+<td><code>test-channels-tab.php</code> (<code>test_nonce_and_capability_are_enforced_for_every_action</code>), <code>test-channel-form.php</code> (<code>test_nonce_and_capability_are_required</code>, <code>test_refusals_change_nothing</code>, <code>test_the_handler_answers_403_when_refused</code>), <code>test-check-now.php</code> (<code>test_a_refused_request_runs_nothing</code>), <code>test-test-send.php</code>, <code>test-slack-notice.php</code>, <code>test-mute-plugins-screen.php</code>, <code>test-muted-tab.php</code>. <code>security/test-capability-matrix.php</code> (#220): discovers every <code>admin_post_*</code>/<code>wp_ajax_*</code> hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests (eleven on multisite): logged out, subscriber, editor, administrator without <code>manage_options</code>, on multisite a site administrator who is not a super admin, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (<code>make dast</code>, #222).</td>
 </tr>
 <tr>
 <td>S/T</td>
@@ -2259,6 +2379,16 @@ and the plugin registers none. The Semgrep rule <code>wpun-no-nopriv-hooks</code
 </tr>
 </tbody>
 </table>
+<p>The mute, unmute and skip actions on the Plugins screen are state-changing GET links, the one exception to the POST
+rule. The plugin rows sit inside core's bulk-action form, and forms cannot be nested, so the links are like core's own
+Activate and Deactivate links. A link carries a security token for the action and the plugin, and the skip link also
+for the version it skips, so a token made for one plugin or version cannot act on another. The handlers read <code>$_GET</code>
+only (fields sent by POST are refused), accept the <code>plugin</code> type only, and act only on installed plugins. They need
+the mute capability (<code>sc_wpun_mute_capability</code>, which defaults to the settings capability). The Plugins screen bulk
+actions run through core's own bulk form, which checks its security token, and the handler checks the mute
+capability. The Muted tab forms are POST and need both the settings capability and the mute capability. A mutation
+is repeatable and reversible (unmute), and a mute only holds back this plugin's notifications. Redirects go back to
+the referrer only if <code>wp_get_referer()</code> accepts it (same site), else to the Plugins screen.</p>
 <p>The Slack notice dismiss is a POST form like the other actions. It changes only the current user's own meta
 (<code>sc_wpun_dismissed_slack_notice</code>), and it needs the security token and the capability. A GET request is refused with a 403.</p>
 <h3 id="2-the-settings-screen">2. The settings screen<a class="headerlink" href="#2-the-settings-screen" title="Permanent link">&para;</a></h3>

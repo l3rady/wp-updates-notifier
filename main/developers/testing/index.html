@@ -293,6 +293,8 @@
       
         
       
+        
+      
     
     
     
@@ -438,6 +440,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../users/muting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting a plugin or theme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../users/how-notifications-work/" class="md-nav__link">
         
   
@@ -563,6 +593,8 @@
       
         
           
+        
+      
         
       
         
@@ -928,6 +960,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../muting-from-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting from code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../configuration-sources/" class="md-nav__link">
         
   
@@ -1023,6 +1083,8 @@
       
         
           
+        
+      
         
       
         
@@ -1619,6 +1681,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0019-mutes-in-their-own-option-through-the-global-veto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0019 Mutes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2014,7 +2104,7 @@
 <li><code>make a11y</code> checks the settings screen on a throwaway WordPress site (its own Compose project, so it never touches <code>make up</code>). Specs are in <code>tests/e2e/specs/</code>.</li>
 <li><code>make e2e</code> drives the plugin the way a user sees it, on a throwaway site of its own (compose project <code>wpun-flows</code>, files in <code>tests/flows/</code>, never touches <code>make up</code>, <code>make a11y</code> or <code>make screenshots</code>). It uses the offline fake pending updates of <code>.wordpress-org/blueprint/fake-updates.php</code> (shared with the screenshots and the Playground blueprint) and Mailpit to catch the mail. The cases, one spec file each in <code>tests/flows/specs/</code>: activation schedules the update check; the General tab saves, shows an invalid value's error on its own field and logs no console error; an email channel is added, edited, tested (the test message arrives), duplicated, disabled, enabled and deleted; a real <code>wp cron event run sc_wpun_update_check</code> sends the expected email (subject, every item, no HTML entities), a core-only channel gets only the WordPress item, a second run sends nothing, <strong>Check for updates and notify now</strong> shows the right notice, and a due daily reminder repeats what is waiting; a value set by a constant is read-only on the form and is the one used when sending; and the fixture add-on (<code>tests/fixtures/plugins/wpun-test-addon</code>) appears in the module picker. The Playwright image has no WP-CLI, so the specs call a small server in the WP-CLI container (<code>tests/flows/control.php</code>, on the private network only) that runs real <code>wp</code> commands. Each test starts by putting the site back to a known state (<code>resetSite</code> in <code>tests/flows/specs/helpers.js</code>: it clears the run state, stores the channels and settings the test names, removes <code>SC_WPUN_</code> constants from <code>wp-config.php</code>, restores the plugins and empties Mailpit), so the specs do not depend on each other or on the time of day. Mail is polled in Mailpit with a timeout, never waited for with a sleep. <code>E2E_KEEP=1 make e2e</code> leaves the site up to look at; <code>FLOWS_ARGS=runs.spec.js make e2e</code> runs one file.</li>
 <li><code>make e2e-upgrade</code> updates the real 1.6.0 from WordPress.org to the zip of <code>make dist</code> (#89, #90), because the main file was renamed and there is no migration stub. It has its own site (compose project <code>wpun-upgrade</code>, files in <code>tests/flows/upgrade/</code>, never touches <code>make up</code>) that does not mount the repository: <code>setup.sh</code> installs WordPress and 1.6.0 from WordPress.org (so it needs the network), and <code>package.php</code> copies the zip of <code>make dist</code> with its Version header raised to 2.0.0 (only the copy; the repository's header is not edited) to where the web server serves it. A must-use plugin offers that copy as the update of <code>wp-updates-notifier/class-sc-wp-updates-notifier.php</code>, as WordPress.org would, and WordPress's own updater does the rest. Each test starts from a fresh, configured 1.6.0 (<code>reset.php</code>: the 1.x options <code>notify_to</code>, <code>notify_from</code>, Slack on, a daily check) and updates it one way: <code>wp plugin update</code> (WP-CLI, <code>Plugin_Upgrader</code>), "update now" on the Plugins screen (admin-ajax) and the background auto-updater (<code>wp_maybe_auto_update()</code>, which can roll an update back in WordPress 6.6 and later). It checks that the plugin ends at 2.0.0 and deactivated (the Plugins screen says so), with no PHP fatal error and no rollback, then activates it again with <code>wp plugin activate</code> and checks that the email settings became the <code>email</code> channel with the same address, the Slack settings are kept, the Slack notice shows and its email is sent once, the leftover 1.x update check event is kept as the one daily event (not doubled, not stuck in the past), and a real run mails the migrated address. Run it before merging a Release PR; CI does not, because it downloads from WordPress.org. <code>E2E_KEEP=1</code> leaves the site up; <code>FLOWS_ARGS=update-cli.spec.js</code> runs one file.</li>
-<li><code>make screenshots</code> is not a test: it regenerates the WordPress.org screenshots (<code>.wordpress-org/screenshot-1.png</code> to <code>5</code>) on a throwaway site of its own (compose project <code>wpun-shots</code>, files in <code>tests/screenshots/</code>), with made-up data and the update email caught by Mailpit. It fails if the update check did not send. Run it before a release; CI does not.</li>
+<li><code>make screenshots</code> is not a test: it regenerates the WordPress.org screenshots (<code>.wordpress-org/screenshot-1.png</code> to <code>6</code>) on a throwaway site of its own (compose project <code>wpun-shots</code>, files in <code>tests/screenshots/</code>), with made-up data and the update email caught by Mailpit. It fails if the update check did not send. Run it before a release; CI does not.</li>
 <li><code>make blueprint-smoke</code> runs the generated Playground blueprint in WordPress Playground CLI (compose project <code>wpun-playground</code>, files in <code>tests/blueprint-smoke/</code>; it never touches <code>make up</code>), with the plugin taken from the zip of <code>make dist</code> instead of WordPress.org. Playwright then checks that the settings screen shows the demo notice, the Channels tab shows two deliveries as sent, and Tools → Demo emails lists the update emails with the made-up plugins. Playground downloads WordPress on every run, so it needs the network. Run it before a release; CI does not.</li>
 <li><code>make docs-a11y</code> builds this documentation site and checks every page in the dark and the light scheme: axe, no request to a third party, visible keyboard focus, and that every Mermaid diagram parses. A syntax error in a diagram fails it, because Mermaid would otherwise draw an error image and the page would still load. Specs are in <code>tests/e2e/docs/specs/</code>.</li>
 <li><code>make docs-links</code> checks the links in the built site and in <code>README.md</code>, the generated <code>readme.txt</code> and <code>CONTRIBUTING.md</code> with lychee, including links to other sites. Internal links and anchors are already checked by the strict <code>make docs</code> build.</li>

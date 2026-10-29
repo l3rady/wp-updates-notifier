@@ -16,7 +16,7 @@
         <link rel="prev" href="../writing-a-module/">
       
       
-        <link rel="next" href="../configuration-sources/">
+        <link rel="next" href="../muting-from-code/">
       
       
         
@@ -293,6 +293,8 @@
       
         
       
+        
+      
     
     
     
@@ -438,6 +440,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../users/muting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting a plugin or theme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../users/how-notifications-work/" class="md-nav__link">
         
   
@@ -563,6 +593,8 @@
       
         
           
+        
+      
         
       
         
@@ -873,6 +905,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../muting-from-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting from code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../configuration-sources/" class="md-nav__link">
         
   
@@ -968,6 +1028,8 @@
       
         
           
+        
+      
         
       
         
@@ -1564,6 +1626,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0019-mutes-in-their-own-option-through-the-global-veto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0019 Mutes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1901,7 +1991,7 @@
 <span class="x">    3</span>
 <span class="x">);</span>
 </code></pre></div>
-<p>To stop an item from going anywhere, use <code>sc_wpun_should_notify_item</code> instead. A vetoed item still counts as waiting, so it is not sent again as new when you stop vetoing it.</p>
+<p>To stop an item from going anywhere, use <code>sc_wpun_should_notify_item</code> instead. A vetoed item still counts as waiting, so it is not sent again as new when you stop vetoing it. Since 3.0.0 the default is false for a muted item, so a callback that returns <code>true</code> whatever it is given unmutes everything: pass <code>$notify</code> on instead. To mute an item, see <a href="../muting-from-code/">Muting from code</a>.</p>
 <h2 id="in-a-channel">In a channel<a class="headerlink" href="#in-a-channel" title="Permanent link">&para;</a></h2>
 <p>A channel receives only the items routed to its instance, in <code>$notification-&gt;get_items()</code>. <code>get_items_of_type( 'php' )</code> picks one type. A channel that formats messages itself should cope with item types it does not know, since any add-on can add one. <code>WPUN\Notification_Renderer</code> lists every item the same way, whatever its type: name, versions, links and notes.</p>
 

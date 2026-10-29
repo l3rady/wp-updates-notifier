@@ -293,6 +293,8 @@
       
         
       
+        
+      
     
     
     
@@ -438,6 +440,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../users/muting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting a plugin or theme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../users/how-notifications-work/" class="md-nav__link">
         
   
@@ -563,6 +593,8 @@
       
         
           
+        
+      
         
       
         
@@ -782,6 +814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../muting-from-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting from code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../configuration-sources/" class="md-nav__link">
         
   
@@ -974,6 +1034,8 @@
       
         
           
+        
+      
         
       
         
@@ -1570,6 +1632,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0019-mutes-in-their-own-option-through-the-global-veto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0019 Mutes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1826,8 +1916,8 @@
 <h2 id="what-is-public">What is public<a class="headerlink" href="#what-is-public" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Every hook in the <a href="../hooks/">hook reference</a>: its name, its arguments and what its return value does.</li>
-<li>The functions <code>sc_wpun_register_channel()</code>, <code>sc_wpun_channels()</code>, <code>sc_wpun_api_version()</code>, <code>sc_wpun_api_satisfies()</code> and <code>sc_wpun_api_supports()</code>, and the <code>SC_WPUN_API_VERSION</code> constant.</li>
-<li>The classes and methods in the <code>WPUN</code> namespace that are documented with <code>@since</code> and not tagged <code>@internal</code>. These include <code>Channel</code>, <code>Channel_Instance</code>, <code>Channel_Registry</code>, <code>Channel_Store</code>, <code>Delivery_Result</code>, <code>Notification</code>, <code>Notification_Item</code>, <code>Notification_Renderer</code>, <code>Routing</code>, <code>Item_Types</code>, <code>Version_Constraint</code>, <code>Config_Source</code>, <code>Config_Context</code> and <code>Config_Value</code>.</li>
+<li>The functions <code>sc_wpun_register_channel()</code>, <code>sc_wpun_channels()</code>, <code>sc_wpun_mutes()</code>, <code>sc_wpun_api_version()</code>, <code>sc_wpun_api_satisfies()</code> and <code>sc_wpun_api_supports()</code>, and the <code>SC_WPUN_API_VERSION</code> constant.</li>
+<li>The classes and methods in the <code>WPUN</code> namespace that are documented with <code>@since</code> and not tagged <code>@internal</code>. These include <code>Channel</code>, <code>Channel_Instance</code>, <code>Channel_Registry</code>, <code>Channel_Store</code>, <code>Delivery_Result</code>, <code>Mute</code>, <code>Mute_Store</code>, <code>Notification</code>, <code>Notification_Item</code>, <code>Notification_Renderer</code>, <code>Routing</code>, <code>Item_Types</code>, <code>Version_Constraint</code>, <code>Config_Source</code>, <code>Config_Context</code> and <code>Config_Value</code>.</li>
 <li>The names that configuration can be supplied under: <code>SC_WPUN_SETTING_*</code>, <code>SC_WPUN_CHANNEL_&lt;ID&gt;__&lt;FIELD&gt;</code>, <code>SC_WPUN_CHANNELS</code> and <code>SC_WPUN_LOAD_FROM_ENV</code>.</li>
 <li>The field schema keys and field types described on <code>WPUN\Channel</code>, including <code>'secret' =&gt; true</code> on a field of any type and <code>show_external</code>.</li>
 <li>The security behaviour that add-ons rely on:</li>

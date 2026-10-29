@@ -293,6 +293,8 @@
       
         
       
+        
+      
     
     
     
@@ -438,6 +440,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../users/muting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting a plugin or theme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../users/how-notifications-work/" class="md-nav__link">
         
   
@@ -563,6 +593,8 @@
       
         
           
+        
+      
         
       
         
@@ -873,6 +905,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../muting-from-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Muting from code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../configuration-sources/" class="md-nav__link">
         
   
@@ -968,6 +1028,8 @@
       
         
           
+        
+      
         
       
         
@@ -1564,6 +1626,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0019-mutes-in-their-own-option-through-the-global-veto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0019 Mutes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1826,7 +1916,7 @@
 <h2 id="the-pieces">The pieces<a class="headerlink" href="#the-pieces" title="Permanent link">&para;</a></h2>
 <p><strong>Update check.</strong> WP-Cron runs the <code>sc_wpun_update_check</code> event at the frequency chosen on the settings screen. You can also run it on demand with <code>do_action( 'sc_wpun_run_check' )</code>: it works like a scheduled run, the notification's source is <code>manual</code> instead of <code>cron</code>, and the schedule is not changed. From a system cron, use <code>wp updates-notifier check</code> (see <a href="../../users/wp-cli/">WP-CLI</a>): it runs the same check with the source <code>cli</code>, and has a dry run. The sources are <code>cron</code>, <code>manual</code> (the action), <code>cli</code> (WP-CLI) and <code>test</code> (a test message). There is no lock between runs, by design: if a manual run overlaps a scheduled one, both can send the same update before either records it, so a notification can arrive twice. That is rare and harmless for update notices, so the plugin keeps the check simple. A channel that must never deliver twice can keep its own record of what it sent. The check asks WordPress for core, plugin and theme updates and turns each one into a <code>WPUN\Notification_Item</code>. The global settings decide what is looked at: WordPress updates (none, all or only major releases), plugins and themes (none, all or only active ones).</p>
 <p><strong>Items.</strong> A <code>Notification_Item</code> is one thing waiting for an update: its <code>type</code> (<code>core</code>, <code>plugin</code>, <code>theme</code> or a type an add-on registers), a <code>key</code> that identifies it within the type (the plugin file, the theme stylesheet or <code>core</code>), a name, the installed and the available version, links, notes and machine-readable flags such as <code>active</code>. Add-ons can add their own items with the <code>sc_wpun_update_items</code> filter. See <a href="../item-types-and-routing/">Item types and routing</a>.</p>
-<p><strong>Global veto.</strong> <code>sc_wpun_should_notify_item</code> can stop an item from being reported anywhere. A vetoed item still counts as waiting, so its history is kept.</p>
+<p><strong>Global veto.</strong> <code>sc_wpun_should_notify_item</code> can stop an item from being reported anywhere. A vetoed item still counts as waiting, so its history is kept. A muted item is vetoed by default: see <a href="../muting-from-code/">Muting from code</a>.</p>
 <p><strong>Notification.</strong> The items are wrapped in a <code>WPUN\Notification</code> with the site name, the site URL, the link to the Updates screen and some context, such as whether this is a test message. The <code>sc_wpun_notification</code> filter can change it before any channel sees it.</p>
 <p><strong>Channels and instances.</strong> A <em>channel</em> is a kind of delivery (the built-in <code>email</code>, or one your add-on registers) and is a subclass of <code>WPUN\Channel</code>. An <em>instance</em> is one configured use of a channel, for example "email to the ops team", stored as a <code>WPUN\Channel_Instance</code> with an id, a label, an enabled flag, its field values and its routing. Site owners create instances on the <strong>Channels</strong> tab. Instances can also be defined in code with the <code>SC_WPUN_CHANNELS</code> constant or the <code>sc_wpun_channels</code> filter. Channels are registered on the <code>sc_wpun_register_channels</code> action. A channel that declares an API version the site does not have (<code>get_api_constraint()</code>) is refused: it is not registered, <code>sc_wpun_channel_rejected</code> fires, and the <strong>Channels</strong> tab, a notice on the settings page and Site Health say why. Its instances are kept, but nothing is sent through them. <code>WPUN\Site_Health</code> adds the update check and channel tests to Site Health (scheduled and running, WP-Cron off, a channel able to send, modules available, last delivery) and the plugin's section to <strong>Site Info</strong>. The tests read stored state only and make no request, so they never run a check. The section lists the settings with their sources, the schedule, the channel instances and the configuration problems, and replaces every email address in it.</p>
 <p><strong>Routing.</strong> Each instance receives only the items its routing allows: which item types, all or only active plugins and themes, and all or only major WordPress releases. The <code>sc_wpun_channel_should_receive_item</code> filter adds rules of your own.</p>
