@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://wpun.cariss.dev/latest/users/troubleshooting/">
       
       
-        <link rel="prev" href="../settings-in-code/">
+        <link rel="prev" href="../wp-cli/">
       
       
         <link rel="next" href="../../developers/">
@@ -293,6 +293,8 @@
       
         
       
+        
+      
     
     
     
@@ -491,6 +493,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../wp-cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WP-CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -587,22 +617,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-do-i-run-the-check-from-a-system-cron" class="md-nav__link">
+  <a href="#how-do-i-run-the-check-from-a-system-cron-or-wp-cli" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How do I run the check from a system cron?
+        How do I run the check from a system cron or WP-CLI?
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="How do I run the check from a system cron?">
+    <nav class="md-nav" aria-label="How do I run the check from a system cron or WP-CLI?">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#request-wp-cronphp" class="md-nav__link">
+  <a href="#run-the-wp-cli-command" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Request wp-cron.php
+        Run the WP-CLI command
       
     </span>
   </a>
@@ -610,10 +640,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fire-the-check-yourself" class="md-nav__link">
+  <a href="#request-wp-cronphp" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fire the check yourself
+        Request wp-cron.php
       
     </span>
   </a>
@@ -1857,22 +1887,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-do-i-run-the-check-from-a-system-cron" class="md-nav__link">
+  <a href="#how-do-i-run-the-check-from-a-system-cron-or-wp-cli" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How do I run the check from a system cron?
+        How do I run the check from a system cron or WP-CLI?
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="How do I run the check from a system cron?">
+    <nav class="md-nav" aria-label="How do I run the check from a system cron or WP-CLI?">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#request-wp-cronphp" class="md-nav__link">
+  <a href="#run-the-wp-cli-command" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Request wp-cron.php
+        Run the WP-CLI command
       
     </span>
   </a>
@@ -1880,10 +1910,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fire-the-check-yourself" class="md-nav__link">
+  <a href="#request-wp-cronphp" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fire the check yourself
+        Request wp-cron.php
       
     </span>
   </a>
@@ -2012,27 +2042,34 @@
 </ol>
 <h2 id="emails-only-arrive-after-someone-visits-the-site">Emails only arrive after someone visits the site<a class="headerlink" href="#emails-only-arrive-after-someone-visits-the-site" title="Permanent link">&para;</a></h2>
 <p>The schedule is run by WP-Cron. WP-Cron is not a real clock. WordPress only looks for due tasks when a page is requested, so on a site that few people visit, a check due at 03:00 can wait until someone arrives at 09:00. A forum user put it as "I only receive emails after someone has logged in".</p>
-<p>To fix it, run WP-Cron from the server's own clock. See <a href="#how-do-i-run-the-check-from-a-system-cron">How do I run the check from a system cron?</a>.</p>
-<h2 id="how-do-i-run-the-check-from-a-system-cron">How do I run the check from a system cron?<a class="headerlink" href="#how-do-i-run-the-check-from-a-system-cron" title="Permanent link">&para;</a></h2>
-<p>There are two ways. Use the first unless you have a reason not to.</p>
-<h3 id="request-wp-cronphp">Request wp-cron.php<a class="headerlink" href="#request-wp-cronphp" title="Permanent link">&para;</a></h3>
-<p>Stop WordPress starting WP-Cron on page loads by adding this to <code>wp-config.php</code>:</p>
+<p>To fix it, run WP-Cron from the server's own clock. See <a href="#how-do-i-run-the-check-from-a-system-cron-or-wp-cli">How do I run the check from a system cron or WP-CLI?</a>.</p>
+<h2 id="how-do-i-run-the-check-from-a-system-cron-or-wp-cli">How do I run the check from a system cron or WP-CLI?<a class="headerlink" href="#how-do-i-run-the-check-from-a-system-cron-or-wp-cli" title="Permanent link">&para;</a></h2>
+<p>Use the server's own clock instead of WP-Cron. There are two ways.</p>
+<h3 id="run-the-wp-cli-command">Run the WP-CLI command<a class="headerlink" href="#run-the-wp-cli-command" title="Permanent link">&para;</a></h3>
+<p>This is the way we suggest. Stop WordPress starting WP-Cron on page loads by adding this to <code>wp-config.php</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="x">define( 'DISABLE_WP_CRON', true );</span>
 </code></pre></div>
-<p>Then have the server request <code>wp-cron.php</code> on a regular schedule, for example every 15 minutes:</p>
-<div class="highlight"><pre><span></span><code>*/15 * * * * curl -fsS https://example.com/wp-cron.php &gt; /dev/null
+<p>Then have the server run the check, for example every hour:</p>
+<div class="highlight"><pre><span></span><code>0 * * * * wp updates-notifier check --path=/var/www/example.com --quiet
 </code></pre></div>
-<p>WP-Cron then runs the plugin's check at the <strong>Frequency to check</strong> you chose, and WordPress's own update tasks too.</p>
-<h3 id="fire-the-check-yourself">Fire the check yourself<a class="headerlink" href="#fire-the-check-yourself" title="Permanent link">&para;</a></h3>
-<p>The plugin's check can also be started from code with the <code>sc_wpun_run_check</code> action. For example, with WP-CLI:</p>
-<div class="highlight"><pre><span></span><code>*/30 * * * * cd /path/to/site &amp;&amp; wp eval "do_action( 'sc_wpun_run_check' );"
-</code></pre></div>
-<p>This runs the same check as the schedule, and anything already reported is not sent again. It does not move the WP-Cron schedule, so <strong>Next check</strong> on the <strong>General</strong> tab does not change. If you rely on this alone, the time of your cron entry is the schedule.</p>
+<p>The command runs the same check as the schedule, and anything already reported is not sent again. It exits with an error if a channel failed, so your cron can tell you. It does not use WP-Cron, so <strong>Next check</strong> on the <strong>General</strong> tab shows nothing. The time of your cron entry is the schedule.</p>
+<p>Other commands help you set it up:</p>
+<ul>
+<li><code>wp updates-notifier check --dry-run</code> shows what would be sent and changes nothing.</li>
+<li><code>wp updates-notifier test</code> sends a test message through each channel.</li>
+<li><code>wp updates-notifier status</code> shows the settings, the schedule, the channels and what is waiting.</li>
+</ul>
+<p>Run <code>wp help updates-notifier</code> for all of them.</p>
 <p>Things to know:</p>
 <ul>
 <li>The plugin does not lock checks against each other. If this overlaps another run, the same update can be sent twice. This is a known trade-off, and rare. See <a href="../how-notifications-work/#overlapping-checks">How notifications work</a>.</li>
 <li>A check started this way is not a WP-Cron run, so WordPress lets plugin and theme data get up to 12 hours old before it refreshes it. A check started by <code>wp-cron.php</code> allows 2 hours. See <a href="#why-is-the-update-data-hours-old">Why is the update data hours old?</a>.</li>
 </ul>
+<h3 id="request-wp-cronphp">Request wp-cron.php<a class="headerlink" href="#request-wp-cronphp" title="Permanent link">&para;</a></h3>
+<p>If you can not use WP-CLI, keep <code>DISABLE_WP_CRON</code> and have the server request <code>wp-cron.php</code> on a regular schedule, for example every 15 minutes:</p>
+<div class="highlight"><pre><span></span><code>*/15 * * * * curl -fsS https://example.com/wp-cron.php &gt; /dev/null
+</code></pre></div>
+<p>WP-Cron then runs the plugin's check at the <strong>Frequency to check</strong> you chose, and WordPress's own update tasks too.</p>
 <h2 id="why-is-the-update-data-hours-old">Why is the update data hours old?<a class="headerlink" href="#why-is-the-update-data-hours-old" title="Permanent link">&para;</a></h2>
 <p>On every check the plugin asks WordPress to refresh what it knows about updates. WordPress asks api.wordpress.org, but it does not do so every time. It skips the request when it has asked recently:</p>
 <table>
@@ -2050,7 +2087,7 @@
 <td>2 hours</td>
 </tr>
 <tr>
-<td><strong>Check for updates and notify now</strong>, or <code>wp eval</code></td>
+<td><strong>Check for updates and notify now</strong>, or <code>wp updates-notifier check</code></td>
 <td>1 minute</td>
 <td>12 hours</td>
 </tr>

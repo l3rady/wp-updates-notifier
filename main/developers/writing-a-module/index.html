@@ -291,6 +291,8 @@
       
         
       
+        
+      
     
     
     
@@ -472,6 +474,34 @@
     
   
     Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/wp-cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WP-CLI
   
 
     
@@ -2513,7 +2543,7 @@
 <p>The example channel's <code>message()</code> method does this.</p>
 <p>Bear in mind that a successful send counts every item as delivered, including the ones summarised as "…and N more". They are not sent again.</p>
 <h3 id="duplicate-deliveries">Duplicate deliveries<a class="headerlink" href="#duplicate-deliveries" title="Permanent link">&para;</a></h3>
-<p>The plugin does not lock update checks against each other. If a check started with <code>sc_wpun_run_check</code> overlaps a scheduled one, both can send the same update before either records it, so a notification can occasionally arrive twice. For update notices that is a fair trade for a simpler plugin. If your service must never receive the same message twice, keep your own record in <code>send()</code>, for example the notification's item keys and versions per instance, and skip what you already sent.</p>
+<p>The plugin does not lock update checks against each other. If a check started with <code>sc_wpun_run_check</code> or <code>wp updates-notifier check</code> overlaps a scheduled one, both can send the same update before either records it, so a notification can occasionally arrive twice. For update notices that is a fair trade for a simpler plugin. If your service must never receive the same message twice, keep your own record in <code>send()</code>, for example the notification's item keys and versions per instance, and skip what you already sent.</p>
 <h2 id="5-testing">5. Testing<a class="headerlink" href="#5-testing" title="Permanent link">&para;</a></h2>
 <p>The plugin's own tests show how to test a module with WordPress's PHPUnit test suite and mocked HTTP. <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php"><code>tests/wp/test-example-channel.php</code></a> tests the example add-on:</p>
 <ul>

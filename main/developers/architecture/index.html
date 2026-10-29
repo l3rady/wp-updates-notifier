@@ -291,6 +291,8 @@
       
         
       
+        
+      
     
     
     
@@ -472,6 +474,34 @@
     
   
     Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/wp-cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WP-CLI
   
 
     
@@ -1794,7 +1824,7 @@
     send --&gt; result["Delivery_Result&lt;br&gt;actions: sc_wpun_notification_sent / _failed"]
     result --&gt; state["Run state saved per instance&lt;br&gt;action: sc_wpun_after_update_check"]</code></pre>
 <h2 id="the-pieces">The pieces<a class="headerlink" href="#the-pieces" title="Permanent link">&para;</a></h2>
-<p><strong>Update check.</strong> WP-Cron runs the <code>sc_wpun_update_check</code> event at the frequency chosen on the settings screen. You can also run it on demand with <code>do_action( 'sc_wpun_run_check' )</code>: it works like a scheduled run, the notification's source is <code>manual</code> instead of <code>cron</code>, and the schedule is not changed. There is no lock between runs, by design: if a manual run overlaps a scheduled one, both can send the same update before either records it, so a notification can arrive twice. That is rare and harmless for update notices, so the plugin keeps the check simple. A channel that must never deliver twice can keep its own record of what it sent. The check asks WordPress for core, plugin and theme updates and turns each one into a <code>WPUN\Notification_Item</code>. The global settings decide what is looked at: WordPress updates (none, all or only major releases), plugins and themes (none, all or only active ones).</p>
+<p><strong>Update check.</strong> WP-Cron runs the <code>sc_wpun_update_check</code> event at the frequency chosen on the settings screen. You can also run it on demand with <code>do_action( 'sc_wpun_run_check' )</code>: it works like a scheduled run, the notification's source is <code>manual</code> instead of <code>cron</code>, and the schedule is not changed. From a system cron, use <code>wp updates-notifier check</code> (see <a href="../../users/wp-cli/">WP-CLI</a>): it runs the same check with the source <code>cli</code>, and has a dry run. The sources are <code>cron</code>, <code>manual</code> (the action), <code>cli</code> (WP-CLI) and <code>test</code> (a test message). There is no lock between runs, by design: if a manual run overlaps a scheduled one, both can send the same update before either records it, so a notification can arrive twice. That is rare and harmless for update notices, so the plugin keeps the check simple. A channel that must never deliver twice can keep its own record of what it sent. The check asks WordPress for core, plugin and theme updates and turns each one into a <code>WPUN\Notification_Item</code>. The global settings decide what is looked at: WordPress updates (none, all or only major releases), plugins and themes (none, all or only active ones).</p>
 <p><strong>Items.</strong> A <code>Notification_Item</code> is one thing waiting for an update: its <code>type</code> (<code>core</code>, <code>plugin</code>, <code>theme</code> or a type an add-on registers), a <code>key</code> that identifies it within the type (the plugin file, the theme stylesheet or <code>core</code>), a name, the installed and the available version, links, notes and machine-readable flags such as <code>active</code>. Add-ons can add their own items with the <code>sc_wpun_update_items</code> filter. See <a href="../item-types-and-routing/">Item types and routing</a>.</p>
 <p><strong>Global veto.</strong> <code>sc_wpun_should_notify_item</code> can stop an item from being reported anywhere. A vetoed item still counts as waiting, so its history is kept.</p>
 <p><strong>Notification.</strong> The items are wrapped in a <code>WPUN\Notification</code> with the site name, the site URL, the link to the Updates screen and some context, such as whether this is a test message. The <code>sc_wpun_notification</code> filter can change it before any channel sees it.</p>

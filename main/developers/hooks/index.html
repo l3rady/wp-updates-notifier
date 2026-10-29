@@ -291,6 +291,8 @@
       
         
       
+        
+      
     
     
     
@@ -472,6 +474,34 @@
     
   
     Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/wp-cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WP-CLI
   
 
     
@@ -4240,9 +4270,9 @@ Pass a frequency to schedule at it instead of the saved one; <code>manual</code>
 <p>Runs the update check now.</p>
 <p>It works as a scheduled run does: same routing, per-instance dedupe, delivery state and
 hooks, so items an instance was already told about are not sent again. The notification
-source is <code>manual</code> and the schedule is not changed. Use it from a deploy script, or from
-a system cron when <code>DISABLE_WP_CRON</code> is set, for example
-<code>wp eval "do_action( 'sc_wpun_run_check' );"</code>.</p>
+source is <code>manual</code> and the schedule is not changed. Use it from a deploy script. From a
+system cron, run <code>wp updates-notifier check</code> instead: it has a dry run, a force option and an
+exit status.</p>
 <p>There is no lock: a run that overlaps another check, scheduled or manual, can send an
 update the other is also sending, so it may arrive twice. A channel that must never
 deliver twice can keep its own record of what it sent.</p>

@@ -293,6 +293,8 @@
       
         
       
+        
+      
     
     
     
@@ -587,6 +589,34 @@
     
   
     Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wp-cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WP-CLI
   
 
     
@@ -1873,12 +1903,12 @@
 <p>Some channels, usually ones from add-ons that talk to an online service, can be told by the service to wait before trying again. This is the HTTP <code>Retry-After</code> header. The plugin then leaves that channel alone until the time is up, at most seven days, and <strong>Last delivery</strong> says <strong>Rate limited, next try after</strong> and the time. Other channels carry on. When the wait is over, the channel is sent everything that is new to it at the next check. The built-in email channel does not do this.</p>
 <p>A test message ignores the wait.</p>
 <h2 id="overlapping-checks">Overlapping checks<a class="headerlink" href="#overlapping-checks" title="Permanent link">&para;</a></h2>
-<p>The plugin does not lock checks against each other. If you click <strong>Check for updates and notify now</strong>, or something fires <code>sc_wpun_run_check</code>, while a scheduled check is running, both can send the same update before either records it. You then get the same notification twice. This is rare and harmless for update notices, so the plugin accepts it rather than adding a lock.</p>
+<p>The plugin does not lock checks against each other. If you click <strong>Check for updates and notify now</strong>, or something fires <code>sc_wpun_run_check</code> or runs <code>wp updates-notifier check</code>, while a scheduled check is running, both can send the same update before either records it. You then get the same notification twice. This is rare and harmless for update notices, so the plugin accepts it rather than adding a lock.</p>
 <h2 id="where-the-checks-come-from">Where the checks come from<a class="headerlink" href="#where-the-checks-come-from" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>The schedule.</strong> WP-Cron runs the check at the frequency you chose. See <a href="../settings/#frequency-to-check">Settings</a>.</li>
 <li><strong>The button.</strong> <strong>Check for updates and notify now</strong> runs the same check straight away and does not change the schedule.</li>
-<li><strong>Your own trigger.</strong> A system cron can start the check. See <a href="../troubleshooting/#how-do-i-run-the-check-from-a-system-cron">How do I run the check from a system cron?</a>.</li>
+<li><strong>Your own trigger.</strong> A system cron can run <code>wp updates-notifier check</code>. See <a href="../troubleshooting/#how-do-i-run-the-check-from-a-system-cron-or-wp-cli">How do I run the check from a system cron or WP-CLI?</a>.</li>
 </ul>
 <p>All three send only what is new.</p>
 <p>For the list of hooks that let developers change this, see the <a href="../../developers/hooks/">hook reference</a>.</p>

@@ -291,6 +291,8 @@
       
         
       
+        
+      
     
     
     
@@ -472,6 +474,34 @@
     
   
     Settings in code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/wp-cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WP-CLI
   
 
     
@@ -2447,6 +2477,12 @@ documented).</p>
 <td>Anyone triggers a run.</td>
 <td>Visitors can only trigger WP-Cron at its schedule, never on demand. <code>sc_wpun_run_check</code> is an action for trusted code only.</td>
 <td><code>test-run-check.php</code>, <code>test-scheduling.php</code>, <code>test-check-now.php</code>.</td>
+</tr>
+<tr>
+<td>E/I</td>
+<td>The WP-CLI commands (<code>wp updates-notifier</code>) run checks, send test messages and print the configuration.</td>
+<td>WP-CLI needs shell access to the site, which is already full control of it. The commands only register under WP-CLI. <code>status</code> shows a secret field only as <code>set</code> or <code>not set</code>, in every format, and shows no fields of an instance whose module is not registered. <code>check --dry-run</code> and <code>status</code> send and save nothing.</td>
+<td><code>test-cli-commands.php</code>, <code>test-cli-check.php</code>, <code>tests/flows/specs/cli.spec.js</code>.</td>
 </tr>
 </tbody>
 </table>
