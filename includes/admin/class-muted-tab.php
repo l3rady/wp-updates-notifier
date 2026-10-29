@@ -211,8 +211,7 @@ class Muted_Tab {
 					<?php
 					echo esc_html(
 						null === $row['name']
-							// translators: %s: Kind of item, for example "Plugin".
-							? sprintf( __( '%s, not installed', 'wp-updates-notifier' ), self::type_label( $row['type'] ) )
+							? sprintf( /* translators: %s: Kind of item, for example "Plugin". */ __( '%s, not installed', 'wp-updates-notifier' ), self::type_label( $row['type'] ) )
 							: self::type_label( $row['type'] )
 					);
 					?>
@@ -221,15 +220,13 @@ class Muted_Tab {
 			</td>
 			<td class="sc-wpun-muted-mute" data-colname="<?php esc_attr_e( 'Mute', 'wp-updates-notifier' ); ?>">
 				<?php
-				// translators: %s: Version that is skipped.
-				echo esc_html( null === $row['until'] ? __( 'Always', 'wp-updates-notifier' ) : sprintf( __( 'Version %s', 'wp-updates-notifier' ), $row['until'] ) );
+				echo esc_html( null === $row['until'] ? __( 'Always', 'wp-updates-notifier' ) : sprintf( /* translators: %s: Version that is skipped. */ __( 'Version %s', 'wp-updates-notifier' ), $row['until'] ) );
 				?>
 			</td>
 			<td class="sc-wpun-muted-by" data-colname="<?php esc_attr_e( 'Muted by', 'wp-updates-notifier' ); ?>"><?php echo esc_html( self::muted_by( $row ) ); ?></td>
 			<td class="sc-wpun-muted-status" data-colname="<?php esc_attr_e( 'Status', 'wp-updates-notifier' ); ?>">
 				<?php
-				// translators: %s: Version of the update that is waiting.
-				echo esc_html( null === $row['offered'] ? __( 'No update waiting', 'wp-updates-notifier' ) : sprintf( __( 'Update to %s waiting', 'wp-updates-notifier' ), $row['offered'] ) );
+				echo esc_html( null === $row['offered'] ? __( 'No update waiting', 'wp-updates-notifier' ) : sprintf( /* translators: %s: Version of the update that is waiting. */ __( 'Update to %s waiting', 'wp-updates-notifier' ), $row['offered'] ) );
 				?>
 			</td>
 			<td class="sc-wpun-muted-unmute" data-colname="<?php esc_attr_e( 'Unmute', 'wp-updates-notifier' ); ?>">
@@ -242,7 +239,11 @@ class Muted_Tab {
 						<input type="hidden" name="type" value="<?php echo esc_attr( $row['type'] ); ?>" />
 						<input type="hidden" name="key" value="<?php echo esc_attr( $row['key'] ); ?>" />
 						<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( self::REMOVE_ACTION . '|' . $row['type'] . '|' . $row['key'] ) ); ?>" />
-						<button type="submit" class="button-link" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: Name of the plugin or theme. */ __( 'Unmute %s', 'wp-updates-notifier' ), $title ) ); ?>"><?php esc_html_e( 'Unmute', 'wp-updates-notifier' ); ?></button>
+						<?php
+						/* translators: %s: Name of the plugin or theme. */
+						$unmute_label = sprintf( __( 'Unmute %s', 'wp-updates-notifier' ), $title );
+						?>
+						<button type="submit" class="button-link" aria-label="<?php echo esc_attr( $unmute_label ); ?>"><?php esc_html_e( 'Unmute', 'wp-updates-notifier' ); ?></button>
 					</form>
 				<?php endif; ?>
 			</td>

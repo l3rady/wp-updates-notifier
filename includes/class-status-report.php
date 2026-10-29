@@ -159,8 +159,12 @@ class Status_Report {
 	 * @return string
 	 */
 	public static function describe_mute( ?string $until ): string {
+		if ( null === $until ) {
+			return __( 'always', 'wp-updates-notifier' );
+		}
+
 		// translators: %s: Version that is skipped.
-		return null === $until ? __( 'always', 'wp-updates-notifier' ) : sprintf( __( 'version %s', 'wp-updates-notifier' ), $until );
+		return sprintf( __( 'version %s', 'wp-updates-notifier' ), $until );
 	}
 
 	/**
