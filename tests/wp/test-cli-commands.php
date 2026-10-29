@@ -427,7 +427,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 		$data = json_decode( $out, true );
 
 		$this->assertStringNotContainsString( self::SECRET, $out );
-		$this->assertSame( array( 'settings', 'schedule', 'channels', 'pending' ), array_keys( $data ) );
+		$this->assertSame( array( 'settings', 'schedule', 'channels', 'muted', 'pending' ), array_keys( $data ) );
 		$this->assertSame( 'daily', $data['schedule']['frequency'] );
 		$this->assertSame( 'a', $data['channels'][0]['id'] );
 		$this->assertSame( 'available', $data['channels'][0]['availability'] );
@@ -550,5 +550,193 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 		( new Channels_Command() )->list_( array(), array() );
 
 		$this->assertMatchesRegularExpression( '/a\tA label\tclicmd\tavailable\tyes\tno\tsuccess, \d{4}-\d\d-\d\d .*: Delivered\./', WP_CLI::text() );
+	}
+
+	/**
+	 * Run mute, unmute or muted with arguments and return the message of the error it ended with, or null.
+	 *
+	 * @param string $method Method of the command.
+	 * @param array  $args   Positional arguments.
+	 * @param array  $assoc  Flags.
+	 * @return string|null
+	 */
+	private function fails_with( $method, array $args, array $assoc = array() ) {
+		try {
+			( new Updates_Notifier_Command() )->$method( $args, $assoc );
+		} catch ( Test_Cli_Error $e ) {
+			return $e->getMessage();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Plugins are found by directory, by file, by single file name with or without .php, and themes by stylesheet.
+	 */
+	public function test_mute_resolves_names_like_wp_plugin() {
+		delete_option( 'sc_wpun_muted' );
+		$events = array();
+		add_action(
+			'sc_wpun_item_muted',
+			function ( $mute, $source ) use ( &$events ) {
+				$events[] = array( $mute->get_key(), $source );
+			},
+			10,
+			2
+		);
+		$theme = get_stylesheet();
+		$own   = plugin_basename( SC_WPUN_FILE ); // A plugin in a directory.
+
+		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello', dirname( $own ) ) ) );
+		$this->assertNull( $this->fails_with( 'mute', array( 'theme', $theme ) ) );
+
+		$this->assertNotNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+		$this->assertNotNull( sc_wpun_mutes()->get( 'plugin', $own ) );
+		$this->assertNotNull( sc_wpun_mutes()->get( 'theme', $theme ) );
+		$this->assertSame( array( 'hello.php', $own, $theme ), array_column( $events, 0 ) );
+		$this->assertSame( array( 'cli' ), array_unique( array_column( $events, 1 ) ) );
+		$this->assertStringContainsString( 'are muted', WP_CLI::text() );
+	}
+
+	/**
+	 * An unknown name is an error, but the other names are still handled first.
+	 */
+	public function test_mute_unknown_name_fails_after_handling_the_rest() {
+		delete_option( 'sc_wpun_muted' );
+
+		$error = $this->fails_with( 'mute', array( 'plugin', 'nope', 'hello.php' ) );
+
+		$this->assertSame( '1 of 2 could not be changed.', $error );
+		$this->assertStringContainsString( 'Error: The plugin "nope" is not installed.', WP_CLI::text() );
+		$this->assertNotNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+
+		WP_CLI::reset();
+		$this->assertNotNull( $this->fails_with( 'mute', array( 'theme', 'nope' ) ) );
+		$this->assertStringContainsString( 'The theme "nope" is not installed.', WP_CLI::text() );
+		$this->assertNotNull( $this->fails_with( 'mute', array( 'widget', 'x' ) ) );
+		$this->assertNotNull( $this->fails_with( 'mute', array( 'plugin' ) ) );
+	}
+
+	/**
+	 * Muting twice the same way is a warning; a different way changes the mute.
+	 */
+	public function test_mute_again_warns_and_until_next_version_skips_the_waiting_version() {
+		delete_option( 'sc_wpun_muted' );
+		$this->waiting();
+
+		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'until-next-version' => true ) ) );
+		$this->assertSame( '2.0.0', sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_until() );
+		$this->assertStringContainsString( 'version 2.0.0 are skipped', WP_CLI::text() );
+
+		WP_CLI::reset();
+		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'until-next-version' => true ) ) );
+		$this->assertSame( 'Warning: Hello Dolly is already muted that way.', WP_CLI::text() );
+
+		WP_CLI::reset();
+		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ) ) );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_until(), 'Muting for good replaces the skip.' );
+
+		WP_CLI::reset();
+		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ) ) );
+		$this->assertStringContainsString( 'Warning: ', WP_CLI::text() );
+	}
+
+	/**
+	 * Skipping a version needs an update to be waiting.
+	 */
+	public function test_mute_until_next_version_without_an_update_fails() {
+		delete_option( 'sc_wpun_muted' );
+		$this->set_updates();
+
+		$error = $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'until-next-version' => true ) );
+
+		$this->assertNotNull( $error );
+		$this->assertStringContainsString( 'No update is waiting for', WP_CLI::text() );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+	}
+
+	/**
+	 * A filter that refuses a mute shows its message and fails.
+	 */
+	public function test_mute_refusal_is_an_error_with_the_message() {
+		delete_option( 'sc_wpun_muted' );
+		$refuse = function () {
+			return new WP_Error( 'policy', 'Security plugins stay on.' );
+		};
+		add_filter( 'sc_wpun_pre_mute', $refuse );
+
+		$error = $this->fails_with( 'mute', array( 'plugin', 'hello' ) );
+		remove_filter( 'sc_wpun_pre_mute', $refuse );
+
+		$this->assertNotNull( $error );
+		$this->assertStringContainsString( 'Error: Security plugins stay on.', WP_CLI::text() );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+	}
+
+	/**
+	 * Unmute removes the mute with source cli, warns when there is none, and reports a refusal.
+	 */
+	public function test_unmute() {
+		delete_option( 'sc_wpun_muted' );
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+		$sources = array();
+		add_action(
+			'sc_wpun_item_unmuted',
+			function ( $mute, $source ) use ( &$sources ) {
+				$sources[] = $source;
+			},
+			10,
+			2
+		);
+
+		$this->assertNull( $this->fails_with( 'unmute', array( 'plugin', 'hello' ) ) );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+		$this->assertSame( array( 'cli' ), $sources );
+		$this->assertStringContainsString( 'are on again', WP_CLI::text() );
+
+		WP_CLI::reset();
+		$this->assertNull( $this->fails_with( 'unmute', array( 'plugin', 'hello' ) ) );
+		$this->assertSame( 'Warning: Hello Dolly is not muted.', WP_CLI::text() );
+
+		WP_CLI::reset();
+		$this->assertSame( '1 of 1 could not be changed.', $this->fails_with( 'unmute', array( 'plugin', 'nope' ) ) );
+
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+		$refuse = function () {
+			return new WP_Error( 'policy', 'Ask the maintainer.' );
+		};
+		add_filter( 'sc_wpun_pre_unmute', $refuse );
+		WP_CLI::reset();
+		$this->assertNotNull( $this->fails_with( 'unmute', array( 'plugin', 'hello' ) ) );
+		remove_filter( 'sc_wpun_pre_unmute', $refuse );
+		$this->assertStringContainsString( 'Error: Ask the maintainer.', WP_CLI::text() );
+		$this->assertNotNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+	}
+
+	/**
+	 * The list shows each mute, the count format counts, and status has the Muted section.
+	 */
+	public function test_muted_list_count_and_status_section() {
+		delete_option( 'sc_wpun_muted' );
+		$this->waiting();
+		$user_id = self::factory()->user->create( array( 'user_login' => 'muter' ) );
+		wp_set_current_user( $user_id );
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php', '2.0.0' );
+
+		$out = $this->run_command( 'muted' );
+		$this->assertStringContainsString( "type\tname\tkey\tmute\tset_in_code\tmuted_by\tmuted_at\tupdate", $out );
+		$this->assertMatchesRegularExpression( '/plugin\tHello Dolly\thello\.php\tversion 2\.0\.0\tno\tmuter\t\d{4}-\d\d-\d\d [^\t]+\t2\.0\.0/', $out );
+
+		WP_CLI::reset();
+		$this->assertSame( '1', $this->run_command( 'muted', array( 'format' => 'count' ) ) );
+
+		WP_CLI::reset();
+		$status = $this->run_command( 'status' );
+		$this->assertStringContainsString( "Muted\ntype\tname\tkey", $status );
+		$this->assertStringContainsString( "hello.php\tversion 2.0.0", $status );
+
+		WP_CLI::reset();
+		$data = json_decode( $this->run_command( 'status', array( 'format' => 'json' ) ), true );
+		$this->assertSame( 'hello.php', $data['muted'][0]['key'] );
 	}
 }

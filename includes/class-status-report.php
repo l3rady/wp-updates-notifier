@@ -100,13 +100,14 @@ class Status_Report {
 	/**
 	 * Everything the status command shows.
 	 *
-	 * @return array{settings: array<int, array{setting: string, value: string, source: string}>, schedule: array{frequency: string, next_run: string, last_check: string}, channels: Channel_Row[], pending: array<int, array{id: string, label: string, status: string, items: array<int, array{type: string, key: string, name: string, current_version: string, new_version: string, new: bool}>}>}
+	 * @return array{settings: array<int, array{setting: string, value: string, source: string}>, schedule: array{frequency: string, next_run: string, last_check: string}, channels: Channel_Row[], muted: Muted_Row[], pending: array<int, array{id: string, label: string, status: string, items: array<int, array{type: string, key: string, name: string, current_version: string, new_version: string, new: bool}>}>}
 	 */
 	public function all(): array {
 		return array(
 			'settings' => $this->settings(),
 			'schedule' => $this->schedule(),
 			'channels' => $this->channels(),
+			'muted'    => $this->muted(),
 			'pending'  => $this->pending(),
 		);
 	}
@@ -148,6 +149,18 @@ class Status_Report {
 		}
 
 		return $rows;
+	}
+
+	/**
+	 * What kind of mute it is, in words.
+	 *
+	 * @param string|null $until The version a mute skips, or null for a mute that is always on.
+	 *
+	 * @return string
+	 */
+	public static function describe_mute( ?string $until ): string {
+		// translators: %s: Version that is skipped.
+		return null === $until ? __( 'always', 'wp-updates-notifier' ) : sprintf( __( 'version %s', 'wp-updates-notifier' ), $until );
 	}
 
 	/**

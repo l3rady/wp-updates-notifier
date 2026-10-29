@@ -61,6 +61,9 @@ namespace {
 
 		public static function error( $message, $exit = true ) {
 			self::$output[] = 'Error: ' . $message;
+			if ( false === $exit ) {
+				return;
+			}
 			throw new Test_Cli_Error( $message );
 		}
 
@@ -92,6 +95,11 @@ namespace WP_CLI\Utils {
 				$row[ $field ] = $item[ $field ] ?? '';
 			}
 			$rows[] = $row;
+		}
+
+		if ( 'count' === $format ) {
+			\WP_CLI::line( count( $rows ) );
+			return;
 		}
 
 		if ( 'json' === $format ) {

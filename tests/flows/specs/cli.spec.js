@@ -35,7 +35,7 @@ test.describe( 'wp updates-notifier', () => {
 		expect( result.stdout ).not.toContain( SECRET );
 		expect( result.stderr ).not.toContain( SECRET );
 		const data = JSON.parse( result.stdout );
-		expect( Object.keys( data ) ).toEqual( [ 'settings', 'schedule', 'channels', 'pending' ] );
+		expect( Object.keys( data ) ).toEqual( [ 'settings', 'schedule', 'channels', 'muted', 'pending' ] );
 		const showcase = data.channels.find( ( c ) => c.id === 'showcase' );
 		expect( showcase.fields.find( ( f ) => f.field === 'secret_plain' ).value ).toBe( 'set' );
 
@@ -86,5 +86,28 @@ test.describe( 'wp updates-notifier', () => {
 		expect( unknown.code ).not.toBe( 0 );
 		expect( unknown.stderr ).toContain( 'There is no channel instance "nope".' );
 		await expectNoMail( request );
+	} );
+
+	test( 'mute, muted and unmute work from the command line, and an unknown name exits non-zero', async ( { request } ) => {
+		const muted = await wpResult( request, 'updates-notifier', 'mute', 'plugin', 'example-gallery' );
+
+		expect( muted.code, muted.stderr ).toBe( 0 );
+		const list = await wpResult( request, 'updates-notifier', 'muted', '--format=json' );
+		const rows = JSON.parse( list.stdout );
+		expect( rows ).toHaveLength( 1 );
+		expect( rows[ 0 ] ).toMatchObject( { type: 'plugin', key: 'example-gallery/example-gallery.php', mute: 'always', set_in_code: 'no' } );
+		expect( ( await wpResult( request, 'updates-notifier', 'muted', '--format=count' ) ).stdout.trim() ).toBe( '1' );
+
+		const again = await wpResult( request, 'updates-notifier', 'mute', 'plugin', 'example-gallery' );
+		expect( again.code ).toBe( 0 );
+		expect( again.stderr ).toContain( 'already muted' );
+
+		const unknown = await wpResult( request, 'updates-notifier', 'mute', 'plugin', 'nope' );
+		expect( unknown.code ).not.toBe( 0 );
+		expect( unknown.stderr ).toContain( 'The plugin "nope" is not installed.' );
+
+		const unmuted = await wpResult( request, 'updates-notifier', 'unmute', 'plugin', 'example-gallery' );
+		expect( unmuted.code, unmuted.stderr ).toBe( 0 );
+		expect( ( await wpResult( request, 'updates-notifier', 'muted', '--format=count' ) ).stdout.trim() ).toBe( '0' );
 	} );
 } );

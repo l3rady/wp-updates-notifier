@@ -7,6 +7,7 @@
 
 namespace WPUN\CLI;
 
+use WPUN\Admin\Mute_Actions;
 use WPUN\Channel_Instance;
 use WPUN\Notification_Renderer;
 use WPUN\Status_Report;
@@ -22,6 +23,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @internal
  */
 class Updates_Notifier_Command {
+	/**
+	 * The columns of the list of muted items.
+	 *
+	 * @var string[]
+	 */
+	const MUTED_FIELDS = array( 'type', 'name', 'key', 'mute', 'set_in_code', 'muted_by', 'muted_at', 'update' );
+
 	/**
 	 * Runs the update check now, as the scheduled one does.
 	 *
@@ -225,6 +233,9 @@ class Updates_Notifier_Command {
 			}
 		}
 
+		\WP_CLI::line( __( 'Muted', 'wp-updates-notifier' ) );
+		\WP_CLI\Utils\format_items( 'table', $this->muted_rows( $data['muted'] ), self::MUTED_FIELDS );
+
 		\WP_CLI::line( __( 'Pending updates', 'wp-updates-notifier' ) );
 		foreach ( $data['pending'] as $pending ) {
 			// translators: 1: Id of a channel instance. 2: What it would do, for example "send".
@@ -235,6 +246,229 @@ class Updates_Notifier_Command {
 			unset( $item );
 			\WP_CLI\Utils\format_items( 'table', $pending['items'], array( 'type', 'name', 'current_version', 'new_version', 'new' ) );
 		}
+	}
+
+	/**
+	 * Mutes plugins or themes, so their updates are left out of the notifications.
+	 *
+	 * Every name is handled, then the command exits with an error if any of them failed. A name that is already muted the same way is only a warning. A mute set in code, or one a `sc_wpun_pre_mute` filter refuses, is an error. The change is reported to `sc_wpun_item_muted` with the source `cli`.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <plugin|theme>
+	 * : What the names are.
+	 *
+	 * <name>...
+	 * : One or more plugins or themes. A plugin is its directory name (or its file for a single-file plugin) or its full file path, as for `wp plugin`. A theme is its stylesheet.
+	 *
+	 * [--until-next-version]
+	 * : Skip only the version that is waiting now. Notifications start again when a newer version is offered. Fails for an item with no update waiting.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Never notify about this plugin.
+	 *     wp updates-notifier mute plugin akismet
+	 *
+	 *     # Skip the version of a theme that is waiting.
+	 *     wp updates-notifier mute theme twentytwentyfive --until-next-version
+	 *
+	 * @param string[]             $args       Positional arguments.
+	 * @param array<string, mixed> $assoc_args Flags.
+	 *
+	 * @return void
+	 */
+	public function mute( $args, $assoc_args ) {
+		$skip = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'until-next-version', false );
+		$this->each(
+			$args,
+			function ( string $type, string $key, string $name ) use ( $skip ): ?string {
+				$store    = sc_wpun()->mute_store();
+				$existing = $store->get( $type, $key );
+				$until    = $skip ? $store->offered_version( $type, $key ) : null;
+				if ( null !== $existing && ! $existing->is_from_code() && ( ! $skip || null !== $until ) && $existing->get_until() === $until ) {
+					// translators: %s: Name of the plugin or theme.
+					\WP_CLI::warning( sprintf( __( '%s is already muted that way.', 'wp-updates-notifier' ), $name ) );
+					return null;
+				}
+
+				$result = ( new Mute_Actions( $store ) )->mute( $type, $key, 'cli', $skip );
+				if ( ! $result[0] ) {
+					return $result[1];
+				}
+				\WP_CLI::log( $result[1] );
+				return null;
+			}
+		);
+	}
+
+	/**
+	 * Turns update notifications on again for muted plugins or themes.
+	 *
+	 * Every name is handled, then the command exits with an error if any of them failed. A name that is not muted is only a warning. A mute set in code, or one a `sc_wpun_pre_unmute` filter refuses to remove, is an error. The change is reported to `sc_wpun_item_unmuted` with the source `cli`.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <plugin|theme>
+	 * : What the names are.
+	 *
+	 * <name>...
+	 * : One or more plugins or themes, named as for `wp updates-notifier mute`.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp updates-notifier unmute plugin akismet
+	 *
+	 * @param string[]             $args       Positional arguments.
+	 * @param array<string, mixed> $assoc_args Flags.
+	 *
+	 * @return void
+	 */
+	public function unmute( $args, $assoc_args ) {
+		unset( $assoc_args );
+		$this->each(
+			$args,
+			function ( string $type, string $key, string $name ): ?string {
+				$store = sc_wpun()->mute_store();
+				if ( null === $store->get( $type, $key ) ) {
+					// translators: %s: Name of the plugin or theme.
+					\WP_CLI::warning( sprintf( __( '%s is not muted.', 'wp-updates-notifier' ), $name ) );
+					return null;
+				}
+
+				$result = ( new Mute_Actions( $store ) )->unmute( $type, $key, 'cli' );
+				if ( ! $result[0] ) {
+					return $result[1];
+				}
+				\WP_CLI::log( $result[1] );
+				return null;
+			}
+		);
+	}
+
+	/**
+	 * Lists the muted plugins and themes.
+	 *
+	 * Includes the mutes set in code, and leaves out a skipped version once a newer one is offered. `update` is the version waiting now, if any.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--format=<format>]
+	 * : Render the list in this format.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - csv
+	 *   - yaml
+	 *   - count
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp updates-notifier muted
+	 *     wp updates-notifier muted --format=json
+	 *
+	 * @param string[]             $args       Positional arguments.
+	 * @param array<string, mixed> $assoc_args Flags.
+	 *
+	 * @return void
+	 */
+	public function muted( $args, $assoc_args ) {
+		unset( $args );
+		$format = (string) \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
+		\WP_CLI\Utils\format_items( $format, $this->muted_rows( sc_wpun()->status_report()->muted() ), self::MUTED_FIELDS );
+	}
+
+	/**
+	 * Resolve the names of a mute or unmute command and run the action on each, then fail if any failed.
+	 *
+	 * @param string[]                                  $args   Type, then names.
+	 * @param callable(string, string, string): ?string $action Does one item; returns an error message, or null.
+	 *
+	 * @return void
+	 */
+	private function each( array $args, callable $action ): void {
+		$type  = (string) array_shift( $args );
+		$names = $args;
+		if ( ! in_array( $type, array( 'plugin', 'theme' ), true ) || array() === $names ) {
+			\WP_CLI::error( __( 'Say whether the names are plugins or themes, then one or more names.', 'wp-updates-notifier' ) );
+		}
+
+		$installed = ( new Mute_Actions( sc_wpun()->mute_store() ) )->installed()[ $type ];
+		$failed    = 0;
+		foreach ( $names as $name ) {
+			$key = $this->resolve( $type, (string) $name, array_keys( $installed ) );
+			if ( null === $key ) {
+				$message = 'plugin' === $type
+					// translators: %s: Name given on the command line.
+					? sprintf( __( 'The plugin "%s" is not installed.', 'wp-updates-notifier' ), $name )
+					// translators: %s: Name given on the command line.
+					: sprintf( __( 'The theme "%s" is not installed.', 'wp-updates-notifier' ), $name );
+			} else {
+				$message = $action( $type, $key, $installed[ $key ] );
+			}
+			if ( null !== $message ) {
+				++$failed;
+				\WP_CLI::error( $message, false );
+			}
+		}
+
+		if ( $failed > 0 ) {
+			// translators: 1: Number of names that failed. 2: Number of names.
+			\WP_CLI::error( sprintf( __( '%1$d of %2$d could not be changed.', 'wp-updates-notifier' ), $failed, count( $names ) ) );
+		}
+	}
+
+	/**
+	 * The key of an installed item for a name given on the command line.
+	 *
+	 * @param string   $type Item type.
+	 * @param string   $name Name given.
+	 * @param string[] $keys Keys of the installed items.
+	 *
+	 * @return string|null Null if nothing matches.
+	 */
+	private function resolve( string $type, string $name, array $keys ): ?string {
+		if ( in_array( $name, $keys, true ) ) {
+			return $name; // The plugin file or the stylesheet.
+		}
+		if ( 'plugin' !== $type ) {
+			return null;
+		}
+		foreach ( $keys as $file ) {
+			if ( dirname( $file ) === $name || ( false === strpos( $file, '/' ) && $file === $name . '.php' ) ) {
+				return $file; // The directory, or a single-file plugin without its extension.
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * The rows of the muted list as the commands print them.
+	 *
+	 * @param array<int, array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string}> $rows From Status_Report::muted().
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function muted_rows( array $rows ): array {
+		$out = array();
+		foreach ( $rows as $row ) {
+			$user  = $row['user'] > 0 ? get_userdata( $row['user'] ) : false;
+			$out[] = array(
+				'type'        => $row['type'],
+				'name'        => (string) $row['name'],
+				'key'         => $row['key'],
+				'mute'        => Status_Report::describe_mute( $row['until'] ),
+				'set_in_code' => $row['from_code'] ? 'yes' : 'no',
+				'muted_by'    => false === $user ? '' : $user->user_login,
+				'muted_at'    => $row['time'] > 0 ? Status_Report::format_time( $row['time'] ) : '',
+				'update'      => (string) $row['offered'],
+			);
+		}
+
+		return $out;
 	}
 
 	/**

@@ -413,6 +413,27 @@ class Test_Site_Health extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The muted items show by name and kind, without user names, and "None" when there are none.
+	 */
+	public function test_debug_info_lists_muted_items_without_users() {
+		delete_option( 'sc_wpun_muted' );
+		$section = apply_filters( 'debug_information', array() )[ Site_Health::SECTION ];
+		$this->assertSame( 'None', $section['fields']['muted']['value'] );
+
+		$user_id = self::factory()->user->create( array( 'user_login' => 'secretmuter' ) );
+		wp_set_current_user( $user_id );
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+		sc_wpun_mutes()->mute( 'plugin', 'gone/gone.php', '3.0.0' );
+
+		$section = apply_filters( 'debug_information', array() )[ Site_Health::SECTION ];
+
+		$this->assertSame( 'Muted plugins and themes', $section['fields']['muted']['label'] );
+		$this->assertSame( 'Hello Dolly (plugin, always); gone/gone.php (plugin, version 3.0.0)', $section['fields']['muted']['value'] );
+		$this->assertStringNotContainsString( 'secretmuter', wp_json_encode( $section ) );
+		delete_option( 'sc_wpun_muted' );
+	}
+
+	/**
 	 * The source of a setting shows, and a value that is not valid is listed by key and source only.
 	 */
 	public function test_debug_info_shows_sources_and_config_problems() {

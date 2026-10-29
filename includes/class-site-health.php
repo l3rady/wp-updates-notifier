@@ -304,6 +304,15 @@ class Site_Health {
 			);
 		}
 
+		$muted = array();
+		foreach ( $this->report->muted() as $row ) {
+			$muted[] = sprintf( '%s (%s, %s%s)', $row['name'] ?? $row['key'], $row['type'], Status_Report::describe_mute( $row['until'] ), $row['from_code'] ? ', ' . __( 'set in code', 'wp-updates-notifier' ) : '' );
+		}
+		$fields['muted'] = array(
+			'label' => __( 'Muted plugins and themes', 'wp-updates-notifier' ),
+			'value' => array() === $muted ? __( 'None', 'wp-updates-notifier' ) : implode( '; ', $muted ),
+		);
+
 		foreach ( $this->problems() as $index => $problem ) {
 			$fields[ 'problem_' . $index ] = array(
 				'label' => __( 'Configuration problem', 'wp-updates-notifier' ),
