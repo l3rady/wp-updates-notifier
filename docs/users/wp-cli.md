@@ -1,6 +1,6 @@
 # WP-CLI
 
-The plugin adds commands to [WP-CLI](https://wp-cli.org/) under `wp updates-notifier`. Use them to run the check from a system cron, to see what a check would do, to test your channels and to see the state of the plugin.
+The plugin adds commands to [WP-CLI](https://wp-cli.org/) under `wp updates-notifier`. Use them to run the check from a system cron, to see what a check would do, to test your channels, to mute plugins and themes and to see the state of the plugin.
 
 Run them from the site's directory, or add `--path=/path/to/site`.
 
@@ -68,7 +68,7 @@ Success: Test message sent through Office.
 
 ## status
 
-Shows the settings, the schedule, the channels and the updates that are waiting.
+Shows the settings, the schedule, the channels, the mutes and the updates that are waiting.
 
 ```
 wp updates-notifier status [--format=<table|json>]
@@ -79,6 +79,7 @@ It shows:
 - **Settings.** The value of each setting and where it comes from: `database`, or for example a constant.
 - **Schedule.** The frequency, when the next check is due and when the last one ran, in the site's time zone.
 - **Channels.** For each channel instance: the module, whether the module is available, whether it is switched on, whether it is defined in code, the last delivery result, the last failure and the time it must wait until. Then its settings, each with its source.
+- **Muted.** The plugins and themes that are [muted](muting.md), as `muted` lists them.
 - **Pending updates.** For each channel instance, what is waiting for it, and which of that is new to it and which it was told about already.
 
 Sample output:
@@ -101,8 +102,61 @@ office  Office  email   available     yes      no            success, 2026-01-01
 
 **Exit code.** 0.
 
+In the JSON the sections are `settings`, `schedule`, `channels`, `muted` and `pending`. `muted` is a list with one entry for each mute, with the keys `type`, `key`, `name` (null if the item is not installed), `until` (null for an always-on mute), `from_code`, `time`, `user` (a user id, 0 if none) and `offered` (the version waiting, or null).
+
 !!! note
     To find what is waiting, `status` does a dry run of the check. It sends and saves nothing, but it asks WordPress to refresh its update data, as `check --dry-run` does.
+
+## mute
+
+Mutes plugins or themes, so the notifications leave them out. See [Muting a plugin or theme](muting.md) for what that does.
+
+```
+wp updates-notifier mute <plugin|theme> <name>... [--until-next-version]
+```
+
+A plugin is named as for `wp plugin`: its directory name, its file for a single-file plugin, or its full file path from the plugins directory. A theme is named by its stylesheet. Names must be installed.
+
+| Option | What it does |
+| --- | --- |
+| `--until-next-version` | Skips only the version that is waiting now, so a newer version is notified again. It fails for an item with no update waiting. |
+
+```
+wp updates-notifier mute plugin akismet hello.php
+wp updates-notifier mute theme twentytwentyfive --until-next-version
+```
+
+Muting an item that is already muted the same way is a warning, not an error. Every name is handled even if one fails. A mute that is set in code, or that a site's code refuses, is an error with the reason.
+
+**Exit codes.** 0 when every name was handled. 1 when a name is not installed, there is no update to skip, or a mute was refused. The last line then says how many names failed.
+
+## unmute
+
+Turns notifications on again.
+
+```
+wp updates-notifier unmute <plugin|theme> <name>...
+```
+
+Unmuting an item that is not muted is a warning. A mute that is set in code, or that a site's code refuses to remove, is an error. Names and exit codes are as for `mute`.
+
+## muted
+
+Lists the muted plugins and themes, including the ones set in code.
+
+```
+wp updates-notifier muted [--format=<table|json|csv|yaml|count>]
+```
+
+The columns are `type`, `name`, `key`, `mute` (`always` or `version X`), `set_in_code`, `muted_by` (a user name, empty if not known), `muted_at` and `update` (the version waiting, if any). `--format=count` prints only the number.
+
+```
+type    name         key                           mute          set_in_code  muted_by  muted_at                 update
+plugin  Akismet      akismet/akismet.php           always        no           admin     2026-01-01 08:00:01 UTC
+plugin  Hello Dolly  hello.php                     version 1.7.3 no           admin     2026-01-01 08:05:12 UTC  1.7.3
+```
+
+**Exit code.** 0.
 
 ## channels list
 

@@ -4,6 +4,8 @@ The **General** tab of **Settings → Updates Notifier** holds the settings that
 
 Click **Save settings** after you change anything.
 
+To stop the notifications about one plugin or theme, use the **Muted** tab. See [Muting a plugin or theme](muting.md).
+
 ## Status
 
 - **Last checked**: when the plugin last ran a check, in your site's time zone, or "never".

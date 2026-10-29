@@ -85,7 +85,7 @@ add_filter(
 );
 ```
 
-To stop an item from going anywhere, use `sc_wpun_should_notify_item` instead. A vetoed item still counts as waiting, so it is not sent again as new when you stop vetoing it.
+To stop an item from going anywhere, use `sc_wpun_should_notify_item` instead. A vetoed item still counts as waiting, so it is not sent again as new when you stop vetoing it. Since 3.0.0 the default is false for a muted item, so a callback that returns `true` whatever it is given unmutes everything: pass `$notify` on instead. To mute an item, see [Muting from code](muting-from-code.md).
 
 ## In a channel
 

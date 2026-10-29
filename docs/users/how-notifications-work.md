@@ -7,6 +7,7 @@ On every check the plugin asks WordPress which updates are waiting. It then send
 - The plugin remembers, for each channel, the version of each plugin, theme and WordPress it has reported. If the update is still waiting at the next check, nothing is sent.
 - A newer version is a new update. If a plugin goes from 2.0 to 2.1 and then 2.2 is released before you update, you are told about 2.2 as well.
 - Once an update is no longer waiting, for example because you installed it, the plugin forgets it.
+- A [muted](muting.md) plugin or theme is left out of the message, but it still counts as waiting. Unmuting it does not send an update the channel was already told about, and sends one it was never told about at the next check.
 - Each channel keeps its own record. Adding a channel does not cause the others to send again.
 
 A check sends one message to each channel, listing everything that is new to that channel. It does not send one message per update. If nothing is new, nothing is sent.
@@ -17,6 +18,7 @@ Updates that a channel does not receive because of its [routing](channels.md#cho
 
 A channel can repeat the updates you have not installed yet. Set **Reminders** to **Daily** or **Weekly** in the channel's [routing](channels.md#reminders). The default is **Never**.
 
+- A [muted](muting.md) plugin or theme is not in a reminder.
 - The reminder is one message listing all updates still waiting for that channel, not only the ones that were reported before. It is marked as a reminder (see below).
 - New updates are not held back. They are sent at once, as a normal message.
 - If a new update is found in the same check as a reminder that is due, you get one message: the reminder, with the new update in it. You never get two.

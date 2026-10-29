@@ -22,10 +22,11 @@ Because the check is due as soon as you activate the plugin, the first one runs 
 
 ## Open the settings
 
-Go to **Settings → Updates Notifier**. There are two tabs:
+Go to **Settings → Updates Notifier**. There are three tabs:
 
 - **General**: the Status line, the **Check for updates and notify now** button, and the settings. See [Settings](settings.md).
 - **Channels**: where notifications are sent. See [Channels](channels.md).
+- **Muted**: the plugins and themes whose notifications are switched off. See [Muting a plugin or theme](muting.md).
 
 By default you need the `manage_options` capability to see them, which administrators have. On a multisite network you need `manage_network_options`, which only super admins have.
 
