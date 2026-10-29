@@ -119,7 +119,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 
 		$this->assertSame( 1, $xpath->query( '//div[@class="wrap"]/h1' )->length );
 		$this->assertSame( 1, $xpath->query( '//nav[@class="nav-tab-wrapper"][@aria-label]' )->length );
-		$this->assertSame( array( 'general', 'channels', 'about' ), $this->tab_slugs( $xpath ) );
+		$this->assertSame( array( 'general', 'channels', 'muted', 'about' ), $this->tab_slugs( $xpath ) );
 		$active = $xpath->query( '//a[contains(@class,"nav-tab-active")]' );
 		$this->assertSame( 1, $active->length );
 		$this->assertSame( 'page', $active->item( 0 )->getAttribute( 'aria-current' ) );
@@ -152,7 +152,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		$_GET['tab'] = 'channels';
 		$xpath       = $this->xpath( $this->html() );
 
-		$this->assertSame( array( 'general', 'channels', 'about' ), $this->tab_slugs( $xpath ) );
+		$this->assertSame( array( 'general', 'channels', 'muted', 'about' ), $this->tab_slugs( $xpath ) );
 		$this->assertSame( 1, $xpath->query( '//table[contains(@class,"sc-wpun-channels")]' )->length );
 		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"options.php")]' )->length );
 	}
@@ -165,7 +165,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		$_GET['tab'] = 'mine';
 		$xpath       = $this->xpath( $this->html() );
 
-		$this->assertSame( array( 'general', 'channels', 'mine', 'about' ), $this->tab_slugs( $xpath ) );
+		$this->assertSame( array( 'general', 'channels', 'muted', 'mine', 'about' ), $this->tab_slugs( $xpath ) );
 		$this->assertSame( 1, $xpath->query( '//p[@class="drawn-mine"]' )->length );
 		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"options.php")]' )->length );
 		$this->assertSame( 1, $xpath->query( '//a[@aria-current]' )->length );
@@ -197,7 +197,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 			}
 		);
 
-		$this->assertSame( array( 'general', 'channels', 'about' ), $this->tab_slugs( $this->xpath( $this->html() ) ) );
+		$this->assertSame( array( 'general', 'channels', 'muted', 'about' ), $this->tab_slugs( $this->xpath( $this->html() ) ) );
 	}
 
 	/**

@@ -1,11 +1,12 @@
 // Keyboard checks (#225): on the Channels list and on a channel form, Tab from the start of `.wrap` must reach every
 // visible control, in the visual order (top to bottom, left to right within a row), each with a visible focus indicator.
 const { test, expect } = require( '@playwright/test' );
-const { CHANNELS, ABOUT } = require( './helpers' );
+const { CHANNELS, ABOUT, MUTED } = require( './helpers' );
 
 const PAGES = [
 	[ 'About tab', ABOUT ],
 	[ 'Channels list', CHANNELS ],
+	[ 'Muted tab', MUTED ],
 	[ 'Email edit form', `${ CHANNELS }&action=edit&id=e2e_email` ],
 ];
 

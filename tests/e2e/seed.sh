@@ -23,3 +23,12 @@ wp option update sc_wpun_channels '{
 	}
 }' --format=json --autoload=no --quiet
 echo 'E2E site seeded: channels e2e_email and e2e_showcase'
+
+# Two mutes, so the Muted tab shows its table: Hello Dolly for good, and the field showcase until a version.
+wp option update sc_wpun_muted '{
+	"plugin": {
+		"hello.php": { "until": null, "time": 1761700000, "user": 1 },
+		"wpun-field-showcase/wpun-field-showcase.php": { "until": "9.9.9", "time": 1761700000, "user": 1 }
+	}
+}' --format=json --autoload=no --quiet
+echo 'E2E site seeded: mutes for hello.php and the field showcase'

@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @internal
  * @phpstan-type Last_Result array{success: bool, message: string, time: string}
  * @phpstan-type Field_Row array{field: string, value: string, source: string}
+ * @phpstan-type Muted_Row array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string}
  * @phpstan-type Channel_Row array{id: string, label: string, module: string, availability: string, enabled: bool, code_defined: bool, last_result: ?Last_Result, last_failure: ?Last_Result, retry_at: ?string, fields: Field_Row[]}
  */
 class Status_Report {
@@ -69,6 +70,13 @@ class Status_Report {
 	private $checker;
 
 	/**
+	 * Mute storage.
+	 *
+	 * @var Mute_Store
+	 */
+	private $mutes;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings         $settings   Settings.
@@ -77,14 +85,16 @@ class Status_Report {
 	 * @param Dispatcher       $dispatcher Dispatcher.
 	 * @param State            $state      Run state.
 	 * @param Update_Checker   $checker    Update checker.
+	 * @param Mute_Store       $mutes      Mute storage.
 	 */
-	public function __construct( Settings $settings, Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Update_Checker $checker ) {
+	public function __construct( Settings $settings, Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Update_Checker $checker, Mute_Store $mutes ) {
 		$this->settings   = $settings;
 		$this->store      = $store;
 		$this->registry   = $registry;
 		$this->dispatcher = $dispatcher;
 		$this->state      = $state;
 		$this->checker    = $checker;
+		$this->mutes      = $mutes;
 	}
 
 	/**
@@ -99,6 +109,45 @@ class Status_Report {
 			'channels' => $this->channels(),
 			'pending'  => $this->pending(),
 		);
+	}
+
+	/**
+	 * The muted plugins and themes, without the mutes a newer version has ended.
+	 *
+	 * Plain data: the screens and commands format it. A mute set in code has no time or user.
+	 *
+	 * @return Muted_Row[] The name is null when the item is not installed, and `offered` is null when no update is waiting.
+	 */
+	public function muted(): array {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		$plugins = get_plugins();
+
+		$rows = array();
+		foreach ( $this->mutes->all() as $mute ) {
+			$type = $mute->get_type();
+			$key  = $mute->get_key();
+			$name = null;
+			if ( 'plugin' === $type && isset( $plugins[ $key ] ) ) {
+				$name = (string) $plugins[ $key ]['Name'];
+			} elseif ( 'theme' === $type && wp_get_theme( $key )->exists() ) {
+				$name = (string) wp_get_theme( $key )->get( 'Name' );
+			}
+
+			$rows[] = array(
+				'type'      => $type,
+				'key'       => $key,
+				'name'      => '' === $name ? null : $name,
+				'until'     => $mute->get_until(),
+				'from_code' => $mute->is_from_code(),
+				'time'      => $mute->get_time(),
+				'user'      => $mute->get_user_id(),
+				'offered'   => $this->mutes->offered_version( $type, $key ),
+			);
+		}
+
+		return $rows;
 	}
 
 	/**

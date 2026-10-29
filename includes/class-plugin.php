@@ -11,7 +11,10 @@ use WPUN\Admin\About_Tab;
 use WPUN\Admin\Channel_Form;
 use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Check_Now;
+use WPUN\Admin\Mute_Actions;
+use WPUN\Admin\Muted_Tab;
 use WPUN\Admin\Notices;
+use WPUN\Admin\Plugins_Screen_Mutes;
 use WPUN\Admin\Settings_Page;
 use WPUN\Admin\Plugin_Requirements;
 use WPUN\Admin\Update_Nag;
@@ -162,6 +165,60 @@ class Plugin {
 	private $plugin_requirements = null;
 
 	/**
+	 * What muting shares between the Plugins screen and the Muted tab.
+	 *
+	 * @var Mute_Actions|null
+	 */
+	private $mute_actions = null;
+
+	/**
+	 * The Muted tab.
+	 *
+	 * @var Muted_Tab|null
+	 */
+	private $muted_tab = null;
+
+	/**
+	 * Muting from the Plugins screen.
+	 *
+	 * @var Plugins_Screen_Mutes|null
+	 */
+	private $plugins_screen_mutes = null;
+
+	/**
+	 * What muting shares between the Plugins screen and the Muted tab, built on first use.
+	 *
+	 * @return Mute_Actions
+	 */
+	public function mute_actions(): Mute_Actions {
+		$this->mute_actions ??= new Mute_Actions( $this->mute_store );
+
+		return $this->mute_actions;
+	}
+
+	/**
+	 * The Muted tab, built on first use: front-end requests never need it.
+	 *
+	 * @return Muted_Tab
+	 */
+	public function muted_tab(): Muted_Tab {
+		$this->muted_tab ??= new Muted_Tab( $this->mute_store, $this->mute_actions(), $this->notices(), $this->status_report() );
+
+		return $this->muted_tab;
+	}
+
+	/**
+	 * Muting from the Plugins screen, built on first use: front-end requests never need it.
+	 *
+	 * @return Plugins_Screen_Mutes
+	 */
+	public function plugins_screen_mutes(): Plugins_Screen_Mutes {
+		$this->plugins_screen_mutes ??= new Plugins_Screen_Mutes( $this->mute_store, $this->mute_actions(), $this->notices() );
+
+		return $this->plugins_screen_mutes;
+	}
+
+	/**
 	 * Channels tab, built on first use: front-end requests never need it.
 	 *
 	 * @return Channels_Tab
@@ -222,7 +279,7 @@ class Plugin {
 	 * @return Status_Report
 	 */
 	public function status_report(): Status_Report {
-		return new Status_Report( $this->settings, $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->update_checker );
+		return new Status_Report( $this->settings, $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->update_checker, $this->mute_store );
 	}
 
 	/**
@@ -391,7 +448,7 @@ class Plugin {
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
-		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab() );
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab(), $this->muted_tab() );
 
 		return $this->settings_page;
 	}
@@ -600,6 +657,12 @@ class Plugin {
 		add_action( 'admin_post_' . Channels_Tab::DELETE_ACTION, array( $this->channels_tab(), 'handle_delete' ) ); // Delete a channel.
 		add_action( 'admin_post_' . Check_Now::ACTION, array( $this->check_now(), 'handle' ) ); // Run the update check on demand.
 		add_action( 'admin_post_' . Channel_Form::SAVE_ACTION, array( $this->channel_form(), 'handle_save' ) ); // Add or edit a channel.
+		add_action( 'load-plugins.php', array( $this->plugins_screen_mutes(), 'load' ) ); // Mute links and bulk actions, on the Plugins screen only.
+		add_action( 'admin_post_' . Plugins_Screen_Mutes::MUTE_ACTION, array( $this->plugins_screen_mutes(), 'handle_mute' ) ); // Mute a plugin for good.
+		add_action( 'admin_post_' . Plugins_Screen_Mutes::UNMUTE_ACTION, array( $this->plugins_screen_mutes(), 'handle_unmute' ) ); // Unmute a plugin.
+		add_action( 'admin_post_' . Plugins_Screen_Mutes::SKIP_ACTION, array( $this->plugins_screen_mutes(), 'handle_skip' ) ); // Skip the waiting version of a plugin.
+		add_action( 'admin_post_' . Muted_Tab::ADD_ACTION, array( $this->muted_tab(), 'handle_add' ) ); // Mute a plugin or theme from the Muted tab.
+		add_action( 'admin_post_' . Muted_Tab::REMOVE_ACTION, array( $this->muted_tab(), 'handle_remove' ) ); // Unmute from the Muted tab.
 	}
 
 	/**

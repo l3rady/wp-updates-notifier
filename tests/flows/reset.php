@@ -3,7 +3,7 @@
  * Puts the `make e2e` site back to a known state, between tests (specs/helpers.js, resetSite). Run with
  * `wp eval-file reset.php '<json>'`, where the JSON is {"channels": {...}, "settings": {...}}.
  *
- * Clears the run state (what was notified, the last results), stores the given channels and settings, removes every
+ * Clears the run state (what was notified, the last results) and the mutes, stores the given channels and settings, removes every
  * SC_WPUN_ constant from wp-config.php, puts the site title back, switches the fixture add-on off and puts the update check back on the
  * schedule. Mail is emptied by the test, in Mailpit.
  *
@@ -31,6 +31,7 @@ if ( ! is_plugin_active( 'wpun-field-showcase/wpun-field-showcase.php' ) ) {
 
 update_option( 'blogname', 'Test' );
 delete_option( 'sc_wpun_state' );
+delete_option( 'sc_wpun_muted' );
 update_option(
 	'sc_wpun_channels',
 	isset( $wpun_args['channels'] ) && is_array( $wpun_args['channels'] ) ? $wpun_args['channels'] : array(),

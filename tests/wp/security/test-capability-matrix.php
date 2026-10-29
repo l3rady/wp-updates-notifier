@@ -8,6 +8,8 @@
 use WPUN\Admin\Channel_Form;
 use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Check_Now;
+use WPUN\Admin\Muted_Tab;
+use WPUN\Admin\Plugins_Screen_Mutes;
 use WPUN\Channel_Instance;
 use WPUN\Slack_Notice;
 
@@ -172,7 +174,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		foreach ( $this->actions() as $name => $action ) {
 			$this->assertArrayHasKey( 'admin_post_' . $action, $found, "Endpoint $name was not discovered." );
 		}
-		$this->assertCount( 7, $found, 'The plugin registers seven admin-post endpoints: ' . implode( ', ', array_keys( $found ) ) );
+		$this->assertCount( 12, $found, 'The plugin registers twelve admin-post endpoints: ' . implode( ', ', array_keys( $found ) ) );
 	}
 
 	/**
@@ -237,6 +239,11 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 			'delete'    => Channels_Tab::DELETE_ACTION,
 			'check_now' => Check_Now::ACTION,
 			'save'      => Channel_Form::SAVE_ACTION,
+			'mute'      => Plugins_Screen_Mutes::MUTE_ACTION,
+			'unmute'    => Plugins_Screen_Mutes::UNMUTE_ACTION,
+			'skip'      => Plugins_Screen_Mutes::SKIP_ACTION,
+			'muted_add' => Muted_Tab::ADD_ACTION,
+			'muted_del' => Muted_Tab::REMOVE_ACTION,
 		);
 	}
 
@@ -254,18 +261,21 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	 */
 	private function specs(): array {
 		$actions = $this->actions();
-		$row     = static function ( string $action, string $method, string $nonce, bool $bound, array $fields, callable $changes ): array {
+		$row     = static function ( string $action, string $method, string $nonce, bool $bound, array $fields, callable $changes, ?callable $setup = null, string $bound_id = 'victim' ): array {
 			return array(
-				'hook'    => 'admin_post_' . $action,
-				'method'  => $method,
-				'action'  => $action,
-				'nonce'   => $nonce,
-				'bound'   => $bound,
-				'fields'  => $fields,
-				'changes' => $changes,
+				'setup'    => $setup,
+				'bound_id' => $bound_id,
+				'hook'     => 'admin_post_' . $action,
+				'method'   => $method,
+				'action'   => $action,
+				'nonce'    => $nonce,
+				'bound'    => $bound,
+				'fields'   => $fields,
+				'changes'  => $changes,
 			);
 		};
 
+		// The Plugins screen links bind the plugin file in `key`; the matrix passes it where it passes a channel id.
 		$specs = array(
 			$row(
 				$actions['dismiss'],
@@ -355,6 +365,86 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 					$this->assertSame( 'Renamed', sc_wpun_channels()->get( 'victim' )->get_label(), 'The channel was not saved.' );
 				}
 			),
+			$row(
+				$actions['mute'],
+				'GET',
+				$actions['mute'] . '|plugin|%s',
+				true,
+				array(
+					'type' => 'plugin',
+					'key'  => 'hello.php',
+				),
+				function () {
+					$this->assertNotNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ), 'The plugin was not muted.' );
+				},
+				null,
+				'hello.php'
+			),
+			$row(
+				$actions['unmute'],
+				'GET',
+				$actions['unmute'] . '|plugin|%s',
+				true,
+				array(
+					'type' => 'plugin',
+					'key'  => 'hello.php',
+				),
+				function () {
+					$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ), 'The plugin was not unmuted.' );
+				},
+				function () {
+					sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+				},
+				'hello.php'
+			),
+			$row(
+				$actions['skip'],
+				'GET',
+				$actions['skip'] . '|plugin|%s|2.0.0',
+				true,
+				array(
+					'type'    => 'plugin',
+					'key'     => 'hello.php',
+					'version' => '2.0.0',
+				),
+				function () {
+					$this->assertSame( '2.0.0', sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_until(), 'The version was not skipped.' );
+				},
+				null,
+				'hello.php'
+			),
+			$row(
+				$actions['muted_add'],
+				'POST',
+				$actions['muted_add'],
+				false,
+				array(
+					'item' => 'plugin:hello.php',
+					'mode' => 'always',
+				),
+				function () {
+					$this->assertNotNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ), 'The plugin was not muted.' );
+				},
+				null,
+				'hello.php'
+			),
+			$row(
+				$actions['muted_del'],
+				'POST',
+				$actions['muted_del'] . '|plugin|%s',
+				true,
+				array(
+					'type' => 'plugin',
+					'key'  => 'hello.php',
+				),
+				function () {
+					$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ), 'The plugin was not unmuted.' );
+				},
+				function () {
+					sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+				},
+				'hello.php'
+			),
 		);
 
 		$by_hook = array();
@@ -388,6 +478,21 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	}
 
 	/**
+	 * Seed the site, then do what the endpoint's request needs first.
+	 *
+	 * @param array $spec Row of specs().
+	 */
+	private function prepare( array $spec ) {
+		$this->seed();
+		delete_option( 'sc_wpun_muted' );
+		if ( null !== $spec['setup'] ) {
+			wp_set_current_user( self::$users['administrator'] );
+			$spec['setup']();
+			wp_set_current_user( 0 );
+		}
+	}
+
+	/**
 	 * Everything a request could change, as it is stored.
 	 *
 	 * @return array
@@ -396,7 +501,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		global $wpdb;
 
 		$options = array();
-		foreach ( array( 'sc_wpun_settings', 'sc_wpun_channels', 'sc_wpun_state' ) as $name ) {
+		foreach ( array( 'sc_wpun_settings', 'sc_wpun_channels', 'sc_wpun_state', 'sc_wpun_muted' ) as $name ) {
 			$options[ $name ] = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		}
 
@@ -468,10 +573,14 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	 * @return string `died`, `redirected` or `returned`.
 	 * @throws RuntimeException Any exception the handler throws other than the redirect.
 	 */
-	private function request( array $spec, ?string $nonce, string $method, string $id = 'victim' ): string {
+	private function request( array $spec, ?string $nonce, string $method, ?string $id = null ): string {
+		$id     = $id ?? $spec['bound_id'];
 		$fields = $spec['fields'];
 		if ( isset( $fields['id'] ) ) {
 			$fields['id'] = $id;
+		}
+		if ( isset( $fields['key'] ) ) {
+			$fields['key'] = $id;
 		}
 		$fields['action'] = $spec['action'];
 		if ( null !== $nonce ) {
@@ -511,8 +620,8 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	 * @param string $id   Channel id the nonce is bound to.
 	 * @return string
 	 */
-	private function nonce_for( array $spec, string $id = 'victim' ): string {
-		return wp_create_nonce( sprintf( $spec['nonce'], $id ) );
+	private function nonce_for( array $spec, ?string $id = null ): string {
+		return wp_create_nonce( sprintf( $spec['nonce'], $id ?? $spec['bound_id'] ) );
 	}
 
 	// The matrix.
@@ -564,7 +673,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 				continue; // The nonce is not bound to a channel.
 			}
 
-			$this->seed();
+			$this->prepare( $spec );
 			$user = $this->be( $who );
 			$send = $this->nonce_for( $spec );
 			$as   = $spec['method'];
@@ -627,7 +736,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 
 		foreach ( array_keys( $this->plugin_endpoints() ) as $hook ) {
 			$spec = $specs[ $hook ];
-			$this->seed();
+			$this->prepare( $spec );
 			$this->be( 'administrator' );
 
 			$before  = $this->snapshot();
@@ -652,7 +761,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		$specs = $this->specs();
 		foreach ( array_keys( $this->plugin_endpoints() ) as $hook ) {
 			$spec = $specs[ $hook ];
-			$this->seed();
+			$this->prepare( $spec );
 			$this->be( 'super_admin' );
 
 			$this->assertSame( 'redirected', $this->request( $spec, $this->nonce_for( $spec ), $spec['method'] ), "$hook refused a super admin." );

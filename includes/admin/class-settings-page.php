@@ -99,6 +99,13 @@ class Settings_Page {
 	private $about_tab;
 
 	/**
+	 * The Muted tab.
+	 *
+	 * @var Muted_Tab
+	 */
+	private $muted_tab;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings          $settings  Settings.
@@ -111,8 +118,9 @@ class Settings_Page {
 	 * @param Notices           $notices Notices about what an admin action did.
 	 * @param Check_Now         $check_now The Check now button.
 	 * @param About_Tab         $about_tab The About tab.
+	 * @param Muted_Tab         $muted_tab The Muted tab.
 	 */
-	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab ) {
+	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab ) {
 		$this->settings          = $settings;
 		$this->state             = $state;
 		$this->notifier          = $notifier;
@@ -123,6 +131,7 @@ class Settings_Page {
 		$this->notices           = $notices;
 		$this->check_now         = $check_now;
 		$this->about_tab         = $about_tab;
+		$this->muted_tab         = $muted_tab;
 	}
 
 	/**
@@ -270,7 +279,7 @@ class Settings_Page {
 	}
 
 	/**
-	 * Hook the General, Channels and About tabs to their drawing, so the tab list includes them.
+	 * Hook the General, Channels, Muted and About tabs to their drawing, so the tab list includes them.
 	 * The About tab is hooked only while the `show_about` setting allows it.
 	 *
 	 * @return void
@@ -278,6 +287,7 @@ class Settings_Page {
 	private function add_tab_actions(): void {
 		add_action( 'sc_wpun_settings_tab_general', array( $this, 'render_general_tab' ) );
 		add_action( 'sc_wpun_settings_tab_channels', array( $this->channels_tab, 'render' ) );
+		add_action( 'sc_wpun_settings_tab_muted', array( $this->muted_tab, 'render' ) );
 		if ( $this->settings->show_about() ) {
 			add_action( 'sc_wpun_settings_tab_about', array( $this->about_tab, 'render' ) );
 		}
@@ -304,6 +314,7 @@ class Settings_Page {
 		$defaults = array(
 			'general'  => __( 'General', 'wp-updates-notifier' ),
 			'channels' => __( 'Channels', 'wp-updates-notifier' ),
+			'muted'    => __( 'Muted', 'wp-updates-notifier' ),
 			'about'    => __( 'About', 'wp-updates-notifier' ),
 		);
 
@@ -321,7 +332,7 @@ class Settings_Page {
 		 *
 		 * @since 2.0.0
 		 *
-		 * @param array<string, string> $tabs Tab labels keyed by slug. Default `general`, `channels` and `about`. The About tab is always moved last, and is hidden by the `show_about` setting (code only).
+		 * @param array<string, string> $tabs Tab labels keyed by slug. Default `general`, `channels`, `muted` and `about`. The About tab is always moved last, and is hidden by the `show_about` setting (code only).
 		 */
 		$filtered = apply_filters( 'sc_wpun_settings_tabs', $defaults );
 

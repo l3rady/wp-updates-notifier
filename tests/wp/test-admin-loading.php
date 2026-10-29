@@ -22,6 +22,8 @@ class Test_Admin_Loading extends WPUN_Test_Case {
 		$this->assertFalse( class_exists( 'WPUN\Admin\Update_Nag', false ) );
 		$this->assertFalse( class_exists( 'WPUN\Admin\Plugin_Requirements', false ) );
 		$this->assertFalse( class_exists( 'WPUN\Admin\Check_Now', false ) );
+		$this->assertFalse( class_exists( 'WPUN\Admin\Plugins_Screen_Mutes', false ) );
+		$this->assertFalse( class_exists( 'WPUN\Admin\Muted_Tab', false ) );
 		$this->assertNotFalse( has_filter( 'extra_plugin_headers' ) );
 		$this->assertFalse( has_action( 'after_plugin_row' ) );
 		$this->assertFalse( has_filter( 'auto_core_update_email' ) );
@@ -45,6 +47,11 @@ class Test_Admin_Loading extends WPUN_Test_Case {
 		$this->assertTrue( class_exists( 'WPUN\Admin\Update_Nag', false ) );
 		$this->assertTrue( class_exists( 'WPUN\Admin\Plugin_Requirements', false ) );
 		$this->assertTrue( class_exists( 'WPUN\Admin\Check_Now', false ) );
+		$this->assertTrue( class_exists( 'WPUN\Admin\Plugins_Screen_Mutes', false ) );
+		$this->assertTrue( class_exists( 'WPUN\Admin\Muted_Tab', false ) );
+		$this->assertNotFalse( has_action( 'admin_post_sc_wpun_mute' ) );
+		$this->assertNotFalse( has_action( 'admin_post_sc_wpun_muted_add' ) );
+		$this->assertFalse( has_filter( 'plugin_action_links' ), 'The mute links are added when the Plugins screen loads.' );
 		$this->assertNotFalse( has_action( 'admin_post_sc_wpun_check_now' ) );
 		$this->assertNotFalse( has_action( 'after_plugin_row' ) );
 		$this->assertFalse( has_filter( 'auto_core_update_email' ) );

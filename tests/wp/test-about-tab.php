@@ -89,7 +89,7 @@ class Test_About_Tab extends WPUN_Test_Case {
 		$html = $this->html();
 
 		$this->assertTrue( sc_wpun()->settings()->show_about() );
-		$this->assertSame( array( 'general', 'channels', 'about' ), $this->tab_slugs( $html ) );
+		$this->assertSame( array( 'general', 'channels', 'muted', 'about' ), $this->tab_slugs( $html ) );
 
 		$_GET['tab'] = 'about';
 		$html        = $this->html();
@@ -162,7 +162,7 @@ class Test_About_Tab extends WPUN_Test_Case {
 
 		$this->assertFalse( sc_wpun()->settings()->show_about() );
 		$this->assertSame( array(), wp_list_pluck( sc_wpun()->config()->problems(), 'key' ) );
-		$this->assertSame( array( 'general', 'channels' ), $this->tab_slugs( $this->html() ) );
+		$this->assertSame( array( 'general', 'channels', 'muted' ), $this->tab_slugs( $this->html() ) );
 
 		// The request for the tab falls back to General.
 		$_GET['tab'] = 'about';
@@ -245,7 +245,7 @@ class Test_About_Tab extends WPUN_Test_Case {
 		);
 		add_action( 'sc_wpun_settings_tab_mine', '__return_empty_string' );
 
-		$this->assertSame( array( 'general', 'channels', 'mine', 'about' ), $this->tab_slugs( $this->html() ) );
+		$this->assertSame( array( 'general', 'channels', 'muted', 'mine', 'about' ), $this->tab_slugs( $this->html() ) );
 		$this->assertSame( 'about', array_key_last( sc_wpun()->settings_page()->tabs() ) );
 	}
 

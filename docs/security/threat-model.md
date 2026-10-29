@@ -100,18 +100,34 @@ which `Plugin` registers next to the notice. There are no `admin_post_nopriv_*`,
 | `sc_wpun_check_now` | `Check_Now::handle` | `sc_wpun_check_now` | POST |
 | `sc_wpun_save_channel` | `Channel_Form::handle_save` | `sc_wpun_save_channel_<new\|edit>_<type\|id>` | POST |
 | `sc_wpun_dismiss_slack_notice` | `Slack_Notice::handle_dismiss` | `sc_wpun_dismiss_slack_notice` | POST |
+| `sc_wpun_mute` | `Plugins_Screen_Mutes::handle_mute` | `sc_wpun_mute_plugin_<file>` | GET |
+| `sc_wpun_unmute` | `Plugins_Screen_Mutes::handle_unmute` | `sc_wpun_unmute_plugin_<file>` | GET |
+| `sc_wpun_skip` | `Plugins_Screen_Mutes::handle_skip` | `sc_wpun_skip_plugin_<file>_<version>` | GET |
+| `sc_wpun_muted_add` | `Muted_Tab::handle_add` | `sc_wpun_muted_add` | POST |
+| `sc_wpun_muted_remove` | `Muted_Tab::handle_remove` | `sc_wpun_muted_remove_<type>_<key>` | POST |
 
 **Trust boundary:** any HTTP client can reach `admin-post.php`. Unauthenticated requests fire only `admin_post_nopriv_*`,
 and the plugin registers none. The Semgrep rule `wpun-no-nopriv-hooks` (`make sast`, #216) fails the build if one is added.
 
 | STRIDE | Threat | Control | Proof |
 | --- | --- | --- | --- |
-| E | A user without the capability changes channels, sends messages or runs the check. | Each handler checks `current_user_can( Settings_Page::capability() )` first, and refuses with a 403 and no change. | `test-channels-tab.php` (`test_nonce_and_capability_are_enforced_for_every_action`), `test-channel-form.php` (`test_nonce_and_capability_are_required`, `test_refusals_change_nothing`, `test_the_handler_answers_403_when_refused`), `test-check-now.php` (`test_a_refused_request_runs_nothing`), `test-test-send.php`, `test-slack-notice.php`. `security/test-capability-matrix.php` (#220): discovers every `admin_post_*`/`wp_ajax_*` hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests (eleven on multisite): logged out, subscriber, editor, administrator without `manage_options`, on multisite a site administrator who is not a super admin, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (`make dast`, #222). |
+| E | A user without the capability changes channels, sends messages or runs the check. | Each handler checks `current_user_can( Settings_Page::capability() )` first, and refuses with a 403 and no change. | `test-channels-tab.php` (`test_nonce_and_capability_are_enforced_for_every_action`), `test-channel-form.php` (`test_nonce_and_capability_are_required`, `test_refusals_change_nothing`, `test_the_handler_answers_403_when_refused`), `test-check-now.php` (`test_a_refused_request_runs_nothing`), `test-test-send.php`, `test-slack-notice.php`, `test-mute-plugins-screen.php`, `test-muted-tab.php`. `security/test-capability-matrix.php` (#220): discovers every `admin_post_*`/`wp_ajax_*` hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests (eleven on multisite): logged out, subscriber, editor, administrator without `manage_options`, on multisite a site administrator who is not a super admin, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (`make dast`, #222). |
 | S/T | CSRF: another site makes an administrator's browser post the action. | A security token per action. Row actions and the form bind it to the channel id (and the mode and type), so a token for one channel can't act on another. | The tests above. `security/test-capability-matrix.php` (#220) covers the wrong-action, other-channel and other-user tokens for every hook. |
 | T | Tampered `id`, `mode` or `type` reaches the store. | `sanitize_key( wp_unslash() )` and `is_string` checks. Unknown ids and types are refused, and code-defined and externally set instances have no row actions. | `test-channels-tab.php`, `test-channel-form.php`. |
 | T | Open redirect after the action. | Redirects use `wp_safe_redirect()` to the settings page. | WPCS `WordPress.Security.SafeRedirect` (`make lint`). #222 checks the redirect targets. |
 | R | An administrator denies changing a channel. | Not addressed. WordPress has no audit log, and the plugin doesn't add one. Accepted for 2.0.0. | n/a |
 | D | Repeated Check now or test sends flood a mail service. | Capability and security token limit this to administrators, who are trusted. | As above. |
+
+The mute, unmute and skip actions on the Plugins screen are state-changing GET links, the one exception to the POST
+rule. The plugin rows sit inside core's bulk-action form, and forms cannot be nested, so the links are like core's own
+Activate and Deactivate links. A link carries a security token for the action and the plugin, and the skip link also
+for the version it skips, so a token made for one plugin or version cannot act on another. The handlers read `$_GET`
+only (fields sent by POST are refused), accept the `plugin` type only, and act only on installed plugins. They need
+the mute capability (`sc_wpun_mute_capability`, which defaults to the settings capability). The Plugins screen bulk
+actions run through core's own bulk form, which checks its security token, and the handler checks the mute
+capability. The Muted tab forms are POST and need both the settings capability and the mute capability. A mutation
+is repeatable and reversible (unmute), and a mute only holds back this plugin's notifications. Redirects go back to
+the referrer only if `wp_get_referer()` accepts it (same site), else to the Plugins screen.
 
 The Slack notice dismiss is a POST form like the other actions. It changes only the current user's own meta
 (`sc_wpun_dismissed_slack_notice`), and it needs the security token and the capability. A GET request is refused with a 403.

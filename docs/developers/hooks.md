@@ -871,6 +871,32 @@ plugin or theme was deleted.
 
 Fired in `includes/class-mute-store.php`.
 
+### `sc_wpun_mute_capability`
+
+*Filter*, since 3.0.0
+
+Filters the capability needed to mute and unmute plugins and themes.
+
+It decides who sees the mute links and bulk actions on the Plugins screen, and who may use them. It
+defaults to the capability of the settings page (`sc_wpun_capability`, `manage_options` on a single
+site), so a site can let maintainers mute without giving them the whole settings screen. An empty or
+non-string value is ignored and the default is used.
+
+The Muted tab is part of the settings page, so seeing it still needs the settings capability, and
+its forms need both. WP-CLI and the PHP API are not affected: they do not check capabilities.
+
+Example, let users who can update plugins mute and unmute:
+
+```php
+add_filter( 'sc_wpun_mute_capability', fn() => 'update_plugins' );
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$capability` | `string` | Capability. Default is the one `sc_wpun_capability` returns. |
+
+Fired in `includes/admin/class-mute-actions.php`.
+
 ### `sc_wpun_mute_ended`
 
 *Action*, since 3.0.0
@@ -1128,7 +1154,7 @@ add_action( 'sc_wpun_settings_tab_mine', fn() => print '<p>Hello</p>' );
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `$tabs` | `array<string, string>` | Tab labels keyed by slug. Default `general`, `channels` and `about`. The About tab is always moved last, and is hidden by the `show_about` setting (code only). |
+| `$tabs` | `array<string, string>` | Tab labels keyed by slug. Default `general`, `channels`, `muted` and `about`. The About tab is always moved last, and is hidden by the `show_about` setting (code only). |
 
 Fired in `includes/admin/class-settings-page.php`.
 
