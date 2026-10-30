@@ -241,10 +241,11 @@ class Updates_Notifier_Command {
 			// translators: 1: Id of a channel instance. 2: What it would do, for example "send".
 			\WP_CLI::line( sprintf( __( '%1$s (%2$s)', 'wp-updates-notifier' ), $pending['id'], $pending['status'] ) );
 			foreach ( $pending['items'] as &$item ) {
-				$item['new'] = $item['new'] ? 'new' : 'notified';
+				$item['new']         = $item['new'] ? 'new' : 'notified';
+				$item['auto_update'] = $item['auto_update'] ? 'yes' : 'no';
 			}
 			unset( $item );
-			\WP_CLI\Utils\format_items( 'table', $pending['items'], array( 'type', 'name', 'current_version', 'new_version', 'new' ) );
+			\WP_CLI\Utils\format_items( 'table', $pending['items'], array( 'type', 'name', 'current_version', 'new_version', 'new', 'auto_update' ) );
 		}
 	}
 

@@ -373,12 +373,19 @@ class Test_Notification extends WPUN_Test_Case {
 		$this->assertCount( 1, $plugin->get_notes() );
 		$this->assertSame(
 			array(
-				'tested' => '99.0',
-				'active' => false,
+				'tested'      => '99.0',
+				'active'      => false,
+				'auto_update' => false,
 			),
 			$plugin->get_flags()
 		);
-		$this->assertSame( array( 'active' => true ), $notification->get_items_of_type( 'theme' )[0]->get_flags() );
+		$this->assertSame(
+			array(
+				'active'      => true,
+				'auto_update' => false,
+			),
+			$notification->get_items_of_type( 'theme' )[0]->get_flags()
+		);
 
 		$theme = $notification->get_items_of_type( 'theme' )[0];
 		$this->assertSame( get_stylesheet(), $theme->get_key() );

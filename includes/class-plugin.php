@@ -347,7 +347,7 @@ class Plugin {
 		$this->notifier          = new Notifier( $this->channel_store );
 		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store );
 		$this->mute_store        = new Mute_Store();
-		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store );
+		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store, new Auto_Update_Policy() );
 		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
 		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->channels, $this->config, $this->status_report() );
 	}

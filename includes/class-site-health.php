@@ -313,6 +313,20 @@ class Site_Health {
 			'value' => array() === $muted ? __( 'None', 'wp-updates-notifier' ) : implode( '; ', $muted ),
 		);
 
+		$blocked = ( new Auto_Update_Policy() )->blocked_reason();
+		$reasons = array(
+			'file_mods' => array( __( 'Disabled by DISALLOW_FILE_MODS', 'wp-updates-notifier' ), 'Disabled by DISALLOW_FILE_MODS' ),
+			'disabled'  => array( __( 'Disabled by AUTOMATIC_UPDATER_DISABLED or the automatic_updater_disabled filter', 'wp-updates-notifier' ), 'Disabled by AUTOMATIC_UPDATER_DISABLED or the automatic_updater_disabled filter' ),
+			'vcs'       => array( __( 'Version control checkout', 'wp-updates-notifier' ), 'Version control checkout' ),
+		);
+		$reason  = $reasons[ $blocked ] ?? array( __( 'Can run', 'wp-updates-notifier' ), 'Can run' );
+
+		$fields['auto_updates'] = array(
+			'label' => __( 'WordPress automatic updates', 'wp-updates-notifier' ),
+			'value' => $reason[0],
+			'debug' => $reason[1],
+		);
+
 		foreach ( $this->problems() as $index => $problem ) {
 			$fields[ 'problem_' . $index ] = array(
 				'label' => __( 'Configuration problem', 'wp-updates-notifier' ),

@@ -142,11 +142,11 @@ class Test_Auto_Updates_First extends WPUN_Test_Case {
 	 */
 	public function settings_provider() {
 		return array(
-			'defaults'       => array( array() ),
-			'core none'      => array( array( 'notify_core' => 'none' ) ),
-			'plugins none'   => array( array( 'notify_plugins' => 'none' ) ),
-			'themes none'    => array( array( 'notify_themes' => 'none' ) ),
-			'only core on'   => array(
+			'defaults'     => array( array() ),
+			'core none'    => array( array( 'notify_core' => 'none' ) ),
+			'plugins none' => array( array( 'notify_plugins' => 'none' ) ),
+			'themes none'  => array( array( 'notify_themes' => 'none' ) ),
+			'only core on' => array(
 				array(
 					'notify_plugins' => 'none',
 					'notify_themes'  => 'none',

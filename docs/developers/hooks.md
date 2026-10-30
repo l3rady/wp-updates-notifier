@@ -1160,6 +1160,39 @@ Fired in `includes/admin/class-settings-page.php`.
 
 ## Lifecycle and legacy
 
+### `sc_wpun_auto_update_enabled`
+
+*Filter*, since 3.0.0
+
+Filters whether an update counts as installed automatically, which adds the `auto_update` flag and its note to the item.
+
+The default follows WordPress: automatic updates are on for the item and can run on this site (the
+`AUTOMATIC_UPDATER_DISABLED` and `DISALLOW_FILE_MODS` constants, version control checkouts, the
+auto-update settings and the `auto_update_*` filters). Use it for an updater outside WordPress that
+installs the update later. Returning false removes the flag and the note.
+
+Example, a host that updates plugins itself:
+
+```php
+add_filter(
+    'sc_wpun_auto_update_enabled',
+    function ( $enabled, $type ) {
+        return $enabled || 'plugin' === $type;
+    },
+    10,
+    2
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$enabled` | `bool` | Whether automatic updates are on for the item. |
+| `$type` | `string` | `core`, `plugin` or `theme`. |
+| `$key` | `string` | `core`, the plugin file or the theme stylesheet. |
+| `$new_version` | `string` | The version that is waiting. |
+
+Fired in `includes/class-auto-update-policy.php`.
+
 ### `sc_wpun_disable_cron`
 
 *Action*, since 1.0.0

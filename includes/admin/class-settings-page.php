@@ -667,6 +667,9 @@ class Settings_Page {
 		if ( $unavailable ) {
 			$described_by[] = $id . '-unavailable';
 		}
+		if ( 'notify_core' === $name ) {
+			$described_by[] = $id . '-help';
+		}
 		if ( $this->is_external( $name ) ) {
 			$described_by[] = $id . '-external';
 		}
@@ -676,6 +679,13 @@ class Settings_Page {
 			?>
 			<p class="description sc-wpun-frequency-unavailable" id="<?php echo esc_attr( $id . '-unavailable' ); ?>">
 				<?php esc_html_e( 'The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it.', 'wp-updates-notifier' ); ?>
+			</p>
+			<?php
+		}
+		if ( 'notify_core' === $name ) {
+			?>
+			<p class="description" id="<?php echo esc_attr( $id . '-help' ); ?>">
+				<?php esc_html_e( 'Scheduled checks run WordPress\'s automatic updates first, so updates it installs by itself are not reported.', 'wp-updates-notifier' ); ?>
 			</p>
 			<?php
 		}

@@ -410,8 +410,8 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'Settings of a', $out );
 		$this->assertStringNotContainsString( 'Settings of gone', $out );
 		$this->assertStringContainsString( 'a (send)', $out );
-		$this->assertMatchesRegularExpression( '/plugin\t[^\t]*\t[^\t]*\t2\.0\.0\tnotified/', $out );
-		$this->assertMatchesRegularExpression( '/core\tWordPress\t[^\t]*\t99\.0\.0\tnew/', $out );
+		$this->assertMatchesRegularExpression( '/plugin\t[^\t]*\t[^\t]*\t2\.0\.0\tnotified\tno/', $out );
+		$this->assertMatchesRegularExpression( '/core\tWordPress\t[^\t]*\t99\.0\.0\tnew\tno/', $out );
 		$this->assertStringContainsString( 'never', $out );
 	}
 

@@ -100,7 +100,7 @@ class Status_Report {
 	/**
 	 * Everything the status command shows.
 	 *
-	 * @return array{settings: array<int, array{setting: string, value: string, source: string}>, schedule: array{frequency: string, next_run: string, last_check: string}, channels: Channel_Row[], muted: Muted_Row[], pending: array<int, array{id: string, label: string, status: string, items: array<int, array{type: string, key: string, name: string, current_version: string, new_version: string, new: bool}>}>}
+	 * @return array{settings: array<int, array{setting: string, value: string, source: string}>, schedule: array{frequency: string, next_run: string, last_check: string}, channels: Channel_Row[], muted: Muted_Row[], pending: array<int, array{id: string, label: string, status: string, items: array<int, array{type: string, key: string, name: string, current_version: string, new_version: string, new: bool, auto_update: bool}>}>}
 	 */
 	public function all(): array {
 		return array(
@@ -283,7 +283,7 @@ class Status_Report {
 	 *
 	 * Runs the check without sending or saving anything, which does refresh WordPress's update data.
 	 *
-	 * @return array<int, array{id: string, label: string, status: string, items: array<int, array{type: string, key: string, name: string, current_version: string, new_version: string, new: bool}>}>
+	 * @return array<int, array{id: string, label: string, status: string, items: array<int, array{type: string, key: string, name: string, current_version: string, new_version: string, new: bool, auto_update: bool}>}>
 	 */
 	public function pending(): array {
 		$channels  = $this->state->get()['channels'];
@@ -300,6 +300,7 @@ class Status_Report {
 					'current_version' => $item->get_current_version(),
 					'new_version'     => $item->get_new_version(),
 					'new'             => ( $channels[ $id ]['notified'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version(),
+					'auto_update'     => true === ( $item->get_flags()['auto_update'] ?? false ),
 				);
 			}
 			$rows[] = array(

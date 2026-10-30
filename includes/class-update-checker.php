@@ -68,6 +68,13 @@ class Update_Checker {
 	private $mutes;
 
 	/**
+	 * Tells whether WordPress is set to install an update by itself.
+	 *
+	 * @var Auto_Update_Policy
+	 */
+	private $auto_updates;
+
+	/**
 	 * The notification built by the last check.
 	 *
 	 * @var Notification|null
@@ -84,18 +91,20 @@ class Update_Checker {
 	/**
 	 * Constructor.
 	 *
-	 * @param Settings      $settings Settings.
-	 * @param State         $state    Run state.
-	 * @param Dispatcher    $dispatcher Dispatcher.
-	 * @param Channel_Store $channels Channel instance storage.
-	 * @param Mute_Store    $mutes    Mute storage.
+	 * @param Settings           $settings Settings.
+	 * @param State              $state    Run state.
+	 * @param Dispatcher         $dispatcher Dispatcher.
+	 * @param Channel_Store      $channels Channel instance storage.
+	 * @param Mute_Store         $mutes    Mute storage.
+	 * @param Auto_Update_Policy $auto_updates Tells whether WordPress is set to install an update by itself.
 	 */
-	public function __construct( Settings $settings, State $state, Dispatcher $dispatcher, Channel_Store $channels, Mute_Store $mutes ) {
-		$this->mutes      = $mutes;
-		$this->settings   = $settings;
-		$this->state      = $state;
-		$this->dispatcher = $dispatcher;
-		$this->channels   = $channels;
+	public function __construct( Settings $settings, State $state, Dispatcher $dispatcher, Channel_Store $channels, Mute_Store $mutes, Auto_Update_Policy $auto_updates ) {
+		$this->auto_updates = $auto_updates;
+		$this->mutes        = $mutes;
+		$this->settings     = $settings;
+		$this->state        = $state;
+		$this->dispatcher   = $dispatcher;
+		$this->channels     = $channels;
 	}
 
 	/**
@@ -742,12 +751,14 @@ class Update_Checker {
 			return;
 		}
 
-		$new_core_ver = $this->core_upgrade_offer( $update_core->updates );
-		if ( '' === $new_core_ver ) {
+		$found = $this->core_upgrade_offer( $update_core->updates );
+		if ( null === $found ) {
 			$checked['core'] = array(); // No update is waiting, so nothing about core stays notified.
 			return;
 		}
 
+		$offer           = $found['offer'];
+		$new_core_ver    = $found['version'];
 		$checked['core'] = array( 'core' );
 		$current_version = wp_get_wp_version(); // Read from version.php, so plugins that change the $wp_version global do not affect it.
 
@@ -780,13 +791,16 @@ class Update_Checker {
 			return;
 		}
 
-		$items[] = new Notification_Item(
+		$auto_update = $this->auto_updates->is_on( 'core', 'core', $offer, $new_core_ver );
+		$items[]     = new Notification_Item(
 			array(
 				'type'            => 'core',
 				'key'             => 'core',
 				'name'            => 'WordPress',
 				'current_version' => $current_version,
 				'new_version'     => $new_core_ver,
+				'notes'           => $this->auto_update_notes( $auto_update ),
+				'flags'           => array( 'auto_update' => $auto_update ),
 			)
 		);
 	}
@@ -800,16 +814,30 @@ class Update_Checker {
 	 *
 	 * @param array<mixed> $offers The `updates` list of the update_core transient.
 	 *
-	 * @return string The offered version, or an empty string if there is no upgrade.
+	 * @return array{offer: object, version: string}|null The offer and its version, or null if there is no upgrade.
 	 */
-	private function core_upgrade_offer( array $offers ): string {
+	private function core_upgrade_offer( array $offers ): ?array {
 		foreach ( $offers as $offer ) {
 			if ( is_object( $offer ) && isset( $offer->response, $offer->current ) && 'upgrade' === $offer->response && is_scalar( $offer->current ) && '' !== (string) $offer->current ) {
-				return (string) $offer->current;
+				return array(
+					'offer'   => $offer,
+					'version' => (string) $offer->current,
+				);
 			}
 		}
 
-		return '';
+		return null;
+	}
+
+	/**
+	 * The note of an update that WordPress is set to install by itself.
+	 *
+	 * @param bool $auto_update Whether automatic updates are on for the update.
+	 *
+	 * @return string[] The note, or nothing.
+	 */
+	private function auto_update_notes( bool $auto_update ): array {
+		return $auto_update ? array( __( 'Automatic updates are on, but WordPress has not installed this update yet.', 'wp-updates-notifier' ) ) : array();
 	}
 
 
@@ -859,7 +887,8 @@ class Update_Checker {
 					} elseif ( '' !== $data->url ) {
 						$links['details'] = $data->url;
 					}
-					$items[] = new Notification_Item(
+					$auto_update = $this->auto_updates->is_on( 'plugin', (string) $key, $data, $data->new_version );
+					$items[]     = new Notification_Item(
 						array(
 							'type'            => 'plugin',
 							'key'             => (string) $key,
@@ -867,8 +896,14 @@ class Update_Checker {
 							'current_version' => $plugin_info['Version'],
 							'new_version'     => $data->new_version,
 							'links'           => $links,
-							'notes'           => $this->plugin_compatibility_notes( $data ),
-							'flags'           => array_merge( $this->plugin_flags( $data ), array( 'active' => in_array( (string) $key, $active_plugins, true ) ) ),
+							'notes'           => array_merge( $this->plugin_compatibility_notes( $data ), $this->auto_update_notes( $auto_update ) ),
+							'flags'           => array_merge(
+								$this->plugin_flags( $data ),
+								array(
+									'active'      => in_array( (string) $key, $active_plugins, true ),
+									'auto_update' => $auto_update,
+								)
+							),
 						)
 					);
 				}
@@ -911,8 +946,9 @@ class Update_Checker {
 			$themes_need_update = array_intersect_key( $themes_need_update, wp_get_themes( array( 'errors' => null ) ) ); // Only read the files of installed themes, whatever the transient or a filter holds.
 			if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 				foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating.
-					$theme_info = wp_get_theme( $key ); // get theme info.
-					$items[]    = new Notification_Item(
+					$theme_info  = wp_get_theme( $key ); // get theme info.
+					$auto_update = $this->auto_updates->is_on( 'theme', (string) $key, (object) $data, $data['new_version'] );
+					$items[]     = new Notification_Item(
 						array(
 							'type'            => 'theme',
 							'key'             => (string) $key,
@@ -920,7 +956,11 @@ class Update_Checker {
 							'current_version' => $theme_info['Version'],
 							'new_version'     => $data['new_version'],
 							'links'           => '' !== $data['url'] ? array( 'details' => $data['url'] ) : array(),
-							'flags'           => array( 'active' => in_array( (string) $key, $active_themes, true ) ),
+							'notes'           => $this->auto_update_notes( $auto_update ),
+							'flags'           => array(
+								'active'      => in_array( (string) $key, $active_themes, true ),
+								'auto_update' => $auto_update,
+							),
 						)
 					);
 				}
