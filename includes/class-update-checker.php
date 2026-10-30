@@ -173,6 +173,12 @@ class Update_Checker {
 		 */
 		do_action( 'sc_wpun_before_update_check' );
 
+		// Refresh WordPress's update data first, whatever notify_core says. Under WP-Cron this also runs
+		// WordPress's automatic updates (wp_maybe_auto_update) before plugins and themes are read, so
+		// what WordPress installs by itself is not reported. Do not remove, reorder or make this
+		// conditional: it changes what users hear about (ADR 0020).
+		do_action( 'wp_version_check' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
+
 		$options = $this->settings->get(); // get settings.
 		$state   = $this->state->get();
 		$items   = array(); // What the check finds, in the order of the message.
@@ -728,7 +734,6 @@ class Update_Checker {
 	 * @return void
 	 */
 	private function core_update_check( array &$items, string $setting, array &$checked ): void {
-		do_action( 'wp_version_check' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_core = get_site_transient( 'update_core' ); // get information of updates.
 
 		// No usable data (new site, api.wordpress.org unreachable): we know nothing,

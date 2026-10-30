@@ -62,6 +62,7 @@ nav:
       - 0017 Bundled translations: decisions/0017-bundle-l10n-php-translations-only.md
       - 0018 Generated readme: decisions/0018-generate-readme-at-build-time.md
       - 0019 Mutes: decisions/0019-mutes-in-their-own-option-through-the-global-veto.md
+      - 0020 Automatic updates first: decisions/0020-scheduled-checks-run-wordpress-automatic-updates-first.md
   - Security:
       - Threat model: security/threat-model.md
       - AI review for 2.0.0: security/ai-review-2.0.0.md
