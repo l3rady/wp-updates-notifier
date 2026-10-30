@@ -72,6 +72,20 @@ If you can not use WP-CLI, keep `DISABLE_WP_CRON` and have the server request `w
 
 WP-Cron then runs the plugin's check at the **Frequency to check** you chose, and WordPress's own update tasks too.
 
+## I was told about an update that has auto-updates on
+
+Scheduled checks run WordPress's automatic updates first, so an update that is still waiting and has auto-updates on is one WordPress failed to install or could not install. The message carries the note "Automatic updates are on, but WordPress has not installed this update yet." Check these:
+
+- The email WordPress sends to the site admin email (**Settings → General**) after an automatic update. It says what failed.
+- **Dashboard → Updates**, where you can install the update yourself.
+- **Tools → Site Health → Info → WP Updates Notifier → WordPress automatic updates**. It says whether automatic updates can run on this site, or why not: `DISALLOW_FILE_MODS`, `AUTOMATIC_UPDATER_DISABLED` or the `automatic_updater_disabled` filter, or a version control checkout.
+
+A check started with **Check for updates and notify now** or `wp updates-notifier check` does not run WordPress's updater first, so it can report an update that WordPress installs later. See [Updates WordPress installs automatically](how-notifications-work.md#updates-wordpress-installs-automatically).
+
+## A scheduled check takes a long time
+
+Before it reads the updates, a scheduled check lets WordPress run its automatic updates. That can include downloading and installing plugins, themes and WordPress itself, so the check can take a while. This is WordPress's own work, and it also runs in WordPress's own twice-daily event. If it times out on your host, switch off automatic updates for the items that are slow, or run the update yourself from **Dashboard → Updates**.
+
 ## Why is the update data hours old?
 
 On every check the plugin asks WordPress to refresh what it knows about updates. WordPress asks api.wordpress.org, but it does not do so every time. It skips the request when it has asked recently:

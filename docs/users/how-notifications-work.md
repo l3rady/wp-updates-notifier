@@ -14,6 +14,28 @@ A check sends one message to each channel, listing everything that is new to tha
 
 Updates that a channel does not receive because of its [routing](channels.md#choose-what-each-channel-receives) are not reported to it, and they do not count as sent.
 
+## Updates WordPress installs automatically
+
+Scheduled checks run WordPress's automatic updates first. This covers checks started by WP-Cron and by a system cron that runs `wp cron event run`. The plugin asks WordPress to refresh its update data before it reads the updates, and under WP-Cron that also lets WordPress install the updates it is set to install by itself. This happens even when **Notify about WordPress updates?** is **No**.
+
+So:
+
+- An update that WordPress installs by itself is normally installed before the check reads it, and is not reported.
+- An update that is still waiting even though automatic updates are on for it is one WordPress failed to install, or could not install. It is reported, with the note "Automatic updates are on, but WordPress has not installed this update yet."
+- WordPress emails the result of its own automatic updates to the site admin email. This plugin leaves those emails alone. See [Settings](settings.md#notify-about-wordpress-updates).
+
+There is no setting to skip these updates. It would also hide the ones that failed.
+
+WordPress's updater does not run first in every check:
+
+- **Check for updates and notify now**, and `wp updates-notifier check`, do not run inside WP-Cron. They refresh the update data only. An update WordPress would install later can be reported, and it is not reported again once it is installed.
+- WordPress skips its updater when its last version check was less than a minute ago, when api.wordpress.org does not answer, when another automatic update is running, or when something has switched off WordPress's version check.
+- After WordPress installs a minor release of itself, a waiting major release is reported one check later.
+- The update data can be up to two hours old (see [Why is the update data hours old?](troubleshooting.md#why-is-the-update-data-hours-old)). A release that is newer than that data can be reported, and installed by WordPress later.
+- On multisite, only the main site runs WordPress's updater (see [#85](https://github.com/l3rady/wp-updates-notifier/issues/85)).
+
+To stop being told about minor WordPress releases, choose **Yes, but only major releases**. To stop being told about one plugin or theme, [mute](muting.md) it.
+
 ## Reminders
 
 A channel can repeat the updates you have not installed yet. Set **Reminders** to **Daily** or **Weekly** in the channel's [routing](channels.md#reminders). The default is **Never**.

@@ -37,6 +37,8 @@ You need the same permission as for the settings screen, which is `manage_option
 
 Muting only affects this plugin's notifications. WordPress's own update notices in the dashboard, the update emails WordPress sends, and automatic updates are not touched. A muted plugin still shows its update in **Dashboard → Updates**, and is still updated if auto-updates are on for it.
 
+For updates that WordPress installs by itself, see [Updates WordPress installs automatically](how-notifications-work.md#updates-wordpress-installs-automatically). Scheduled checks do not report those. Mute a plugin or theme whose updates are handled outside WordPress.
+
 ## Mutes set in code
 
 A developer can define mutes in code, for example in an mu-plugin. They work like the others and are listed on the Muted tab marked **Set in code**, but there is no **Unmute** for them. A developer can also refuse a mute, or refuse an unmute, and the message they gave is shown to you. See [Muting from code](../developers/muting-from-code.md).

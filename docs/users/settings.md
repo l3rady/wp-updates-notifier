@@ -32,6 +32,10 @@ The schedule is run by WP-Cron, so a check only starts when someone visits the s
 - **Yes** (the default): every WordPress update is reported.
 - **Yes, but only major releases**: only updates that change the first two numbers of the version are reported. 6.7.1 to 6.8 counts, and 6.7 to 6.7.1 does not.
 
+Choose **Yes, but only major releases** if you do not want to hear about minor releases that WordPress installs by itself.
+
+**No** does not stop WordPress's automatic updates from running before each scheduled check. They run whatever you choose here, so plugin and theme updates that WordPress installs by itself are not reported. See [Updates WordPress installs automatically](how-notifications-work.md#updates-wordpress-installs-automatically).
+
 ## Notify about plugin updates? and Notify about theme updates?
 
 Each has the same three choices:

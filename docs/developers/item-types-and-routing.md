@@ -53,6 +53,27 @@ How the item's fields are used:
 - `name`, `current_version`, `links` and `notes` appear in the message.
 - `flags` are machine-readable facts (scalars) for routing rules and channels. They are not shown in the message.
 
+The check sets a bool `auto_update` flag on every core, plugin and theme item. It is true when WordPress is set to install the update by itself and can run on this site. The item then also has the note "Automatic updates are on, but WordPress has not installed this update yet." Items you add with `sc_wpun_update_items` get no flag from the plugin. Set it yourself if you want it.
+
+The `sc_wpun_auto_update_enabled` filter (`$enabled`, `$type`, `$key`, `$new_version`) lets code mark updates that something outside WordPress installs, such as a host or a deployment pipeline. Returning false removes the flag and the note.
+
+Scheduled checks run WordPress's automatic updates first, so a flagged item that is still waiting usually failed to install. To skip flagged items in checks where WordPress's updater did not run, use the veto:
+
+```php
+add_filter(
+	'sc_wpun_should_notify_item',
+	function ( $notify, $item ) {
+		$flags = $item->get_flags();
+		if ( ! empty( $flags['auto_update'] ) && 0 === did_action( 'wp_maybe_auto_update' ) ) {
+			return false;
+		}
+		return $notify;
+	},
+	10,
+	2
+);
+```
+
 Only `Notification_Item` objects survive the filter. The constructor throws an `InvalidArgumentException` for an invalid type.
 
 ## 3. Route it

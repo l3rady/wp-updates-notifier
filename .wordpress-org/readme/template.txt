@@ -67,6 +67,10 @@ The [getting started guide](https://wpun.cariss.dev/latest/users/getting-started
 
 Each channel is told about each new version once. If you don't install it, nothing more is sent unless you switch on daily or weekly reminders for that channel. See [How notifications work](https://wpun.cariss.dev/latest/users/how-notifications-work/).
 
+= Can I stop notifications for updates WordPress installs automatically? =
+
+You are already not told about most of them. A scheduled check runs WordPress's automatic updates first, so what WordPress installs by itself is not reported. An update that is still reported with automatic updates on failed or could not be installed, and says so in a note. To skip minor WordPress releases, choose "Yes, but only major releases" for WordPress updates. To skip a plugin or theme whose updates are handled elsewhere, mute it. See [Updates WordPress installs automatically](https://wpun.cariss.dev/latest/users/how-notifications-work/#updates-wordpress-installs-automatically).
+
 = How do I stop notifications for one plugin or theme? =
 
 Mute it. On the Plugins screen, click "Mute update notifications" under the plugin's name. When an update is waiting, "Don't notify me about this version" skips only that version. Themes are muted on the Muted tab of Settings > Updates Notifier, or with `wp updates-notifier mute`. A muted item is left out of every channel, and you can unmute it at any time.

@@ -8,6 +8,8 @@ Run them from the site's directory, or add `--path=/path/to/site`.
 
 Runs the update check now, as the schedule does. Each channel instance gets the updates it has not been told about yet, and each line says what happened.
 
+This runs outside WP-Cron, so WordPress's automatic updates do not run first. An update that WordPress would install later can be reported. A scheduled check, including `wp cron event run sc_wpun_update_check`, runs them first. See [Updates WordPress installs automatically](how-notifications-work.md#updates-wordpress-installs-automatically).
+
 ```
 wp updates-notifier check [--dry-run] [--force]
 ```
@@ -80,7 +82,7 @@ It shows:
 - **Schedule.** The frequency, when the next check is due and when the last one ran, in the site's time zone.
 - **Channels.** For each channel instance: the module, whether the module is available, whether it is switched on, whether it is defined in code, the last delivery result, the last failure and the time it must wait until. Then its settings, each with its source.
 - **Muted.** The plugins and themes that are [muted](muting.md), as `muted` lists them.
-- **Pending updates.** For each channel instance, what is waiting for it, and which of that is new to it and which it was told about already.
+- **Pending updates.** For each channel instance, what is waiting for it, and which of that is new to it and which it was told about already. An `auto_update` column says `yes` when WordPress is set to install the update by itself.
 
 Sample output:
 
