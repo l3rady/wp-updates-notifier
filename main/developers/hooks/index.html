@@ -4774,9 +4774,9 @@ notifications go. Such a user can:</p>
 <p>Example, let editors manage the plugin:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter( 'sc_wpun_capability', fn() =&gt; 'edit_pages' );</span>
 </code></pre></div>
-<p>Example, let the administrators of the sites of a network manage the plugin:</p>
-<div class="highlight"><pre><span></span><code><span class="x">add_filter( 'sc_wpun_capability', fn() =&gt; 'manage_options' );</span>
-</code></pre></div>
+<p>Network-activated, the screen is in the network admin, which only users who can manage the
+network reach, so lowering this to <code>manage_options</code> does not let the administrators of the
+sites in. Lower it to a capability that users who manage the network have, or leave it.</p>
 <table>
 <thead>
 <tr>
