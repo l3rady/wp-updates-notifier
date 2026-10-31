@@ -140,6 +140,7 @@ bin/build-assets.sh       -
 
 # make coverage: the WordPress suite with pcov (the coverage job). Its Clover check and the test of that check.
 bin/coverage-check.php    coverage phpcs smoke
+bin/coverage-merge.php    coverage phpcs smoke
 tests/bin/test-coverage-check.sh coverage
 
 # make mutation (Infection) runs by hand before a release, never in CI, so its settings affect no job.

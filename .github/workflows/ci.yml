@@ -221,7 +221,7 @@ jobs:
       - name: Run the tests
         run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
 
-  # Line coverage of the plugin's runtime PHP by the WordPress suite (pcov, single site, one PHP and WordPress
+  # Line coverage of the plugin's runtime PHP by the WordPress suite (pcov, single site and multisite, one PHP and WordPress
   # version). Fails below COVERAGE_MIN in the Makefile; the report is kept as an artifact.
   coverage:
     needs: changes
