@@ -40,16 +40,26 @@ final class Config_Report {
 	private $store;
 
 	/**
+	 * Where the plugin runs.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Config        $config   Resolver.
-	 * @param Settings      $settings Settings.
-	 * @param Channel_Store $store    Channel instances.
+	 * @param Config               $config   Resolver.
+	 * @param Settings             $settings Settings.
+	 * @param Channel_Store        $store    Channel instances.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Config $config, Settings $settings, Channel_Store $store ) {
+	public function __construct( Config $config, Settings $settings, Channel_Store $store, ?Network_Context $network_context = null ) {
 		$this->config   = $config;
 		$this->settings = $settings;
 		$this->store    = $store;
+
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -127,7 +137,7 @@ final class Config_Report {
 			'description' => '<p>' . esc_html__( 'Some values supplied by constants, environment variables or other sources are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
 			'actions'     => sprintf(
 				'<p><a href="%s">%s</a></p>',
-				esc_url( admin_url( 'options-general.php?page=' . Slack_Notice::SETTINGS_SLUG ) ),
+				esc_url( $this->network_context->settings_url() ),
 				esc_html__( 'Review the notification settings', 'wp-updates-notifier' )
 			),
 			'test'        => 'sc_wpun_config',

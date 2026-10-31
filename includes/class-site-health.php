@@ -81,22 +81,32 @@ class Site_Health {
 	private $report;
 
 	/**
+	 * Where the plugin runs.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Settings         $settings Settings.
-	 * @param State            $state    Run state.
-	 * @param Channel_Store    $store    Channel instances.
-	 * @param Channel_Registry $registry Registered modules.
-	 * @param Config           $config   Resolver.
-	 * @param Status_Report    $report   Report of settings, schedule and channels.
+	 * @param Settings             $settings Settings.
+	 * @param State                $state    Run state.
+	 * @param Channel_Store        $store    Channel instances.
+	 * @param Channel_Registry     $registry Registered modules.
+	 * @param Config               $config   Resolver.
+	 * @param Status_Report        $report   Report of settings, schedule and channels.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Settings $settings, State $state, Channel_Store $store, Channel_Registry $registry, Config $config, Status_Report $report ) {
+	public function __construct( Settings $settings, State $state, Channel_Store $store, Channel_Registry $registry, Config $config, Status_Report $report, ?Network_Context $network_context = null ) {
 		$this->settings = $settings;
 		$this->state    = $state;
 		$this->store    = $store;
 		$this->registry = $registry;
 		$this->config   = $config;
 		$this->report   = $report;
+
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -498,7 +508,7 @@ class Site_Health {
 			'description' => $description,
 			'actions'     => sprintf(
 				'<p><a href="%s">%s</a></p>',
-				esc_url( admin_url( 'options-general.php?page=' . Slack_Notice::SETTINGS_SLUG ) ),
+				esc_url( $this->network_context->settings_url() ),
 				esc_html__( 'Review the notification settings', 'wp-updates-notifier' )
 			),
 			'test'        => $test,

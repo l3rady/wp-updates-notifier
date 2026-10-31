@@ -22,6 +22,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Network_Context {
 
 	/**
+	 * Slug of the settings screen.
+	 */
+	const SETTINGS_SLUG = 'wp-updates-notifier';
+
+	/**
 	 * Whether the plugin is network-activated on a multisite.
 	 *
 	 * Reads the network's active plugins directly: is_plugin_active_for_network() is only loaded in the
@@ -192,5 +197,33 @@ class Network_Context {
 	 */
 	public function owner_site_id(): int {
 		return $this->is_network() ? $this->main_site_id() : (int) get_current_blog_id();
+	}
+
+	/**
+	 * The address of the plugin's settings screen, or one of its tabs.
+	 *
+	 * In network mode the screen is in the network admin, else under Settings.
+	 *
+	 * @param string $tab Tab slug; empty for the screen's default tab.
+	 *
+	 * @return string Not escaped for HTML.
+	 */
+	public function settings_url( string $tab = '' ): string {
+		$url = $this->is_network()
+			? network_admin_url( 'settings.php?page=' . self::SETTINGS_SLUG )
+			: admin_url( 'options-general.php?page=' . self::SETTINGS_SLUG );
+
+		return '' === $tab ? $url : $url . '&tab=' . rawurlencode( $tab );
+	}
+
+	/**
+	 * The address of an admin screen, in the network admin in network mode.
+	 *
+	 * @param string $path Path relative to the admin, for example `plugins.php`.
+	 *
+	 * @return string Not escaped for HTML.
+	 */
+	public function admin_page_url( string $path ): string {
+		return $this->is_network() ? network_admin_url( $path ) : admin_url( $path );
 	}
 }

@@ -15,6 +15,7 @@ use WPUN\Boolean_Field;
 use WPUN\Config_Report;
 use WPUN\Rejected_Channels;
 use WPUN\Enum_Field;
+use WPUN\Network_Context;
 use WPUN\Notifier;
 use WPUN\Plugin;
 use WPUN\Scheduler;
@@ -28,6 +29,11 @@ use WPUN\State;
  * @internal
  */
 class Settings_Page {
+	/**
+	 * Action of the form on the network settings screen, handled on `network_admin_edit_{action}`.
+	 */
+	const NETWORK_SAVE_ACTION = 'sc_wpun_save_network_settings';
+
 	/**
 	 * Settings.
 	 *
@@ -106,21 +112,29 @@ class Settings_Page {
 	private $muted_tab;
 
 	/**
+	 * Where the plugin runs.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Settings          $settings  Settings.
-	 * @param State             $state     Run state.
-	 * @param Notifier          $notifier  Notifier.
-	 * @param Slack_Notice      $slack_notice Notice about Slack no longer being supported.
-	 * @param Config_Report     $config_report Report of configuration problems.
-	 * @param Rejected_Channels $rejected_channels Report of modules refused for needing a newer API.
-	 * @param Channels_Tab      $channels_tab The Channels tab.
-	 * @param Notices           $notices Notices about what an admin action did.
-	 * @param Check_Now         $check_now The Check now button.
-	 * @param About_Tab         $about_tab The About tab.
-	 * @param Muted_Tab         $muted_tab The Muted tab.
+	 * @param Settings             $settings  Settings.
+	 * @param State                $state     Run state.
+	 * @param Notifier             $notifier  Notifier.
+	 * @param Slack_Notice         $slack_notice Notice about Slack no longer being supported.
+	 * @param Config_Report        $config_report Report of configuration problems.
+	 * @param Rejected_Channels    $rejected_channels Report of modules refused for needing a newer API.
+	 * @param Channels_Tab         $channels_tab The Channels tab.
+	 * @param Notices              $notices Notices about what an admin action did.
+	 * @param Check_Now            $check_now The Check now button.
+	 * @param About_Tab            $about_tab The About tab.
+	 * @param Muted_Tab            $muted_tab The Muted tab.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab ) {
+	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab, ?Network_Context $network_context = null ) {
 		$this->settings          = $settings;
 		$this->state             = $state;
 		$this->notifier          = $notifier;
@@ -132,6 +146,7 @@ class Settings_Page {
 		$this->check_now         = $check_now;
 		$this->about_tab         = $about_tab;
 		$this->muted_tab         = $muted_tab;
+		$this->network_context   = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -169,9 +184,9 @@ class Settings_Page {
 		 *
 		 *     add_filter( 'sc_wpun_capability', fn() => 'edit_pages' );
 		 *
-		 * Example, let the administrators of the sites of a network manage the plugin:
-		 *
-		 *     add_filter( 'sc_wpun_capability', fn() => 'manage_options' );
+		 * Network-activated, the screen is in the network admin, which only users who can manage the
+		 * network reach, so lowering this to `manage_options` does not let the administrators of the
+		 * sites in. Lower it to a capability that users who manage the network have, or leave it.
 		 *
 		 * @since 2.0.0
 		 *
@@ -194,7 +209,7 @@ class Settings_Page {
 		if ( null !== $file && plugin_basename( SC_WPUN_FILE ) !== $file ) {
 			return $links;
 		}
-		$settings_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=wp-updates-notifier' ) ) . '">' . esc_html__( 'Settings', 'wp-updates-notifier' ) . '</a>';
+		$settings_link = '<a href="' . esc_url( $this->network_context->settings_url() ) . '">' . esc_html__( 'Settings', 'wp-updates-notifier' ) . '</a>';
 		array_unshift( $links, $settings_link );
 		return $links;
 	}
@@ -221,11 +236,46 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function admin_settings_menu() {
-		$hook = add_options_page( __( 'Updates Notifier', 'wp-updates-notifier' ), __( 'Updates Notifier', 'wp-updates-notifier' ), self::capability(), 'wp-updates-notifier', array( $this, 'settings_page' ) );
+		$title = __( 'Updates Notifier', 'wp-updates-notifier' );
+		if ( $this->network_context->is_network() ) {
+			// Network-activated, the screen lives in the network admin, under its Settings.
+			$hook = add_submenu_page( 'settings.php', $title, $title, self::capability(), Network_Context::SETTINGS_SLUG, array( $this, 'settings_page' ) );
+		} else {
+			$hook = add_options_page( $title, $title, self::capability(), Network_Context::SETTINGS_SLUG, array( $this, 'settings_page' ) );
+		}
 		if ( $hook ) {
 			add_action( 'load-' . $hook, array( $this, 'enqueue_styles' ) );
 			add_action( 'load-' . $hook, array( $this, 'add_title_filter' ) );
 		}
+	}
+
+	/**
+	 * Save the settings sent from the network settings screen. Hooked on `network_admin_edit_{action}`.
+	 *
+	 * The network admin has no `options.php` for network options, so this does what it does for one option: checks
+	 * the security token and the capability, saves what the form sent, which runs the validation of
+	 * `sc_wpun_settings_validate` once, and goes back to the screen with the messages kept for 30 seconds.
+	 *
+	 * @return void
+	 */
+	public function handle_network_save(): void {
+		check_admin_referer( Settings::OPT_FIELD . '-options' );
+		if ( ! current_user_can( self::capability() ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
+		}
+
+		$input = isset( $_POST[ Settings::OPT_FIELD ] ) && is_array( $_POST[ Settings::OPT_FIELD ] ) ? wp_unslash( $_POST[ Settings::OPT_FIELD ] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Checked above; update_site_option() runs the validation.
+		update_site_option( Settings::OPT_FIELD, $input );
+
+		if ( ! count( get_settings_errors() ) ) {
+			$saved = __( 'Settings saved.' ); // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- Core's own message, already translated.
+			add_settings_error( 'general', 'settings_updated', $saved, 'success' );
+		}
+		set_transient( 'settings_errors', get_settings_errors(), 30 );
+
+		$back = wp_get_referer();
+		wp_safe_redirect( add_query_arg( 'settings-updated', 'true', false !== $back && '' !== $back ? $back : $this->network_context->settings_url( 'general' ) ) );
+		exit;
 	}
 
 	/**
@@ -387,7 +437,7 @@ class Settings_Page {
 	 * @return string
 	 */
 	private function tab_url( string $tab ): string {
-		return admin_url( 'options-general.php?page=wp-updates-notifier&tab=' . rawurlencode( $tab ) );
+		return $this->network_context->settings_url( $tab );
 	}
 
 	/**
@@ -410,6 +460,12 @@ class Settings_Page {
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Updates Notifier', 'wp-updates-notifier' ); ?></h1>
 
+			<?php
+			if ( $this->network_context->is_network() ) {
+				// Core shows these above the screens under Settings, not above the ones under the network's Settings.
+				settings_errors();
+			}
+			?>
 			<?php $this->slack_notice->render(); ?>
 			<?php $this->config_report->render(); ?>
 			<?php $this->rejected_channels->render(); ?>
@@ -472,7 +528,7 @@ class Settings_Page {
 
 		<?php $this->check_now->render(); ?>
 
-		<form action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" method="post">
+		<form action="<?php echo esc_url( $this->network_context->is_network() ? network_admin_url( 'edit.php?action=' . self::NETWORK_SAVE_ACTION ) : admin_url( 'options.php' ) ); ?>" method="post">
 			<?php
 			// Saving goes back to the page it was sent from, which is this tab: the tab links carry `tab=general`.
 			settings_fields( 'sc_wpun_settings' );

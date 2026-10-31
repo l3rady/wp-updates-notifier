@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use WPUN\Mute;
 use WPUN\Mute_Store;
+use WPUN\Network_Context;
 
 /**
  * Adds the mute links to the Plugins screen, and handles them.
@@ -20,7 +21,8 @@ use WPUN\Mute_Store;
  * The hooks are added while the Plugins screen loads (`load-plugins.php`), so no other request has them. The links
  * are GET links to `admin-post.php` with a security token for the action and the plugin, as core's Activate and
  * Deactivate links are: the rows are inside core's bulk form, and forms cannot be nested. Skipping a version has the
- * version in its token, so a link only skips the version it was made for. The network Plugins screen is left out.
+ * version in its token, so a link only skips the version it was made for. Network-activated, only the network Plugins
+ * screen has them, as the sites' own Plugins screens are not where the plugin is managed.
  *
  * @internal
  */
@@ -54,16 +56,26 @@ class Plugins_Screen_Mutes {
 	private $notices;
 
 	/**
+	 * Where the plugin runs.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Mute_Store   $store   Mute storage.
-	 * @param Mute_Actions $actions What muting shares with the Muted tab.
-	 * @param Notices      $notices Notices shown after an action.
+	 * @param Mute_Store           $store   Mute storage.
+	 * @param Mute_Actions         $actions What muting shares with the Muted tab.
+	 * @param Notices              $notices Notices shown after an action.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Mute_Store $store, Mute_Actions $actions, Notices $notices ) {
+	public function __construct( Mute_Store $store, Mute_Actions $actions, Notices $notices, ?Network_Context $network_context = null ) {
 		$this->store   = $store;
 		$this->actions = $actions;
 		$this->notices = $notices;
+
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -72,21 +84,25 @@ class Plugins_Screen_Mutes {
 	 * @return void
 	 */
 	public function load(): void {
-		if ( is_network_admin() ) {
-			return; // Multisite is a later step (#85).
+		$network = $this->network_context->is_network();
+		if ( is_network_admin() !== $network ) {
+			return; // Network-activated: the network admin's screen only. Else the site's.
 		}
 
-		add_action( 'admin_notices', array( $this->notices, 'render' ) );
+		$screen = $network ? 'plugins-network' : 'plugins';
+
+		add_action( $network ? 'network_admin_notices' : 'admin_notices', array( $this->notices, 'render' ) );
 		// Core runs the bulk action handler for any action it does not know; it checks the capability itself.
-		add_filter( 'handle_bulk_actions-plugins', array( $this, 'handle_bulk_actions' ), 10, 3 );
+		add_filter( "handle_bulk_actions-{$screen}", array( $this, 'handle_bulk_actions' ), 10, 3 );
 
 		if ( ! Mute_Actions::can_mute() ) {
 			return;
 		}
 
-		add_filter( 'plugin_action_links', array( $this, 'action_links' ), 10, 4 );
+		// The network admin's plugin list runs its own filter, not plugin_action_links.
+		add_filter( $network ? 'network_admin_plugin_action_links' : 'plugin_action_links', array( $this, 'action_links' ), 10, 4 );
 		add_filter( 'plugin_row_meta', array( $this, 'row_meta' ), 10, 4 );
-		add_filter( 'bulk_actions-plugins', array( $this, 'bulk_actions' ) );
+		add_filter( "bulk_actions-{$screen}", array( $this, 'bulk_actions' ) );
 		foreach ( array_keys( $this->waiting() ) as $file ) {
 			add_action(
 				"in_plugin_update_message-{$file}",
@@ -318,7 +334,7 @@ class Plugins_Screen_Mutes {
 	}
 
 	/**
-	 * Mute or unmute the selected plugins (always) and tell the user how it went. Hooked on `handle_bulk_actions-plugins`.
+	 * Mute or unmute the selected plugins (always) and tell the user how it went. Hooked on `handle_bulk_actions-plugins`, or `-plugins-network`.
 	 *
 	 * Core has checked its own security token for the bulk form; the capability is checked here.
 	 *
@@ -368,7 +384,7 @@ class Plugins_Screen_Mutes {
 		}
 		$this->notices->add( array() === $problems, $text );
 
-		return is_string( $redirect_to ) && '' !== $redirect_to ? $redirect_to : admin_url( 'plugins.php' );
+		return is_string( $redirect_to ) && '' !== $redirect_to ? $redirect_to : $this->network_context->admin_page_url( 'plugins.php' );
 	}
 
 	/**
@@ -494,6 +510,6 @@ class Plugins_Screen_Mutes {
 			return;
 		}
 
-		$this->actions->go_back( admin_url( 'plugins.php' ) );
+		$this->actions->go_back( $this->network_context->admin_page_url( 'plugins.php' ) );
 	}
 }

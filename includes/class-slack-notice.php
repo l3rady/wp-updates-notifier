@@ -89,7 +89,7 @@ class Slack_Notice {
 	 * @return string
 	 */
 	public function settings_url(): string {
-		return admin_url( 'options-general.php?page=' . self::SETTINGS_SLUG );
+		return $this->network_context->settings_url();
 	}
 
 	/**

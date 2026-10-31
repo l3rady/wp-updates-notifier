@@ -1112,11 +1112,9 @@ Example, let editors manage the plugin:
 add_filter( 'sc_wpun_capability', fn() => 'edit_pages' );
 ```
 
-Example, let the administrators of the sites of a network manage the plugin:
-
-```php
-add_filter( 'sc_wpun_capability', fn() => 'manage_options' );
-```
+Network-activated, the screen is in the network admin, which only users who can manage the
+network reach, so lowering this to `manage_options` does not let the administrators of the
+sites in. Lower it to a capability that users who manage the network have, or leave it.
 
 | Parameter | Type | Description |
 | --- | --- | --- |

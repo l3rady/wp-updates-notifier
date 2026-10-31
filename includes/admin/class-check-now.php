@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use WPUN\Channel_Store;
 use WPUN\Delivery_Result;
 use WPUN\Dispatcher;
+use WPUN\Network_Context;
 use WPUN\Notification;
 use WPUN\Update_Checker;
 
@@ -57,18 +58,27 @@ class Check_Now {
 	private $checker;
 
 	/**
+	 * Where the plugin runs.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Channel_Store  $store      Channel instance storage.
-	 * @param Dispatcher     $dispatcher Dispatcher.
-	 * @param Notices        $notices    Notices shown after an action.
-	 * @param Update_Checker $checker   The update check.
+	 * @param Channel_Store        $store      Channel instance storage.
+	 * @param Dispatcher           $dispatcher Dispatcher.
+	 * @param Notices              $notices    Notices shown after an action.
+	 * @param Update_Checker       $checker   The update check.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Channel_Store $store, Dispatcher $dispatcher, Notices $notices, Update_Checker $checker ) {
-		$this->store      = $store;
-		$this->dispatcher = $dispatcher;
-		$this->notices    = $notices;
-		$this->checker    = $checker;
+	public function __construct( Channel_Store $store, Dispatcher $dispatcher, Notices $notices, Update_Checker $checker, ?Network_Context $network_context = null ) {
+		$this->store           = $store;
+		$this->dispatcher      = $dispatcher;
+		$this->notices         = $notices;
+		$this->checker         = $checker;
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -77,7 +87,7 @@ class Check_Now {
 	 * @return string
 	 */
 	private function general_url(): string {
-		return admin_url( 'options-general.php?page=wp-updates-notifier&tab=general' );
+		return $this->network_context->settings_url( 'general' );
 	}
 
 	/**
@@ -86,7 +96,7 @@ class Check_Now {
 	 * @return void
 	 */
 	public function render(): void {
-		$channels_url = admin_url( 'options-general.php?page=wp-updates-notifier&tab=channels' );
+		$channels_url = $this->network_context->settings_url( 'channels' );
 		?>
 		<form class="sc-wpun-check-now" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>" />

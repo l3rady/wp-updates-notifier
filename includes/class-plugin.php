@@ -202,7 +202,7 @@ class Plugin {
 	 * @return Muted_Tab
 	 */
 	public function muted_tab(): Muted_Tab {
-		$this->muted_tab ??= new Muted_Tab( $this->mute_store, $this->mute_actions(), $this->notices(), $this->status_report() );
+		$this->muted_tab ??= new Muted_Tab( $this->mute_store, $this->mute_actions(), $this->notices(), $this->status_report(), $this->network_context );
 
 		return $this->muted_tab;
 	}
@@ -213,7 +213,7 @@ class Plugin {
 	 * @return Plugins_Screen_Mutes
 	 */
 	public function plugins_screen_mutes(): Plugins_Screen_Mutes {
-		$this->plugins_screen_mutes ??= new Plugins_Screen_Mutes( $this->mute_store, $this->mute_actions(), $this->notices() );
+		$this->plugins_screen_mutes ??= new Plugins_Screen_Mutes( $this->mute_store, $this->mute_actions(), $this->notices(), $this->network_context );
 
 		return $this->plugins_screen_mutes;
 	}
@@ -224,7 +224,7 @@ class Plugin {
 	 * @return Channels_Tab
 	 */
 	public function channels_tab(): Channels_Tab {
-		$this->channels_tab ??= new Channels_Tab( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->channel_form() );
+		$this->channels_tab ??= new Channels_Tab( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->channel_form(), $this->network_context );
 
 		return $this->channels_tab;
 	}
@@ -246,7 +246,7 @@ class Plugin {
 	 * @return Check_Now
 	 */
 	public function check_now(): Check_Now {
-		$this->check_now ??= new Check_Now( $this->channel_store, $this->dispatcher, $this->notices(), $this->update_checker );
+		$this->check_now ??= new Check_Now( $this->channel_store, $this->dispatcher, $this->notices(), $this->update_checker, $this->network_context );
 
 		return $this->check_now;
 	}
@@ -257,7 +257,7 @@ class Plugin {
 	 * @return Channel_Form
 	 */
 	public function channel_form(): Channel_Form {
-		$this->channel_form ??= new Channel_Form( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->settings() );
+		$this->channel_form ??= new Channel_Form( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->settings(), $this->network_context );
 
 		return $this->channel_form;
 	}
@@ -349,15 +349,15 @@ class Plugin {
 		$this->channels          = new Channel_Registry();
 		$this->channel_store     = new Channel_Store( $this->config, $this->channels, $this->network_context );
 		$this->settings          = new Settings( $this->state, $this->channel_store, $this->config, $this->network_context );
-		$this->config_report     = new Config_Report( $this->config, $this->settings, $this->channel_store );
-		$this->rejected_channels = new Rejected_Channels( $this->channels );
+		$this->config_report     = new Config_Report( $this->config, $this->settings, $this->channel_store, $this->network_context );
+		$this->rejected_channels = new Rejected_Channels( $this->channels, $this->network_context );
 		$this->scheduler         = new Scheduler( $this->settings, $this->network_context );
 		$this->notifier          = new Notifier( $this->channel_store, $this->network_context );
 		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store, $this->network_context );
 		$this->mute_store        = new Mute_Store( $this->network_context );
 		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store, new Auto_Update_Policy(), $this->network_context );
 		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state, $this->network_context );
-		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->channels, $this->config, $this->status_report() );
+		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->channels, $this->config, $this->status_report(), $this->network_context );
 	}
 
 	/**
@@ -467,7 +467,7 @@ class Plugin {
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
-		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab(), $this->muted_tab() );
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab(), $this->muted_tab(), $this->network_context );
 
 		return $this->settings_page;
 	}
@@ -566,8 +566,6 @@ class Plugin {
 		$this->translations->register();
 		// Add Actions.
 		add_action( 'switch_blog', array( $this->config, 'flush' ) ); // Values are resolved per site.
-		add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
-		add_filter( 'site_status_tests', array( $this->rejected_channels, 'add_site_health_test' ) ); // Site Health test while a module is refused for needing a newer API.
 		add_action( 'deleted_plugin', array( $this->mute_store, 'plugin_deleted' ), 10, 2 ); // Deleting a plugin removes its mute.
 		add_action( 'deleted_theme', array( $this->mute_store, 'theme_deleted' ), 10, 2 ); // Deleting a theme removes its mute.
 		add_action( 'sc_wpun_channel_deleted', array( $this->state, 'forget_channel' ) ); // Deleting an instance deletes its delivery state.
@@ -623,9 +621,14 @@ class Plugin {
 			add_action( Scheduler::CRON_NAME, array( $this->slack_notice, 'maybe_send_email' ), 5 ); // Tell the admin once that Slack is no longer supported, before the check.
 		}
 		add_action( 'admin_post_' . Slack_Notice::DISMISS_ACTION, array( $this->slack_notice, 'handle_dismiss' ) ); // Dismiss the notice on the settings page.
-		add_filter( 'site_status_tests', array( $this->slack_notice, 'add_site_health_test' ) ); // Site Health test while Slack settings are stored but unused.
-		add_filter( 'site_status_tests', array( $this->site_health, 'add_tests' ) ); // Site Health tests of the update check and the channels.
-		add_filter( 'debug_information', array( $this->site_health, 'add_debug_info' ) ); // Settings, schedule and channels in the site info, without secrets or addresses.
+		if ( ! $this->network_context->is_network() || get_current_blog_id() === $this->network_context->main_site_id() ) {
+			// Network-activated, the network has one check, so only the main site reports on it.
+			add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
+			add_filter( 'site_status_tests', array( $this->rejected_channels, 'add_site_health_test' ) ); // Site Health test while a module is refused for needing a newer API.
+			add_filter( 'site_status_tests', array( $this->slack_notice, 'add_site_health_test' ) ); // Site Health test while Slack settings are stored but unused.
+			add_filter( 'site_status_tests', array( $this->site_health, 'add_tests' ) ); // Site Health tests of the update check and the channels.
+			add_filter( 'debug_information', array( $this->site_health, 'add_debug_info' ) ); // Settings, schedule and channels in the site info, without secrets or addresses.
+		}
 		add_action( 'init', array( $this->scheduler, 'maybe_schedule' ) ); // Put the check back on the schedule if it is missing.
 		$this->network_context->on_option_updated( Settings::OPT_FIELD, array( $this->scheduler, 'settings_updated' ) ); // Reschedule when the frequency changes.
 
@@ -668,10 +671,16 @@ class Plugin {
 	 * @return void
 	 */
 	public function register_admin_hooks(): void {
-		add_filter( 'plugin_action_links_' . plugin_basename( SC_WPUN_FILE ), array( $this->settings_page(), 'plugin_action_links' ), 10, 2 ); // Add settings link to plugin in plugin list.
+		$network = $this->network_context->is_network();
+
+		// Network-activated, the settings are in the network admin: its plugin list gets the link, the sites' lists none.
+		add_filter( ( $network ? 'network_admin_plugin_action_links_' : 'plugin_action_links_' ) . plugin_basename( SC_WPUN_FILE ), array( $this->settings_page(), 'plugin_action_links' ), 10, 2 ); // Add settings link to plugin in plugin list.
 		add_filter( 'plugin_row_meta', array( $this->settings_page(), 'plugin_row_meta' ), 10, 2 ); // Link the documentation from the plugin's row.
 		add_action( 'after_plugin_row', array( $this->plugin_requirements(), 'render_row' ), 10, 2 ); // Notice below an add-on that needs another API version.
-		add_action( 'admin_menu', array( $this->settings_page(), 'admin_settings_menu' ) ); // Add menu to options.
+		add_action( $network ? 'network_admin_menu' : 'admin_menu', array( $this->settings_page(), 'admin_settings_menu' ) ); // Add menu to options.
+		if ( $network ) {
+			add_action( 'network_admin_edit_' . Settings_Page::NETWORK_SAVE_ACTION, array( $this->settings_page(), 'handle_network_save' ) ); // Network options are not saved by options.php.
+		}
 		add_action( 'admin_init', array( $this->settings_page(), 'admin_settings_init' ) ); // Add admin init functions.
 		add_action( 'admin_init', array( $this->update_nag(), 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins.
 		add_filter( 'option_page_capability_' . Settings::OPT_FIELD, array( Settings_Page::class, 'capability' ) ); // options.php accepts saves with the same capability.

@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use WPUN\Mute_Store;
+use WPUN\Network_Context;
 use WPUN\Status_Report;
 
 /**
@@ -57,18 +58,27 @@ class Muted_Tab {
 	private $report;
 
 	/**
+	 * Where the plugin runs.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Mute_Store    $store   Mute storage.
-	 * @param Mute_Actions  $actions What muting shares with the Plugins screen.
-	 * @param Notices       $notices Notices shown after an action.
-	 * @param Status_Report $report  The report that lists the mutes.
+	 * @param Mute_Store           $store   Mute storage.
+	 * @param Mute_Actions         $actions What muting shares with the Plugins screen.
+	 * @param Notices              $notices Notices shown after an action.
+	 * @param Status_Report        $report  The report that lists the mutes.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Mute_Store $store, Mute_Actions $actions, Notices $notices, Status_Report $report ) {
-		$this->store   = $store;
-		$this->actions = $actions;
-		$this->notices = $notices;
-		$this->report  = $report;
+	public function __construct( Mute_Store $store, Mute_Actions $actions, Notices $notices, Status_Report $report, ?Network_Context $network_context = null ) {
+		$this->store           = $store;
+		$this->actions         = $actions;
+		$this->notices         = $notices;
+		$this->report          = $report;
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -77,7 +87,7 @@ class Muted_Tab {
 	 * @return string
 	 */
 	private function tab_url(): string {
-		return admin_url( 'options-general.php?page=wp-updates-notifier&tab=muted' );
+		return $this->network_context->settings_url( 'muted' );
 	}
 
 	/**
@@ -112,7 +122,7 @@ class Muted_Tab {
 			sprintf(
 				// translators: %s: Link to the Plugins screen, with the text "Plugins screen".
 				__( 'Nothing is muted. Muting a plugin or theme stops the update notifications about it, always or for the version that is waiting. Mute a plugin from the %s, or a plugin or theme with the form below.', 'wp-updates-notifier' ),
-				'<a href="' . esc_url( admin_url( 'plugins.php' ) ) . '">' . esc_html__( 'Plugins screen', 'wp-updates-notifier' ) . '</a>'
+				'<a href="' . esc_url( $this->network_context->admin_page_url( 'plugins.php' ) ) . '">' . esc_html__( 'Plugins screen', 'wp-updates-notifier' ) . '</a>'
 			),
 			array( 'a' => array( 'href' => array() ) )
 		) . '</p>';

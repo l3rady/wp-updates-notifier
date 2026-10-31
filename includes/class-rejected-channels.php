@@ -29,12 +29,21 @@ final class Rejected_Channels {
 	private $registry;
 
 	/**
+	 * Where the plugin runs.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Channel_Registry $registry Registered channels.
+	 * @param Channel_Registry     $registry Registered channels.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Channel_Registry $registry ) {
-		$this->registry = $registry;
+	public function __construct( Channel_Registry $registry, ?Network_Context $network_context = null ) {
+		$this->registry        = $registry;
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -98,7 +107,7 @@ final class Rejected_Channels {
 			'description' => '<p>' . esc_html__( 'Some notification modules need a newer version of WP Updates Notifier than this site has, so they are switched off. Their settings have been kept.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
 			'actions'     => sprintf(
 				'<p><a href="%s">%s</a></p>',
-				esc_url( admin_url( 'plugins.php' ) ),
+				esc_url( $this->network_context->admin_page_url( 'plugins.php' ) ),
 				esc_html__( 'Update WP Updates Notifier', 'wp-updates-notifier' )
 			),
 			'test'        => 'sc_wpun_rejected_channels',

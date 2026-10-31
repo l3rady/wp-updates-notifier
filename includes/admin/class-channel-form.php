@@ -19,6 +19,7 @@ use WPUN\Channel_Store;
 use WPUN\Dispatcher;
 use WPUN\Enum_Field;
 use WPUN\Field_Types;
+use WPUN\Network_Context;
 use WPUN\Routing;
 use WPUN\Settings;
 use WPUN\State;
@@ -79,22 +80,31 @@ class Channel_Form {
 	private $settings;
 
 	/**
+	 * Where the plugin runs.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Channel_Store    $store      Channel instance storage.
-	 * @param Channel_Registry $registry   Registered channels.
-	 * @param Dispatcher       $dispatcher Dispatcher.
-	 * @param State            $state      Run state.
-	 * @param Notices          $notices    Notices shown after an action.
-	 * @param Settings         $settings   Global settings.
+	 * @param Channel_Store        $store      Channel instance storage.
+	 * @param Channel_Registry     $registry   Registered channels.
+	 * @param Dispatcher           $dispatcher Dispatcher.
+	 * @param State                $state      Run state.
+	 * @param Notices              $notices    Notices shown after an action.
+	 * @param Settings             $settings   Global settings.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Notices $notices, Settings $settings ) {
-		$this->store      = $store;
-		$this->registry   = $registry;
-		$this->dispatcher = $dispatcher;
-		$this->state      = $state;
-		$this->notices    = $notices;
-		$this->settings   = $settings;
+	public function __construct( Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Notices $notices, Settings $settings, ?Network_Context $network_context = null ) {
+		$this->store           = $store;
+		$this->registry        = $registry;
+		$this->dispatcher      = $dispatcher;
+		$this->state           = $state;
+		$this->notices         = $notices;
+		$this->settings        = $settings;
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -105,7 +115,7 @@ class Channel_Form {
 	 * @return string
 	 */
 	private function tab_url( array $args = array() ): string {
-		return add_query_arg( $args, admin_url( 'options-general.php?page=wp-updates-notifier&tab=channels' ) );
+		return add_query_arg( $args, $this->network_context->settings_url( 'channels' ) );
 	}
 
 	/**
