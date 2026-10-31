@@ -3,7 +3,7 @@
 #   make smoke                       # sanity-check the environment
 #   make smoke PHP_VERSION=7.4       # pick a PHP version (default 8.3)
 #   make matrix                      # smoke test every supported PHP version
-#   make up                          # local site on http://localhost:8080, mail on :8025
+#   make up                          # local sites on http://localhost:8080 and :8081 (multisite), mail on :8025
 
 PHP_VERSION ?= 8.3
 WP_VERSION  ?= 7.1.3
@@ -53,7 +53,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log wp check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-upgrade screenshots security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-upgrade screenshots security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -322,20 +322,27 @@ docs-deploy: ## Commit one version to the local gh-pages branch with mike, witho
 
 security: check-workflows secrets audit sast taint ## Run every security check
 
-up: ## Start the local WordPress site (http://localhost:8080) with Mailpit (:8025), then set it up
-	$(COMPOSE) --profile site up -d --build wordpress mailpit webhook
+up: ## Start the local single site (http://localhost:8080) and multisite (http://localhost:8081) with Mailpit (:8025), then set them up
+	$(COMPOSE) --profile site up -d --build wordpress wordpress-ms mailpit webhook
 	$(MAKE) --no-print-directory site-setup
 
-site-setup: ## Install and configure the local site: debug settings and plugins (safe to run again)
+site-setup: ## Install and configure both local sites: debug settings and plugins (safe to run again)
 	$(COMPOSE) --profile site run --rm -T --entrypoint sh wp-cli /usr/local/bin/wpun-site-setup
+	$(COMPOSE) --profile site run --rm -T --entrypoint sh wp-cli-ms /usr/local/bin/wpun-site-setup
 
 site-log: ## Follow the local site's debug log (wp-content/debug.log)
 	$(COMPOSE) --profile site exec wordpress sh -c 'touch wp-content/debug.log && tail -n 50 -f wp-content/debug.log'
 
-wp: ## Run WP-CLI on the local site, e.g. make wp ARGS="plugin list"
+site-log-ms: ## Follow the local multisite's debug log (wp-content/debug.log)
+	$(COMPOSE) --profile site exec wordpress-ms sh -c 'touch wp-content/debug.log && tail -n 50 -f wp-content/debug.log'
+
+wp: ## Run WP-CLI on the local single site, e.g. make wp ARGS="plugin list"
 	$(COMPOSE) --profile site run --rm wp-cli $(ARGS)
 
-down: ## Stop the local site
+wp-ms: ## Run WP-CLI on the local multisite, e.g. make wp-ms ARGS="site list"
+	$(COMPOSE) --profile site run --rm wp-cli-ms $(ARGS)
+
+down: ## Stop the local sites
 	$(COMPOSE) --profile site down
 
 clean: ## Remove containers, volumes and built images

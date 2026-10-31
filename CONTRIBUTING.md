@@ -6,8 +6,11 @@ Thanks for helping. Everything runs in Docker, so the only things you need are
 - Set up, tests and coding standards: see **Development** in the
   [README](README.md). `make lint`, `make stan`, `make rector` and `make test`
   must pass; CI runs them on every pull request.
-- Check changes by hand on the local site (`make up`, see **Local site** in the
-  README): debugging is on there, with Query Monitor, so a change must not add
+- Check changes by hand on the local sites (`make up`, see **Local site** in the
+  README): a single site on http://localhost:8080 and a multisite on
+  http://localhost:8081 (`make wp` and `make wp-ms` run WP-CLI on each; log in as
+  admin / admin). The plugin starts network-activated on the multisite; the README
+  shows how to activate it per site instead. Debugging is on there, with Query Monitor, so a change must not add
   PHP notices or `doing_it_wrong` messages. It also runs with a persistent
   object cache. For changes that save or read options, transients or channels,
   check them with the cache on and with `make site-setup OBJECT_CACHE=off`.

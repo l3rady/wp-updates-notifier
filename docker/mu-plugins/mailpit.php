@@ -15,10 +15,11 @@ add_action(
 	}
 );
 
-// WordPress defaults to wordpress@localhost here, which PHPMailer rejects.
+// WordPress defaults to wordpress@localhost here, which PHPMailer rejects. The address tells the two local sites apart
+// in Mailpit.
 add_filter(
 	'wp_mail_from',
 	static function () {
-		return 'wordpress@example.test';
+		return is_multisite() ? 'wordpress@network.example.test' : 'wordpress@single.example.test';
 	}
 );

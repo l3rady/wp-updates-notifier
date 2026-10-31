@@ -6,7 +6,7 @@
  * @package wp-updates-notifier
  */
 
-// Mail comes from a plain example.com address (docker/mu-plugins/mailpit.php sets example.test).
+// Mail comes from a plain example.com address (docker/mu-plugins/mailpit.php sets single.example.test).
 add_filter(
 	'wp_mail_from',
 	static function () {
