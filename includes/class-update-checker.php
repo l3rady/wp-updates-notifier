@@ -96,6 +96,13 @@ class Update_Checker {
 	private $network_context;
 
 	/**
+	 * What is active across the network, read once per check: false until read, null for "everything installed".
+	 *
+	 * @var array{plugins: string[], themes: string[]}|null|false
+	 */
+	private $network_actives = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings             $settings Settings.
@@ -190,6 +197,8 @@ class Update_Checker {
 		 * @since 2.0.0
 		 */
 		do_action( 'sc_wpun_before_update_check' );
+
+		$this->network_actives = false; // Read again for each check, at most once.
 
 		// Refresh WordPress's update data first, whatever notify_core says. Under WP-Cron this also runs
 		// WordPress's automatic updates (wp_maybe_auto_update) before plugins and themes are read, so
@@ -1144,9 +1153,14 @@ class Update_Checker {
 
 		// Network mode: active on any site of the network counts.
 		if ( $this->network_context->is_network() ) {
-			foreach ( $this->network_context->site_ids() as $site_id ) {
-				$active = array_merge( $active, array_filter( (array) get_blog_option( $site_id, 'active_plugins', array() ), 'is_string' ) );
+			$network = $this->network_actives();
+			if ( null === $network ) {
+				if ( ! function_exists( 'get_plugins' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/plugin.php'; // Not loaded in cron requests.
+				}
+				return array_map( 'strval', array_keys( get_plugins() ) ); // Too many sites to read: every installed plugin counts.
 			}
+			$active = array_merge( $active, $network['plugins'] );
 		}
 
 		return array_values( array_unique( $active ) );
@@ -1162,13 +1176,23 @@ class Update_Checker {
 			return array_unique( array( get_stylesheet(), get_template() ) );
 		}
 
-		$themes = array();
-		foreach ( $this->network_context->site_ids() as $site_id ) {
-			$themes[] = (string) get_blog_option( $site_id, 'stylesheet' );
-			$themes[] = (string) get_blog_option( $site_id, 'template' );
+		$network = $this->network_actives();
+
+		// Too many sites to read: every installed theme counts.
+		return null === $network ? array_map( 'strval', array_keys( wp_get_themes( array( 'errors' => null ) ) ) ) : $network['themes'];
+	}
+
+	/**
+	 * What is active across the network, read on first use in a check.
+	 *
+	 * @return array{plugins: string[], themes: string[]}|null Null when everything installed counts as active.
+	 */
+	private function network_actives(): ?array {
+		if ( false === $this->network_actives ) {
+			$this->network_actives = ( new Network_Actives() )->collect();
 		}
 
-		return array_values( array_unique( array_filter( $themes ) ) );
+		return $this->network_actives;
 	}
 
 	/**

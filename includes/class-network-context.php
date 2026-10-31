@@ -171,26 +171,6 @@ class Network_Context {
 	}
 
 	/**
-	 * The ids of the sites of the current network that are not deleted.
-	 *
-	 * Only for network mode, where "active" means active on any site. `number => 0` lifts the default limit of 100.
-	 *
-	 * @return int[]
-	 */
-	public function site_ids(): array {
-		$ids = get_sites(
-			array(
-				'fields'     => 'ids',
-				'number'     => 0,
-				'network_id' => get_current_network_id(),
-				'deleted'    => 0,
-			)
-		);
-
-		return array_map( 'intval', (array) $ids );
-	}
-
-	/**
 	 * The site id the plugin's settings and schedule belong to: the main site in network mode, else the current site.
 	 *
 	 * @return int
