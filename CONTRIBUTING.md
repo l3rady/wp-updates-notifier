@@ -10,7 +10,7 @@ Thanks for helping. Everything runs in Docker, so the only things you need are
   README): a single site on http://localhost:8080 and a multisite on
   http://localhost:8081 (`make wp` and `make wp-ms` run WP-CLI on each; log in as
   admin / admin). The plugin starts network-activated on the multisite; the README
-  shows how to activate it per site instead. Debugging is on there, with Query Monitor, so a change must not add
+  shows how to make a per-site copy to test the dormant mode. Debugging is on there, with Query Monitor, so a change must not add
   PHP notices or `doing_it_wrong` messages. It also runs with a persistent
   object cache. For changes that save or read options, transients or channels,
   check them with the cache on and with `make site-setup OBJECT_CACHE=off`.

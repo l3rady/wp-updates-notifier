@@ -350,6 +350,14 @@ Return errors from `validate_settings()` as a `WP_Error` keyed by field, as with
 
 `make a11y` in the plugin repository runs axe and keyboard checks of the settings screen on a throwaway site, including a form with every field type. Also tab through your form and listen to it with a screen reader.
 
+## Linking to the settings screen
+
+The settings screen is `options-general.php` on a single site and in the network admin on a multisite network. Use `sc_wpun_settings_url()` (API 1.1.0) for a link, and `sc_wpun_is_network()` to know which mode you are in. Never write `admin_url( 'options-general.php?page=…' )`.
+
+```php
+$url = sc_wpun_settings_url( 'channels' ); // The Channels tab, in either mode.
+```
+
 ## Checklist
 
 - The header has `Requires Plugins: wp-updates-notifier` and `Requires WPUN API` with the constraint, and `boot()` checks `sc_wpun_api_satisfies( '^1.0' )` for code outside the channel.

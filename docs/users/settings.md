@@ -1,6 +1,6 @@
 # Settings
 
-The **General** tab of **Settings → Updates Notifier** holds the settings that apply to the whole site. Where each update goes is set per channel, on the [Channels](channels.md) tab.
+The **General** tab of **Settings → Updates Notifier** holds the settings that apply to the whole site, or to the whole network on multisite. Where each update goes is set per channel, on the [Channels](channels.md) tab.
 
 Click **Save settings** after you change anything.
 
@@ -48,6 +48,8 @@ On a single site, "active" means:
 
 - **Plugins**: plugins that are activated on the **Plugins** screen.
 - **Themes**: the theme you have activated and, if it is a child theme, its parent theme.
+
+On a multisite network, a plugin or theme is active when any site uses it, and network-activated plugins count too. See [Multisite networks](multisite.md).
 
 These settings are the first filter. A channel can narrow them further with its own routing, but it can not report what is switched off here. See [Choose what each channel receives](channels.md#choose-what-each-channel-receives).
 

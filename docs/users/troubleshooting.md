@@ -23,9 +23,15 @@ Reminders are optional and per channel. Check these in turn:
 5. **Is the channel switched on and free to send?** A channel that is switched off, or was told by a service to wait (**Rate limited, next try after** under **Last delivery**), gets no reminder until it is on and the wait is over.
 6. **Did the last send fail?** **Last delivery** shows the reason. A failed reminder is tried again at the next check.
 
+## Does it work on multisite?
+
+Yes, when the plugin is network-activated. The network has one set of settings in the Network Admin, under **Settings → Updates Notifier**, one check on the main site and one notification for each update. A copy activated for a single site does nothing until a super admin network-activates it. The Multisite networks page of the documentation has the details.
+
 ## Emails only arrive after someone visits the site
 
 The schedule is run by WP-Cron. WP-Cron is not a real clock. WordPress only looks for due tasks when a page is requested, so on a site that few people visit, a check due at 03:00 can wait until someone arrives at 09:00. A forum user put it as "I only receive emails after someone has logged in".
+
+On a multisite network, it is the visitors of the main site that matter, because the check runs there.
 
 To fix it, run WP-Cron from the server's own clock. See [How do I run the check from a system cron or WP-CLI?](#how-do-i-run-the-check-from-a-system-cron-or-wp-cli).
 

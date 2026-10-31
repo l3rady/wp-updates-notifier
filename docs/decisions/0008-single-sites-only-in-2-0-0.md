@@ -1,6 +1,6 @@
 # 0008. Support single sites only in 2.0.0
 
-Status: Accepted. Date: 2026-10-17.
+Status: Superseded by [0021](0021-network-only-on-multisite.md). Date: 2026-10-17.
 
 ## Context
 

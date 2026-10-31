@@ -25,6 +25,7 @@ nav:
       - Getting started: users/getting-started.md
       - Settings: users/settings.md
       - Channels: users/channels.md
+      - Multisite networks: users/multisite.md
       - Muting a plugin or theme: users/muting.md
       - How notifications work: users/how-notifications-work.md
       - Settings in code: users/settings-in-code.md

@@ -29,7 +29,7 @@ The date is when the decision was made, not when the record was written.
 | [0005](0005-settings-state-and-channels-in-separate-options.md) | Keep settings, run state and channels in separate options | Accepted | 2026-10-12 |
 | [0006](0006-drop-slack-in-2-0-0-and-keep-its-settings.md) | Drop Slack in 2.0.0 and keep its settings | Accepted | 2026-10-14 |
 | [0007](0007-settings-and-secrets-from-outside-the-database.md) | Allow settings and secrets from outside the database | Accepted | 2026-10-12 |
-| [0008](0008-single-sites-only-in-2-0-0.md) | Support single sites only in 2.0.0 | Accepted | 2026-10-17 |
+| [0008](0008-single-sites-only-in-2-0-0.md) | Support single sites only in 2.0.0 | Superseded by 0021 | 2026-10-17 |
 | [0009](0009-no-lock-against-overlapping-update-checks.md) | No lock against overlapping update checks | Accepted | 2026-10-18 |
 | [0010](0010-leave-wordpress-auto-update-emails-alone.md) | Leave WordPress's own auto-update emails alone | Accepted | 2026-10-19 |
 | [0011](0011-accessibility-wcag-2-2-aa-without-javascript.md) | Settings screen to WCAG 2.2 AA, without JavaScript | Accepted | 2026-10-18 |

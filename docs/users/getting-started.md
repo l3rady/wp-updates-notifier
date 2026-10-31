@@ -4,7 +4,7 @@
 
 - WordPress 6.7 or newer.
 - PHP 7.4 or newer.
-- A single WordPress site. WP Updates Notifier 2.0.0 does not support multisite networks. If you use it on a network anyway, only super admins can change its settings.
+- A single WordPress site, or a multisite network where the plugin is network-activated. See [Multisite networks](multisite.md).
 
 ## Install
 
@@ -28,7 +28,7 @@ Go to **Settings → Updates Notifier**. There are three tabs:
 - **Channels**: where notifications are sent. See [Channels](channels.md).
 - **Muted**: the plugins and themes whose notifications are switched off. See [Muting a plugin or theme](muting.md).
 
-By default you need the `manage_options` capability to see them, which administrators have. On a multisite network you need `manage_network_options`, which only super admins have.
+By default you need the `manage_options` capability to see them, which administrators have. On a multisite network the screen is in the Network Admin and you need `manage_network_options`, which only super admins have. See [Multisite networks](multisite.md).
 
 ## Send a test message
 

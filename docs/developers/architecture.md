@@ -51,6 +51,17 @@ There is no separate cron event. Reminders can not be more frequent than the che
 
 Global settings live in the `sc_wpun_settings` option, the instances in `sc_wpun_channels` and the delivery state in `sc_wpun_state`. Read instances through `sc_wpun_channels()`, not the option, so instances defined in code and values from configuration sources are included. Any setting or channel field can instead come from a `wp-config.php` constant, an environment variable or a source your add-on registers. See [Configuration sources](configuration-sources.md).
 
+## Multisite
+
+On multisite the plugin runs only when it is network-activated ([ADR 0021](../decisions/0021-network-only-on-multisite.md)). One internal object, `WPUN\Network_Context`, answers every question that depends on the mode, so each screen, handler and store is registered once and asks it. Network mode is multisite plus network activation, whichever screen the request comes from.
+
+- **Storage.** Options are read and written with the site option functions in network mode, under the same names. The options filters wrap them the same way.
+- **Screens and URLs.** The settings screen is in the network admin, and its links come from `network_admin_url()`. Code outside the plugin uses `sc_wpun_settings_url()`.
+- **Cron.** The check is scheduled on the main site only. `Config_Context::get_site_id()` returns the main site's id.
+- **Notifications.** The site name, home URL and updates link in a `Notification` are the network's.
+- **Not network-activated.** A copy that is active on a site but not network-activated boots dormant. It registers no commands, creates no options and sends nothing. It only clears a leftover check event and shows super admins a notice and a Site Health result.
+- **First run.** When the network has no settings, they are copied from the main site (`Settings::migrate_from_main_site()`).
+
 ## Public and internal code
 
 Everything in `includes/` is in the `WPUN` namespace. Classes and methods tagged `@internal` are not part of the public API and can change in any release. Everything else that is documented with `@since` is public; see [Stability and deprecation](stability.md). The built-in email module in `modules/email/` uses only the public API, and CI (`make check-public-api`) makes sure it stays that way.

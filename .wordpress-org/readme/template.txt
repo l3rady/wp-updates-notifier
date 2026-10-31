@@ -47,7 +47,7 @@ The full documentation, including the [user guide](https://wpun.cariss.dev/lates
 
 = Requirements =
 
-WordPress 6.7 or newer and PHP 7.4 or newer, on a single site. Version 2.0.0 does not support multisite networks.
+WordPress 6.7 or newer and PHP 7.4 or newer, on a single site or a multisite network where the plugin is network-activated.
 
 == Installation ==
 
@@ -74,10 +74,6 @@ You are already not told about most of them. A scheduled check runs WordPress's 
 = How do I stop notifications for one plugin or theme? =
 
 Mute it. On the Plugins screen, click "Mute update notifications" under the plugin's name. When an update is waiting, "Don't notify me about this version" skips only that version. Themes are muted on the Muted tab of Settings > Updates Notifier, or with `wp updates-notifier mute`. A muted item is left out of every channel, and you can unmute it at any time.
-
-= Does it work on multisite? =
-
-Not yet. Version 2.0.0 supports single sites only.
 
 = How do I send WordPress's automatic update emails to another address? =
 

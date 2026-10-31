@@ -32,7 +32,7 @@ WordPress's updater does not run first in every check:
 - WordPress skips its updater when its last version check was less than a minute ago, when api.wordpress.org does not answer, when another automatic update is running, or when something has switched off WordPress's version check.
 - After WordPress installs a minor release of itself, a waiting major release is reported one check later.
 - The update data can be up to two hours old (see [Why is the update data hours old?](troubleshooting.md#why-is-the-update-data-hours-old)). A release that is newer than that data can be reported, and installed by WordPress later.
-- On multisite, only the main site runs WordPress's updater (see [#85](https://github.com/l3rady/wp-updates-notifier/issues/85)).
+- On multisite, WordPress runs its updater only on the main site of the main network. On any other network the check does not run it first. See [Multisite networks](multisite.md#more-than-one-network).
 
 To stop being told about minor WordPress releases, choose **Yes, but only major releases**. To stop being told about one plugin or theme, [mute](muting.md) it.
 

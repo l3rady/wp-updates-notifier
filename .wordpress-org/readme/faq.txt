@@ -1,6 +1,7 @@
 # The questions of docs/users/troubleshooting.md that go in the readme's FAQ, as its ## headings, in this order.
 # bin/readme.php fails if one is missing. The questions only in the readme are in template.txt, after these.
 Why did I not get an email about an update?
+Does it work on multisite?
 Emails only arrive after someone visits the site
 How do I run the check from a system cron or WP-CLI?
 Why is the update data hours old?
