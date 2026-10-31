@@ -70,7 +70,7 @@ final class Config_Context {
 		$this->setting     = $setting;
 		$this->instance_id = $instance_id;
 		$this->field       = $field;
-		$this->site_id     = get_current_blog_id();
+		$this->site_id     = ( new Network_Context() )->owner_site_id(); // The main site in network mode.
 	}
 
 	/**
@@ -146,6 +146,8 @@ final class Config_Context {
 
 	/**
 	 * The site the value is asked for, as it was when this object was made.
+	 *
+	 * When the plugin is network-activated its settings belong to the whole network, and this is the main site's id.
 	 *
 	 * @since 2.0.0
 	 *

@@ -25,12 +25,21 @@ class Notifier {
 	private $channels;
 
 	/**
+	 * Where the plugin runs: one site or a whole network.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Channel_Store $channels Channel instance storage.
+	 * @param Channel_Store        $channels        Channel instance storage.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Channel_Store $channels ) {
-		$this->channels = $channels;
+	public function __construct( Channel_Store $channels, ?Network_Context $network_context = null ) {
+		$this->channels        = $channels;
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -45,7 +54,7 @@ class Notifier {
 	 */
 	public function send_legacy_message( $message ) {
 		// translators: %s: Site name.
-		$subject = sprintf( __( 'WP Updates Notifier: updates available for %s', 'wp-updates-notifier' ), wp_specialchars_decode( get_bloginfo(), ENT_QUOTES ) );
+		$subject = sprintf( __( 'WP Updates Notifier: updates available for %s', 'wp-updates-notifier' ), wp_specialchars_decode( $this->network_context->site_name(), ENT_QUOTES ) );
 		$sent    = false;
 
 		foreach ( $this->channels->all() as $instance ) {

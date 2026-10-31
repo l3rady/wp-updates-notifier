@@ -141,7 +141,7 @@ class Settings {
 	 * @return void
 	 */
 	private function migrate_channels( array $options, int $current_ver ): void {
-		$admin_email = (string) get_option( 'admin_email' );
+		$admin_email = $this->context->admin_email();
 
 		// Before settings version 7 there was email only, so the upgrade turned email notifications on.
 		$email_on = $current_ver < 7 || $this->is_on( $options['email_notifications'] ?? 0 );

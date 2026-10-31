@@ -351,12 +351,12 @@ class Plugin {
 		$this->settings          = new Settings( $this->state, $this->channel_store, $this->config, $this->network_context );
 		$this->config_report     = new Config_Report( $this->config, $this->settings, $this->channel_store );
 		$this->rejected_channels = new Rejected_Channels( $this->channels );
-		$this->scheduler         = new Scheduler( $this->settings );
-		$this->notifier          = new Notifier( $this->channel_store );
-		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store );
+		$this->scheduler         = new Scheduler( $this->settings, $this->network_context );
+		$this->notifier          = new Notifier( $this->channel_store, $this->network_context );
+		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store, $this->network_context );
 		$this->mute_store        = new Mute_Store( $this->network_context );
-		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store, new Auto_Update_Policy() );
-		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
+		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store, new Auto_Update_Policy(), $this->network_context );
+		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state, $this->network_context );
 		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->channels, $this->config, $this->status_report() );
 	}
 
@@ -615,8 +615,13 @@ class Plugin {
 		 * @since 2.0.0
 		 */
 		add_action( 'sc_wpun_run_check', array( $this->update_checker, 'run_manual_check' ) );
-		add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.
-		add_action( Scheduler::CRON_NAME, array( $this->slack_notice, 'maybe_send_email' ), 5 ); // Tell the admin once that Slack is no longer supported, before the check.
+		if ( $this->network_context->is_network() && get_current_blog_id() !== $this->network_context->main_site_id() ) {
+			// Only the main site checks in network mode: an event a site kept from before just removes itself.
+			add_action( Scheduler::CRON_NAME, array( $this->scheduler, 'clear_leftover_event' ) );
+		} else {
+			add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.
+			add_action( Scheduler::CRON_NAME, array( $this->slack_notice, 'maybe_send_email' ), 5 ); // Tell the admin once that Slack is no longer supported, before the check.
+		}
 		add_action( 'admin_post_' . Slack_Notice::DISMISS_ACTION, array( $this->slack_notice, 'handle_dismiss' ) ); // Dismiss the notice on the settings page.
 		add_filter( 'site_status_tests', array( $this->slack_notice, 'add_site_health_test' ) ); // Site Health test while Slack settings are stored but unused.
 		add_filter( 'site_status_tests', array( $this->site_health, 'add_tests' ) ); // Site Health tests of the update check and the channels.

@@ -47,16 +47,25 @@ class Slack_Notice {
 	private $state;
 
 	/**
+	 * Where the plugin runs: one site or a whole network.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Channel_Store    $store    Channel instance storage.
-	 * @param Channel_Registry $registry Registered notification channels.
-	 * @param State            $state    Run state.
+	 * @param Channel_Store        $store           Channel instance storage.
+	 * @param Channel_Registry     $registry        Registered notification channels.
+	 * @param State                $state           Run state.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Channel_Store $store, Channel_Registry $registry, State $state ) {
-		$this->store    = $store;
-		$this->registry = $registry;
-		$this->state    = $state;
+	public function __construct( Channel_Store $store, Channel_Registry $registry, State $state, ?Network_Context $network_context = null ) {
+		$this->store           = $store;
+		$this->registry        = $registry;
+		$this->state           = $state;
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -142,7 +151,7 @@ class Slack_Notice {
 
 		$to = $this->email_recipients();
 		if ( '' === $to ) {
-			$to = (string) get_option( 'admin_email' );
+			$to = $this->network_context->admin_email();
 		}
 
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail

@@ -89,22 +89,31 @@ class Update_Checker {
 	private $last_results = array();
 
 	/**
+	 * Where the plugin runs: one site or a whole network.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Settings           $settings Settings.
-	 * @param State              $state    Run state.
-	 * @param Dispatcher         $dispatcher Dispatcher.
-	 * @param Channel_Store      $channels Channel instance storage.
-	 * @param Mute_Store         $mutes    Mute storage.
-	 * @param Auto_Update_Policy $auto_updates Tells whether WordPress is set to install an update by itself.
+	 * @param Settings             $settings Settings.
+	 * @param State                $state    Run state.
+	 * @param Dispatcher           $dispatcher Dispatcher.
+	 * @param Channel_Store        $channels Channel instance storage.
+	 * @param Mute_Store           $mutes    Mute storage.
+	 * @param Auto_Update_Policy   $auto_updates Tells whether WordPress is set to install an update by itself.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Settings $settings, State $state, Dispatcher $dispatcher, Channel_Store $channels, Mute_Store $mutes, Auto_Update_Policy $auto_updates ) {
-		$this->auto_updates = $auto_updates;
-		$this->mutes        = $mutes;
-		$this->settings     = $settings;
-		$this->state        = $state;
-		$this->dispatcher   = $dispatcher;
-		$this->channels     = $channels;
+	public function __construct( Settings $settings, State $state, Dispatcher $dispatcher, Channel_Store $channels, Mute_Store $mutes, Auto_Update_Policy $auto_updates, ?Network_Context $network_context = null ) {
+		$this->network_context = $network_context ?? new Network_Context();
+		$this->auto_updates    = $auto_updates;
+		$this->mutes           = $mutes;
+		$this->settings        = $settings;
+		$this->state           = $state;
+		$this->dispatcher      = $dispatcher;
+		$this->channels        = $channels;
 	}
 
 	/**
@@ -264,7 +273,7 @@ class Update_Checker {
 		// The global veto comes after, so a vetoed item still counts as waiting.
 		$items = array_values( array_filter( $items, array( $this, 'should_notify' ) ) );
 
-		$notification = new Notification( get_bloginfo(), home_url(), admin_url( 'update-core.php' ), $items, array( 'source' => $source ) );
+		$notification = new Notification( $this->network_context->site_name(), $this->network_context->home_url(), $this->network_context->update_core_url(), $items, array( 'source' => $source ) );
 
 		/**
 		 * Filters the notification built by the update check, before any channel instance gets its share.
@@ -931,7 +940,7 @@ class Update_Checker {
 
 		if ( ! empty( $pending ) ) { // any theme updates available?
 			$themes_need_update = $pending; // themes that need updating.
-			$active_themes      = array_unique( array( get_stylesheet(), get_template() ) ); // The active theme and, for a child theme, its parent.
+			$active_themes      = $this->active_themes(); // The active theme and, for a child theme, its parent.
 			if ( 'active' === $all_or_active ) { // are we to check just active themes?
 				$themes_need_update = array_intersect_key( $themes_need_update, array_flip( $active_themes ) ); // only keep theme that is active.
 			}
@@ -1133,7 +1142,33 @@ class Update_Checker {
 			$active  = array_merge( $active, array_filter( $network, 'is_string' ) );
 		}
 
+		// Network mode: active on any site of the network counts.
+		if ( $this->network_context->is_network() ) {
+			foreach ( $this->network_context->site_ids() as $site_id ) {
+				$active = array_merge( $active, array_filter( (array) get_blog_option( $site_id, 'active_plugins', array() ), 'is_string' ) );
+			}
+		}
+
 		return array_values( array_unique( $active ) );
+	}
+
+	/**
+	 * Themes in use: the current site's, or every site's in network mode, each with its parent theme.
+	 *
+	 * @return string[] Theme stylesheets.
+	 */
+	private function active_themes(): array {
+		if ( ! $this->network_context->is_network() ) {
+			return array_unique( array( get_stylesheet(), get_template() ) );
+		}
+
+		$themes = array();
+		foreach ( $this->network_context->site_ids() as $site_id ) {
+			$themes[] = (string) get_blog_option( $site_id, 'stylesheet' );
+			$themes[] = (string) get_blog_option( $site_id, 'template' );
+		}
+
+		return array_values( array_unique( array_filter( $themes ) ) );
 	}
 
 	/**

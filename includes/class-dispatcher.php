@@ -32,14 +32,23 @@ class Dispatcher {
 	private $store;
 
 	/**
+	 * Where the plugin runs: one site or a whole network.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Channel_Registry   $registry Channel registry.
-	 * @param Channel_Store|null $store    Channel instances, to refuse a misconfigured one.
+	 * @param Channel_Registry     $registry        Channel registry.
+	 * @param Channel_Store|null   $store           Channel instances, to refuse a misconfigured one.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Channel_Registry $registry, ?Channel_Store $store = null ) {
-		$this->registry = $registry;
-		$this->store    = $store;
+	public function __construct( Channel_Registry $registry, ?Channel_Store $store = null, ?Network_Context $network_context = null ) {
+		$this->registry        = $registry;
+		$this->store           = $store;
+		$this->network_context = $network_context ?? new Network_Context();
 	}
 
 	/**
@@ -143,9 +152,9 @@ class Dispatcher {
 		}
 
 		$notification = new Notification(
-			get_bloginfo(),
-			home_url(),
-			admin_url( 'update-core.php' ),
+			$this->network_context->site_name(),
+			$this->network_context->home_url(),
+			$this->network_context->update_core_url(),
 			array(),
 			array(
 				'is_test' => true,

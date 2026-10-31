@@ -123,4 +123,74 @@ class Network_Context {
 	public function main_site_id(): int {
 		return is_multisite() ? (int) get_main_site_id() : (int) get_current_blog_id();
 	}
+
+	/**
+	 * The name to call the site in notifications: the network's name in network mode.
+	 *
+	 * @return string
+	 */
+	public function site_name(): string {
+		if ( $this->is_network() ) {
+			$network = get_network();
+			return $network instanceof \WP_Network ? (string) $network->site_name : get_bloginfo();
+		}
+
+		return get_bloginfo();
+	}
+
+	/**
+	 * The address notifications link to as the site's home.
+	 *
+	 * @return string
+	 */
+	public function home_url(): string {
+		return $this->is_network() ? network_home_url() : home_url();
+	}
+
+	/**
+	 * The screen where the updates are listed, as notifications link to it.
+	 *
+	 * @return string
+	 */
+	public function update_core_url(): string {
+		return $this->is_network() ? network_admin_url( 'update-core.php' ) : admin_url( 'update-core.php' );
+	}
+
+	/**
+	 * The address of the person to notify by default: the network admin's in network mode.
+	 *
+	 * @return string
+	 */
+	public function admin_email(): string {
+		return (string) ( $this->is_network() ? get_site_option( 'admin_email' ) : get_option( 'admin_email' ) );
+	}
+
+	/**
+	 * The ids of the sites of the current network that are not deleted.
+	 *
+	 * Only for network mode, where "active" means active on any site. `number => 0` lifts the default limit of 100.
+	 *
+	 * @return int[]
+	 */
+	public function site_ids(): array {
+		$ids = get_sites(
+			array(
+				'fields'     => 'ids',
+				'number'     => 0,
+				'network_id' => get_current_network_id(),
+				'deleted'    => 0,
+			)
+		);
+
+		return array_map( 'intval', (array) $ids );
+	}
+
+	/**
+	 * The site id the plugin's settings and schedule belong to: the main site in network mode, else the current site.
+	 *
+	 * @return int
+	 */
+	public function owner_site_id(): int {
+		return $this->is_network() ? $this->main_site_id() : (int) get_current_blog_id();
+	}
 }

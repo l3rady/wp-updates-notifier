@@ -28,12 +28,56 @@ class Scheduler {
 	private $settings;
 
 	/**
+	 * Where the plugin runs: one site or a whole network.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Settings $settings Settings.
+	 * @param Settings             $settings        Settings.
+	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Settings $settings ) {
-		$this->settings = $settings;
+	public function __construct( Settings $settings, ?Network_Context $network_context = null ) {
+		$this->settings        = $settings;
+		$this->network_context = $network_context ?? new Network_Context();
+	}
+
+	/**
+	 * Move to the site that holds the schedule: the main site in network mode.
+	 *
+	 * @return bool Whether the site was switched, so that restore() must follow.
+	 */
+	private function switch_to_schedule_site(): bool {
+		if ( ! $this->network_context->is_network() || get_current_blog_id() === $this->network_context->main_site_id() ) {
+			return false;
+		}
+
+		switch_to_blog( $this->network_context->main_site_id() );
+
+		return true;
+	}
+
+	/**
+	 * Whether this request is on a site that must not hold a schedule: any but the main site in network mode.
+	 *
+	 * @return bool
+	 */
+	private function is_off_schedule_site(): bool {
+		return $this->network_context->is_network() && get_current_blog_id() !== $this->network_context->main_site_id();
+	}
+
+	/**
+	 * Clear the event a site kept from before the plugin was network-activated, and do nothing else.
+	 *
+	 * Hooked to the cron event instead of the check on the sites that are not the main site in network mode.
+	 *
+	 * @return void
+	 */
+	public function clear_leftover_event(): void {
+		wp_clear_scheduled_hook( self::CRON_NAME );
 	}
 
 	/**
@@ -44,6 +88,21 @@ class Scheduler {
 	 * @return void
 	 */
 	public function enable_cron( $manual_interval = false ) {
+		$switched = $this->switch_to_schedule_site();
+		$this->enable_cron_here( $manual_interval );
+		if ( $switched ) {
+			restore_current_blog();
+		}
+	}
+
+	/**
+	 * Enable cron on the current site, which is the one that holds the schedule.
+	 *
+	 * @param bool|string $manual_interval For setting a manual cron interval.
+	 *
+	 * @return void
+	 */
+	private function enable_cron_here( $manual_interval ) {
 		$options          = $this->settings->get(); // Get settings.
 		$current_schedule = wp_get_schedule( self::CRON_NAME ); // find if a schedule already exists.
 
@@ -100,6 +159,11 @@ class Scheduler {
 	 * @return void
 	 */
 	public function maybe_schedule() {
+		// Only the main site schedules in network mode: never switch sites on the requests of the others.
+		if ( $this->is_off_schedule_site() ) {
+			return;
+		}
+
 		$event = wp_get_scheduled_event( self::CRON_NAME );
 		if ( false === $event ) {
 			$this->enable_cron();
@@ -119,7 +183,11 @@ class Scheduler {
 	 * @return void
 	 */
 	public function disable_cron() {
+		$switched = $this->switch_to_schedule_site();
 		wp_clear_scheduled_hook( self::CRON_NAME ); // clear cron.
+		if ( $switched ) {
+			restore_current_blog();
+		}
 	}
 
 	/**
