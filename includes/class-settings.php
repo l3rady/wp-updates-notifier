@@ -545,6 +545,9 @@ class Settings {
 		/**
 		 * Filters a setting option of the plugin after it is read.
 		 *
+		 * When the plugin runs for a network (see `sc_wpun_is_network()`), the options are network
+		 * options, under the same names.
+		 *
 		 * @since 1.4.0
 		 *
 		 * @param mixed  $value The stored value.
@@ -564,6 +567,9 @@ class Settings {
 	public function write_option( $field, $value ) {
 		/**
 		 * Filters a setting option of the plugin before it is stored.
+		 *
+		 * When the plugin runs for a network (see `sc_wpun_is_network()`), the options are network
+		 * options, under the same names.
 		 *
 		 * @since 1.4.0
 		 *

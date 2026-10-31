@@ -525,6 +525,45 @@ if ( ! function_exists( 'sc_wpun_mutes' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sc_wpun_is_network' ) ) {
+	/**
+	 * Whether the plugin runs for a whole multisite network.
+	 *
+	 * True on a multisite where the plugin is network-activated. The plugin then has one set of
+	 * settings, channels and mutes for the network, its screen is in the network admin, and the
+	 * check runs once, on the main site. False on a single site, and for a copy still activated
+	 * per site on a network, which does nothing until it is network-activated.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return bool
+	 */
+	function sc_wpun_is_network(): bool {
+		return sc_wpun()->network_context()->is_network();
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_settings_url' ) ) {
+	/**
+	 * The address of the plugin's settings screen, or of one of its tabs.
+	 *
+	 * Settings → Updates Notifier on a single site, Network Admin → Settings → Updates Notifier
+	 * when the plugin runs for a network. Link to the screen with this rather than building the
+	 * address, which differs between the two:
+	 *
+	 *     printf( '<a href="%s">Channels</a>', esc_url( sc_wpun_settings_url( 'channels' ) ) );
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $tab Optional. A tab, for example `general`, `channels` or `muted`. Default the screen's first tab.
+	 *
+	 * @return string The address, not escaped.
+	 */
+	function sc_wpun_settings_url( string $tab = '' ): string {
+		return sc_wpun()->network_context()->settings_url( $tab );
+	}
+}
+
 if ( ! function_exists( 'sc_wpun_api_version' ) ) {
 	/**
 	 * The version of the public API, for add-ons to check what they can use.

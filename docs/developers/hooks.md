@@ -802,6 +802,9 @@ Fired in `includes/class-settings.php`.
 
 Filters a setting option of the plugin after it is read.
 
+When the plugin runs for a network (see `sc_wpun_is_network()`), the options are network
+options, under the same names.
+
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$value` | `mixed` | The stored value. |
@@ -829,6 +832,9 @@ Fired in `includes/class-config.php`.
 *Filter*, since 1.4.0
 
 Filters a setting option of the plugin before it is stored.
+
+When the plugin runs for a network (see `sc_wpun_is_network()`), the options are network
+options, under the same names.
 
 | Parameter | Type | Description |
 | --- | --- | --- |

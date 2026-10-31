@@ -101,7 +101,8 @@ final class Notification {
 	}
 
 	/**
-	 * Site name, as WordPress returns it (it may contain HTML entities).
+	 * Site name, as WordPress returns it (it may contain HTML entities). The network's name when the
+	 * plugin runs for a network (see `sc_wpun_is_network()`).
 	 *
 	 * @since 2.0.0
 	 *
@@ -112,7 +113,7 @@ final class Notification {
 	}
 
 	/**
-	 * Site address.
+	 * Site address. The network's home when the plugin runs for a network.
 	 *
 	 * @since 2.0.0
 	 *
@@ -123,7 +124,7 @@ final class Notification {
 	}
 
 	/**
-	 * Address of the WordPress updates screen.
+	 * Address of the WordPress updates screen. The network admin's when the plugin runs for a network.
 	 *
 	 * @since 2.0.0
 	 *
