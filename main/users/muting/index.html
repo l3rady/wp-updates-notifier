@@ -1079,6 +1079,8 @@
       
         
       
+        
+      
     
     
     
@@ -1665,6 +1667,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0020-scheduled-checks-run-wordpress-automatic-updates-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0020 Automatic updates first
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1953,6 +1983,7 @@
 </ul>
 <h2 id="what-muting-does-not-change">What muting does not change<a class="headerlink" href="#what-muting-does-not-change" title="Permanent link">&para;</a></h2>
 <p>Muting only affects this plugin's notifications. WordPress's own update notices in the dashboard, the update emails WordPress sends, and automatic updates are not touched. A muted plugin still shows its update in <strong>Dashboard → Updates</strong>, and is still updated if auto-updates are on for it.</p>
+<p>For updates that WordPress installs by itself, see <a href="../how-notifications-work/#updates-wordpress-installs-automatically">Updates WordPress installs automatically</a>. Scheduled checks do not report those. Mute a plugin or theme whose updates are handled outside WordPress.</p>
 <h2 id="mutes-set-in-code">Mutes set in code<a class="headerlink" href="#mutes-set-in-code" title="Permanent link">&para;</a></h2>
 <p>A developer can define mutes in code, for example in an mu-plugin. They work like the others and are listed on the Muted tab marked <strong>Set in code</strong>, but there is no <strong>Unmute</strong> for them. A developer can also refuse a mute, or refuse an unmute, and the message they gave is shown to you. See <a href="../../developers/muting-from-code/">Muting from code</a>.</p>
 

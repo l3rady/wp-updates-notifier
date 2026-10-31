@@ -1567,6 +1567,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_auto_update_enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_auto_update_enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_disable_cron" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1687,6 +1698,8 @@
       
         
           
+        
+      
         
       
         
@@ -2300,6 +2313,34 @@
     
   
     0019 Mutes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0020-scheduled-checks-run-wordpress-automatic-updates-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0020 Automatic updates first
   
 
     
@@ -3133,6 +3174,17 @@
   
     <nav class="md-nav" aria-label="Lifecycle and legacy">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_auto_update_enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_auto_update_enabled
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#sc_wpun_disable_cron" class="md-nav__link">
@@ -4746,6 +4798,55 @@ are ignored. The General tab cannot be removed.</p>
 </table>
 <p>Fired in <code>includes/admin/class-settings-page.php</code>.</p>
 <h2 id="lifecycle-and-legacy">Lifecycle and legacy<a class="headerlink" href="#lifecycle-and-legacy" title="Permanent link">&para;</a></h2>
+<h3 id="sc_wpun_auto_update_enabled"><code>sc_wpun_auto_update_enabled</code><a class="headerlink" href="#sc_wpun_auto_update_enabled" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters whether an update counts as installed automatically, which adds the <code>auto_update</code> flag and its note to the item.</p>
+<p>The default follows WordPress: automatic updates are on for the item and can run on this site (the
+<code>AUTOMATIC_UPDATER_DISABLED</code> and <code>DISALLOW_FILE_MODS</code> constants, version control checkouts, the
+auto-update settings and the <code>auto_update_*</code> filters). Use it for an updater outside WordPress that
+installs the update later. Returning false removes the flag and the note.</p>
+<p>Example, a host that updates plugins itself:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_auto_update_enabled',</span>
+<span class="x">    function ( $enabled, $type ) {</span>
+<span class="x">        return $enabled || 'plugin' === $type;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$enabled</code></td>
+<td><code>bool</code></td>
+<td>Whether automatic updates are on for the item.</td>
+</tr>
+<tr>
+<td><code>$type</code></td>
+<td><code>string</code></td>
+<td><code>core</code>, <code>plugin</code> or <code>theme</code>.</td>
+</tr>
+<tr>
+<td><code>$key</code></td>
+<td><code>string</code></td>
+<td><code>core</code>, the plugin file or the theme stylesheet.</td>
+</tr>
+<tr>
+<td><code>$new_version</code></td>
+<td><code>string</code></td>
+<td>The version that is waiting.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-auto-update-policy.php</code>.</p>
 <h3 id="sc_wpun_disable_cron"><code>sc_wpun_disable_cron</code><a class="headerlink" href="#sc_wpun_disable_cron" title="Permanent link">&para;</a></h3>
 <p><em>Action</em>, since 1.0.0</p>
 <p>Fires when the plugin is deactivated, to turn the scheduled check off.</p>

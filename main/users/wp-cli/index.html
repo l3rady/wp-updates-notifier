@@ -1112,6 +1112,8 @@
       
         
       
+        
+      
     
     
     
@@ -1698,6 +1700,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0020-scheduled-checks-run-wordpress-automatic-updates-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0020 Automatic updates first
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1992,6 +2022,7 @@
 <p>Run them from the site's directory, or add <code>--path=/path/to/site</code>.</p>
 <h2 id="check">check<a class="headerlink" href="#check" title="Permanent link">&para;</a></h2>
 <p>Runs the update check now, as the schedule does. Each channel instance gets the updates it has not been told about yet, and each line says what happened.</p>
+<p>This runs outside WP-Cron, so WordPress's automatic updates do not run first. An update that WordPress would install later can be reported. A scheduled check, including <code>wp cron event run sc_wpun_update_check</code>, runs them first. See <a href="../how-notifications-work/#updates-wordpress-installs-automatically">Updates WordPress installs automatically</a>.</p>
 <div class="highlight"><pre><span></span><code>wp updates-notifier check [--dry-run] [--force]
 </code></pre></div>
 <table>
@@ -2056,7 +2087,7 @@ Success: Dry run finished, nothing was sent or changed. 1 channel instance would
 <li><strong>Schedule.</strong> The frequency, when the next check is due and when the last one ran, in the site's time zone.</li>
 <li><strong>Channels.</strong> For each channel instance: the module, whether the module is available, whether it is switched on, whether it is defined in code, the last delivery result, the last failure and the time it must wait until. Then its settings, each with its source.</li>
 <li><strong>Muted.</strong> The plugins and themes that are <a href="../muting/">muted</a>, as <code>muted</code> lists them.</li>
-<li><strong>Pending updates.</strong> For each channel instance, what is waiting for it, and which of that is new to it and which it was told about already.</li>
+<li><strong>Pending updates.</strong> For each channel instance, what is waiting for it, and which of that is new to it and which it was told about already. An <code>auto_update</code> column says <code>yes</code> when WordPress is set to install the update by itself.</li>
 </ul>
 <p>Sample output:</p>
 <div class="highlight"><pre><span></span><code>Settings

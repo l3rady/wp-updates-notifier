@@ -1068,6 +1068,8 @@
       
         
       
+        
+      
     
     
     
@@ -1654,6 +1656,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0020-scheduled-checks-run-wordpress-automatic-updates-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0020 Automatic updates first
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1902,7 +1932,8 @@
 <h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
 <p>This page follows one update check from start to finish, so you know where your code plugs in.</p>
 <pre class="mermaid"><code>flowchart TD
-    cron["WP-Cron: sc_wpun_update_check"] --&gt; check["Update check&lt;br&gt;core, plugins, themes"]
+    cron["WP-Cron: sc_wpun_update_check"] --&gt; auto["wp_version_check&lt;br&gt;WordPress automatic updates&lt;br&gt;(under WP-Cron)"]
+    auto --&gt; check["Update check&lt;br&gt;core, plugins, themes"]
     check --&gt; items["Notification_Item list&lt;br&gt;filter: sc_wpun_update_items"]
     items --&gt; veto["Global veto&lt;br&gt;filter: sc_wpun_should_notify_item"]
     veto --&gt; notification["Notification&lt;br&gt;filter: sc_wpun_notification"]
@@ -1914,7 +1945,7 @@
     send --&gt; result["Delivery_Result&lt;br&gt;actions: sc_wpun_notification_sent / _failed"]
     result --&gt; state["Run state saved per instance&lt;br&gt;action: sc_wpun_after_update_check"]</code></pre>
 <h2 id="the-pieces">The pieces<a class="headerlink" href="#the-pieces" title="Permanent link">&para;</a></h2>
-<p><strong>Update check.</strong> WP-Cron runs the <code>sc_wpun_update_check</code> event at the frequency chosen on the settings screen. You can also run it on demand with <code>do_action( 'sc_wpun_run_check' )</code>: it works like a scheduled run, the notification's source is <code>manual</code> instead of <code>cron</code>, and the schedule is not changed. From a system cron, use <code>wp updates-notifier check</code> (see <a href="../../users/wp-cli/">WP-CLI</a>): it runs the same check with the source <code>cli</code>, and has a dry run. The sources are <code>cron</code>, <code>manual</code> (the action), <code>cli</code> (WP-CLI) and <code>test</code> (a test message). There is no lock between runs, by design: if a manual run overlaps a scheduled one, both can send the same update before either records it, so a notification can arrive twice. That is rare and harmless for update notices, so the plugin keeps the check simple. A channel that must never deliver twice can keep its own record of what it sent. The check asks WordPress for core, plugin and theme updates and turns each one into a <code>WPUN\Notification_Item</code>. The global settings decide what is looked at: WordPress updates (none, all or only major releases), plugins and themes (none, all or only active ones).</p>
+<p><strong>Update check.</strong> WP-Cron runs the <code>sc_wpun_update_check</code> event at the frequency chosen on the settings screen. You can also run it on demand with <code>do_action( 'sc_wpun_run_check' )</code>: it works like a scheduled run, the notification's source is <code>manual</code> instead of <code>cron</code>, and the schedule is not changed. From a system cron, use <code>wp updates-notifier check</code> (see <a href="../../users/wp-cli/">WP-CLI</a>): it runs the same check with the source <code>cli</code>, and has a dry run. The sources are <code>cron</code>, <code>manual</code> (the action), <code>cli</code> (WP-CLI) and <code>test</code> (a test message). There is no lock between runs, by design: if a manual run overlaps a scheduled one, both can send the same update before either records it, so a notification can arrive twice. That is rare and harmless for update notices, so the plugin keeps the check simple. A channel that must never deliver twice can keep its own record of what it sent. The check first runs <code>do_action( 'wp_version_check' )</code>, whatever the core setting is. Under WP-Cron this lets WordPress run its automatic updates before the plugin and theme updates are read, so what WordPress installs by itself is not reported. Outside WP-Cron it only refreshes the data. See <a href="../../decisions/0020-scheduled-checks-run-wordpress-automatic-updates-first/">ADR 0020</a>. The check then asks WordPress for core, plugin and theme updates and turns each one into a <code>WPUN\Notification_Item</code>. The global settings decide what is looked at: WordPress updates (none, all or only major releases), plugins and themes (none, all or only active ones).</p>
 <p><strong>Items.</strong> A <code>Notification_Item</code> is one thing waiting for an update: its <code>type</code> (<code>core</code>, <code>plugin</code>, <code>theme</code> or a type an add-on registers), a <code>key</code> that identifies it within the type (the plugin file, the theme stylesheet or <code>core</code>), a name, the installed and the available version, links, notes and machine-readable flags such as <code>active</code>. Add-ons can add their own items with the <code>sc_wpun_update_items</code> filter. See <a href="../item-types-and-routing/">Item types and routing</a>.</p>
 <p><strong>Global veto.</strong> <code>sc_wpun_should_notify_item</code> can stop an item from being reported anywhere. A vetoed item still counts as waiting, so its history is kept. A muted item is vetoed by default: see <a href="../muting-from-code/">Muting from code</a>.</p>
 <p><strong>Notification.</strong> The items are wrapped in a <code>WPUN\Notification</code> with the site name, the site URL, the link to the Updates screen and some context, such as whether this is a test message. The <code>sc_wpun_notification</code> filter can change it before any channel sees it.</p>

@@ -686,6 +686,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#i-was-told-about-an-update-that-has-auto-updates-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I was told about an update that has auto-updates on
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-scheduled-check-takes-a-long-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A scheduled check takes a long time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#why-is-the-update-data-hours-old" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1133,6 +1155,8 @@
       
         
           
+        
+      
         
       
         
@@ -1759,6 +1783,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0020-scheduled-checks-run-wordpress-automatic-updates-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0020 Automatic updates first
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2016,6 +2068,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#i-was-told-about-an-update-that-has-auto-updates-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I was told about an update that has auto-updates on
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-scheduled-check-takes-a-long-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A scheduled check takes a long time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#why-is-the-update-data-hours-old" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2161,6 +2235,16 @@
 <div class="highlight"><pre><span></span><code>*/15 * * * * curl -fsS https://example.com/wp-cron.php &gt; /dev/null
 </code></pre></div>
 <p>WP-Cron then runs the plugin's check at the <strong>Frequency to check</strong> you chose, and WordPress's own update tasks too.</p>
+<h2 id="i-was-told-about-an-update-that-has-auto-updates-on">I was told about an update that has auto-updates on<a class="headerlink" href="#i-was-told-about-an-update-that-has-auto-updates-on" title="Permanent link">&para;</a></h2>
+<p>Scheduled checks run WordPress's automatic updates first, so an update that is still waiting and has auto-updates on is one WordPress failed to install or could not install. The message carries the note "Automatic updates are on, but WordPress has not installed this update yet." Check these:</p>
+<ul>
+<li>The email WordPress sends to the site admin email (<strong>Settings → General</strong>) after an automatic update. It says what failed.</li>
+<li><strong>Dashboard → Updates</strong>, where you can install the update yourself.</li>
+<li><strong>Tools → Site Health → Info → WP Updates Notifier → WordPress automatic updates</strong>. It says whether automatic updates can run on this site, or why not: <code>DISALLOW_FILE_MODS</code>, <code>AUTOMATIC_UPDATER_DISABLED</code> or the <code>automatic_updater_disabled</code> filter, or a version control checkout.</li>
+</ul>
+<p>A check started with <strong>Check for updates and notify now</strong> or <code>wp updates-notifier check</code> does not run WordPress's updater first, so it can report an update that WordPress installs later. See <a href="../how-notifications-work/#updates-wordpress-installs-automatically">Updates WordPress installs automatically</a>.</p>
+<h2 id="a-scheduled-check-takes-a-long-time">A scheduled check takes a long time<a class="headerlink" href="#a-scheduled-check-takes-a-long-time" title="Permanent link">&para;</a></h2>
+<p>Before it reads the updates, a scheduled check lets WordPress run its automatic updates. That can include downloading and installing plugins, themes and WordPress itself, so the check can take a while. This is WordPress's own work, and it also runs in WordPress's own twice-daily event. If it times out on your host, switch off automatic updates for the items that are slow, or run the update yourself from <strong>Dashboard → Updates</strong>.</p>
 <h2 id="why-is-the-update-data-hours-old">Why is the update data hours old?<a class="headerlink" href="#why-is-the-update-data-hours-old" title="Permanent link">&para;</a></h2>
 <p>On every check the plugin asks WordPress to refresh what it knows about updates. WordPress asks api.wordpress.org, but it does not do so every time. It skips the request when it has asked recently:</p>
 <table>

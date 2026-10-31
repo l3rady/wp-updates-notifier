@@ -541,6 +541,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#updates-wordpress-installs-automatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Updates WordPress installs automatically
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#reminders" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1050,6 +1061,8 @@
       
         
           
+        
+      
         
       
         
@@ -1676,6 +1689,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0020-scheduled-checks-run-wordpress-automatic-updates-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0020 Automatic updates first
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1872,6 +1913,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#updates-wordpress-installs-automatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Updates WordPress installs automatically
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#reminders" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1955,6 +2007,24 @@
 </ul>
 <p>A check sends one message to each channel, listing everything that is new to that channel. It does not send one message per update. If nothing is new, nothing is sent.</p>
 <p>Updates that a channel does not receive because of its <a href="../channels/#choose-what-each-channel-receives">routing</a> are not reported to it, and they do not count as sent.</p>
+<h2 id="updates-wordpress-installs-automatically">Updates WordPress installs automatically<a class="headerlink" href="#updates-wordpress-installs-automatically" title="Permanent link">&para;</a></h2>
+<p>Scheduled checks run WordPress's automatic updates first. This covers checks started by WP-Cron and by a system cron that runs <code>wp cron event run</code>. The plugin asks WordPress to refresh its update data before it reads the updates, and under WP-Cron that also lets WordPress install the updates it is set to install by itself. This happens even when <strong>Notify about WordPress updates?</strong> is <strong>No</strong>.</p>
+<p>So:</p>
+<ul>
+<li>An update that WordPress installs by itself is normally installed before the check reads it, and is not reported.</li>
+<li>An update that is still waiting even though automatic updates are on for it is one WordPress failed to install, or could not install. It is reported, with the note "Automatic updates are on, but WordPress has not installed this update yet."</li>
+<li>WordPress emails the result of its own automatic updates to the site admin email. This plugin leaves those emails alone. See <a href="../settings/#notify-about-wordpress-updates">Settings</a>.</li>
+</ul>
+<p>There is no setting to skip these updates. It would also hide the ones that failed.</p>
+<p>WordPress's updater does not run first in every check:</p>
+<ul>
+<li><strong>Check for updates and notify now</strong>, and <code>wp updates-notifier check</code>, do not run inside WP-Cron. They refresh the update data only. An update WordPress would install later can be reported, and it is not reported again once it is installed.</li>
+<li>WordPress skips its updater when its last version check was less than a minute ago, when api.wordpress.org does not answer, when another automatic update is running, or when something has switched off WordPress's version check.</li>
+<li>After WordPress installs a minor release of itself, a waiting major release is reported one check later.</li>
+<li>The update data can be up to two hours old (see <a href="../troubleshooting/#why-is-the-update-data-hours-old">Why is the update data hours old?</a>). A release that is newer than that data can be reported, and installed by WordPress later.</li>
+<li>On multisite, only the main site runs WordPress's updater (see <a href="https://github.com/l3rady/wp-updates-notifier/issues/85">#85</a>).</li>
+</ul>
+<p>To stop being told about minor WordPress releases, choose <strong>Yes, but only major releases</strong>. To stop being told about one plugin or theme, <a href="../muting/">mute</a> it.</p>
 <h2 id="reminders">Reminders<a class="headerlink" href="#reminders" title="Permanent link">&para;</a></h2>
 <p>A channel can repeat the updates you have not installed yet. Set <strong>Reminders</strong> to <strong>Daily</strong> or <strong>Weekly</strong> in the channel's <a href="../channels/#reminders">routing</a>. The default is <strong>Never</strong>.</p>
 <ul>
