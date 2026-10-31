@@ -30,6 +30,22 @@ class State {
 	const MAX_RETRY_AFTER = 604800; // 7 days.
 
 	/**
+	 * Where the options are stored.
+	 *
+	 * @var Network_Context
+	 */
+	private $context;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param Network_Context|null $context Where the options are stored; defaults to the current site setup.
+	 */
+	public function __construct( ?Network_Context $context = null ) {
+		$this->context = $context ?? new Network_Context();
+	}
+
+	/**
 	 * What the plugin has already notified about and when it last checked.
 	 *
 	 * Kept apart from the settings, in an option that is not autoloaded, so a run
@@ -39,7 +55,7 @@ class State {
 	 */
 	public function get(): array {
 		/** This filter is documented in includes/class-settings.php */
-		return $this->normalise( apply_filters( 'sc_wpun_get_options_filter', get_option( self::OPT_FIELD ), self::OPT_FIELD ) );
+		return $this->normalise( apply_filters( 'sc_wpun_get_options_filter', $this->context->get_option( self::OPT_FIELD ), self::OPT_FIELD ) );
 	}
 
 	/**
@@ -53,10 +69,10 @@ class State {
 		/** This filter is documented in includes/class-settings.php */
 		$state = apply_filters( 'sc_wpun_put_options_filter', $state, self::OPT_FIELD );
 
-		if ( false === get_option( self::OPT_FIELD ) ) {
-			add_option( self::OPT_FIELD, $state, '', false );
+		if ( false === $this->context->get_option( self::OPT_FIELD ) ) {
+			$this->context->add_option( self::OPT_FIELD, $state, false );
 		} else {
-			update_option( self::OPT_FIELD, $state );
+			$this->context->update_option( self::OPT_FIELD, $state );
 		}
 	}
 

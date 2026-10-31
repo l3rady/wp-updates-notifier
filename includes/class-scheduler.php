@@ -146,8 +146,8 @@ class Scheduler {
 	/**
 	 * Reschedule the update check when a saved frequency changes.
 	 *
-	 * Runs on update_option_{option}, so only when the settings really change,
-	 * whoever saves them.
+	 * Runs when the settings option is updated (see Network_Context::on_option_updated()), so only
+	 * when the settings really change, whoever saves them.
 	 *
 	 * @param mixed $old_value Previous settings.
 	 * @param mixed $value     New settings.

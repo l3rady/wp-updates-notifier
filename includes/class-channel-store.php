@@ -44,6 +44,13 @@ class Channel_Store {
 	private $registry;
 
 	/**
+	 * Where the options are stored.
+	 *
+	 * @var Network_Context
+	 */
+	private $context;
+
+	/**
 	 * Instances defined in code, with the Config generation they were built in.
 	 *
 	 * @var array<string, Channel_Instance>|null
@@ -67,12 +74,14 @@ class Channel_Store {
 	/**
 	 * Constructor.
 	 *
-	 * @param Config           $config   Resolver of values supplied from outside the database.
-	 * @param Channel_Registry $registry Registered channels.
+	 * @param Config               $config   Resolver of values supplied from outside the database.
+	 * @param Channel_Registry     $registry Registered channels.
+	 * @param Network_Context|null $context Where the options are stored; defaults to the current site setup.
 	 */
-	public function __construct( Config $config, Channel_Registry $registry ) {
+	public function __construct( Config $config, Channel_Registry $registry, ?Network_Context $context = null ) {
 		$this->config   = $config;
 		$this->registry = $registry;
+		$this->context  = $context ?? new Network_Context();
 	}
 
 	/**
@@ -744,7 +753,7 @@ class Channel_Store {
 	 */
 	private function read(): array {
 		/** This filter is documented in includes/class-settings.php */
-		$stored = apply_filters( 'sc_wpun_get_options_filter', get_option( self::OPT_FIELD ), self::OPT_FIELD );
+		$stored = apply_filters( 'sc_wpun_get_options_filter', $this->context->get_option( self::OPT_FIELD ), self::OPT_FIELD );
 
 		return is_array( $stored ) ? $stored : array();
 	}
@@ -760,10 +769,10 @@ class Channel_Store {
 		/** This filter is documented in includes/class-settings.php */
 		$stored = apply_filters( 'sc_wpun_put_options_filter', $stored, self::OPT_FIELD );
 
-		if ( false === get_option( self::OPT_FIELD ) ) {
-			add_option( self::OPT_FIELD, $stored, '', false );
+		if ( false === $this->context->get_option( self::OPT_FIELD ) ) {
+			$this->context->add_option( self::OPT_FIELD, $stored, false );
 		} else {
-			update_option( self::OPT_FIELD, $stored );
+			$this->context->update_option( self::OPT_FIELD, $stored );
 		}
 	}
 

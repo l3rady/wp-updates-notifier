@@ -29,6 +29,22 @@ final class Mute_Store {
 	const OPT_FIELD = 'sc_wpun_muted';
 
 	/**
+	 * Where the options are stored.
+	 *
+	 * @var Network_Context
+	 */
+	private $context;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param Network_Context|null $context Where the options are stored; defaults to the current site setup.
+	 */
+	public function __construct( ?Network_Context $context = null ) {
+		$this->context = $context ?? new Network_Context();
+	}
+
+	/**
 	 * The effective mutes, including ended ones, by "type key".
 	 *
 	 * @return array<string, Mute>
@@ -107,7 +123,7 @@ final class Mute_Store {
 	 */
 	private function stored(): array {
 		/** This filter is documented in includes/class-settings.php */
-		$option = apply_filters( 'sc_wpun_get_options_filter', get_option( self::OPT_FIELD ), self::OPT_FIELD );
+		$option = apply_filters( 'sc_wpun_get_options_filter', $this->context->get_option( self::OPT_FIELD ), self::OPT_FIELD );
 
 		$mutes = array();
 		foreach ( is_array( $option ) ? $option : array() as $type => $entries ) {
@@ -167,10 +183,10 @@ final class Mute_Store {
 		/** This filter is documented in includes/class-settings.php */
 		$stored = apply_filters( 'sc_wpun_put_options_filter', $stored, self::OPT_FIELD );
 
-		if ( false === get_option( self::OPT_FIELD ) ) {
-			add_option( self::OPT_FIELD, $stored, '', false );
+		if ( false === $this->context->get_option( self::OPT_FIELD ) ) {
+			$this->context->add_option( self::OPT_FIELD, $stored, false );
 		} else {
-			update_option( self::OPT_FIELD, $stored );
+			$this->context->update_option( self::OPT_FIELD, $stored );
 		}
 	}
 

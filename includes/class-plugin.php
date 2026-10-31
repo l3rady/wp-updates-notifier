@@ -332,24 +332,43 @@ class Plugin {
 	private $mute_store;
 
 	/**
+	 * Where the plugin's options are stored.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
 	 * Build the components. Nothing is hooked until register() runs.
 	 */
 	public function __construct() {
 		$this->translations      = new Translations();
-		$this->state             = new State();
+		$this->network_context   = new Network_Context();
+		$this->state             = new State( $this->network_context );
 		$this->config            = new Config();
 		$this->channels          = new Channel_Registry();
-		$this->channel_store     = new Channel_Store( $this->config, $this->channels );
-		$this->settings          = new Settings( $this->state, $this->channel_store, $this->config );
+		$this->channel_store     = new Channel_Store( $this->config, $this->channels, $this->network_context );
+		$this->settings          = new Settings( $this->state, $this->channel_store, $this->config, $this->network_context );
 		$this->config_report     = new Config_Report( $this->config, $this->settings, $this->channel_store );
 		$this->rejected_channels = new Rejected_Channels( $this->channels );
 		$this->scheduler         = new Scheduler( $this->settings );
 		$this->notifier          = new Notifier( $this->channel_store );
 		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store );
-		$this->mute_store        = new Mute_Store();
+		$this->mute_store        = new Mute_Store( $this->network_context );
 		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store, new Auto_Update_Policy() );
 		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state );
 		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->channels, $this->config, $this->status_report() );
+	}
+
+	/**
+	 * Where the plugin's options are stored.
+	 *
+	 * @internal
+	 *
+	 * @return Network_Context
+	 */
+	public function network_context(): Network_Context {
+		return $this->network_context;
 	}
 
 	/**
@@ -603,7 +622,7 @@ class Plugin {
 		add_filter( 'site_status_tests', array( $this->site_health, 'add_tests' ) ); // Site Health tests of the update check and the channels.
 		add_filter( 'debug_information', array( $this->site_health, 'add_debug_info' ) ); // Settings, schedule and channels in the site info, without secrets or addresses.
 		add_action( 'init', array( $this->scheduler, 'maybe_schedule' ) ); // Put the check back on the schedule if it is missing.
-		add_action( 'update_option_' . Settings::OPT_FIELD, array( $this->scheduler, 'settings_updated' ), 10, 2 ); // Reschedule when the frequency changes.
+		$this->network_context->on_option_updated( Settings::OPT_FIELD, array( $this->scheduler, 'settings_updated' ) ); // Reschedule when the frequency changes.
 
 		if ( is_admin() ) {
 			$this->register_admin_hooks();

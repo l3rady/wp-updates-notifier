@@ -53,16 +53,25 @@ class Settings {
 	private $config;
 
 	/**
+	 * Where the options are stored.
+	 *
+	 * @var Network_Context
+	 */
+	private $context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param State         $state    Run state storage.
-	 * @param Channel_Store $channels Channel instance storage.
-	 * @param Config        $config   Resolver of values supplied from outside the database.
+	 * @param State                $state    Run state storage.
+	 * @param Channel_Store        $channels Channel instance storage.
+	 * @param Config               $config   Resolver of values supplied from outside the database.
+	 * @param Network_Context|null $context Where the options are stored; defaults to the current site setup.
 	 */
-	public function __construct( State $state, Channel_Store $channels, Config $config ) {
+	public function __construct( State $state, Channel_Store $channels, Config $config, ?Network_Context $context = null ) {
 		$this->state    = $state;
 		$this->channels = $channels;
 		$this->config   = $config;
+		$this->context  = $context ?? new Network_Context();
 	}
 
 	/**
@@ -75,7 +84,7 @@ class Settings {
 	public function maybe_upgrade(): void {
 		$current_ver = $this->read_option( self::OPT_VERSION_FIELD ); // Get current plugin version.
 		if ( self::OPT_VERSION !== $current_ver ) { // is the version the same as this plugin?
-			$options  = (array) get_option( self::OPT_FIELD ); // get current settings from DB.
+			$options  = (array) $this->context->get_option( self::OPT_FIELD ); // get current settings from DB.
 			$defaults = $this->default_settings();
 
 			// "manual" has meant "never check" since the external cron was removed in 1.5.1. Check daily instead.
@@ -98,7 +107,7 @@ class Settings {
 			}
 
 			// Settings version 8 moved the run state (what was notified, when the last check ran) to its own option.
-			if ( false === get_option( State::OPT_FIELD ) ) {
+			if ( false === $this->context->get_option( State::OPT_FIELD ) ) {
 				$this->state->save(
 					$this->state->normalise(
 						array(
@@ -110,7 +119,7 @@ class Settings {
 			}
 
 			// Settings version 9 moved the email and Slack settings to channel instances.
-			if ( false === get_option( Channel_Store::OPT_FIELD ) ) {
+			if ( false === $this->context->get_option( Channel_Store::OPT_FIELD ) ) {
 				$this->migrate_channels( $options, intval( $current_ver ) );
 			}
 
@@ -505,7 +514,7 @@ class Settings {
 		 * @param mixed  $value The stored value.
 		 * @param string $field The name of the option.
 		 */
-		return apply_filters( 'sc_wpun_get_options_filter', get_option( $field ), $field );
+		return apply_filters( 'sc_wpun_get_options_filter', $this->context->get_option( $field ), $field );
 	}
 
 	/**
@@ -527,6 +536,6 @@ class Settings {
 		 */
 		$value = apply_filters( 'sc_wpun_put_options_filter', $value, $field );
 
-		return update_option( $field, $value );
+		return $this->context->update_option( $field, $value );
 	}
 }
