@@ -257,7 +257,7 @@ class Test_Security_Secrets extends WPUN_Security_Test_Case {
 		$surfaces = array();
 
 		// A delivery with a pending update: the channel throws an exception with its token in the message.
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$this->set_updates( '99.0.0' );
 		sc_wpun()->update_checker()->do_update_check();
 		$results = array();
@@ -265,8 +265,8 @@ class Test_Security_Secrets extends WPUN_Security_Test_Case {
 			$results[ $result_id ] = array( $result->get_message(), $result->get_code(), $result->get_context() );
 		}
 		$surfaces['delivery results']          = (string) wp_json_encode( $results );
-		$surfaces['stored state']              = (string) wp_json_encode( get_option( 'sc_wpun_state' ) );
-		$surfaces['all options of the plugin'] = (string) wp_json_encode( array( get_option( 'sc_wpun_state' ), get_option( 'sc_wpun_settings' ) ) );
+		$surfaces['stored state']              = (string) wp_json_encode( sc_wpun()->network_context()->get_option( 'sc_wpun_state' ) );
+		$surfaces['all options of the plugin'] = (string) wp_json_encode( array( sc_wpun()->network_context()->get_option( 'sc_wpun_state' ), sc_wpun()->network_context()->get_option( 'sc_wpun_settings' ) ) );
 
 		// "Check now" and a test message: the notices the administrator is shown.
 		$_POST = array( '_wpnonce' => wp_create_nonce( Check_Now::ACTION ) );
@@ -426,8 +426,8 @@ class Test_Security_Secrets extends WPUN_Security_Test_Case {
 			$this->assertTrue( sc_wpun()->channels_tab()->$method() );
 		}
 
-		$this->assertStringNotContainsString( 'SECRETTOKEN', (string) wp_json_encode( get_option( 'sc_wpun_channels' ) ) );
-		$this->assertStringNotContainsString( 'SECRETPATH', (string) wp_json_encode( get_option( 'sc_wpun_channels' ) ) );
+		$this->assertStringNotContainsString( 'SECRETTOKEN', (string) wp_json_encode( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) ) );
+		$this->assertStringNotContainsString( 'SECRETPATH', (string) wp_json_encode( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) ) );
 	}
 
 	/**

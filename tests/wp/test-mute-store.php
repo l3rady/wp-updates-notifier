@@ -20,7 +20,7 @@ class Test_Mute_Store extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		$this->set_updates();
 	}
 
@@ -150,7 +150,7 @@ class Test_Mute_Store extends WPUN_Test_Case {
 	 * Junk in the option is dropped or normalised.
 	 */
 	public function test_junk_in_the_option_is_normalised() {
-		update_option(
+		sc_wpun()->network_context()->update_option(
 			'sc_wpun_muted',
 			array(
 				'plugin'   => array(
@@ -181,7 +181,7 @@ class Test_Mute_Store extends WPUN_Test_Case {
 	 * A core entry in the option is ignored, also when a filter supplies it: core cannot be muted.
 	 */
 	public function test_a_stored_core_mute_is_ignored() {
-		update_option( 'sc_wpun_muted', array( 'core' => array( 'core' => array( 'until' => null ) ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_muted', array( 'core' => array( 'core' => array( 'until' => null ) ) ) );
 		$core = new \WPUN\Notification_Item(
 			array(
 				'type'            => 'core',
@@ -224,7 +224,7 @@ class Test_Mute_Store extends WPUN_Test_Case {
 		$this->assertCount( 3, $muted );
 		$this->assertSame( 'cli', $muted[0][1] );
 		$this->assertFalse( sc_wpun_mutes()->is_muted( $this->item( 'plugin', 'b/b.php' ) ) );
-		$this->assertFalse( get_option( 'sc_wpun_muted' ) === false, 'Stored.' );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) === false, 'Stored.' );
 
 		$this->assertTrue( sc_wpun_mutes()->unmute( 'theme', 'twentytwentyfive', 'settings' ) );
 		$this->assertNull( sc_wpun_mutes()->get( 'theme', 'twentytwentyfive' ) );
@@ -458,11 +458,11 @@ class Test_Mute_Store extends WPUN_Test_Case {
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '1.6' ) ) );
 		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
 		$this->assertCount( 1, sc_wpun_mutes()->all() );
-		$this->assertArrayHasKey( 'hello.php', get_option( 'sc_wpun_muted' )['plugin'], 'Reading does not write.' );
+		$this->assertArrayHasKey( 'hello.php', sc_wpun()->network_context()->get_option( 'sc_wpun_muted' )['plugin'], 'Reading does not write.' );
 		$this->assertWPError( sc_wpun_mutes()->unmute( 'plugin', 'hello.php' ), 'It is not muted any more.' );
 
 		sc_wpun_mutes()->mute( 'plugin', 'c/c.php' );
-		$this->assertArrayNotHasKey( 'hello.php', get_option( 'sc_wpun_muted' )['plugin'] );
+		$this->assertArrayNotHasKey( 'hello.php', sc_wpun()->network_context()->get_option( 'sc_wpun_muted' )['plugin'] );
 	}
 
 	/**

@@ -28,9 +28,9 @@ class Test_Reminders extends WPUN_Test_Case {
 		$this->channel = new Test_Channel( 'remtest' );
 		sc_wpun()->channels()->unregister( 'remtest' );
 		sc_wpun()->channels()->register( $this->channel );
-		delete_option( 'sc_wpun_channels' );
-		delete_option( 'sc_wpun_state' );
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
 	}
 
 	/**
@@ -65,9 +65,9 @@ class Test_Reminders extends WPUN_Test_Case {
 	 * @param int    $seconds_ago How long ago.
 	 */
 	private function backdate( $id, $seconds_ago ) {
-		$state                                     = get_option( 'sc_wpun_state' );
+		$state                                     = sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 		$state['channels'][ $id ]['last_reminder'] = time() - $seconds_ago;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 	}
 
 	/**
@@ -114,9 +114,9 @@ class Test_Reminders extends WPUN_Test_Case {
 		$this->run_check();
 		$this->assertCount( 1, $this->received() );
 
-		$state                                   = get_option( 'sc_wpun_state' );
+		$state                                   = sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 		$state['channels']['a']['last_reminder'] = time() - 10 * WEEK_IN_SECONDS;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 		$this->run_check();
 
 		$this->assertCount( 1, $this->received(), 'Nothing is repeated.' );
@@ -205,7 +205,7 @@ class Test_Reminders extends WPUN_Test_Case {
 	 * An hourly check only forgives half an hour.
 	 */
 	public function test_the_tolerance_follows_the_check_frequency() {
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'hourly' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'hourly' ) ) );
 		$this->add( 'a', 'daily' );
 		$this->run_check();
 
@@ -222,7 +222,7 @@ class Test_Reminders extends WPUN_Test_Case {
 	 * Checks less often than reminders send one on every check, but never one right after another.
 	 */
 	public function test_the_tolerance_is_at_most_half_the_reminder_interval() {
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'weekly' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'weekly' ) ) );
 		$this->add( 'a', 'daily' );
 		$this->run_check();
 
@@ -296,9 +296,9 @@ class Test_Reminders extends WPUN_Test_Case {
 		$this->add( 'a', 'daily' );
 		$this->run_check();
 		$this->backdate( 'a', 2 * DAY_IN_SECONDS );
-		$state                              = get_option( 'sc_wpun_state' );
+		$state                              = sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 		$state['channels']['a']['retry_at'] = time() + HOUR_IN_SECONDS;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 		$clock = $this->clock();
 
 		$this->run_check();
@@ -361,9 +361,9 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_a_skip_pending_run_never_sends_a_reminder() {
 		$this->add( 'a', 'daily' );
 		sc_wpun()->state()->skip_pending( 'a' );
-		$state                                   = get_option( 'sc_wpun_state' );
+		$state                                   = sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 		$state['channels']['a']['last_reminder'] = time() - 3 * DAY_IN_SECONDS;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		$this->run_check();
 
@@ -546,7 +546,7 @@ class Test_Reminders extends WPUN_Test_Case {
 	 * A check frequency the site does not offer anymore forgives nothing.
 	 */
 	public function test_an_unknown_check_frequency_has_no_tolerance() {
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'schedule_from_a_removed_plugin' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'schedule_from_a_removed_plugin' ) ) );
 		$this->add( 'a', 'daily' );
 		$this->run_check();
 

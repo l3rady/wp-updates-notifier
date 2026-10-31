@@ -197,8 +197,8 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	 */
 	private function snapshot(): array {
 		return array(
-			get_option( 'sc_wpun_channels' ),
-			get_option( 'sc_wpun_state' ),
+			sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ),
+			sc_wpun()->network_context()->get_option( 'sc_wpun_state' ),
 			$this->sent_mail_count(),
 		);
 	}
@@ -320,7 +320,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 				'time'    => $time,
 			),
 		);
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 		$xpath = $this->tab();
 
 		$expected = \WPUN\Admin\Settings_Page::format_site_time( $time );
@@ -352,7 +352,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	 * With no channel the tab explains it and offers no table.
 	 */
 	public function test_an_empty_list() {
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 		$xpath = $this->tab();
 
 		$this->assertSame( 0, $xpath->query( '//table' )->length );
@@ -366,7 +366,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	public function test_an_unavailable_instance_is_hidden_and_untouched() {
 		$this->store_slack();
 		$this->assertTrue( sc_wpun_channels()->has( 'slack' ) );
-		$stored = get_option( 'sc_wpun_channels' );
+		$stored = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
 		$xpath  = $this->tab();
 
 		$this->assertSame( 0, $xpath->query( '//tr[@data-id="slack"]' )->length );
@@ -379,7 +379,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 			$notice = $this->notice();
 			$this->assertFalse( $notice['success'], $action );
 			$this->assertSame( 'There is no such channel.', $notice['message'], $action );
-			$this->assertSame( $stored, get_option( 'sc_wpun_channels' ), $action );
+			$this->assertSame( $stored, sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ), $action );
 			$this->assertSame( 0, $this->sent_mail_count(), $action );
 		}
 
@@ -585,8 +585,8 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		$this->post( Channels_Tab::DUPLICATE_ACTION, 'vault' );
 		$this->assertTrue( sc_wpun()->channels_tab()->process_duplicate() );
 
-		$this->assertSame( 'ok-stored', get_option( 'sc_wpun_channels' )['vault_copy']['settings']['token'] );
-		$this->assertStringNotContainsString( 'ok-external-secret', wp_json_encode( get_option( 'sc_wpun_channels' ) ) );
+		$this->assertSame( 'ok-stored', sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )['vault_copy']['settings']['token'] );
+		$this->assertStringNotContainsString( 'ok-external-secret', wp_json_encode( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) ) );
 	}
 
 	/**
@@ -604,7 +604,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 				'time'    => time(),
 			),
 		);
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		$_GET['action'] = 'delete';
 		$_GET['id']     = 'second';

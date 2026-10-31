@@ -29,7 +29,7 @@ class Test_Network_Check extends WPUN_Test_Case {
 	private $other_id = 0;
 
 	/**
-	 * Network-activate the plugin, as far as the plugin can tell, and make two more sites.
+	 * Make two more sites in the network.
 	 */
 	public function set_up() {
 		parent::set_up();
@@ -48,24 +48,8 @@ class Test_Network_Check extends WPUN_Test_Case {
 			restore_current_blog();
 		}
 
-		$active                                    = (array) get_site_option( 'active_sitewide_plugins', array() );
-		$active[ plugin_basename( SC_WPUN_FILE ) ] = time();
-		update_site_option( 'active_sitewide_plugins', $active );
-
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 		$this->fake_http( 'api.wordpress.org/plugins/info', $this->fake_response( 200, wp_json_encode( array( 'name' => 'Hello Dolly' ) ) ) );
-	}
-
-	/**
-	 * Leave the network as found.
-	 */
-	public function tear_down() {
-		if ( is_multisite() ) {
-			$active = (array) get_site_option( 'active_sitewide_plugins', array() );
-			unset( $active[ plugin_basename( SC_WPUN_FILE ) ] );
-			update_site_option( 'active_sitewide_plugins', $active );
-		}
-		parent::tear_down();
 	}
 
 	/**

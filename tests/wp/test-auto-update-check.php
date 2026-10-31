@@ -30,10 +30,10 @@ class Test_Auto_Update_Check extends WPUN_Test_Case {
 		$this->channel = new Test_Channel( 'autotest' );
 		sc_wpun()->channels()->unregister( 'autotest' );
 		sc_wpun()->channels()->register( $this->channel );
-		delete_option( 'sc_wpun_channels' );
-		delete_option( 'sc_wpun_state' );
-		delete_option( 'sc_wpun_muted' );
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
 		sc_wpun_channels()->save( new Channel_Instance( 'a', 'autotest', 'A', true, array( 'behaviour' => 'succeed' ), array( 'remind' => 'daily' ) ) );
 		remove_filter( 'automatic_updater_disabled', '__return_true' ); // WordPress's own test bootstrap disables its updater.
 		add_filter( 'automatic_updates_is_vcs_checkout', '__return_false' );
@@ -203,7 +203,7 @@ class Test_Auto_Update_Check extends WPUN_Test_Case {
 		$this->check();
 		$state                                   = $this->stored_state();
 		$state['channels']['a']['last_reminder'] = time() - 3 * DAY_IN_SECONDS;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		$this->check();
 
@@ -220,7 +220,7 @@ class Test_Auto_Update_Check extends WPUN_Test_Case {
 	 */
 	public function test_the_email_contains_the_note() {
 		$this->auto_on();
-		update_option( 'sc_wpun_channels', array() );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_channels', array() );
 		$this->save_settings();
 		$this->waiting();
 

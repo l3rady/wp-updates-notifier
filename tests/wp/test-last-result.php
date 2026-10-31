@@ -217,7 +217,7 @@ class Test_Last_Result extends WPUN_Test_Case {
 		$this->save_channel_state( 'email', array( 'core' => array( 'core' => '1' ) ) );
 		$state                                     = sc_wpun()->state()->get();
 		$state['channels']['email']['last_result'] = $before;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		sc_wpun()->state()->skip_pending( 'email' );
 

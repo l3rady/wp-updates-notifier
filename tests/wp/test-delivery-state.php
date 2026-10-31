@@ -77,7 +77,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 	 */
 	public function test_a_first_run_sends_everything_pending() {
 		$this->save_settings();
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
 		$this->run_check();
@@ -129,14 +129,14 @@ class Test_Delivery_State extends WPUN_Test_Case {
 	public function test_an_upgrade_from_1_6_resends_nothing_announced() {
 		$fixtures = require dirname( __DIR__ ) . '/fixtures/settings.php';
 		$fixture  = $fixtures['1.6.0'];
-		update_option( 'sc_wpun_settings', $fixture['options'] );
-		update_option( 'sc_wpun_settings_ver', $fixture['version'] );
-		delete_option( 'sc_wpun_channels' );
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $fixture['options'] );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', $fixture['version'] );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		sc_wpun()->settings()->maybe_upgrade();
 		$this->assertArrayHasKey( 'legacy_notified', $this->stored_state() );
 
-		update_option( 'sc_wpun_settings', array_merge( $this->stored_settings(), array( 'notify_plugins' => 'all' ) ) ); // The fixture checks active plugins only.
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( $this->stored_settings(), array( 'notify_plugins' => 'all' ) ) ); // The fixture checks active plugins only.
 
 		// Core 6.4 and hello.php 1.8 were announced; the own plugin was never announced.
 		$this->set_updates(
@@ -219,7 +219,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 	 */
 	public function test_forgetting_leaves_unchecked_types_alone() {
 		$this->save_settings();
-		update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_plugins' => 'none' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_plugins' => 'none' ) ) );
 		$this->save_channel_state(
 			'email',
 			array(
@@ -441,7 +441,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		$this->save_channel_state( 'email', array( 'plugin' => array( 'hello.php' => '2.0.0' ) ) );
 		$state                                       = $this->stored_state();
 		$state['channels']['email']['last_reminder'] = 12345;
-		update_option( 'sc_wpun_state', $state );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		sc_wpun()->state()->record_delivery(
 			Delivery_Result::success( 'Sent' ),
@@ -460,7 +460,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 	 */
 	public function test_recording_a_delivery_starts_an_entry() {
 		$this->save_settings();
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 
 		sc_wpun()->state()->record_delivery(
 			Delivery_Result::failure( 'Down' ),
@@ -535,7 +535,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 	 */
 	public function test_a_delivery_with_something_else_is_not_recorded() {
 		$this->save_settings();
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$result       = Delivery_Result::success( 'Sent' );
 		$notification = new Notification( 'Site', 'https://example.org', 'https://example.org/wp-admin/update-core.php', array() );
 		$instance     = sc_wpun_channels()->get( 'email' );

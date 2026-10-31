@@ -33,7 +33,7 @@ class Test_Run_Check extends WPUN_Test_Case {
 			)
 		);
 		$this->save_settings();
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 		reset_phpmailer_instance();
 	}

@@ -42,9 +42,9 @@ class Test_No_Early_Translation extends WPUN_Test_Case {
 	 * Forget what the test seeded.
 	 */
 	public function tear_down() {
-		delete_option( 'sc_wpun_settings' );
-		delete_option( 'sc_wpun_settings_ver' );
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings_ver' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 		set_current_screen( 'front' );
 		parent::tear_down();
 	}
@@ -54,9 +54,9 @@ class Test_No_Early_Translation extends WPUN_Test_Case {
 	 */
 	private function load_plugin_on_1x_settings() {
 		$fixtures = require dirname( __DIR__ ) . '/fixtures/settings.php';
-		delete_option( 'sc_wpun_channels' );
-		update_option( 'sc_wpun_settings', $fixtures['1.6.0']['options'] );
-		update_option( 'sc_wpun_settings_ver', $fixtures['1.6.0']['version'] );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $fixtures['1.6.0']['options'] );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', $fixtures['1.6.0']['version'] );
 
 		$plugin = new \WPUN\Plugin();
 		$plugin->register();
@@ -64,8 +64,8 @@ class Test_No_Early_Translation extends WPUN_Test_Case {
 		$plugin->boot();
 
 		// The channel migration ran, so it was covered.
-		$this->assertArrayHasKey( 'email', get_option( 'sc_wpun_channels' ) );
-		$this->assertArrayHasKey( 'slack', get_option( 'sc_wpun_channels' ) );
+		$this->assertArrayHasKey( 'email', sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
+		$this->assertArrayHasKey( 'slack', sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
 	}
 
 	/**

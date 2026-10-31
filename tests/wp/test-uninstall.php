@@ -30,9 +30,12 @@ class Test_Uninstall extends WPUN_Test_Case {
 	 * Store everything the plugin can leave behind on the current site.
 	 */
 	private function leave_traces() {
-		$this->save_settings();
+		// The site's own options, as 2.x and a single site keep them, whatever mode the suite runs in.
+		update_option( 'sc_wpun_settings', $this->global_settings() );
+		update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
+		update_option( 'sc_wpun_channels', array( 'email' => array( 'type' => 'email' ) ) );
+		update_option( 'sc_wpun_state', array( 'channels' => array() ), false );
 		update_option( 'sc_wpun_muted', array( 'plugin' => array( 'hello.php' => array( 'until' => null ) ) ), false );
-		$this->save_channel_state( 'email', array( 'core' => array( 'core' => '99.0.0' ) ) );
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 		wp_schedule_event( time(), 'daily', 'sc_wpun_update_check' );
 		set_transient( 'sc_wpun_send_test_email', 1 );
@@ -50,6 +53,9 @@ class Test_Uninstall extends WPUN_Test_Case {
 	private function assert_no_traces( $where ) {
 		foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state', 'sc_wpun_channels', 'sc_wpun_muted' ) as $option ) {
 			$this->assertFalse( get_option( $option ), "$where: $option" );
+			if ( is_multisite() ) {
+				$this->assertFalse( get_site_option( $option ), "$where: network $option" );
+			}
 		}
 		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ), "$where: cron event" );
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ), "$where: test email transient" );
@@ -113,5 +119,23 @@ class Test_Uninstall extends WPUN_Test_Case {
 		switch_to_blog( $blog_id );
 		$this->assert_no_traces( 'other site' );
 		restore_current_blog();
+	}
+
+	/**
+	 * Multisite: the network's own options go too, and the sites keep nothing.
+	 */
+	public function test_uninstall_removes_the_network_options() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Needs multisite (make test-wp-ms).' );
+		}
+
+		$this->leave_traces();
+		foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state', 'sc_wpun_channels', 'sc_wpun_muted' ) as $option ) {
+			update_site_option( $option, array( 'network' => true ) );
+		}
+
+		$this->uninstall();
+
+		$this->assert_no_traces( 'network' );
 	}
 }

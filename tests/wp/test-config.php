@@ -453,7 +453,7 @@ class Test_Config extends WPUN_Test_Case {
 		$this->assertSame( 'all', $valid['notify_plugins'] );
 		$this->assertSame( 'active', $valid['notify_themes'], 'Settings that are not external still save.' );
 
-		update_option( 'sc_wpun_settings', $valid );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $valid );
 		$this->assertSame( 'daily', $this->stored_settings()['frequency'] );
 		$this->assertSame( 'weekly', sc_wpun()->settings()->get()['frequency'] );
 	}
@@ -474,7 +474,7 @@ class Test_Config extends WPUN_Test_Case {
 		$this->assertSame( 'daily', $this->stored_settings()['frequency'] );
 
 		// Changing the saved frequency by other means does not override the external one.
-		update_option( 'sc_wpun_settings', array_merge( $this->stored_settings(), array( 'frequency' => 'twicedaily' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( $this->stored_settings(), array( 'frequency' => 'twicedaily' ) ) );
 		$this->assertSame( 'weekly', wp_get_schedule( 'sc_wpun_update_check' ) );
 	}
 

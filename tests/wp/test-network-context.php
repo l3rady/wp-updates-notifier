@@ -19,30 +19,24 @@ use WPUN\State;
 class Test_Network_Context extends WPUN_Test_Case {
 
 	/**
-	 * The plugin's key in the network's active plugins.
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
 	 *
-	 * @return string
+	 * @var bool
 	 */
-	private function basename() {
-		return plugin_basename( SC_WPUN_FILE );
-	}
+	protected $network_activated = false;
 
 	/**
 	 * Network-activate the plugin, as far as the plugin can tell.
 	 */
 	private function network_activate() {
-		$active                      = (array) get_site_option( 'active_sitewide_plugins', array() );
-		$active[ $this->basename() ] = time();
-		update_site_option( 'active_sitewide_plugins', $active );
+		$this->set_network_activated( true );
 	}
 
 	/**
 	 * Undo network_activate().
 	 */
 	private function network_deactivate() {
-		$active = (array) get_site_option( 'active_sitewide_plugins', array() );
-		unset( $active[ $this->basename() ] );
-		update_site_option( 'active_sitewide_plugins', $active );
+		$this->set_network_activated( false );
 	}
 
 	/**
@@ -66,16 +60,6 @@ class Test_Network_Context extends WPUN_Test_Case {
 				delete_site_option( $name );
 			}
 		}
-	}
-
-	/**
-	 * Leave the network as found.
-	 */
-	public function tear_down() {
-		if ( is_multisite() ) {
-			$this->network_deactivate();
-		}
-		parent::tear_down();
 	}
 
 	/**

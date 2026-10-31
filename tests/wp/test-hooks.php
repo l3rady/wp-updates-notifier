@@ -20,6 +20,13 @@ use WPUN\Notification_Renderer;
  */
 class Test_Hooks extends WPUN_Test_Case {
 
+	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
 	const OWN_PLUGIN = 'wp-updates-notifier/wp-updates-notifier.php';
 
 	/**
@@ -165,9 +172,9 @@ class Test_Hooks extends WPUN_Test_Case {
 				return $defaults;
 			}
 		);
-		delete_option( 'sc_wpun_settings' );
-		delete_option( 'sc_wpun_settings_ver' );
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings_ver' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 
 		sc_wpun()->settings()->maybe_upgrade();
 
@@ -769,6 +776,7 @@ class Test_Hooks extends WPUN_Test_Case {
 		$this->clear_hooks( array( 'switch_blog', 'site_status_tests', 'debug_information', 'sc_wpun_channel_deleted', 'sc_wpun_notification_sent', 'sc_wpun_notification_failed', 'sc_wpun_enable_cron', 'sc_wpun_disable_cron', 'sc_wpun_run_check', 'sc_wpun_update_check', 'admin_post_sc_wpun_dismiss_slack_notice', 'init', 'update_option_sc_wpun_settings', 'lang_dir_for_domain', 'load_textdomain' ) );
 		\SC_WP_Updates_Notifier::$did_init = false;
 		$plugin                            = new WPUN\Plugin();
+		$this->set_network_activated( true ); // A multisite's copy only boots like this when network-activated; a single site's does too.
 
 		$plugin->boot();
 
@@ -790,10 +798,14 @@ class Test_Hooks extends WPUN_Test_Case {
 			array( 'sc_wpun_update_check', 'WPUN\Slack_Notice', 'maybe_send_email', 5, 1 ),
 			array( 'admin_post_sc_wpun_dismiss_slack_notice', 'WPUN\Slack_Notice', 'handle_dismiss', 10, 1 ),
 			array( 'init', 'WPUN\Scheduler', 'maybe_schedule', 10, 1 ),
-			array( 'update_option_sc_wpun_settings', 'WPUN\Scheduler', 'settings_updated', 10, 2 ),
 			array( 'lang_dir_for_domain', 'WPUN\Translations', 'lang_dir', 10, 3 ),
 			array( 'load_textdomain', 'WPUN\Translations', 'load_pack_first', 10, 2 ),
 		);
+		if ( ! is_multisite() ) {
+			$expected[] = array( 'update_option_sc_wpun_settings', 'WPUN\Scheduler', 'settings_updated', 10, 2 );
+		} else {
+			$this->assertNotFalse( has_action( 'update_site_option_sc_wpun_settings' ), 'Network options have their own update hook.' );
+		}
 		foreach ( $expected as list( $hook, $owner, $method, $priority, $args ) ) {
 			$this->assertSame( array( $priority, $args ), $this->registered( $hook, $owner, $method ), "$hook: $owner::$method" );
 		}

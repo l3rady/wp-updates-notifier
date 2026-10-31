@@ -182,6 +182,9 @@ class Test_Routing extends WPUN_Test_Case {
 	 * Scope "active" keeps inactive plugins from the instance; the "all" instance gets both.
 	 */
 	public function test_active_scope_for_plugins() {
+		if ( is_multisite() ) {
+			$this->set_network_activated( false ); // Network-activated, this plugin would be active too.
+		}
 		$this->save_settings( array( 'email_notifications' => 0 ) );
 		$this->add_routed( 'everything', array() );
 		$this->add_routed( 'active', array( 'scope' => 'active' ) );
@@ -210,11 +213,9 @@ class Test_Routing extends WPUN_Test_Case {
 		}
 		$this->save_settings( array( 'email_notifications' => 0 ) );
 		$this->add_routed( 'active', array( 'scope' => 'active' ) );
-		update_site_option( 'active_sitewide_plugins', array( self::OWN_PLUGIN => time() ) );
-		// Network-activated, the plugin keeps its options network-wide, so move the ones saved above (#85).
-		foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state', 'sc_wpun_channels' ) as $name ) {
-			update_site_option( $name, get_option( $name ) );
-		}
+		$active                     = (array) get_site_option( 'active_sitewide_plugins', array() );
+		$active[ self::OWN_PLUGIN ] = time();
+		update_site_option( 'active_sitewide_plugins', $active ); // Keeps the suite's own network activation.
 		$this->set_updates( null, array( self::OWN_PLUGIN => array( 'new_version' => '4.5.6' ) ) );
 
 		$bodies = $this->run_check();

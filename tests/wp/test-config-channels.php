@@ -97,7 +97,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	 * @return string
 	 */
 	private function raw_option() {
-		return wp_json_encode( get_option( 'sc_wpun_channels' ) );
+		return wp_json_encode( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
 	}
 
 	/**
@@ -165,7 +165,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 
 		$this->assertTrue( $store->save( $instance->with_enabled( true )->with_settings( array_merge( $instance->get_settings(), array( 'from' => 'x@example.com' ) ) ) ) );
 
-		$raw = get_option( 'sc_wpun_channels' )['email'];
+		$raw = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )['email'];
 		$this->assertSame( 'ops@example.org', $raw['settings']['to'] );
 		$this->assertSame( 'x@example.com', $raw['settings']['from'] );
 		$this->assertTrue( $raw['enabled'], 'The stored switch is kept, not the external one.' );
@@ -182,7 +182,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 
 		sc_wpun_channels()->save( new Channel_Instance( 'fresh', 'email', 'Fresh', true, array( 'to' => 'vault@example.org' ) ) );
 
-		$this->assertArrayNotHasKey( 'to', get_option( 'sc_wpun_channels' )['fresh']['settings'] );
+		$this->assertArrayNotHasKey( 'to', sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )['fresh']['settings'] );
 	}
 
 	/**
@@ -244,7 +244,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 		$this->assertFalse( $store->save( $store->get( 'ops_code' ) ) );
 		$this->assertFalse( $store->delete( 'ops_code' ) );
 		$this->assertFalse( $store->delete( 'email' ), 'A stored one with the same id stays.' );
-		$this->assertArrayHasKey( 'email', get_option( 'sc_wpun_channels' ) );
+		$this->assertArrayHasKey( 'email', sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
 	}
 
 	/**
@@ -353,7 +353,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 
 		$store->save( $instance->with_settings( array_merge( $instance->get_settings(), array( 'label' => 'changed' ) ) ) );
 		$this->assertStringNotContainsString( self::SECRET, $this->raw_option() );
-		$this->assertSame( 'changed', get_option( 'sc_wpun_channels' )['vault']['settings']['label'] );
+		$this->assertSame( 'changed', sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )['vault']['settings']['label'] );
 
 		// The edit form shows no value for a secret field.
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
@@ -437,6 +437,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Needs multisite (make test-wp-ms).' );
 		}
+		$this->set_network_activated( false ); // Network-activated, every site reads the main site's values.
 		add_filter(
 			'sc_wpun_config_value',
 			static function ( $value, $context ) {
@@ -467,12 +468,12 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	 */
 	public function test_a_programmatic_update_leaves_the_email_instance_alone( $field, $value ) {
 		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__' . $field => $value ) );
-		$before = get_option( 'sc_wpun_channels' );
+		$before = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
 
 		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate( array( 'frequency' => 'daily' ) );
 
 		$this->assertSame( 'daily', $valid['frequency'] );
-		$this->assertSame( $before, get_option( 'sc_wpun_channels' ) );
+		$this->assertSame( $before, sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
 	}
 
 	/**
@@ -582,17 +583,17 @@ class Test_Config_Channels extends WPUN_Test_Case {
 			);
 			sc_wpun()->config()->flush();
 		}
-		update_option( 'sc_wpun_settings', $fixtures['1.6.0']['options'] );
-		update_option( 'sc_wpun_settings_ver', $fixtures['1.6.0']['version'] );
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $fixtures['1.6.0']['options'] );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', $fixtures['1.6.0']['version'] );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 
 		sc_wpun()->settings()->maybe_upgrade();
 
-		$email = get_option( 'sc_wpun_channels' )['email'];
+		$email = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )['email'];
 		$this->assertSame( 'ops@example.org', $email['settings']['to'] );
 		$this->assertSame( 'ops@example.org', $email['settings']['from'] );
 		$this->assertTrue( $email['enabled'] );
-		$this->assertArrayHasKey( 'slack', get_option( 'sc_wpun_channels' ) );
+		$this->assertArrayHasKey( 'slack', sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
 	}
 
 	/**

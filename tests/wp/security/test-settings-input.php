@@ -316,7 +316,7 @@ class Test_Security_Settings_Input extends WPUN_Security_Test_Case {
 	 * @return array
 	 */
 	private function stored(): array {
-		return array( get_option( 'sc_wpun_channels' ), get_option( 'sc_wpun_state' ), get_option( 'sc_wpun_settings' ) );
+		return array( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ), sc_wpun()->network_context()->get_option( 'sc_wpun_state' ), sc_wpun()->network_context()->get_option( 'sc_wpun_settings' ) );
 	}
 
 	/**

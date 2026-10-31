@@ -79,7 +79,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * Updating the option outside the settings form (another plugin, a migration, our own code) must not die.
 	 */
 	public function test_updating_the_option_outside_the_settings_form_does_not_die() {
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
 
 		$this->assertSame( 'active', $this->stored_settings()['notify_plugins'] );
 	}
@@ -141,7 +141,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		);
 		$before = sc_wpun_channels()->all();
 
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
 
 		$this->assertSame( 'daily', $this->stored_settings()['frequency'] );
 		$this->assertEquals( $before, sc_wpun_channels()->all() );
@@ -187,7 +187,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * Saving the form creates no Slack instance, nor any other.
 	 */
 	public function test_validation_creates_no_slack_instance() {
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 
 		$this->plugin()->sc_wpun_settings_validate(
 			$this->settings(
@@ -223,7 +223,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * The run state is not part of the settings: the sanitizer drops it if a caller passes it.
 	 */
 	public function test_the_run_state_is_not_stored_in_the_settings() {
-		update_option(
+		sc_wpun()->network_context()->update_option(
 			'sc_wpun_settings',
 			array_merge(
 				$this->settings(),
@@ -245,7 +245,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 		wp_schedule_event( time(), 'hourly', 'sc_wpun_update_check' );
 
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
 
 		$this->assertSame( 'daily', wp_get_schedule( 'sc_wpun_update_check' ) );
 	}
@@ -258,7 +258,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$next = time() + 5000;
 		wp_schedule_event( $next, 'hourly', 'sc_wpun_update_check' );
 
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
 
 		$this->assertSame( $next, wp_next_scheduled( 'sc_wpun_update_check' ) );
 	}
@@ -282,7 +282,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$_POST['submitwithemail'] = 'Save settings with test email';
 
 		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
 
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ) );
 	}
@@ -428,7 +428,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$this->plugin()->sc_wpun_settings_validate( array( 'notify_to' => 'not an address', 'email_notifications' => 'maybe' ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$this->assertSame( array(), $this->errors() );
 
-		update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_to' => 'x@example.org' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_to' => 'x@example.org' ) ) );
 		$this->assertArrayNotHasKey( 'notify_to', $this->stored_settings() );
 	}
 
@@ -472,6 +472,6 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * @return mixed
 	 */
 	private function snapshot_channels() {
-		return get_option( 'sc_wpun_channels' );
+		return sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
 	}
 }

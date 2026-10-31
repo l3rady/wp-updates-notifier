@@ -16,6 +16,13 @@ use WPUN\Channel_Instance;
  */
 class Test_Channel_Form extends WPUN_Test_Case {
 
+	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
 	const SECRET = 'stored-SECRET-111';
 	const TYPED  = 'typed-SECRET-222';
 
@@ -223,7 +230,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	 * @return array
 	 */
 	private function snapshot(): array {
-		return array( get_option( 'sc_wpun_channels' ), get_option( 'sc_wpun_state' ) );
+		return array( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ), sc_wpun()->network_context()->get_option( 'sc_wpun_state' ) );
 	}
 
 	/**
@@ -296,7 +303,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	 * @return array|null
 	 */
 	private function raw( string $id ) {
-		$all = get_option( 'sc_wpun_channels' );
+		$all = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
 
 		return $all[ $id ] ?? null;
 	}
@@ -363,7 +370,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertSame( 1, $xpath->query( '//tr[@data-id="ops_code"]' )->length );
 		$this->assertSame( 0, $xpath->query( '//tr[@data-id="ops_code"]//a[normalize-space()="Edit"]' )->length );
 
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 		remove_all_filters( 'sc_wpun_channels' );
 		sc_wpun()->config()->flush();
 		$xpath = $this->page();
@@ -503,9 +510,9 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	public function test_a_custom_render_replaces_only_the_settings() {
 		$this->store_fixture( 'custom_one', array( 'name' => 'Custom <b>name' ) );
 		sc_wpun_channels()->save( sc_wpun_channels()->get( 'custom_one' )->with_label( 'Custom' ) );
-		$all                       = get_option( 'sc_wpun_channels' );
+		$all                       = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
 		$all['custom_one']['type'] = 'fixture_custom';
-		update_option( 'sc_wpun_channels', $all );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_channels', $all );
 
 		$html  = $this->html(
 			array(
@@ -760,10 +767,10 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	 * An edit saves everything, keeps unknown keys and never changes the id.
 	 */
 	public function test_an_edit_is_saved() {
-		$all                                 = get_option( 'sc_wpun_channels' );
+		$all                                 = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
 		$all['email']['routing']             = array( 'addon_rule' => 'keep', 'scope' => 'all' ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$all['email']['settings']['addon_x'] = 'kept';
-		update_option( 'sc_wpun_channels', $all );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_channels', $all );
 
 		$this->post_email(
 			array(
@@ -784,7 +791,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 
 		$this->assertSame( admin_url( 'options-general.php?page=wp-updates-notifier&tab=channels' ), $url );
 		$this->assertSame( 'Renamed team saved.', sc_wpun()->notices()->take()['message'] );
-		$this->assertSame( array( 'email' ), array_keys( get_option( 'sc_wpun_channels' ) ), 'The id did not change.' );
+		$this->assertSame( array( 'email' ), array_keys( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) ), 'The id did not change.' );
 		$raw = $this->raw( 'email' );
 		$this->assertSame( 'Renamed team', $raw['label'] );
 		$this->assertFalse( $raw['enabled'] );
@@ -1444,7 +1451,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 
 		$this->post_email( array( 'settings' => array( 'to' => 'typed@example.org', 'from' => 'new@example.org' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		sc_wpun()->channel_form()->process_save();
-		$raw = get_option( 'sc_wpun_channels' )['email']['settings'];
+		$raw = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )['email']['settings'];
 		$this->assertSame( 'ops@example.org', $raw['to'] );
 		$this->assertSame( 'new@example.org', $raw['from'] );
 
@@ -1458,7 +1465,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'defined in code and cannot be changed here', $this->text( $xpath, '//div[contains(@class,"sc-wpun-inline-notice")]' ) );
 		$this->post_email( array( 'settings' => array( 'from' => 'other@example.org' ) ) );
 		sc_wpun()->channel_form()->process_save();
-		$this->assertSame( 'new@example.org', get_option( 'sc_wpun_channels' )['email']['settings']['from'], 'Nothing is saved for a code-defined email.' );
+		$this->assertSame( 'new@example.org', sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )['email']['settings']['from'], 'Nothing is saved for a code-defined email.' );
 	}
 
 	/**

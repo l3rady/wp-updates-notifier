@@ -463,7 +463,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		sc_wpun()->config()->flush();
 		$this->save_settings();
 		sc_wpun_channels()->save( new Channel_Instance( 'victim', 'email', 'Victim', true, array( 'to' => 'ops@example.org' ) ) );
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$this->reset_http();
 		$this->fake_http( 'api.wordpress.org/plugins/info', $this->fake_response( 200, wp_json_encode( array( 'name' => 'X', 'slug' => 'x', 'version' => '9', 'tested' => '99' ) ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
@@ -484,7 +484,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	 */
 	private function prepare( array $spec ) {
 		$this->seed();
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		if ( null !== $spec['setup'] ) {
 			wp_set_current_user( self::$users['administrator'] );
 			$spec['setup']();

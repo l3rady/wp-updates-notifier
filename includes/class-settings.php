@@ -83,6 +83,9 @@ class Settings {
 	 */
 	public function maybe_upgrade(): void {
 		$current_ver = $this->read_option( self::OPT_VERSION_FIELD ); // Get current plugin version.
+		if ( false === $current_ver && $this->migrate_from_main_site() ) {
+			$current_ver = $this->read_option( self::OPT_VERSION_FIELD ); // The copied version, so older data is upgraded below.
+		}
 		if ( self::OPT_VERSION !== $current_ver ) { // is the version the same as this plugin?
 			$options  = (array) $this->context->get_option( self::OPT_FIELD ); // get current settings from DB.
 			$defaults = $this->default_settings();
@@ -130,6 +133,39 @@ class Settings {
 			$this->write_option( self::OPT_FIELD, $options ); // update settings.
 			$this->write_option( self::OPT_VERSION_FIELD, self::OPT_VERSION ); // update settings version.
 		}
+	}
+
+	/**
+	 * Copy the main site's options to the network's when the plugin runs for the network and has no options there yet (#85).
+	 *
+	 * A 2.x site that is network-activated keeps its settings, state, channels and mutes as options of the
+	 * main site, which is where the one check ran. The copy is the raw stored values, unfiltered: it is a
+	 * move of storage, and channel instance ids must stay, as `SC_WPUN_CHANNEL_<ID>__<FIELD>` depends on them.
+	 * Copying the state keeps the first network check from sending everything again. The main site's options
+	 * stay, so going back to 2.x loses nothing. It runs once: the network having options ends it.
+	 *
+	 * @return bool Whether anything was copied.
+	 */
+	private function migrate_from_main_site(): bool {
+		if ( ! $this->context->is_network() ) {
+			return false;
+		}
+
+		// Reads straight from storage: a filter must not be able to hide that the network has its options.
+		if ( false !== get_site_option( self::OPT_VERSION_FIELD ) || false !== get_site_option( self::OPT_FIELD ) ) {
+			return false;
+		}
+
+		$copied = false;
+		foreach ( array( self::OPT_FIELD, self::OPT_VERSION_FIELD, State::OPT_FIELD, Channel_Store::OPT_FIELD, Mute_Store::OPT_FIELD ) as $name ) {
+			$value = get_blog_option( $this->context->main_site_id(), $name );
+			if ( false !== $value ) {
+				add_site_option( $name, $value );
+				$copied = true;
+			}
+		}
+
+		return $copied;
 	}
 
 	/**

@@ -32,8 +32,8 @@ class Test_Retry_After extends WPUN_Test_Case {
 		$this->channel = new Test_Channel( 'limited' );
 		sc_wpun()->channels()->unregister( 'limited' );
 		sc_wpun()->channels()->register( $this->channel );
-		delete_option( 'sc_wpun_channels' );
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 	}
 
 	/**
@@ -95,9 +95,9 @@ class Test_Retry_After extends WPUN_Test_Case {
 	 * @param string $id Id.
 	 */
 	private function end_deferral( $id = 'a' ) {
-		$state                                = get_option( 'sc_wpun_state' );
+		$state                                = sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 		$state['channels'][ $id ]['retry_at'] = time() - 1;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 	}
 
 	/**
@@ -227,7 +227,7 @@ class Test_Retry_After extends WPUN_Test_Case {
 	 */
 	public function test_no_usable_retry_after_sets_nothing() {
 		foreach ( array( 0, null ) as $wait ) {
-			delete_option( 'sc_wpun_state' );
+			sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 			$this->channel->received = array();
 			$this->add( 'a', 'limit', $wait );
 
@@ -253,7 +253,7 @@ class Test_Retry_After extends WPUN_Test_Case {
 		$this->assertSame( 429, $result->get_status() );
 		$this->assertSame( $retry_at, $this->retry_at() );
 
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		sc_wpun()->dispatcher()->send_one( $this->test_notification(), sc_wpun_channels()->get( 'a' ) );
 		$this->assertNull( $this->retry_at() );
 	}
@@ -265,9 +265,9 @@ class Test_Retry_After extends WPUN_Test_Case {
 		$this->add( 'a' );
 		$this->run_check();
 		sc_wpun()->state()->skip_pending( 'a' );
-		$state                              = get_option( 'sc_wpun_state' );
+		$state                              = sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 		$state['channels']['a']['retry_at'] = time() + 600;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		$this->run_check();
 

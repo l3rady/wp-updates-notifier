@@ -10,6 +10,13 @@
  */
 class Test_Slack_Notice extends WPUN_Test_Case {
 
+	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
 	const SLACK_URL = 'https://hooks.slack.com/services/T000/B000/XXXX';
 
 	/**
@@ -68,10 +75,10 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 	 */
 	private function upgrade_from_slack_site() {
 		$fixtures = require dirname( __DIR__ ) . '/fixtures/settings.php';
-		update_option( 'sc_wpun_settings', $fixtures['1.6.0']['options'] );
-		update_option( 'sc_wpun_settings_ver', $fixtures['1.6.0']['version'] );
-		delete_option( 'sc_wpun_channels' );
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $fixtures['1.6.0']['options'] );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', $fixtures['1.6.0']['version'] );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 
 		sc_wpun()->settings()->maybe_upgrade();
 	}
@@ -113,8 +120,8 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 	 */
 	public function test_an_upgraded_slack_site_is_told_once_and_nothing_is_posted() {
 		$this->upgrade_from_slack_site();
-		$channels_before = get_option( 'sc_wpun_channels' );
-		$settings_before = get_option( 'sc_wpun_settings' );
+		$channels_before = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
+		$settings_before = sc_wpun()->network_context()->get_option( 'sc_wpun_settings' );
 		$this->set_updates( '99.0.0' );
 
 		$this->assertTrue( sc_wpun_channels()->has( 'slack' ) );
@@ -130,8 +137,8 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 			$subjects[] = $mail['subject'];
 		}
 		$this->assertCount( 1, preg_grep( '/Slack notifications are no longer supported/', $subjects ) );
-		$this->assertSame( $channels_before, get_option( 'sc_wpun_channels' ) );
-		$this->assertSame( $settings_before, get_option( 'sc_wpun_settings' ) );
+		$this->assertSame( $channels_before, sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
+		$this->assertSame( $settings_before, sc_wpun()->network_context()->get_option( 'sc_wpun_settings' ) );
 		$this->assertSame( self::SLACK_URL, $this->instance_setting( 'slack', 'webhook_url' ) );
 		$this->assertSame( '#ops', $this->instance_setting( 'slack', 'channel' ) );
 		$this->assertTrue( $this->stored_instance( 'slack' )->is_enabled() );
@@ -456,14 +463,14 @@ class Test_Slack_Notice extends WPUN_Test_Case {
 		);
 		$channel = new Test_Channel( 'slack' );
 		sc_wpun()->channels()->register( $channel );
-		$before = get_option( 'sc_wpun_channels' );
+		$before = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
 		$this->set_updates( '99.0.0' );
 
 		do_action( 'sc_wpun_update_check' );
 
 		$this->assertCount( 1, $channel->received['slack'] );
 		$this->assertCount( 0, $this->requests_to( 'hooks.slack.com' ) );
-		$this->assertSame( $before, get_option( 'sc_wpun_channels' ) );
+		$this->assertSame( $before, sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
 		$this->assertFalse( sc_wpun()->slack_notice()->applies() );
 		$this->assertFalse( $this->stored_state()['slack_notice_sent'] ?? false );
 		$this->assertSame( 1, $this->sent_mail_count(), 'Only the update email.' );

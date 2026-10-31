@@ -62,7 +62,7 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 		sc_wpun()->register_admin_hooks();
 		sc_wpun()->config()->flush();
 		$this->save_settings();
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		wp_set_current_user( self::$admin_id );
 	}
 
@@ -191,7 +191,7 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 	 * @return object The mail.
 	 */
 	private function mail_in( string $format ) {
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		reset_phpmailer_instance();
 		$this->save_settings( array( 'email_format' => $format ) );
 		sc_wpun()->config()->flush();
@@ -318,7 +318,7 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 		$this->assert_no_live_markup( $html, 'Channels tab' );
 
 		// The notice after "Check now" names the failure.
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_check_now' );
 		$this->assertTrue( sc_wpun()->check_now()->process() );
 		unset( $_POST['_wpnonce'] );
@@ -353,7 +353,7 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 			)
 		);
 		// Stored values reach the page without passing a save: as after a restore, an import or a direct database write.
-		update_option( 'sc_wpun_settings', array_merge( (array) get_option( 'sc_wpun_settings' ), array( 'notify_plugins' => $payload ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( (array) sc_wpun()->network_context()->get_option( 'sc_wpun_settings' ), array( 'notify_plugins' => $payload ) ) );
 		sc_wpun()->channels()->register( new Test_Security_Failing_Channel( $payload ) );
 		sc_wpun_channels()->save( new Channel_Instance( 'hostile', 'security_failing', $payload, false, array() ) );
 

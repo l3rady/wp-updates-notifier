@@ -31,10 +31,10 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	 * @param array  $options Saved settings.
 	 */
 	private function upgrade_from( $version, array $options ) {
-		update_option( 'sc_wpun_settings', $options );
-		update_option( 'sc_wpun_settings_ver', $version );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $options );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', $version );
 
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 
 		sc_wpun()->settings()->maybe_upgrade();
 	}
@@ -60,7 +60,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	public function test_the_upgrade_produces_the_current_shape( $name, $version, array $options ) {
 		$this->upgrade_from( $version, $options );
 
-		$this->assertSame( '13.0', get_option( 'sc_wpun_settings_ver' ), $name );
+		$this->assertSame( '13.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ), $name );
 		$this->assertEqualsCanonicalizing( array_keys( $this->global_settings() ), array_keys( $this->stored_settings() ), $name );
 	}
 
@@ -108,7 +108,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	 * @param array  $options Saved settings.
 	 */
 	public function test_the_run_state_moves_to_its_own_option( $name, $version, array $options ) {
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 
 		$this->upgrade_from( $version, $options );
 		$stored = $this->stored_settings();
@@ -235,8 +235,8 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		// Older settings arriving again (a restore, an import) do not replace what is stored.
 		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'email', 'email', 'Email', false, array( 'to' => 'mine@example.org' ) ) );
 		$channels = sc_wpun_channels()->all();
-		update_option( 'sc_wpun_settings', $fixtures['1.6.0']['options'] );
-		update_option( 'sc_wpun_settings_ver', '7.0' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $fixtures['1.6.0']['options'] );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', '7.0' );
 
 		sc_wpun()->settings()->maybe_upgrade();
 
@@ -261,9 +261,9 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	 * A new install gets the documented defaults.
 	 */
 	public function test_a_fresh_install_gets_defaults() {
-		delete_option( 'sc_wpun_settings' );
-		delete_option( 'sc_wpun_settings_ver' );
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings_ver' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 		update_option( 'admin_email', 'admin@example.org' );
 
 		sc_wpun()->settings()->maybe_upgrade();
@@ -316,7 +316,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 				)
 			);
 
-			$stored = get_option( 'sc_wpun_settings' );
+			$stored = sc_wpun()->network_context()->get_option( 'sc_wpun_settings' );
 			$this->assertSame( $case[1], $stored['notify_plugins'], 'plugins ' . var_export( $case[0], true ) );
 			$this->assertSame( $case[1], $stored['notify_themes'], 'themes ' . var_export( $case[0], true ) );
 		}
@@ -336,12 +336,12 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 			)
 		);
 
-		$stored = get_option( 'sc_wpun_settings' );
+		$stored = sc_wpun()->network_context()->get_option( 'sc_wpun_settings' );
 		$this->assertSame( 'active', $stored['notify_plugins'] );
 		$this->assertSame( 'all', $stored['notify_themes'] );
 
 		$this->upgrade_from( '9.0', $this->global_settings( array( 'notify_plugins' => 7 ) ) );
-		$this->assertSame( 'all', get_option( 'sc_wpun_settings' )['notify_plugins'] );
+		$this->assertSame( 'all', sc_wpun()->network_context()->get_option( 'sc_wpun_settings' )['notify_plugins'] );
 	}
 
 	/**
@@ -349,8 +349,8 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	 */
 	public function test_the_update_check_behaves_the_same_after_the_upgrade() {
 		$this->save_settings();
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
-		update_option( 'sc_wpun_settings_ver', '9.0' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 2 ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', '9.0' );
 		sc_wpun()->settings()->maybe_upgrade();
 		update_option( 'active_plugins', array() );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
@@ -450,7 +450,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$stored = $this->stored_settings();
 		$this->assertSame( $expect_hide, $stored['hide_updates'] );
 		$this->assertSame( 'daily', $stored['frequency'] );
-		$this->assertSame( '13.0', get_option( 'sc_wpun_settings_ver' ) );
+		$this->assertSame( '13.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ) );
 	}
 
 	/**
@@ -500,9 +500,9 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		);
 
 		$this->assertArrayNotHasKey( 'notify_automatic', $this->stored_settings() );
-		$this->assertArrayNotHasKey( 'notify_automatic', get_option( 'sc_wpun_settings' ) );
-		$this->assertSame( 'daily', get_option( 'sc_wpun_settings' )['frequency'] );
-		$this->assertSame( '13.0', get_option( 'sc_wpun_settings_ver' ) );
+		$this->assertArrayNotHasKey( 'notify_automatic', sc_wpun()->network_context()->get_option( 'sc_wpun_settings' ) );
+		$this->assertSame( 'daily', sc_wpun()->network_context()->get_option( 'sc_wpun_settings' )['frequency'] );
+		$this->assertSame( '13.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ) );
 	}
 
 	/**
@@ -560,7 +560,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 			)
 		);
 
-		$stored = get_option( 'sc_wpun_settings' );
+		$stored = sc_wpun()->network_context()->get_option( 'sc_wpun_settings' );
 		$this->assertSame( 'active', $stored['notify_plugins'] );
 		$this->assertSame( 'none', $stored['notify_themes'] );
 	}
@@ -604,7 +604,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		);
 
 		$this->assertTrue( sc_wpun()->settings()->write_option( 'wpun_test_option', 'x' ) );
-		$this->assertSame( 'filtered-x', get_option( 'wpun_test_option' ) );
+		$this->assertSame( 'filtered-x', sc_wpun()->network_context()->get_option( 'wpun_test_option' ) );
 		$this->assertFalse( sc_wpun()->settings()->write_option( 'wpun_test_option', 'x' ), 'Nothing changed the second time.' );
 	}
 
@@ -626,7 +626,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	public function test_a_decimal_is_not_a_legacy_notify_number() {
 		$this->upgrade_from( '9.0', $this->global_settings( array( 'notify_plugins' => 2.0 ) ) );
 
-		$this->assertSame( 'all', get_option( 'sc_wpun_settings' )['notify_plugins'] );
+		$this->assertSame( 'all', sc_wpun()->network_context()->get_option( 'sc_wpun_settings' )['notify_plugins'] );
 	}
 
 	/**

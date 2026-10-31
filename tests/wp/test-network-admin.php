@@ -43,7 +43,7 @@ class Test_Network_Admin extends WPUN_Test_Case {
 	private $sub_id = 0;
 
 	/**
-	 * Network-activate the plugin, as far as the plugin can tell, and be a super admin in the network admin.
+	 * Be a super admin in the network admin.
 	 */
 	public function set_up() {
 		parent::set_up();
@@ -54,7 +54,6 @@ class Test_Network_Admin extends WPUN_Test_Case {
 
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 		$this->sub_id = self::factory()->blog->create();
-		$this->activate_for_network();
 
 		$GLOBALS['submenu']            = array();
 		$GLOBALS['menu']               = array();
@@ -88,11 +87,6 @@ class Test_Network_Admin extends WPUN_Test_Case {
 	 * Leave the network and the request as found.
 	 */
 	public function tear_down() {
-		if ( is_multisite() ) {
-			$active = (array) get_site_option( 'active_sitewide_plugins', array() );
-			unset( $active[ plugin_basename( SC_WPUN_FILE ) ] );
-			update_site_option( 'active_sitewide_plugins', $active );
-		}
 		$_GET     = array();
 		$_POST    = array();
 		$_REQUEST = array();
@@ -102,15 +96,6 @@ class Test_Network_Admin extends WPUN_Test_Case {
 		set_current_screen( 'front' );
 
 		parent::tear_down();
-	}
-
-	/**
-	 * Network-activate the plugin, as far as the plugin can tell.
-	 */
-	private function activate_for_network() {
-		$active                                    = (array) get_site_option( 'active_sitewide_plugins', array() );
-		$active[ plugin_basename( SC_WPUN_FILE ) ] = time();
-		update_site_option( 'active_sitewide_plugins', $active );
 	}
 
 	/**
@@ -252,27 +237,6 @@ class Test_Network_Admin extends WPUN_Test_Case {
 		$this->assertTrue( $this->hooked( 'network_admin_plugin_action_links_' . $file, Settings_Page::class, 'plugin_action_links' ) );
 		$this->assertFalse( $this->hooked( 'plugin_action_links_' . $file, Settings_Page::class, 'plugin_action_links' ) );
 		$this->assertTrue( $this->hooked( 'network_admin_edit_' . Settings_Page::NETWORK_SAVE_ACTION, Settings_Page::class, 'handle_network_save' ) );
-	}
-
-	/**
-	 * Single mode keeps the hooks it had, and none for the network save.
-	 */
-	public function test_the_admin_hooks_are_unchanged_when_not_network_activated() {
-		$active = (array) get_site_option( 'active_sitewide_plugins', array() );
-		unset( $active[ plugin_basename( SC_WPUN_FILE ) ] );
-		update_site_option( 'active_sitewide_plugins', $active );
-		set_current_screen( 'dashboard' );
-		$file = plugin_basename( SC_WPUN_FILE );
-		remove_all_actions( 'admin_menu' );
-		remove_all_actions( 'network_admin_menu' );
-		remove_all_filters( 'plugin_action_links_' . $file );
-
-		( new Plugin() )->boot();
-
-		$this->assertTrue( $this->hooked( 'admin_menu', Settings_Page::class, 'admin_settings_menu' ) );
-		$this->assertFalse( $this->hooked( 'network_admin_menu', Settings_Page::class, 'admin_settings_menu' ) );
-		$this->assertTrue( $this->hooked( 'plugin_action_links_' . $file, Settings_Page::class, 'plugin_action_links' ) );
-		$this->assertFalse( has_action( 'network_admin_edit_' . Settings_Page::NETWORK_SAVE_ACTION ) );
 	}
 
 	/**

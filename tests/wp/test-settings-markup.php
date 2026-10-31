@@ -15,6 +15,13 @@ use WPUN\Channel_Instance;
 class Test_Settings_Markup extends WPUN_Test_Case {
 
 	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
+	/**
 	 * The parser errors of the last page.
 	 *
 	 * @var LibXMLError[]

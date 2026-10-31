@@ -36,9 +36,9 @@ class Test_Cli_Check extends WPUN_Test_Case {
 		$this->channel = new Test_Channel( 'clitest' );
 		sc_wpun()->channels()->unregister( 'clitest' );
 		sc_wpun()->channels()->register( $this->channel );
-		delete_option( 'sc_wpun_channels' );
-		delete_option( 'sc_wpun_state' );
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
 
 		$this->fired = array();
 		foreach ( array( 'sc_wpun_after_dispatch', 'sc_wpun_after_update_check', 'sc_wpun_notification_sent', 'sc_wpun_notification_failed' ) as $hook ) {
@@ -106,7 +106,7 @@ class Test_Cli_Check extends WPUN_Test_Case {
 	 * @return mixed
 	 */
 	private function raw_state() {
-		return (array) get_option( 'sc_wpun_state' );
+		return (array) sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 	}
 
 	/**
@@ -120,7 +120,7 @@ class Test_Cli_Check extends WPUN_Test_Case {
 		$state['channels'][ $id ]['last_reminder'] = time() - 10 * DAY_IN_SECONDS;
 		$state['last_check_time']                  = 12345;
 		$state['legacy_notified']                  = array( 'core' => '1.0' );
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 	}
 
 	/**
@@ -215,7 +215,7 @@ class Test_Cli_Check extends WPUN_Test_Case {
 			'skip_pending' => false,
 			'retry_at'     => time() + 600,
 		);
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		$plan = $this->check( true );
 
@@ -407,7 +407,7 @@ class Test_Cli_Check extends WPUN_Test_Case {
 		);
 		$state                                   = $this->raw_state();
 		$state['channels']['a']['last_reminder'] = time() - 3 * DAY_IN_SECONDS;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		$this->assertSame( Update_Checker::STATUS_REMINDER, $this->check( true )['a']['status'] );
 		$plan = $this->check( false, true );
@@ -431,7 +431,7 @@ class Test_Cli_Check extends WPUN_Test_Case {
 			'skip_pending' => false,
 			'retry_at'     => time() + 600,
 		);
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 		add_filter( 'sc_wpun_should_notify_item', static fn( $notify, $item ) => 'theme' === $item->get_type() ? false : $notify, 10, 2 );
 
 		$plan = $this->check( false, true );

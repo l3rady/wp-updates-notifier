@@ -19,8 +19,8 @@ class Test_Mutes_Check extends WPUN_Test_Case {
 		parent::set_up();
 
 		$this->save_settings();
-		delete_option( 'sc_wpun_muted' );
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 	}
 
 	/**
@@ -127,7 +127,7 @@ class Test_Mutes_Check extends WPUN_Test_Case {
 		$this->check( '1.10' );
 		$this->assertSame( 1, $this->sent_mail_count(), '1.10 is newer than 1.9.' );
 
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		sc_wpun_mutes()->mute( 'plugin', 'hello.php', '2.0' );
 		$this->check( '2.0.0' );
 		$this->assertSame( 2, $this->sent_mail_count(), '2.0.0 is newer than 2.0, so the mute ends.' );
@@ -192,7 +192,7 @@ class Test_Mutes_Check extends WPUN_Test_Case {
 		$this->check( '2.0' );
 		$state                                       = $this->stored_state();
 		$state['channels']['email']['last_reminder'] = time() - 3 * DAY_IN_SECONDS;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		$this->check( '2.0' );
 

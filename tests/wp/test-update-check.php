@@ -13,6 +13,13 @@
  */
 class Test_Update_Check extends WPUN_Test_Case {
 
+	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
 	const SLACK_URL = 'https://hooks.slack.com/services/T000/B000/XXXX';
 
 	/**

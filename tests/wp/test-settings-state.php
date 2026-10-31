@@ -40,9 +40,9 @@ class Test_Settings_State extends WPUN_Test_Case {
 		$options  = $fixtures['1.6.0-string-values']['options'];
 		unset( $options['notified'], $options['last_check_time'] );
 		// The email and Slack settings of version 7 become channel instances when the settings are upgraded.
-		delete_option( 'sc_wpun_channels' );
-		update_option( 'sc_wpun_settings', $options );
-		update_option( 'sc_wpun_settings_ver', $fixtures['1.6.0-string-values']['version'] );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $options );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', $fixtures['1.6.0-string-values']['version'] );
 		sc_wpun()->settings()->maybe_upgrade();
 		$this->set_updates( '99.0.0' );
 
@@ -78,9 +78,9 @@ class Test_Settings_State extends WPUN_Test_Case {
 	 * Settings missing keys get their defaults when read.
 	 */
 	public function test_missing_settings_get_defaults() {
-		delete_option( 'sc_wpun_channels' );
-		update_option( 'sc_wpun_settings', array( 'frequency' => 'daily' ) );
-		update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array( 'frequency' => 'daily' ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
 		$this->plugin()->do_update_check();
@@ -147,7 +147,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 	 */
 	public function test_the_run_state_has_its_own_option() {
 		$this->save_settings();
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$this->set_updates( '99.0.0' );
 
 		$this->plugin()->do_update_check();
@@ -166,7 +166,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		add_filter(
 			'sc_wpun_plugins_need_update',
 			function ( $plugins ) {
-				update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'weekly' ) ) );
+				sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'weekly' ) ) );
 				return $plugins;
 			},
 			20

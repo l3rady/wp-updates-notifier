@@ -50,8 +50,8 @@ class Test_Scheduling extends WPUN_Test_Case {
 	 * A brand new install has no settings when it is activated; it gets the defaults and the default schedule.
 	 */
 	public function test_activating_a_new_install_creates_settings_and_schedules_hourly() {
-		delete_option( 'sc_wpun_settings' );
-		delete_option( 'sc_wpun_settings_ver' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings_ver' );
 
 		do_action( 'activate_' . self::BASENAME );
 
@@ -66,7 +66,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 		$this->save_settings( array( 'frequency' => 'daily' ) );
 		do_action( 'activate_' . self::BASENAME );
 
-		do_action( 'deactivate_' . self::BASENAME );
+		do_action( 'deactivate_' . self::BASENAME, is_multisite() ); // Network-active on a multisite, so a network deactivation.
 
 		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ) );
 	}
@@ -248,7 +248,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 		$plugin->activate();
 		$this->assertSame( 'daily', wp_get_schedule( 'sc_wpun_update_check' ) );
 
-		$plugin->deactivate();
+		$plugin->deactivate( is_multisite() );
 		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ) );
 
 		$plugin->enable_cron( 'weekly' );

@@ -191,8 +191,8 @@ class Test_Frequencies extends WPUN_Test_Case {
 	 * A stored "manual" frequency (never checks since 1.5.1) becomes daily on upgrade, and gets scheduled.
 	 */
 	public function test_manual_is_migrated_to_daily_on_upgrade() {
-		update_option( 'sc_wpun_settings', $this->settings( array( 'frequency' => 'manual' ) ) );
-		update_option( 'sc_wpun_settings_ver', '8.0' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->settings( array( 'frequency' => 'manual' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', '8.0' );
 
 		sc_wpun()->settings()->maybe_upgrade();
 		$this->plugin()->maybe_schedule();

@@ -276,7 +276,7 @@ class Test_About_Tab extends WPUN_Test_Case {
 		$this->assertSame( 'daily', $valid['frequency'] );
 
 		$page->admin_settings_init();
-		update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'show_about' => '0' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'show_about' => '0' ) ) );
 		$this->assertArrayNotHasKey( 'show_about', $this->stored_settings() );
 		$this->assertArrayNotHasKey( 'show_about', sc_wpun()->settings()->stored() );
 		$this->assertArrayNotHasKey( 'show_about', sc_wpun()->settings()->get() );
@@ -288,8 +288,8 @@ class Test_About_Tab extends WPUN_Test_Case {
 	 * The upgrade drops a stored show_about.
 	 */
 	public function test_the_upgrade_drops_a_stray_stored_value() {
-		update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'show_about' => '0' ) ) );
-		update_option( 'sc_wpun_settings_ver', '12.0' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'show_about' => '0' ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', '12.0' );
 
 		sc_wpun()->settings()->maybe_upgrade();
 

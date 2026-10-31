@@ -56,7 +56,7 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 		wp_set_current_user( self::$admin_id );
 		sc_wpun()->notices()->take();
@@ -221,7 +221,7 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 	 */
 	public function test_an_ended_mute_is_hidden_then_pruned() {
 		// Stored directly: the store drops an ended mute when it writes.
-		update_option(
+		sc_wpun()->network_context()->update_option(
 			'sc_wpun_muted',
 			array(
 				'plugin' => array(
@@ -236,10 +236,10 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 		);
 		$this->assertCount( 0, sc_wpun()->status_report()->muted(), 'Version 2.0.0 is waiting: the mute ended.' );
 		$this->assertSame( 1, $this->tab()->query( '//p[contains(@class,"sc-wpun-no-muted")]' )->length );
-		$this->assertArrayHasKey( 'hello.php', get_option( 'sc_wpun_muted' )['plugin'], 'Still stored.' );
+		$this->assertArrayHasKey( 'hello.php', sc_wpun()->network_context()->get_option( 'sc_wpun_muted' )['plugin'], 'Still stored.' );
 
 		sc_wpun_mutes()->mute( 'theme', 'twentytwentyfive' );
-		$this->assertArrayNotHasKey( 'plugin', get_option( 'sc_wpun_muted' ) );
+		$this->assertArrayNotHasKey( 'plugin', sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 	}
 
 	/**
@@ -422,7 +422,7 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 	 */
 	public function test_refused_requests_answer_403() {
 		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
-		$before = get_option( 'sc_wpun_muted' );
+		$before = sc_wpun()->network_context()->get_option( 'sc_wpun_muted' );
 		$add    = array(
 			'item' => 'theme:' . get_stylesheet(),
 			'mode' => 'always',
@@ -449,7 +449,7 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 		$this->assertSame( 'died', $this->submit( Muted_Tab::ADD_ACTION, $add, Muted_Tab::ADD_ACTION ) );
 		$this->assertSame( 'died', $this->submit( Muted_Tab::REMOVE_ACTION, $remove, Muted_Tab::REMOVE_ACTION . '|plugin|hello.php' ) );
 
-		$this->assertSame( $before, get_option( 'sc_wpun_muted' ) );
+		$this->assertSame( $before, sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 	}
 
 	/**

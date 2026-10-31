@@ -15,6 +15,13 @@
 class Test_Contract extends WPUN_Test_Case {
 
 	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
+	/**
 	 * Active plugins are stored by path, so renaming the main file deactivates the plugin on every
 	 * site that updates. 2.0.0 moved it back to wp-updates-notifier.php (#90) on purpose; don't
 	 * move it again.
@@ -110,11 +117,13 @@ class Test_Contract extends WPUN_Test_Case {
 	 */
 	public function test_the_plugin_registers_its_admin_hooks_in_admin() {
 		set_current_screen( 'dashboard' );
+		$this->set_network_activated( true ); // A multisite's copy only boots like this when network-activated.
 		( new \WPUN\Plugin() )->boot();
 
-		$this->assertNotFalse( has_action( 'admin_menu' ) );
+		// Network-activated, the screen and the link are the network admin's.
+		$this->assertNotFalse( has_action( is_multisite() ? 'network_admin_menu' : 'admin_menu' ) );
 		$this->assertNotFalse( has_action( 'admin_init' ) );
-		$this->assertNotFalse( has_filter( 'plugin_action_links_' . plugin_basename( SC_WPUN_FILE ) ) );
+		$this->assertNotFalse( has_filter( ( is_multisite() ? 'network_admin_plugin_action_links_' : 'plugin_action_links_' ) . plugin_basename( SC_WPUN_FILE ) ) );
 		$this->assertNotFalse( has_filter( 'plugin_row_meta' ) );
 		$this->assertNotFalse( has_filter( 'option_page_capability_sc_wpun_settings' ) );
 		$this->assertNotFalse( has_action( 'admin_post_sc_wpun_send_test' ) );
@@ -201,7 +210,7 @@ class Test_Contract extends WPUN_Test_Case {
 		$this->plugin()->do_update_check();
 		$this->assertContains( 'sc_wpun_state', $put, 'Saving the run state must run the put filter.' );
 
-		update_option( 'sc_wpun_settings_ver', '7.0' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', '7.0' );
 		sc_wpun()->settings()->maybe_upgrade();
 		$this->assertContains( 'sc_wpun_settings', $put, 'Saving settings must run the put filter.' );
 	}

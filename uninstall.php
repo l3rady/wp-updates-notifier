@@ -37,12 +37,12 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 /**
  * Remove everything the plugin stored for the current site.
  */
-$sc_wpun_uninstall_site = static function () {
-	delete_option( 'sc_wpun_settings' );
-	delete_option( 'sc_wpun_settings_ver' );
-	delete_option( 'sc_wpun_state' );
-	delete_option( 'sc_wpun_channels' );
-	delete_option( 'sc_wpun_muted' );
+$sc_wpun_options = array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state', 'sc_wpun_channels', 'sc_wpun_muted' );
+
+$sc_wpun_uninstall_site = static function () use ( $sc_wpun_options ) {
+	foreach ( $sc_wpun_options as $sc_wpun_option ) {
+		delete_option( $sc_wpun_option );
+	}
 	delete_transient( 'sc_wpun_send_test_email' );
 	delete_transient( 'sc_wpun_send_test_slack' );
 
@@ -57,6 +57,19 @@ delete_metadata( 'user', 0, 'sc_wpun_notice', '', true );
 delete_metadata( 'user', 0, 'sc_wpun_channel_form', '', true );
 
 if ( is_multisite() ) {
+	// Network-activated, the options are the network's: delete them for every network, then the sites' own below.
+	$sc_wpun_network_ids = (array) get_networks(
+		array(
+			'fields' => 'ids',
+			'number' => 0,
+		)
+	);
+	foreach ( $sc_wpun_network_ids as $sc_wpun_network_id ) {
+		foreach ( $sc_wpun_options as $sc_wpun_option ) {
+			delete_network_option( $sc_wpun_network_id, $sc_wpun_option );
+		}
+	}
+
 	// Settings, state and the event are kept per site, so clean every site.
 	// A page at a time, so a large network does not load every site id at once.
 	$sc_wpun_batch  = 100;

@@ -25,7 +25,7 @@ class Test_Hardening_Installed_Items extends WPUN_Security_Test_Case {
 		parent::set_up();
 
 		$this->save_settings();
-		delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 
 		// Core refreshes the transients on these hooks and would drop the stray keys the tests plant.
 		remove_all_actions( 'wp_update_plugins' );

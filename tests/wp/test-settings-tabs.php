@@ -13,6 +13,13 @@
 class Test_Settings_Tabs extends WPUN_Test_Case {
 
 	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
+	/**
 	 * The request URI before the test.
 	 *
 	 * @var string|null

@@ -16,6 +16,13 @@
  */
 class Test_Known_Bugs extends WPUN_Test_Case {
 
+	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
 	const BASENAME = 'wp-updates-notifier/wp-updates-notifier.php';
 
 	/**

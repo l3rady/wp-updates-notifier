@@ -15,6 +15,13 @@ use WPUN\Admin\Plugins_Screen_Mutes;
 class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 
 	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
+	/**
 	 * An administrator.
 	 *
 	 * @var int
@@ -58,7 +65,7 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 		wp_set_current_user( self::$admin_id );
 		set_current_screen( 'plugins' );
@@ -505,7 +512,7 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 		foreach ( $cases as $name => $case ) {
 			$this->assertSame( 'died', $this->click( $case[0], $case[1], $case[2] ?? null ), $name );
 			$this->assertSame( 403, $this->died_with, $name );
-			$this->assertFalse( get_option( 'sc_wpun_muted' ), "$name wrote the option." );
+			$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ), "$name wrote the option." );
 		}
 
 		// No token at all.
@@ -520,7 +527,7 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 		wp_set_current_user( self::$editor_id );
 		$this->assertSame( 'died', $this->click( 'sc_wpun_mute' ) );
 		$this->assertSame( 403, $this->died_with );
-		$this->assertFalse( get_option( 'sc_wpun_muted' ) );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 	}
 
 	/**
@@ -538,7 +545,7 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 		);
 
 		$this->assertSame( 'died', $this->click( 'sc_wpun_mute' ), 'The administrator no longer may.' );
-		$this->assertFalse( get_option( 'sc_wpun_muted' ) );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 
 		wp_set_current_user( self::$editor_id );
 		$this->assertSame( 'redirected', $this->click( 'sc_wpun_mute' ), 'The editor now may.' );
@@ -555,7 +562,7 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 		$notice = $this->notice();
 		$this->assertFalse( $notice['success'] );
 		$this->assertSame( 'That plugin or theme is not installed.', $notice['message'] );
-		$this->assertFalse( get_option( 'sc_wpun_muted' ) );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 	}
 
 	/**
@@ -568,14 +575,14 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 		$notice = $this->notice();
 		$this->assertFalse( $notice['success'] );
 		$this->assertStringContainsString( 'Reload the page', $notice['message'], 'A newer version arrived since the page loaded.' );
-		$this->assertFalse( get_option( 'sc_wpun_muted' ) );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 
 		$this->set_updates();
 		$this->assertSame( 'redirected', $this->click( 'sc_wpun_skip', array( 'version' => '2.0.0' ) ) );
 		$notice = $this->notice();
 		$this->assertFalse( $notice['success'] );
 		$this->assertStringContainsString( 'No update is waiting for Hello Dolly', $notice['message'] );
-		$this->assertFalse( get_option( 'sc_wpun_muted' ) );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 	}
 
 	/**
@@ -670,7 +677,7 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 			apply_filters( 'handle_bulk_actions-plugins', '', 'sc_wpun_bulk_mute', array( 'hello.php' ) );
 		} finally {
 			$this->assertSame( 403, $this->died_with );
-			$this->assertFalse( get_option( 'sc_wpun_muted' ) );
+			$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 		}
 	}
 

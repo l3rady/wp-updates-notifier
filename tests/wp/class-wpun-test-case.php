@@ -42,10 +42,24 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	protected $default_capability = false;
 
 	/**
+	 * Whether the plugin is network-activated when the test runs on a multisite, as the suite leaves it. A class
+	 * that tests the plugin as one site's (its own settings screen, links and options) sets this to false.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = true;
+
+	/**
 	 * Set up: block the network and reset the mailer.
 	 */
 	public function set_up() {
 		parent::set_up();
+
+		if ( is_multisite() && ! $this->network_activated ) {
+			$this->set_network_activated( false );
+			// What a single site has from the plugin booting: the bootstrap created the network's defaults instead.
+			sc_wpun()->settings()->maybe_upgrade();
+		}
 
 		if ( is_multisite() && ! $this->default_capability ) {
 			add_filter( 'sc_wpun_capability', static fn() => 'manage_options' );
@@ -55,6 +69,33 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 		$this->http_fakes    = array();
 		add_filter( 'pre_http_request', array( $this, 'handle_http' ), 1, 3 );
 		reset_phpmailer_instance();
+	}
+
+	/**
+	 * Network-activate the plugin, as far as the plugin can tell, or undo it. Multisite only.
+	 *
+	 * @param bool $activated Whether the plugin is network-activated.
+	 */
+	protected function set_network_activated( $activated ) {
+		$active = (array) get_site_option( 'active_sitewide_plugins', array() );
+		$key    = plugin_basename( SC_WPUN_FILE );
+		if ( $activated ) {
+			$active[ $key ] = time();
+		} else {
+			unset( $active[ $key ] );
+		}
+		update_site_option( 'active_sitewide_plugins', $active );
+	}
+
+	/**
+	 * Leave the network as the suite found it.
+	 */
+	public function tear_down() {
+		if ( is_multisite() ) {
+			$this->set_network_activated( true );
+		}
+
+		parent::tear_down();
 	}
 
 	/**
@@ -189,10 +230,11 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	protected function save_settings( array $overrides = array() ) {
 		$all = $this->settings( $overrides );
 
-		update_option( 'sc_wpun_settings', $this->global_settings( $overrides ) );
-		update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
+		$context = sc_wpun()->network_context();
+		$context->update_option( 'sc_wpun_settings', $this->global_settings( $overrides ) );
+		$context->update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
 
-		delete_option( 'sc_wpun_channels' );
+		$context->delete_option( 'sc_wpun_channels' );
 		$store = sc_wpun_channels();
 		$store->save(
 			new WPUN\Channel_Instance(
@@ -232,13 +274,12 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	 * @param int|false $last_check_time Time of the last check.
 	 */
 	protected function save_state( $last_check_time = false ) {
-		update_option(
+		sc_wpun()->network_context()->update_option(
 			'sc_wpun_state',
 			array(
 				'channels'        => array(),
 				'last_check_time' => $last_check_time,
-			),
-			false
+			)
 		);
 	}
 
@@ -249,7 +290,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	 * @param int|false $last_check_time Time of the last check.
 	 */
 	protected function save_legacy_state( array $notified = array(), $last_check_time = false ) {
-		update_option(
+		sc_wpun()->network_context()->update_option(
 			'sc_wpun_state',
 			array(
 				'notified'        => array_merge(
@@ -261,8 +302,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 					$notified
 				),
 				'last_check_time' => $last_check_time,
-			),
-			false
+			)
 		);
 	}
 
@@ -279,7 +319,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 			'notified'     => $notified,
 			'skip_pending' => $skip_pending,
 		);
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 	}
 
 	/**
@@ -312,7 +352,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	 * @return array
 	 */
 	protected function stored_state() {
-		return (array) get_option( 'sc_wpun_state' );
+		return (array) sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 	}
 
 	/**
@@ -321,7 +361,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	 * @return array
 	 */
 	protected function stored_settings() {
-		return (array) get_option( 'sc_wpun_settings' );
+		return (array) sc_wpun()->network_context()->get_option( 'sc_wpun_settings' );
 	}
 
 	/**

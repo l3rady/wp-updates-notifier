@@ -140,7 +140,7 @@ class Test_Site_Health extends WPUN_Test_Case {
 				'time'    => time(),
 			),
 		);
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 	}
 
 	/**
@@ -416,7 +416,7 @@ class Test_Site_Health extends WPUN_Test_Case {
 	 * The muted items show by name and kind, without user names, and "None" when there are none.
 	 */
 	public function test_debug_info_lists_muted_items_without_users() {
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		$section = apply_filters( 'debug_information', array() )[ Site_Health::SECTION ];
 		$this->assertSame( 'None', $section['fields']['muted']['value'] );
 
@@ -430,7 +430,7 @@ class Test_Site_Health extends WPUN_Test_Case {
 		$this->assertSame( 'Muted plugins and themes', $section['fields']['muted']['label'] );
 		$this->assertSame( 'Hello Dolly (plugin, always); gone/gone.php (plugin, version 3.0.0)', $section['fields']['muted']['value'] );
 		$this->assertStringNotContainsString( 'secretmuter', wp_json_encode( $section ) );
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 	}
 
 	/**

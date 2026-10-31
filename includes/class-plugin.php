@@ -13,6 +13,7 @@ use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Check_Now;
 use WPUN\Admin\Mute_Actions;
 use WPUN\Admin\Muted_Tab;
+use WPUN\Admin\Network_Activation_Notice;
 use WPUN\Admin\Notices;
 use WPUN\Admin\Plugins_Screen_Mutes;
 use WPUN\Admin\Settings_Page;
@@ -186,6 +187,13 @@ class Plugin {
 	private $plugins_screen_mutes = null;
 
 	/**
+	 * The notice of a copy that is not network-activated.
+	 *
+	 * @var Network_Activation_Notice|null
+	 */
+	private $network_activation_notice = null;
+
+	/**
 	 * What muting shares between the Plugins screen and the Muted tab, built on first use.
 	 *
 	 * @return Mute_Actions
@@ -216,6 +224,17 @@ class Plugin {
 		$this->plugins_screen_mutes ??= new Plugins_Screen_Mutes( $this->mute_store, $this->mute_actions(), $this->notices(), $this->network_context );
 
 		return $this->plugins_screen_mutes;
+	}
+
+	/**
+	 * The notice of a copy that is not network-activated, built on first use: only such a copy needs it.
+	 *
+	 * @return Network_Activation_Notice
+	 */
+	public function network_activation_notice(): Network_Activation_Notice {
+		$this->network_activation_notice ??= new Network_Activation_Notice();
+
+		return $this->network_activation_notice;
 	}
 
 	/**
@@ -560,6 +579,11 @@ class Plugin {
 		// Kept in step for code that read the original class's flag.
 		\SC_WP_Updates_Notifier::$did_init = true;
 
+		if ( is_multisite() && ! $this->network_context->is_network() ) {
+			$this->boot_dormant();
+			return;
+		}
+
 		// Check settings are up to date.
 		$this->settings->maybe_upgrade();
 		// Internationalization: the bundled translations load just in time, with a language pack's strings first.
@@ -650,6 +674,30 @@ class Plugin {
 	}
 
 	/**
+	 * Boot a copy that is activated on single sites of a multisite instead of the network.
+	 *
+	 * It does nothing but ask for network activation: no check, schedule, settings screen, mutes or WP-CLI
+	 * commands, and it touches no options (the site's 2.x ones stay as they are). WP-CLI gets no commands rather
+	 * than commands that refuse. `sc_wpun_loaded` still fires, so add-ons that register channels there load as before.
+	 * A check event the site kept removes itself when it fires, which costs nothing on other requests.
+	 *
+	 * @return void
+	 */
+	private function boot_dormant(): void {
+		$this->translations->register();
+		add_action( Scheduler::CRON_NAME, array( $this->scheduler, 'clear_leftover_event' ) );
+		add_action( 'sc_wpun_disable_cron', array( $this->scheduler, 'disable_cron' ) ); // Deactivating the copy removes the site's event.
+		add_filter( 'site_status_tests', array( $this->network_activation_notice(), 'add_site_health_test' ) );
+		if ( is_admin() ) {
+			add_action( 'admin_notices', array( $this->network_activation_notice(), 'render' ) );
+			add_action( 'network_admin_notices', array( $this->network_activation_notice(), 'render' ) );
+		}
+
+		/** This action is documented in includes/class-plugin.php */
+		do_action( 'sc_wpun_loaded' );
+	}
+
+	/**
 	 * Register the WP-CLI commands. Only WP-CLI requests need them, so other requests never load their classes.
 	 *
 	 * @internal
@@ -701,20 +749,44 @@ class Plugin {
 	/**
 	 * Function that deals with activation of this plugin
 	 *
+	 * On a multisite only a network activation sets anything up: a copy activated on a single site is
+	 * dormant, so it neither creates options nor schedules a check.
+	 *
+	 * @param bool $network_wide Whether the plugin is being activated for the whole network.
+	 *
 	 * @return void
 	 */
-	public function activate(): void {
-		// `plugins_loaded` has not run on the activation request, so a new install has no settings yet.
-		$this->settings->maybe_upgrade();
-		$this->scheduler->enable_cron();
+	public function activate( $network_wide = false ): void {
+		if ( $network_wide ) {
+			// WordPress records a network activation after this hook runs, so say it here.
+			$this->network_context->assume_network_activated();
+		}
+
+		try {
+			if ( ! is_multisite() || $this->network_context->is_network() ) {
+				// `plugins_loaded` has not run on the activation request, so a new install has no settings yet.
+				// On a network the upgrade also copies the main site's options on the first activation.
+				$this->settings->maybe_upgrade();
+				$this->scheduler->enable_cron();
+			}
+		} finally {
+			$this->network_context->assume_network_activated( false );
+		}
 	}
 
 	/**
 	 * Function that deals with de-activation of this plugin
 	 *
+	 * @param bool $network_wide Whether the plugin is being deactivated for the whole network.
+	 *
 	 * @return void
 	 */
-	public function deactivate(): void {
+	public function deactivate( $network_wide = false ): void {
+		// A copy on a single site going while the plugin stays network-activated must leave the network's check alone.
+		if ( ! $network_wide && $this->network_context->is_network() ) {
+			return;
+		}
+
 		/**
 		 * Fires when the plugin is deactivated, to turn the scheduled check off.
 		 *

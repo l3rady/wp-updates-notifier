@@ -19,6 +19,7 @@
  * x-release-please-end
  * Requires at least: 6.7
  * Requires PHP: 7.4
+ * Network: true
  * Author: Scott Cariss
  * Author URI: https://wpun.cariss.dev/#about-the-developer
  * Text Domain: wp-updates-notifier
@@ -108,19 +109,21 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		/**
 		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
 		 *
+		 * @param bool $network_wide Passed on unchanged.
 		 * @return void
 		 */
-		public function activate() {
-			sc_wpun()->activate();
+		public function activate( $network_wide = false ) {
+			sc_wpun()->activate( $network_wide );
 		}
 
 		/**
 		 * Kept for backwards compatibility: see the matching method of the component that now owns it.
 		 *
+		 * @param bool $network_wide Passed on unchanged.
 		 * @return void
 		 */
-		public function deactivate() {
-			sc_wpun()->deactivate();
+		public function deactivate( $network_wide = false ) {
+			sc_wpun()->deactivate( $network_wide );
 		}
 
 		/**

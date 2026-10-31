@@ -89,9 +89,9 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 		$this->channel = new Test_Cli_Channel( 'clicmd' );
 		sc_wpun()->channels()->unregister( 'clicmd' );
 		sc_wpun()->channels()->register( $this->channel );
-		delete_option( 'sc_wpun_channels' );
-		delete_option( 'sc_wpun_state' );
-		update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'daily' ) ) );
 	}
 
 	/**
@@ -212,7 +212,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 		$this->assertStringContainsString( '99.0.0', $out );
 		$this->assertStringContainsString( 'Success: Dry run finished, nothing was sent or changed. 1 channel instance would be sent a message.', $out );
 		$this->assertSame( array(), $this->channel->received );
-		$this->assertFalse( get_option( 'sc_wpun_state' ) );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_state' ) );
 	}
 
 	/**
@@ -251,7 +251,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 			'skip_pending' => false,
 			'retry_at'     => time() + 600,
 		);
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
 		$out = $this->run_command( 'check', array( 'dry-run' => true ) );
 
@@ -312,7 +312,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 
 		$this->assertStringContainsString( 'Warning: No channel instance is switched on and available', $out );
 		$this->assertStringNotContainsString( 'Success', $out );
-		$this->assertFalse( get_option( 'sc_wpun_state' ) );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_state' ) );
 	}
 
 	/**
@@ -574,7 +574,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	 * Plugins are found by directory, by file, by single file name with or without .php, and themes by stylesheet.
 	 */
 	public function test_mute_resolves_names_like_wp_plugin() {
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		$events = array();
 		add_action(
 			'sc_wpun_item_muted',
@@ -602,7 +602,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	 * An unknown name is an error, but the other names are still handled first.
 	 */
 	public function test_mute_unknown_name_fails_after_handling_the_rest() {
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 
 		$error = $this->fails_with( 'mute', array( 'plugin', 'nope', 'hello.php' ) );
 
@@ -621,7 +621,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	 * Muting twice the same way is a warning; a different way changes the mute.
 	 */
 	public function test_mute_again_warns_and_until_next_version_skips_the_waiting_version() {
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		$this->waiting();
 
 		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'until-next-version' => true ) ) );
@@ -645,7 +645,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	 * Skipping a version needs an update to be waiting.
 	 */
 	public function test_mute_until_next_version_without_an_update_fails() {
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		$this->set_updates();
 
 		$error = $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'until-next-version' => true ) );
@@ -659,7 +659,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	 * A filter that refuses a mute shows its message and fails.
 	 */
 	public function test_mute_refusal_is_an_error_with_the_message() {
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		$refuse = function () {
 			return new WP_Error( 'policy', 'Security plugins stay on.' );
 		};
@@ -677,7 +677,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	 * Unmute removes the mute with source cli, warns when there is none, and reports a refusal.
 	 */
 	public function test_unmute() {
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
 		$sources = array();
 		add_action(
@@ -717,7 +717,7 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	 * The list shows each mute, the count format counts, and status has the Muted section.
 	 */
 	public function test_muted_list_count_and_status_section() {
-		delete_option( 'sc_wpun_muted' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		$this->waiting();
 		$user_id = self::factory()->user->create( array( 'user_login' => 'muter' ) );
 		wp_set_current_user( $user_id );

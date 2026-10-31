@@ -23,6 +23,13 @@ tests_add_filter(
 	'muplugins_loaded',
 	static function () {
 		require WP_PLUGIN_DIR . '/wp-updates-notifier/wp-updates-notifier.php';
+
+		// On a multisite the plugin only runs network-activated; the tests that need another state change it themselves.
+		if ( is_multisite() ) {
+			$active                                    = (array) get_site_option( 'active_sitewide_plugins', array() );
+			$active[ plugin_basename( SC_WPUN_FILE ) ] = time();
+			update_site_option( 'active_sitewide_plugins', $active );
+		}
 	}
 );
 

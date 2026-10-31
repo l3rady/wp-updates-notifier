@@ -27,6 +27,27 @@ class Network_Context {
 	const SETTINGS_SLUG = 'wp-updates-notifier';
 
 	/**
+	 * Whether this request is treating the plugin as network-activated before WordPress has recorded it.
+	 *
+	 * @var bool
+	 */
+	private $assume_network = false;
+
+	/**
+	 * Treat the request as network mode (or stop), for a network activation in progress.
+	 *
+	 * WordPress runs the activation hook before it adds the plugin to the network's active plugins, so
+	 * is_network() would still say no while the plugin sets itself up. Only counts on a multisite.
+	 *
+	 * @param bool $assume Whether to assume network activation.
+	 *
+	 * @return void
+	 */
+	public function assume_network_activated( bool $assume = true ): void {
+		$this->assume_network = $assume;
+	}
+
+	/**
 	 * Whether the plugin is network-activated on a multisite.
 	 *
 	 * Reads the network's active plugins directly: is_plugin_active_for_network() is only loaded in the
@@ -37,6 +58,10 @@ class Network_Context {
 	public function is_network(): bool {
 		if ( ! is_multisite() ) {
 			return false;
+		}
+
+		if ( $this->assume_network ) {
+			return true;
 		}
 
 		$active = get_site_option( 'active_sitewide_plugins', array() );

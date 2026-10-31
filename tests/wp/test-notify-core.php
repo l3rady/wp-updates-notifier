@@ -58,9 +58,9 @@ class Test_Notify_Core extends WPUN_Test_Case {
 	public function test_the_default_is_all() {
 		$this->assertSame( 'all', sc_wpun()->settings()->default_settings()['notify_core'] );
 
-		delete_option( 'sc_wpun_settings' );
-		delete_option( 'sc_wpun_settings_ver' );
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings_ver' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 		sc_wpun()->settings()->maybe_upgrade();
 		$this->assertSame( 'all', $this->stored_settings()['notify_core'] );
 	}
@@ -69,15 +69,15 @@ class Test_Notify_Core extends WPUN_Test_Case {
 	 * An upgrade from the previous settings version adds the key without touching the others.
 	 */
 	public function test_the_upgrade_adds_the_setting() {
-		update_option( 'sc_wpun_settings', array_diff_key( $this->global_settings( array( 'notify_plugins' => 'active' ) ), array( 'notify_core' => 1 ) ) );
-		update_option( 'sc_wpun_settings_ver', '11.0' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_diff_key( $this->global_settings( array( 'notify_plugins' => 'active' ) ), array( 'notify_core' => 1 ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', '11.0' );
 
 		sc_wpun()->settings()->maybe_upgrade();
 
 		$stored = $this->stored_settings();
 		$this->assertSame( 'all', $stored['notify_core'] );
 		$this->assertSame( 'active', $stored['notify_plugins'] );
-		$this->assertSame( '13.0', get_option( 'sc_wpun_settings_ver' ) );
+		$this->assertSame( '13.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ) );
 	}
 
 	/**
@@ -110,16 +110,16 @@ class Test_Notify_Core extends WPUN_Test_Case {
 	 */
 	public function test_valid_values_are_kept_and_invalid_ones_fall_back() {
 		foreach ( array( 'none', 'all', 'major' ) as $value ) {
-			update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_core' => $value ) ) );
+			sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_core' => $value ) ) );
 			$this->assertSame( $value, sc_wpun()->settings()->get()['notify_core'], $value );
 		}
 
 		foreach ( array( 'active', 'bogus', 1, 2, '' ) as $bad ) {
-			update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_core' => $bad ) ) );
+			sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_core' => $bad ) ) );
 			$this->assertSame( 'all', sc_wpun()->settings()->get()['notify_core'], var_export( $bad, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 		}
 
-		update_option( 'sc_wpun_settings', array_diff_key( $this->global_settings(), array( 'notify_core' => 1 ) ) );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_diff_key( $this->global_settings(), array( 'notify_core' => 1 ) ) );
 		$this->assertSame( 'all', sc_wpun()->settings()->get()['notify_core'], 'Missing.' );
 	}
 

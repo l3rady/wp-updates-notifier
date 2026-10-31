@@ -445,9 +445,9 @@ class Test_Example_Channel extends WPUN_Test_Case {
 
 		$this->assertCount( 0, $this->requests_to( 'chat.example.org' ), 'Not tried while the service asked to wait.' );
 
-		$state                                      = get_option( 'sc_wpun_state' );
+		$state                                      = sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 		$state['channels']['example_1']['retry_at'] = time() - 1;
-		update_option( 'sc_wpun_state', $state, false );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertCount( 1, $this->requests_to( 'chat.example.org' ), 'Tried again.' );

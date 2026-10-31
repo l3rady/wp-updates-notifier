@@ -16,6 +16,13 @@ use WPUN\Notification_Renderer;
 class Test_Notification extends WPUN_Test_Case {
 
 	/**
+	 * Tests the plugin as one site's, so on a multisite it is not network-activated.
+	 *
+	 * @var bool
+	 */
+	protected $network_activated = false;
+
+	/**
 	 * An item.
 	 *
 	 * @param array $overrides Values to override.

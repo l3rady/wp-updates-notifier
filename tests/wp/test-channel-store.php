@@ -19,7 +19,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 	}
 
 	/**
@@ -60,7 +60,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 					'routing'  => array( 'types' => array( 'core' ) ),
 				),
 			),
-			get_option( 'sc_wpun_channels' )
+			sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )
 		);
 	}
 
@@ -111,7 +111,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 				'enabled' => '0',
 			),
 		);
-		add_option( 'sc_wpun_channels', $bad, '', false );
+		sc_wpun()->network_context()->add_option( 'sc_wpun_channels', $bad );
 		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 
 		$this->assertSame( array( 'string_off' ), array_keys( $store->all() ) );
@@ -121,14 +121,14 @@ class Test_Channel_Store extends WPUN_Test_Case {
 		$this->assertFalse( $store->has( 'Bad Id' ) );
 
 		$store->save( $this->instance( 'one' ) );
-		$this->assertSame( array_merge( array_keys( $bad ), array( 'one' ) ), array_keys( get_option( 'sc_wpun_channels' ) ) );
+		$this->assertSame( array_merge( array_keys( $bad ), array( 'one' ) ), array_keys( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) ) );
 	}
 
 	/**
 	 * A stored value that is not an array is treated as empty.
 	 */
 	public function test_a_non_array_option_is_empty() {
-		add_option( 'sc_wpun_channels', 'nonsense', '', false );
+		sc_wpun()->network_context()->add_option( 'sc_wpun_channels', 'nonsense' );
 		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 
 		$this->assertSame( array(), $store->all() );
