@@ -322,7 +322,9 @@ final class Notification_Renderer {
 
 			$details = '';
 			foreach ( $item->get_links() as $label => $url ) {
-				$details .= '<li><a href="' . esc_url( $url ) . '">' . esc_html( self::item_link_label( (string) $label, $item->get_name() ) ) . '</a></li>';
+				$link_url = self::web_url( $url );
+				$text     = esc_html( self::item_link_label( (string) $label, $item->get_name() ) );
+				$details .= '<li>' . ( '' === $link_url ? $text : '<a href="' . esc_url( $link_url ) . '">' . $text . '</a>' ) . '</li>';
 			}
 			foreach ( $item->get_notes() as $note ) {
 				$details .= '<li>' . esc_html( $note ) . '</li>';
