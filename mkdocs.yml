@@ -133,10 +133,10 @@ extra:
 plugins:
   - search
   # Every version's canonical link points at the same page under the `latest` alias, which search engines should
-  # index, instead of an unversioned address the versioned site does not have. Material draws the version selector.
+  # index, instead of an unversioned address the versioned site does not have. Material draws the version selector
+  # from extra.version, but only while mike's version_selector is on (its default): turning it off removes the selector.
   - mike:
       canonical_version: latest
-      version_selector: false
 
 markdown_extensions:
   - admonition
