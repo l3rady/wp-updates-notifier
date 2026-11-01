@@ -173,6 +173,8 @@ tests/e2e/*               a11y docs e2e
 # must not trigger the e2e job.
 tests/flows/specs/*       e2e
 tests/flows/compose.yml   e2e
+tests/flows/compose.multisite.yml e2e
+tests/flows/apache-ms.conf e2e
 tests/flows/run.sh        e2e
 tests/flows/seed.sh       e2e
 tests/flows/playwright.config.js e2e

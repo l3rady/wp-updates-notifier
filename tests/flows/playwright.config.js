@@ -3,9 +3,13 @@
 const path = require( 'path' );
 const { defineConfig } = require( '@playwright/test' );
 
+// `make e2e-ms` (FLOWS_MULTISITE=1) runs only the network spec, on a multisite; `make e2e` runs all the others.
+const multisite = !! process.env.FLOWS_MULTISITE;
+
 module.exports = defineConfig( {
 	testDir: './specs',
 	testMatch: '*.spec.js',
+	testIgnore: multisite ? [ '**/!(network).spec.js' ] : [ '**/network.spec.js' ],
 	outputDir: '/tmp/wpun-flows-results',
 	globalSetup: path.resolve( __dirname, '../e2e/specs/global-setup.js' ),
 	// The tests share one site and one mailbox, and each starts by putting both back (helpers.resetSite), so they

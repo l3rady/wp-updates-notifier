@@ -266,7 +266,7 @@ jobs:
           retention-days: 14
 
   # The flows of tests/flows in a real browser: settings, channels, a real update check from WP-CLI with fake pending
-  # updates, and the mail it sends (caught by Mailpit), on a throwaway site. One PHP and WordPress combination.
+  # updates, and the mail it sends (caught by Mailpit), on a throwaway site, then the core path again on a multisite (make e2e-ms). One PHP and WordPress combination.
   e2e:
     needs: changes
     if: github.event_name != 'schedule' && contains(fromJSON(needs.changes.outputs.jobs), 'e2e')
@@ -278,6 +278,8 @@ jobs:
           persist-credentials: false
       - name: End-to-end flows
         run: make e2e
+      - name: End-to-end flows on a multisite
+        run: make e2e-ms
 
   # The same against WordPress trunk every night.
   wordpress-trunk:

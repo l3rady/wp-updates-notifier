@@ -93,16 +93,21 @@ SITE_MODE="${SITE_MODE:-dev}"
 
 case "$SITE_MODE" in dast | e2e) throwaway=yes ;; *) throwaway=no ;; esac
 
-if [ "$SITE_KIND" = network ] && [ "$throwaway" = yes ]; then
-	echo 'The multisite is for local use only: SITE_MODE must be dev.' >&2
+if [ "$SITE_KIND" = network ] && [ "$SITE_MODE" = dast ]; then
+	echo 'The multisite is for local use and the flows (make e2e-ms) only: SITE_MODE must be dev or e2e.' >&2
 	exit 1
 fi
 
 if [ "$throwaway" = yes ]; then
 	wp config set WP_ENVIRONMENT_TYPE production --type=constant --quiet
 	wp config set WP_DEBUG false --raw --type=constant --quiet
-	wp plugin is-active wp-updates-notifier || wp plugin activate wp-updates-notifier --quiet
-	wp plugin is-active wpun-field-showcase || wp plugin activate wpun-field-showcase --quiet
+	# On the multisite (make e2e-ms) they are network-activated: $NET is empty on the single site, so the unquoted
+	# expansion is meant.
+	# shellcheck disable=SC2086
+	{
+		wp plugin is-active wp-updates-notifier $NET || wp plugin activate wp-updates-notifier $NET --quiet
+		wp plugin is-active wpun-field-showcase $NET || wp plugin activate wpun-field-showcase $NET --quiet
+	}
 fi
 
 if [ "$throwaway" = no ]; then
@@ -178,6 +183,12 @@ seed_theme() { # <slug> <version>
 		wp theme install "$1" --version="$2" --force --quiet
 	fi
 }
+
+# The throwaway multisite (SITE_MODE=e2e, make e2e-ms) needs no more: tests/flows/seed.sh adds its sub-site and plugins.
+if [ "$SITE_KIND" = network ] && [ "$throwaway" = yes ]; then
+	echo "Throwaway multisite ready: $SITE_URL (admin / admin)"
+	exit 0
+fi
 
 # The multisite (#176): the same outdated plugins and themes, installed once for the whole network, a main site and two
 # sub-sites. Each site has its own theme and plugin, so "active only" across sites shows. The dev plugins above are

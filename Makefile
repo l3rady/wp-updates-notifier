@@ -53,7 +53,7 @@ TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-upgrade screenshots security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
@@ -269,6 +269,9 @@ a11y: ## axe and keyboard checks of the settings screen on a throwaway site (own
 
 e2e: ## End-to-end flows in a browser on a throwaway site with fake updates and Mailpit: settings, channels, a real update check (own compose project wpun-flows, never touches make up)
 	@./tests/flows/run.sh
+
+e2e-ms: ## The core path of make e2e on a multisite with the plugin network-activated: the Network Admin settings, one check, one email (own compose project wpun-flows-ms, can run beside make e2e)
+	@FLOWS_MULTISITE=1 ./tests/flows/run.sh
 
 e2e-upgrade: dist ## Update the real 1.6.0 from WordPress.org to the zip of make dist three ways (WP-CLI, Plugins screen, auto-update); needs the network, local only (own compose project wpun-upgrade, never touches make up)
 	@./tests/flows/upgrade/run.sh

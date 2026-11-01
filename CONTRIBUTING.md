@@ -29,6 +29,8 @@ Thanks for helping. Everything runs in Docker, so the only things you need are
   a real browser, a real `wp cron event run` and the mail in Mailpit, on a
   throwaway site that never touches `make up`. Add a case in `tests/flows/specs/`
   for a new flow; each test resets the site first (`resetSite` in `helpers.js`).
+  `make e2e-ms` runs `network.spec.js` on a multisite with the plugin
+  network-activated; a change to the network behaviour should keep it passing.
 - Commits use [Conventional Commits](https://www.conventionalcommits.org/)
   (`fix(cron): …`, `feat!: …` for breaking changes). They decide the next
   version number, so write them with care. `make commits` checks the commits on

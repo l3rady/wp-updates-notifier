@@ -11,16 +11,32 @@ set -eu
 # background and send mail in the middle of a test.
 wp config set DISABLE_WP_CRON true --raw --type=constant --quiet
 
-# make_plugin <slug> <name> <version> <active|inactive>: a plugin that does nothing, named in fake-updates.php.
+# On the multisite (make e2e-ms, SITE_KIND=network) a plugin is active on one site, not the network: see below.
+if wp core is-installed --network 2>/dev/null; then
+	NETWORK=yes
+	ALPHA="$SITE_URL/alpha/"
+	wp site list --field=path | grep -qx /alpha/ || wp site create --slug=alpha --title=Alpha --email=a@example.com --quiet
+else
+	NETWORK=no
+fi
+
+# make_plugin <slug> <name> <version> <active|inactive|alpha>: a plugin that does nothing, named in fake-updates.php.
+# alpha (the multisite only) activates it on the sub-site alone, so "active only" has to look past the main site.
 make_plugin() {
 	mkdir -p "wp-content/plugins/$1"
 	printf '<?php\n/**\n * Plugin Name: %s\n * Version: %s\n * Author: Example Author\n */\n' "$2" "$3" >"wp-content/plugins/$1/$1.php"
-	if [ "$4" = active ]; then
+	if [ "$4" = alpha ]; then
+		wp plugin is-active "$1" --url="$ALPHA" || wp plugin activate "$1" --url="$ALPHA" --quiet
+	elif [ "$4" = active ]; then
 		wp plugin is-active "$1" || wp plugin activate "$1" --quiet
 	fi
 }
 make_plugin example-contact-forms 'Example Contact Forms' 3.4.1 active
-make_plugin example-gallery 'Example Gallery' 2.1.0 active
+if [ "$NETWORK" = yes ]; then
+	make_plugin example-gallery 'Example Gallery' 2.1.0 alpha
+else
+	make_plugin example-gallery 'Example Gallery' 2.1.0 active
+fi
 make_plugin example-backup 'Example Backup' 1.8.3 inactive
 
 echo 'Flows site seeded'

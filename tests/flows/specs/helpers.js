@@ -3,6 +3,8 @@ const { expect } = require( '@playwright/test' );
 
 const SETTINGS = '/wp-admin/options-general.php?page=wp-updates-notifier';
 const CHANNELS = `${ SETTINGS }&tab=channels`;
+// The same screens on a multisite (make e2e-ms): the plugin is network-activated, so its screen is in the Network Admin.
+const NETWORK_SETTINGS = '/wp-admin/network/settings.php?page=wp-updates-notifier';
 const MAILPIT = process.env.MAILPIT_URL || 'http://mailpit:8025';
 const WPCLI = process.env.WPCLI_URL || 'http://wpcli:9000';
 
@@ -102,4 +104,4 @@ function channelRow( page, label ) {
 	return page.locator( 'tr.sc-wpun-channel', { has: page.locator( 'strong', { hasText: new RegExp( `^${ label.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }$` ) } ) } );
 }
 
-module.exports = { WPCLI, wpResult, SETTINGS, CHANNELS, MAILPIT, FAKE_ITEMS, wp, resetSite, emailChannel, clearMail, messages, waitForMail, expectNoMail, recipients, runCheck, channelState, watchConsole, channelRow };
+module.exports = { WPCLI, wpResult, SETTINGS, NETWORK_SETTINGS, CHANNELS, MAILPIT, FAKE_ITEMS, wp, resetSite, emailChannel, clearMail, messages, waitForMail, expectNoMail, recipients, runCheck, channelState, watchConsole, channelRow };
