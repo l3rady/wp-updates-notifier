@@ -81,6 +81,8 @@ Reminders are worked out at each check, so they can not come more often than you
 
 ## The email options
 
+The form puts **Send to** under **Recipients** and the other options under **Message**.
+
 | Option | What it does |
 | --- | --- |
 | **Send to** | Required. One or more email addresses, separated by commas. |
