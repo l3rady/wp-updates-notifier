@@ -74,6 +74,17 @@ class Test_Notification extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The time an item was reported is optional and must be a positive number.
+	 */
+	public function test_item_notified_at() {
+		$this->assertNull( $this->item()->get_notified_at() );
+		$this->assertSame( 1700000000, $this->item( array( 'notified_at' => 1700000000 ) )->get_notified_at() );
+		$this->assertSame( 1700000000, $this->item( array( 'notified_at' => '1700000000' ) )->get_notified_at() );
+		$this->assertNull( $this->item( array( 'notified_at' => 0 ) )->get_notified_at() );
+		$this->assertNull( $this->item( array( 'notified_at' => 'soon' ) )->get_notified_at() );
+	}
+
+	/**
 	 * Custom types are fine as long as they are constant-safe.
 	 */
 	public function test_item_types() {

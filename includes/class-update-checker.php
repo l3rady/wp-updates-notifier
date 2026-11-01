@@ -348,13 +348,16 @@ class Update_Checker {
 
 		// Forget what is no longer waiting for an update, and what is snoozed, for every instance whether it is on or not.
 		// A snoozed item is sent as new when the snooze ends, even if that version was notified before it started.
+		// What is no longer waiting at all (not just snoozed) may be resolved, see find_resolved().
+		$gone = array(); // Instance id => item type => key => notified version, of the built-in types.
 		foreach ( $channels as $id => $entry ) {
 			foreach ( $checked as $type => $pending_keys ) {
 				if ( isset( $entry['notified'][ $type ] ) ) {
-					$channels[ $id ]['notified'][ $type ] = array_diff_key(
-						array_intersect_key( $entry['notified'][ $type ], array_flip( $pending_keys ) ),
-						$snoozed[ $type ] ?? array()
-					);
+					$waiting = array_intersect_key( $entry['notified'][ $type ], array_flip( $pending_keys ) );
+					if ( in_array( $type, array( 'core', 'plugin', 'theme' ), true ) && count( $waiting ) < count( $entry['notified'][ $type ] ) ) {
+						$gone[ $id ][ $type ] = array_diff_key( $entry['notified'][ $type ], $waiting );
+					}
+					$channels[ $id ]['notified'][ $type ] = array_diff_key( $waiting, $snoozed[ $type ] ?? array() );
 				}
 			}
 		}
@@ -417,7 +420,7 @@ class Update_Checker {
 				}
 				$plan[ $id ]['items']  = $for_instance;
 				$entry['skip_pending'] = false;
-				$entry['notified']     = $this->record( $entry['notified'], $for_instance );
+				$entry                 = $this->record( $entry, $for_instance );
 			} elseif ( $due ) {
 				// One message with everything waiting, new items included, instead of a second message.
 				$send                  = new Notification(
@@ -448,7 +451,7 @@ class Update_Checker {
 					$plan[ $id ]['result'] = $result;
 					$results[ $id ]        = $result;
 					if ( $result->is_success() ) {
-						$entry['notified']     = $this->record( $entry['notified'], $plan[ $id ]['items'] );
+						$entry                 = $this->record( $entry, $plan[ $id ]['items'] );
 						$entry['skip_pending'] = false; // A forced message replaces the skip.
 						if ( self::STATUS_REMINDER === $plan[ $id ]['status'] ) {
 							$entry['last_reminder'] = time();
@@ -472,8 +475,10 @@ class Update_Checker {
 		$this->last_results = $results;
 
 		// Sending saved each instance's last result and retry time in the stored state, which the copy read at the start lacks.
-		$fresh = $this->state->get()['channels'];
+		$fresh    = $this->state->get()['channels'];
+		$resolved = $this->find_resolved( $gone, $state, $instances ); // Read before the details of what was notified are trimmed.
 		foreach ( $channels as $id => $entry ) {
+			$channels[ $id ] = $this->trim_notified_meta( $entry );
 			unset( $channels[ $id ]['last_result'], $channels[ $id ]['retry_at'] );
 			if ( isset( $fresh[ $id ]['last_result'] ) ) {
 				$channels[ $id ]['last_result'] = $fresh[ $id ]['last_result'];
@@ -516,6 +521,60 @@ class Update_Checker {
 			 * @param string            $reason `version` when a newer version ended a "skip this version" mute, `expired` when the time of a snooze passed.
 			 */
 			do_action( 'sc_wpun_mute_ended', $mute, $item, $reason );
+		}
+
+		foreach ( $resolved as [$instance, $item, $how] ) {
+			/**
+			 * Fires once per channel instance when an update it reported is no longer pending.
+			 *
+			 * The update check compares what each instance was told (its `notified` state) with what is
+			 * pending now. An item that was reported and is no longer pending at all is resolved, and is then
+			 * forgotten. Use it to close a helpdesk ticket opened from a webhook notification, to log the
+			 * time to update (see `Notification_Item::get_notified_at()`), or to post "done" to whatever
+			 * received the alert.
+			 *
+			 * `$how` is `updated` when the installed version of a plugin or theme is now the reported version
+			 * or newer, `removed` when the plugin or theme is no longer installed, and `core` when WordPress
+			 * is at or past the reported version.
+			 *
+			 * The check finds this out, not the install, so it does not matter how the update was installed
+			 * (Updates screen, automatic updates, WP-CLI, a host, an uploaded zip or FTP), but it can take up
+			 * to one check interval. Only core, plugin and theme items are reported; an item of an add-on type
+			 * is forgotten silently. It fires for every instance that reported the item, also one that is
+			 * switched off or waiting after a Retry-After (see `Channel_Instance::is_enabled()`), and for an
+			 * item recorded when an instance was added with "skip what's waiting".
+			 *
+			 * It does not fire for an item that is muted, snoozed, replaced by a newer version or hidden by the
+			 * `sc_wpun_should_notify_item` filter: those are still pending. An update installed while the item
+			 * is snoozed is never reported as resolved, because the snooze made the check forget the entry. It
+			 * never fires in a dry run or for a test notification. If two checks overlap it can fire twice;
+			 * see ADR 0009.
+			 *
+			 * The item is as it was reported: its new version is the one reported, and its name, installed
+			 * version and links (without the download link) are from then. Entries stored before 3.0.0 have
+			 * no details: the name is the installed one, if there is one, and `get_notified_at()` is null.
+			 *
+			 * Example, log the time to update:
+			 *
+			 *     add_action(
+			 *         'sc_wpun_item_resolved',
+			 *         function ( $item, $how, $instance ) {
+			 *             $since = $item->get_notified_at();
+			 *             if ( null !== $since ) {
+			 *                 error_log( sprintf( '%s was %s after %d seconds.', $item->get_name(), $how, time() - $since ) );
+			 *             }
+			 *         },
+			 *         10,
+			 *         3
+			 *     );
+			 *
+			 * @since 3.0.0
+			 *
+			 * @param Notification_Item $item     The item as it was reported.
+			 * @param string            $how      `updated`, `removed` or `core`.
+			 * @param Channel_Instance  $instance The channel instance that reported it.
+			 */
+			do_action( 'sc_wpun_item_resolved', $item, $how, $instance );
 		}
 
 		if ( array() !== $results ) {
@@ -616,6 +675,126 @@ class Update_Checker {
 			'snoozes'  => $snoozes,
 			'fire'     => $fire,
 		);
+	}
+
+	/**
+	 * Find the reported items that are no longer pending because they were installed or removed.
+	 *
+	 * Only the built-in types are looked at. An item that is gone from the update data while the installed
+	 * version is still older was not installed (the update data may just be missing), so it is forgotten silently.
+	 *
+	 * @param array<string, array<string, array<string, string>>> $gone      Instance id => item type => key => notified version, for what is no longer waiting.
+	 * @param array<string, mixed>                                $state     The run state as it was read, with the details of what was notified.
+	 * @param array<string, Channel_Instance>                     $instances The stored instances.
+	 *
+	 * @return array<int, array{0: Channel_Instance, 1: Notification_Item, 2: string}> Instance, item and how it was resolved.
+	 */
+	private function find_resolved( array $gone, array $state, array $instances ): array {
+		$resolved  = array();
+		$installed = array(); // Item type => key => name and version, read when first needed.
+		foreach ( $gone as $id => $types ) {
+			foreach ( $types as $type => $versions ) {
+				$installed[ $type ] ??= $this->installed_versions( $type );
+				foreach ( $versions as $key => $version ) {
+					$now = $installed[ $type ][ $key ] ?? null;
+					if ( null === $now ) {
+						$how = 'removed';
+					} elseif ( version_compare( $now['version'], $version, '>=' ) ) {
+						$how = 'core' === $type ? 'core' : 'updated';
+					} else {
+						continue; // Not installed: the update data is just missing.
+					}
+
+					$meta       = $state['channels'][ $id ]['notified_meta'][ $type ][ $key ] ?? null;
+					$name       = null !== $meta && '' !== $meta['name'] ? $meta['name'] : ( $now['name'] ?? (string) $key );
+					$resolved[] = array(
+						$instances[ $id ],
+						new Notification_Item(
+							array(
+								'type'            => $type,
+								'key'             => (string) $key,
+								'name'            => $name,
+								'current_version' => $meta['current_version'] ?? '',
+								'new_version'     => $version,
+								'links'           => $meta['links'] ?? array(),
+								'notified_at'     => $meta['time'] ?? null,
+							)
+						),
+						$how,
+					);
+				}
+			}
+		}
+
+		return $resolved;
+	}
+
+	/**
+	 * The name and version of what is installed, by item key.
+	 *
+	 * @param string $type Item type: `core`, `plugin` or `theme`.
+	 *
+	 * @return array<string, array{name: string, version: string}>
+	 */
+	private function installed_versions( string $type ): array {
+		$installed = array();
+		if ( 'core' === $type ) {
+			$installed['core'] = array(
+				'name'    => 'WordPress',
+				'version' => wp_get_wp_version(),
+			);
+		} elseif ( 'plugin' === $type ) {
+			if ( ! function_exists( 'get_plugins' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php'; // Not loaded in cron requests.
+			}
+			foreach ( get_plugins() as $file => $data ) {
+				$installed[ (string) $file ] = array(
+					'name'    => (string) $data['Name'],
+					'version' => (string) $data['Version'],
+				);
+			}
+		} else {
+			foreach ( wp_get_themes( array( 'errors' => null ) ) as $stylesheet => $theme ) {
+				$installed[ (string) $stylesheet ] = array(
+					'name'    => (string) $theme->get( 'Name' ),
+					'version' => (string) $theme->get( 'Version' ),
+				);
+			}
+		}
+
+		return $installed;
+	}
+
+	/**
+	 * Keep the details of what was notified only for what is still notified.
+	 *
+	 * One pass covers everything that forgets a notified version: items no longer waiting, snoozes, and a
+	 * reset by `State::skip_pending()`.
+	 *
+	 * @param Channel_State $entry The state of one instance.
+	 *
+	 * @return Channel_State
+	 */
+	private function trim_notified_meta( array $entry ): array { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint -- A phpstan-type alias.
+		if ( ! isset( $entry['notified_meta'] ) ) {
+			return $entry;
+		}
+
+		$meta = array();
+		foreach ( $entry['notified_meta'] as $type => $keys ) {
+			$kept = array_intersect_key( $keys, $entry['notified'][ $type ] ?? array() );
+			if ( array() !== $kept ) {
+				$meta[ $type ] = $kept;
+			}
+		}
+
+		if ( array() !== $meta ) {
+			$entry['notified_meta'] = $meta;
+		} else {
+			unset( $entry['notified_meta'] );
+		}
+
+		return $entry;
 	}
 
 	/**
@@ -727,19 +906,36 @@ class Update_Checker {
 	}
 
 	/**
-	 * Add items to a list of notified versions.
+	 * Add items to the notified versions of an instance, with the details `sc_wpun_item_resolved` needs.
 	 *
-	 * @param array<string, array<string, string>> $notified Notified versions by item type and key.
-	 * @param Notification_Item[]                  $items    Items that were announced.
+	 * The details and the time are stored when the version changes; a reminder or a forced send of the same
+	 * version keeps them. The download link is not stored, as it can hold a licence key or a private token.
 	 *
-	 * @return array<string, array<string, string>>
+	 * @param Channel_State       $entry The state of one instance.
+	 * @param Notification_Item[] $items Items that were announced.
+	 *
+	 * @return Channel_State
 	 */
-	private function record( array $notified, array $items ): array {
+	private function record( array $entry, array $items ): array { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint -- A phpstan-type alias.
 		foreach ( $items as $item ) {
-			$notified[ $item->get_type() ][ $item->get_key() ] = $item->get_new_version();
+			$type  = $item->get_type();
+			$key   = $item->get_key();
+			$known = ( $entry['notified'][ $type ][ $key ] ?? null ) === $item->get_new_version();
+
+			$entry['notified'][ $type ][ $key ] = $item->get_new_version();
+			if ( ! $known ) {
+				$links = $item->get_links();
+				unset( $links['download'] );
+				$entry['notified_meta'][ $type ][ $key ] = array(
+					'name'            => $item->get_name(),
+					'current_version' => $item->get_current_version(),
+					'links'           => $links,
+					'time'            => time(),
+				);
+			}
 		}
 
-		return $notified;
+		return $entry;
 	}
 
 	/**

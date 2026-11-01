@@ -291,6 +291,85 @@ class Test_Delivery_State extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The details kept with what was notified are cleaned, and left out when there are none.
+	 */
+	public function test_notified_meta_is_normalised() {
+		$state = sc_wpun()->state()->normalise(
+			array(
+				'channels' => array(
+					'one' => array(
+						'notified'      => array( 'plugin' => array( 'a.php' => '2' ) ),
+						'notified_meta' => array(
+							'plugin' => array(
+								'a.php' => array(
+									'name'            => 5,
+									'current_version' => array( 'x' ),
+									'links'           => array(
+										'details' => 'https://example.com',
+										'bad'     => array( 'x' ),
+									),
+									'time'            => '1700000000',
+								),
+								'b.php' => 'junk',
+								'c.php' => array( 'time' => '0.5' ),
+							),
+							'theme'  => 'junk',
+						),
+					),
+					'two' => array( 'notified_meta' => 'junk' ),
+				),
+			)
+		);
+
+		$this->assertSame(
+			array(
+				'plugin' => array(
+					'a.php' => array(
+						'name'            => '5',
+						'current_version' => '',
+						'links'           => array( 'details' => 'https://example.com' ),
+						'time'            => 1700000000,
+					),
+					'c.php' => array(
+						'name'            => '',
+						'current_version' => '',
+						'links'           => array(),
+						'time'            => 0,
+					),
+				),
+			),
+			$state['channels']['one']['notified_meta']
+		);
+		$this->assertArrayNotHasKey( 'notified_meta', $state['channels']['two'] );
+	}
+
+	/**
+	 * Skipping pending also clears the details of what was notified.
+	 */
+	public function test_skip_pending_clears_the_notified_meta() {
+		$state                      = sc_wpun()->state()->get();
+		$state['channels']['email'] = array(
+			'notified'      => array( 'plugin' => array( 'a.php' => '2' ) ),
+			'notified_meta' => array(
+				'plugin' => array(
+					'a.php' => array(
+						'name'            => 'A',
+						'current_version' => '1',
+						'links'           => array(),
+						'time'            => 5,
+					),
+				),
+			),
+			'skip_pending'  => false,
+		);
+		sc_wpun()->state()->save( $state );
+
+		sc_wpun()->state()->skip_pending( 'email' );
+
+		$this->assertArrayNotHasKey( 'notified_meta', $this->stored_state()['channels']['email'] );
+	}
+
+	/**
 	 * Skipping pending: the first run records without sending, the next sends only new items, and a disabled instance keeps the flag.
 	 */
 	public function test_skip_pending() {

@@ -56,6 +56,63 @@ least an hour.
 
 Fired in `includes/class-frequencies.php`.
 
+### `sc_wpun_item_resolved`
+
+*Action*, since 3.0.0
+
+Fires once per channel instance when an update it reported is no longer pending.
+
+The update check compares what each instance was told (its `notified` state) with what is
+pending now. An item that was reported and is no longer pending at all is resolved, and is then
+forgotten. Use it to close a helpdesk ticket opened from a webhook notification, to log the
+time to update (see `Notification_Item::get_notified_at()`), or to post "done" to whatever
+received the alert.
+
+`$how` is `updated` when the installed version of a plugin or theme is now the reported version
+or newer, `removed` when the plugin or theme is no longer installed, and `core` when WordPress
+is at or past the reported version.
+
+The check finds this out, not the install, so it does not matter how the update was installed
+(Updates screen, automatic updates, WP-CLI, a host, an uploaded zip or FTP), but it can take up
+to one check interval. Only core, plugin and theme items are reported; an item of an add-on type
+is forgotten silently. It fires for every instance that reported the item, also one that is
+switched off or waiting after a Retry-After (see `Channel_Instance::is_enabled()`), and for an
+item recorded when an instance was added with "skip what's waiting".
+
+It does not fire for an item that is muted, snoozed, replaced by a newer version or hidden by the
+`sc_wpun_should_notify_item` filter: those are still pending. An update installed while the item
+is snoozed is never reported as resolved, because the snooze made the check forget the entry. It
+never fires in a dry run or for a test notification. If two checks overlap it can fire twice;
+see ADR 0009.
+
+The item is as it was reported: its new version is the one reported, and its name, installed
+version and links (without the download link) are from then. Entries stored before 3.0.0 have
+no details: the name is the installed one, if there is one, and `get_notified_at()` is null.
+
+Example, log the time to update:
+
+```php
+add_action(
+    'sc_wpun_item_resolved',
+    function ( $item, $how, $instance ) {
+        $since = $item->get_notified_at();
+        if ( null !== $since ) {
+            error_log( sprintf( '%s was %s after %d seconds.', $item->get_name(), $how, time() - $since ) );
+        }
+    },
+    10,
+    3
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$item` | `Notification_Item` | The item as it was reported. |
+| `$how` | `string` | `updated`, `removed` or `core`. |
+| `$instance` | `Channel_Instance` | The channel instance that reported it. |
+
+Fired in `includes/class-update-checker.php`.
+
 ## Items and routing
 
 ### `sc_wpun_channel_should_receive_item`

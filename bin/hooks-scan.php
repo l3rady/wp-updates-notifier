@@ -354,7 +354,7 @@ function wpun_markdown_text( array $lines ): string {
  */
 function wpun_hook_sections(): array {
 	return array(
-		'Update check'        => array( 'sc_wpun_before_update_check', 'sc_wpun_after_update_check', 'sc_wpun_frequencies' ),
+		'Update check'        => array( 'sc_wpun_before_update_check', 'sc_wpun_after_update_check', 'sc_wpun_item_resolved', 'sc_wpun_frequencies' ),
 		'Items and routing'   => array( 'sc_wpun_update_items', 'sc_wpun_item_types', 'sc_wpun_core_needs_update', 'sc_wpun_plugins_need_update', 'sc_wpun_themes_need_update', 'sc_wpun_should_notify_item', 'sc_wpun_channel_should_receive_item', 'sc_wpun_notification' ),
 		'Delivery'            => array( 'sc_wpun_pre_send', 'sc_wpun_after_dispatch', 'sc_wpun_notification_sent', 'sc_wpun_notification_failed', 'sc_wpun_message_text', 'sc_wpun_more_items_text', 'sc_wpun_channel_payload', 'sc_wpun_email_' ),
 		'Channels and fields' => array( 'sc_wpun_register_channels', 'sc_wpun_channels', 'sc_wpun_channel_deleted', 'sc_wpun_channel_rejected', 'sc_wpun_channel_fields', 'sc_wpun_field_types' ),

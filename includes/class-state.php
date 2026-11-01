@@ -17,8 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @internal
  * @phpstan-type Generic_Notified array<string, array<string, string>>
  * @phpstan-type Legacy_Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
+ * @phpstan-type Notified_Meta array<string, array<string, array{name: string, current_version: string, links: array<string, string>, time: int}>>
  * @phpstan-type Last_Result array{success: bool, message: string, time: int}
- * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, last_result?: Last_Result, retry_at?: int, last_reminder?: int}
+ * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, notified_meta?: Notified_Meta, last_result?: Last_Result, retry_at?: int, last_reminder?: int}
  * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified, ended_mutes?: Generic_Notified, ended_snoozes?: Generic_Notified}
  */
 class State {
@@ -93,11 +94,15 @@ class State {
 		$channels = array();
 
 		foreach ( isset( $state['channels'] ) && is_array( $state['channels'] ) ? $state['channels'] : array() as $id => $entry ) {
-			$entry       = is_array( $entry ) ? $entry : array();
-			$clean       = array(
+			$entry = is_array( $entry ) ? $entry : array();
+			$clean = array(
 				'notified'     => $this->normalise_generic( $entry['notified'] ?? array() ),
 				'skip_pending' => ! empty( $entry['skip_pending'] ),
 			);
+			$meta  = $this->normalise_meta( $entry['notified_meta'] ?? null );
+			if ( array() !== $meta ) {
+				$clean['notified_meta'] = $meta;
+			}
 			$last_result = $this->normalise_last_result( $entry['last_result'] ?? null );
 			if ( null !== $last_result ) {
 				$clean['last_result'] = $last_result;
@@ -170,6 +175,7 @@ class State {
 		$entry                 = $state['channels'][ $id ] ?? array();
 		$entry['notified']     = array();
 		$entry['skip_pending'] = true;
+		unset( $entry['notified_meta'] );
 		unset( $entry['last_reminder'] ); // The skip run starts the reminder interval afresh, so skipped updates are not reminded about at once.
 		$state['channels'][ $id ] = $entry;
 		$this->save( $state );
@@ -215,6 +221,36 @@ class State {
 
 		$state['channels'][ $id ] = $entry;
 		$this->save( $state );
+	}
+
+	/**
+	 * The details kept with what was notified, by item type and key: name, installed version, links and the time it was notified.
+	 *
+	 * @param mixed $meta Stored value.
+	 *
+	 * @return Notified_Meta
+	 */
+	private function normalise_meta( $meta ): array {
+		if ( ! is_array( $meta ) ) {
+			return array();
+		}
+
+		$clean = array();
+		foreach ( $meta as $type => $keys ) {
+			foreach ( is_array( $keys ) ? $keys : array() as $key => $details ) {
+				if ( ! is_array( $details ) ) {
+					continue;
+				}
+				$clean[ (string) $type ][ (string) $key ] = array(
+					'name'            => isset( $details['name'] ) && is_scalar( $details['name'] ) ? (string) $details['name'] : '',
+					'current_version' => isset( $details['current_version'] ) && is_scalar( $details['current_version'] ) ? (string) $details['current_version'] : '',
+					'links'           => $this->normalise_versions( $details['links'] ?? array() ),
+					'time'            => isset( $details['time'] ) && is_numeric( $details['time'] ) && (int) $details['time'] > 0 ? (int) $details['time'] : 0,
+				);
+			}
+		}
+
+		return $clean;
 	}
 
 	/**

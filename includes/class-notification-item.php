@@ -82,6 +82,13 @@ final class Notification_Item {
 	private $flags;
 
 	/**
+	 * When the item was reported to the channel instance, or null.
+	 *
+	 * @var int|null
+	 */
+	private $notified_at;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 2.0.0
@@ -96,6 +103,7 @@ final class Notification_Item {
 	 *     @type string   $new_version     Version available.
 	 *     @type array    $links           Label => URL. The update check uses the labels `details`, `changelog` and `download`.
 	 *     @type string[] $notes           Extra lines.
+	 *     @type int      $notified_at     When the item was reported to the channel instance (Unix time). Set on items built from the run state, such as those passed to `sc_wpun_item_resolved`.
 	 *     @type array    $flags           Name => scalar value. Plugin and theme items from the update check carry a bool `active` flag, and plugins also `tested`, `requires_php` and `requires_wp`. Core, plugin and theme items from the check carry a bool `auto_update` flag: true when WordPress is set to install the update by itself.
 	 * }
 	 *
@@ -126,6 +134,8 @@ final class Notification_Item {
 				$this->notes[] = self::single_line( (string) $note );
 			}
 		}
+
+		$this->notified_at = isset( $data['notified_at'] ) && is_numeric( $data['notified_at'] ) && (int) $data['notified_at'] > 0 ? (int) $data['notified_at'] : null;
 
 		$this->flags = array();
 		foreach ( isset( $data['flags'] ) && is_array( $data['flags'] ) ? $data['flags'] : array() as $flag => $value ) {
@@ -244,5 +254,19 @@ final class Notification_Item {
 	 */
 	public function get_flags(): array {
 		return $this->flags;
+	}
+
+	/**
+	 * When the item was reported to the channel instance, as a Unix time.
+	 *
+	 * Set on items built from the run state, such as those passed to `sc_wpun_item_resolved`; null otherwise,
+	 * and for items reported before 3.0.0.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return int|null
+	 */
+	public function get_notified_at(): ?int {
+		return $this->notified_at;
 	}
 }
