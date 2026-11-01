@@ -20,7 +20,7 @@ Each new version is reported once, not on every check. Version 2.0.0 is a ground
 = What it does =
 
 * Checks for core, plugin and theme updates hourly, twice daily, daily or weekly.
-* Tells you about each new version once, with optional daily or weekly reminders about updates you haven't installed yet.
+* Tells you about each new version once, with optional reminders (daily, weekly or at every check) about updates you haven't installed yet.
 * Sends email to one or more addresses, with a test send to check it arrives.
 * Lets you set up more than one email channel, each with its own recipients, its own choice of updates and its own reminders.
 * Can watch only the plugins and themes you have active.
@@ -65,7 +65,7 @@ The [getting started guide](https://wpun.cariss.dev/latest/users/getting-started
 
 = Will I be told about every version? =
 
-Each channel is told about each new version once. If you don't install it, nothing more is sent unless you switch on daily or weekly reminders for that channel. See [How notifications work](https://wpun.cariss.dev/latest/users/how-notifications-work/).
+Each channel is told about each new version once. If you don't install it, nothing more is sent unless you switch on reminders (daily, weekly or at every check) for that channel. See [How notifications work](https://wpun.cariss.dev/latest/users/how-notifications-work/).
 
 = Can I stop notifications for updates WordPress installs automatically? =
 

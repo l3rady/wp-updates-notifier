@@ -38,13 +38,13 @@ To stop being told about minor WordPress releases, choose **Yes, but only major 
 
 ## Reminders
 
-A channel can repeat the updates you have not installed yet. Set **Reminders** to **Daily** or **Weekly** in the channel's [routing](channels.md#reminders). The default is **Never**.
+A channel can repeat the updates you have not installed yet. Set **Reminders** to **Daily**, **Weekly** or **Every check** in the channel's [routing](channels.md#reminders). The default is **Never**.
 
 - A [muted](muting.md) plugin or theme is not in a reminder.
 - The reminder is one message listing all updates still waiting for that channel, not only the ones that were reported before. It is marked as a reminder (see below).
 - New updates are not held back. They are sent at once, as a normal message.
 - If a new update is found in the same check as a reminder that is due, you get one message: the reminder, with the new update in it. You never get two.
-- The first reminder comes one interval after something starts waiting for the channel. When nothing is waiting, the interval is cleared. The next update to wait starts it again.
+- The first reminder comes one interval after something starts waiting for the channel. With **Every check** there is no interval: the check that finds an update sends it as a normal message, and every later check sends a reminder. When nothing is waiting, the interval is cleared. The next update to wait starts it again.
 - A failed reminder does not restart the interval. The channel tries again at the next check.
 - A channel that is switched off, or is waiting because of `Retry-After`, gets no reminder. If you added or switched on a channel and chose not to send what was already waiting, that check sends no reminder, but the interval starts, so you are reminded about those updates later.
 
@@ -53,6 +53,7 @@ Reminders are decided at each check, so they can not come more often than the [f
 - A daily check and daily reminders: each daily check sends a reminder.
 - Hourly checks and daily reminders: a reminder goes about a day after the last one, up to half an hour early.
 - Weekly checks and daily reminders: a reminder goes on every check.
+- Hourly checks and **Every check**: a reminder goes every hour. With daily checks, it goes every day.
 
 **Check for updates and notify now**, and `sc_wpun_run_check`, work out reminders too.
 

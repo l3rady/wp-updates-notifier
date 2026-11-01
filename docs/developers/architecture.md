@@ -34,10 +34,10 @@ flowchart TD
 
 **Delivery state.** The plugin remembers, per instance, which version of each item it has told that instance about, and when it last sent a reminder. An instance is sent only what is new to it. If a send fails, nothing is recorded for that instance, so the same items go out again on the next run, while the instances that succeeded are not sent them twice.
 
-**Reminders.** The `remind` routing key (`never`, `daily` or `weekly`) turns on reminders for an instance. The state of an instance has a `last_reminder` (a unix time) in `sc_wpun_state`, under `channels[id]`:
+**Reminders.** The `remind` routing key (`never`, `daily`, `weekly` or `every_check`) turns on reminders for an instance. The state of an instance has a `last_reminder` (a unix time) in `sc_wpun_state`, under `channels[id]`:
 
 - While `remind` is not `never` and the instance receives at least one waiting item, the clock runs. The first check that sees this sets `last_reminder` to now and sends no reminder, so the first one comes one interval later. When `remind` is `never` or nothing is waiting, `last_reminder` is removed.
-- A reminder is due when `now - last_reminder` is at least the interval minus a tolerance. The tolerance is half the interval of the site's check frequency, capped at half the reminder interval, so a late WP-Cron run does not skip a cycle.
+- A reminder is due when `now - last_reminder` is at least the interval minus a tolerance. The tolerance is half the interval of the site's check frequency, capped at half the reminder interval, so a late WP-Cron run does not skip a cycle. With `every_check` a reminder is due at every check once the clock runs, with no interval or tolerance.
 - When it is due, the check sends one `Notification` with `is_reminder()` true and every waiting item the instance receives, even those that are new in this run. On success all of them are recorded as notified and `last_reminder` is set to now. On failure neither changes, so the next check tries again.
 - Between reminders, new items are sent as a normal message and the clock is untouched. A skip run (see `State::skip_pending()`) sends no reminder but starts the clock. An instance that is off or deferred by `retry_at` is not touched. A test send never goes through the clock.
 

@@ -16,9 +16,9 @@ Check these in turn:
 
 Reminders are optional and per channel. Check these in turn:
 
-1. **Is it on?** Edit the channel. **Reminders** must be **Daily** or **Weekly**, not **Never**.
+1. **Is it on?** Edit the channel. **Reminders** must be **Daily**, **Weekly** or **Every check**, not **Never**.
 2. **Is anything waiting?** A channel is reminded only about updates it receives that are still waiting. Check the channel's **Routing** column, and the **General** tab settings. If routing leaves nothing for the channel, there is nothing to remind it about.
-3. **Has the first interval passed?** The first reminder comes one interval after an update starts waiting for the channel, not at once. A new update is sent at once as a normal message.
+3. **Has the first interval passed?** The first reminder comes one interval after an update starts waiting for the channel, not at once. With **Every check** the first reminder comes at the next check. A new update is sent at once as a normal message.
 4. **How often do you check?** Reminders are decided at each check, so a weekly check can not remind you daily. See [Reminders](how-notifications-work.md#reminders).
 5. **Is the channel switched on and free to send?** A channel that is switched off, or was told by a service to wait (**Rate limited, next try after** under **Last delivery**), gets no reminder until it is on and the wait is over.
 6. **Did the last send fail?** **Last delivery** shows the reason. A failed reminder is tried again at the next check.

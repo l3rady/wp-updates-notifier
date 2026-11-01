@@ -37,3 +37,4 @@ Since 2.0.0 there are several channel instances, each with its own routing. A re
 - [Issue #81](https://github.com/l3rady/wp-updates-notifier/issues/81): optional reminders for updates still pending.
 - Old pull request #13 (add-resend-updates-setting), which proposed a global setting.
 - [Issue #75](https://github.com/l3rady/wp-updates-notifier/issues/75) and [issue #95](https://github.com/l3rady/wp-updates-notifier/issues/95): the run state option and the per-channel routing and delivery state that reminders build on.
+- [ADR 0022](0022-remind-on-every-check.md): adds the `every_check` value.

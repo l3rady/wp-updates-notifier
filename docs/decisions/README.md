@@ -43,3 +43,4 @@ The date is when the decision was made, not when the record was written.
 | [0019](0019-mutes-in-their-own-option-through-the-global-veto.md) | Store mutes in their own option and apply them through the global veto | Accepted | 2026-10-29 |
 | [0020](0020-scheduled-checks-run-wordpress-automatic-updates-first.md) | Scheduled checks run WordPress's automatic updates first | Accepted | 2026-10-30 |
 | [0021](0021-network-only-on-multisite.md) | On multisite, run only when network-activated | Accepted | 2026-10-31 |
+| [0022](0022-remind-on-every-check.md) | Remind on every check | Accepted | 2026-11-01 |
