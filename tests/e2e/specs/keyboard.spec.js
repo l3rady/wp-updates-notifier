@@ -87,8 +87,11 @@ for ( const [ label, url ] of PAGES ) {
 			wrap.removeAttribute( 'tabindex' );
 		} );
 
+		// A date and time field is one control but several Tab stops: month, day, year, hour, minute, AM/PM and the picker.
+		const segments = 8 * ( await page.locator( '.wrap input[type="datetime-local"]' ).count() );
+
 		const reached = [];
-		for ( let i = 0; i < expected.length + 5; i++ ) {
+		for ( let i = 0; i < expected.length + segments + 5; i++ ) {
 			await page.keyboard.press( 'Tab' );
 			const focus = await page.evaluate( describeFocus );
 			if ( null === focus ) {

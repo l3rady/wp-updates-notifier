@@ -161,7 +161,7 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 			$fields
 		);
 		if ( ! isset( $fields['_wpnonce'] ) ) {
-			$fields['_wpnonce'] = wp_create_nonce( $token ?? ( $action . '|plugin|' . $fields['key'] . ( isset( $fields['version'] ) ? '|' . $fields['version'] : '' ) ) );
+			$fields['_wpnonce'] = wp_create_nonce( $token ?? ( $action . '|plugin|' . $fields['key'] . ( isset( $fields['version'] ) ? '|' . $fields['version'] : ( isset( $fields['seconds'] ) ? '|' . $fields['seconds'] : '' ) ) ) );
 		}
 		$_GET     = $fields;
 		$_REQUEST = $fields;
@@ -697,5 +697,208 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 		do_action( 'admin_notices' );
 		$this->assertStringNotContainsString( 'Done it.', ob_get_clean(), 'Shown once.' );
 		$this->assertSame( 'sc_wpun_mute', Plugins_Screen_Mutes::MUTE_ACTION );
+	}
+
+	// Snoozing (#346).
+
+	/**
+	 * Let the current user see core's update notice.
+	 */
+	private function can_update_plugins() {
+		if ( is_multisite() ) {
+			grant_super_admin( self::$admin_id );
+		}
+		$this->assertTrue( current_user_can( 'update_plugins' ) );
+	}
+
+	/**
+	 * Take away the right to update plugins, so core hides its notice.
+	 */
+	private function cannot_update_plugins() {
+		add_filter(
+			'user_has_cap',
+			static function ( $allcaps ) {
+				$allcaps['update_plugins'] = false;
+				return $allcaps;
+			}
+		);
+	}
+
+	/**
+	 * The notice offers a snooze link for each length, after the skip link.
+	 */
+	public function test_the_update_notice_offers_snooze_links() {
+		$this->can_update_plugins();
+		$this->load_screen();
+
+		$html = $this->update_message();
+		$this->assertStringContainsString( 'Snooze:', $html );
+		$this->assertGreaterThan( strpos( $html, 'sc_wpun_skip' ), strpos( $html, 'Snooze:' ) );
+		foreach ( array(
+			DAY_IN_SECONDS      => '1 day',
+			WEEK_IN_SECONDS     => '1 week',
+			30 * DAY_IN_SECONDS => '30 days',
+		) as $seconds => $label ) {
+			$this->assertStringContainsString( 'action=sc_wpun_snooze&#038;type=plugin&#038;key=hello.php&#038;seconds=' . $seconds . '&#038;_wpnonce=', $html );
+			$this->assertStringContainsString( '>' . $label . '</a>', $html );
+		}
+		$this->assertStringNotContainsString( 'Snooze:', implode( ' ', $this->row_meta() ), 'The notice has them; the row meta does not.' );
+		$this->assertStringNotContainsString( 'sc_wpun_snooze', implode( ' ', $this->action_links() ), 'Not a row action.' );
+	}
+
+	/**
+	 * When core hides its notice the snooze links are in the row meta.
+	 */
+	public function test_without_update_plugins_the_snooze_links_are_in_the_row_meta() {
+		$this->cannot_update_plugins();
+		$this->load_screen();
+
+		$meta = implode( ' ', $this->row_meta() );
+		$this->assertStringContainsString( 'Snooze:', $meta );
+		$this->assertStringContainsString( 'action=sc_wpun_snooze', $meta );
+
+		$this->set_updates();
+		$this->assertStringNotContainsString( 'Snooze:', implode( ' ', $this->row_meta() ), 'No update is waiting.' );
+	}
+
+	/**
+	 * A muted plugin gets no snooze links, and a snoozed one says so and offers the undo.
+	 */
+	public function test_the_snoozed_note_and_undo() {
+		$this->can_update_plugins();
+		$this->load_screen();
+
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+		$this->assertStringNotContainsString( 'Snooze:', $this->update_message() );
+
+		$expires = time() + WEEK_IN_SECONDS;
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php', null, 'api', $expires );
+		$when = WPUN\Admin\Settings_Page::format_site_time( $expires );
+		$html = $this->update_message();
+		$this->assertStringContainsString( 'Notifications snoozed until ' . $when . '.', $html );
+		$this->assertStringContainsString( 'action=sc_wpun_unmute', $html );
+		$this->assertStringNotContainsString( 'Snooze:', $html );
+		$this->assertStringContainsString( 'Notifications snoozed until ' . $when, implode( ' ', $this->row_meta() ) );
+
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php', '2.0.0', 'api', $expires );
+		$this->assertStringContainsString( 'Notifications for version 2.0.0 are skipped until ' . $when . '.', $this->update_message() );
+		$this->assertStringContainsString( 'action=sc_wpun_unmute', $this->update_message() );
+		$this->assertStringContainsString( 'Unmute', implode( ' ', $this->action_links() ), 'The row action stays.' );
+	}
+
+	/**
+	 * Row meta of a snoozed plugin offers the undo when core hides its notice.
+	 */
+	public function test_the_row_meta_of_a_snoozed_plugin_offers_the_undo() {
+		$this->cannot_update_plugins();
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php', null, 'api', time() + HOUR_IN_SECONDS );
+		$this->load_screen();
+
+		$meta = implode( ' ', $this->row_meta() );
+		$this->assertStringContainsString( 'Notifications snoozed until', $meta );
+		$this->assertStringContainsString( 'action=sc_wpun_unmute', $meta );
+	}
+
+	/**
+	 * A snooze link mutes until about now plus its length, with the source, and says so.
+	 */
+	public function test_the_snooze_handler() {
+		$this->register_hooks();
+		$fired = array();
+		add_action(
+			'sc_wpun_item_muted',
+			static function ( $mute, $source ) use ( &$fired ) {
+				$fired[] = $source;
+			},
+			10,
+			2
+		);
+
+		$before = time();
+		$this->assertSame( 'redirected', $this->click( 'sc_wpun_snooze', array( 'seconds' => (string) WEEK_IN_SECONDS ) ) );
+		$mute = sc_wpun_mutes()->get( 'plugin', 'hello.php' );
+		$this->assertGreaterThanOrEqual( $before + WEEK_IN_SECONDS, $mute->get_expires() );
+		$this->assertLessThanOrEqual( time() + WEEK_IN_SECONDS, $mute->get_expires() );
+		$this->assertTrue( $mute->is_always() );
+		$this->assertSame( 'plugins_screen', $mute->get_source() );
+		$this->assertSame( array( 'plugins_screen' ), $fired );
+
+		$notice = $this->notice();
+		$this->assertTrue( $notice['success'] ?? true );
+		$this->assertStringContainsString( 'Update notifications for Hello Dolly are snoozed until', $notice['message'] );
+	}
+
+	/**
+	 * Only lengths from the filtered list are accepted, and the filter can add one.
+	 */
+	public function test_the_snooze_handler_accepts_only_listed_lengths() {
+		$this->register_hooks();
+
+		$this->assertSame( 'redirected', $this->click( 'sc_wpun_snooze', array( 'seconds' => '12345' ) ), 'A valid token for a length that is not offered.' );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+		$this->assertFalse( $this->notice()['success'] ?? true );
+
+		foreach ( array( '0', '-5', '1.5', 'abc', '1e5', '' ) as $bad ) {
+			$this->click( 'sc_wpun_snooze', array( 'seconds' => $bad ) );
+			$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ), "'$bad' was accepted." );
+		}
+		$this->notice();
+
+		add_filter(
+			'sc_wpun_snooze_durations',
+			static function ( $durations ) {
+				$durations[ 4 * HOUR_IN_SECONDS ] = '4 hours';
+				return $durations;
+			}
+		);
+		$this->assertSame( 'redirected', $this->click( 'sc_wpun_snooze', array( 'seconds' => (string) ( 4 * HOUR_IN_SECONDS ) ) ) );
+		$this->assertEqualsWithDelta( time() + 4 * HOUR_IN_SECONDS, sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_expires(), 5 );
+
+		$this->can_update_plugins();
+		$this->load_screen();
+		$this->assertStringContainsString( 'seconds=' . ( 4 * HOUR_IN_SECONDS ), $this->update_message( 'other.php' ) . implode( ' ', $this->row_meta() ) . $this->snooze_notice_html() );
+	}
+
+	/**
+	 * The notice html for a plugin with no mute, after unmuting hello.php.
+	 *
+	 * @return string
+	 */
+	private function snooze_notice_html() {
+		sc_wpun_mutes()->unmute( 'plugin', 'hello.php' );
+
+		return $this->update_message();
+	}
+
+	/**
+	 * A bad token, a token for another length or plugin, and a missing capability give a 403 and change nothing.
+	 */
+	public function test_refused_snooze_requests_change_nothing() {
+		$this->register_hooks();
+		$week = (string) WEEK_IN_SECONDS;
+
+		$cases = array(
+			'bad token'          => array(
+			array(
+			'seconds'  => $week,
+			'_wpnonce' => 'abcdef1234',
+				),
+				null,
+			), // phpcs:ignore WordPress.Arrays.MultipleStatementAlignment
+			'token of a skip'    => array( array( 'seconds' => $week ), 'sc_wpun_skip|plugin|hello.php|' . $week ),
+			'other length token' => array( array( 'seconds' => $week ), 'sc_wpun_snooze|plugin|hello.php|' . DAY_IN_SECONDS ),
+			'no seconds'         => array( array(), 'sc_wpun_snooze|plugin|hello.php' ),
+			'other plugin token' => array( array( 'seconds' => $week ), 'sc_wpun_snooze|plugin|other.php|' . $week ),
+		);
+		foreach ( $cases as $name => $case ) {
+			$this->assertSame( 'died', $this->click( 'sc_wpun_snooze', $case[0], $case[1] ), $name );
+			$this->assertSame( 403, $this->died_with, $name );
+			$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ), "$name wrote the option." );
+		}
+
+		wp_set_current_user( self::$editor_id );
+		$this->assertSame( 'died', $this->click( 'sc_wpun_snooze', array( 'seconds' => $week ) ) );
+		$this->assertSame( 403, $this->died_with );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 	}
 }

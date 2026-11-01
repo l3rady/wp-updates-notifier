@@ -28,7 +28,7 @@ class Updates_Notifier_Command {
 	 *
 	 * @var string[]
 	 */
-	const MUTED_FIELDS = array( 'type', 'name', 'key', 'mute', 'set_in_code', 'muted_by', 'muted_at', 'update' );
+	const MUTED_FIELDS = array( 'type', 'name', 'key', 'mute', 'expires', 'set_in_code', 'muted_by', 'source', 'muted_at', 'update' );
 
 	/**
 	 * Runs the update check now, as the scheduled one does.
@@ -252,7 +252,7 @@ class Updates_Notifier_Command {
 	/**
 	 * Mutes plugins or themes, so their updates are left out of the notifications.
 	 *
-	 * Every name is handled, then the command exits with an error if any of them failed. A name that is already muted the same way is only a warning. A mute set in code, or one a `sc_wpun_pre_mute` filter refuses, is an error. The change is reported to `sc_wpun_item_muted` with the source `cli`.
+	 * Every name is handled, then the command exits with an error if any of them failed. A name that is already muted the same way is only a warning. A mute set in code, or one a `sc_wpun_pre_mute` filter refuses, is an error. With --for or --until-date the mute is a snooze that ends by itself; the update check then sends the item again. A wrong or past time is an error before anything is changed. The change is reported to `sc_wpun_item_muted` with the source `cli`.
 	 *
 	 * ## OPTIONS
 	 *
@@ -263,7 +263,13 @@ class Updates_Notifier_Command {
 	 * : One or more plugins or themes. A plugin is its directory name (or its file for a single-file plugin) or its full file path, as for `wp plugin`. A theme is its stylesheet.
 	 *
 	 * [--until-next-version]
-	 * : Skip only the version that is waiting now. Notifications start again when a newer version is offered. Fails for an item with no update waiting.
+	 * : Skip only the version that is waiting now. Notifications start again when a newer version is offered. Fails for an item with no update waiting. With --for or --until-date, the mute ends at the earlier of the two.
+	 *
+	 * [--for=<duration>]
+	 * : Snooze for this long: a whole number and `h` (hours), `d` (days) or `w` (weeks), for example `12h`, `3d` or `2w`. Not with --until-date.
+	 *
+	 * [--until-date=<date>]
+	 * : Snooze until this date, in the site's timezone, as `YYYY-MM-DD` (the start of that day) or `YYYY-MM-DD HH:MM`. It must be in the future. Not with --for.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -273,26 +279,33 @@ class Updates_Notifier_Command {
 	 *     # Skip the version of a theme that is waiting.
 	 *     wp updates-notifier mute theme twentytwentyfive --until-next-version
 	 *
+	 *     # Snooze a plugin for a week.
+	 *     wp updates-notifier mute plugin akismet --for=1w
+	 *
+	 *     # Snooze until a date and time on the site's clock.
+	 *     wp updates-notifier mute plugin akismet --until-date="2026-12-01 09:00"
+	 *
 	 * @param string[]             $args       Positional arguments.
 	 * @param array<string, mixed> $assoc_args Flags.
 	 *
 	 * @return void
 	 */
 	public function mute( $args, $assoc_args ) {
-		$skip = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'until-next-version', false );
+		$skip    = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'until-next-version', false );
+		$expires = $this->snooze_end( $assoc_args );
 		$this->each(
 			$args,
-			function ( string $type, string $key, string $name ) use ( $skip ): ?string {
+			function ( string $type, string $key, string $name ) use ( $skip, $expires ): ?string {
 				$store    = sc_wpun()->mute_store();
 				$existing = $store->get( $type, $key );
 				$until    = $skip ? $store->offered_version( $type, $key ) : null;
-				if ( null !== $existing && ! $existing->is_from_code() && ( ! $skip || null !== $until ) && $existing->get_until() === $until ) {
+				if ( null !== $existing && ! $existing->is_from_code() && ( ! $skip || null !== $until ) && $existing->get_until() === $until && null === $expires && null === $existing->get_expires() ) {
 					// translators: %s: Name of the plugin or theme.
 					\WP_CLI::warning( sprintf( __( '%s is already muted that way.', 'wp-updates-notifier' ), $name ) );
 					return null;
 				}
 
-				$result = ( new Mute_Actions( $store ) )->mute( $type, $key, 'cli', $skip );
+				$result = ( new Mute_Actions( $store ) )->mute( $type, $key, 'cli', $skip, null, $expires );
 				if ( ! $result[0] ) {
 					return $result[1];
 				}
@@ -300,6 +313,70 @@ class Updates_Notifier_Command {
 				return null;
 			}
 		);
+	}
+
+	/**
+	 * When a snooze ends, from --for or --until-date. Exits with an error for a wrong value, both options or a time that has passed.
+	 *
+	 * @param array<string, mixed> $assoc_args Flags.
+	 *
+	 * @return int|null Unix timestamp; null if no snooze was asked for.
+	 */
+	private function snooze_end( array $assoc_args ): ?int {
+		$for  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'for', null );
+		$date = \WP_CLI\Utils\get_flag_value( $assoc_args, 'until-date', null );
+		if ( null === $for && null === $date ) {
+			return null;
+		}
+		if ( null !== $for && null !== $date ) {
+			\WP_CLI::error( __( 'Use --for or --until-date, not both.', 'wp-updates-notifier' ) );
+		}
+
+		if ( null !== $for ) {
+			if ( ! is_string( $for ) || 1 !== preg_match( '/^([1-9][0-9]{0,5})([hdw])$/D', $for, $parts ) ) {
+				\WP_CLI::error( __( '--for must be a whole number and h, d or w, for example 12h, 3d or 2w.', 'wp-updates-notifier' ) );
+			}
+			$units = array(
+				'h' => HOUR_IN_SECONDS,
+				'd' => DAY_IN_SECONDS,
+				'w' => WEEK_IN_SECONDS,
+			);
+
+			return time() + (int) $parts[1] * $units[ $parts[2] ];
+		}
+
+		$expires = is_string( $date ) ? self::parse_site_date( $date ) : null;
+		if ( null === $expires ) {
+			\WP_CLI::error( __( '--until-date must be a date as YYYY-MM-DD or YYYY-MM-DD HH:MM, in the site\'s timezone.', 'wp-updates-notifier' ) );
+		}
+		if ( $expires <= time() ) {
+			\WP_CLI::error( __( '--until-date must be in the future.', 'wp-updates-notifier' ) );
+		}
+
+		return $expires;
+	}
+
+	/**
+	 * A date given on the command line, in the site's timezone.
+	 *
+	 * @param string $date `YYYY-MM-DD` (midnight) or `YYYY-MM-DD HH:MM`.
+	 *
+	 * @return int|null Unix timestamp; null if it is not a real date in one of those forms.
+	 */
+	private static function parse_site_date( string $date ): ?int {
+		if ( 1 !== preg_match( '/^[0-9]{4}-[0-9]{2}-[0-9]{2}( [0-9]{2}:[0-9]{2})?$/D', trim( $date ) ) ) {
+			return null; // createFromFormat() would accept 2099-6-1 too.
+		}
+
+		foreach ( array( '!Y-m-d H:i', '!Y-m-d' ) as $format ) {
+			$parsed = \DateTimeImmutable::createFromFormat( $format, trim( $date ), wp_timezone() );
+			$errors = \DateTimeImmutable::getLastErrors();
+			if ( false !== $parsed && ( false === $errors || ( 0 === $errors['warning_count'] && 0 === $errors['error_count'] ) ) ) {
+				return $parsed->getTimestamp();
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -349,7 +426,7 @@ class Updates_Notifier_Command {
 	/**
 	 * Lists the muted plugins and themes.
 	 *
-	 * Includes the mutes set in code, and leaves out a skipped version once a newer one is offered. `update` is the version waiting now, if any.
+	 * Includes the mutes set in code, and leaves out a skipped version once a newer one is offered and a snooze once its time has passed. `expires` is when a snooze ends, in the site's timezone, and empty for a mute with no time limit. `source` is where the mute was set from. `update` is the version waiting now, if any.
 	 *
 	 * ## OPTIONS
 	 *
@@ -449,7 +526,7 @@ class Updates_Notifier_Command {
 	/**
 	 * The rows of the muted list as the commands print them.
 	 *
-	 * @param array<int, array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string}> $rows From Status_Report::muted().
+	 * @param array<int, array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string, expires: ?int, source: string}> $rows From Status_Report::muted().
 	 *
 	 * @return array<int, array<string, string>>
 	 */
@@ -462,8 +539,10 @@ class Updates_Notifier_Command {
 				'name'        => (string) $row['name'],
 				'key'         => $row['key'],
 				'mute'        => Status_Report::describe_mute( $row['until'] ),
+				'expires'     => null === $row['expires'] ? '' : Status_Report::format_time( $row['expires'] ),
 				'set_in_code' => $row['from_code'] ? 'yes' : 'no',
 				'muted_by'    => false === $user ? '' : $user->user_login,
+				'source'      => $row['source'],
 				'muted_at'    => $row['time'] > 0 ? Status_Report::format_time( $row['time'] ) : '',
 				'update'      => (string) $row['offered'],
 			);

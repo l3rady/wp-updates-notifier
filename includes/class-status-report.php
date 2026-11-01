@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @internal
  * @phpstan-type Last_Result array{success: bool, message: string, time: string}
  * @phpstan-type Field_Row array{field: string, value: string, source: string}
- * @phpstan-type Muted_Row array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string}
+ * @phpstan-type Muted_Row array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string, expires: ?int, source: string}
  * @phpstan-type Channel_Row array{id: string, label: string, module: string, availability: string, enabled: bool, code_defined: bool, last_result: ?Last_Result, last_failure: ?Last_Result, retry_at: ?string, fields: Field_Row[]}
  */
 class Status_Report {
@@ -113,11 +113,11 @@ class Status_Report {
 	}
 
 	/**
-	 * The muted plugins and themes, without the mutes a newer version has ended.
+	 * The muted plugins and themes, without the mutes a newer version or their time has ended.
 	 *
 	 * Plain data: the screens and commands format it. A mute set in code has no time or user.
 	 *
-	 * @return Muted_Row[] The name is null when the item is not installed, and `offered` is null when no update is waiting.
+	 * @return Muted_Row[] `expires` is a Unix timestamp, or null for a mute that does not end by time; `source` is the raw source, empty if unknown. The name is null when the item is not installed, and `offered` is null when no update is waiting.
 	 */
 	public function muted(): array {
 		if ( ! function_exists( 'get_plugins' ) ) {
@@ -145,6 +145,8 @@ class Status_Report {
 				'time'      => $mute->get_time(),
 				'user'      => $mute->get_user_id(),
 				'offered'   => $this->mutes->offered_version( $type, $key ),
+				'expires'   => $mute->get_expires(),
+				'source'    => $mute->get_source(),
 			);
 		}
 

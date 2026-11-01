@@ -131,8 +131,8 @@ class Muted_Tab {
 	/**
 	 * Output the table of mutes.
 	 *
-	 * @param array<int, array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string}> $rows The mutes.
-	 * @param bool                                                                                                                                 $can  Whether the user may unmute.
+	 * @param array<int, array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string, expires: ?int, source: string}> $rows The mutes.
+	 * @param bool                                                                                                                                                                $can  Whether the user may unmute.
 	 *
 	 * @return void
 	 */
@@ -177,9 +177,9 @@ class Muted_Tab {
 	}
 
 	/**
-	 * Who muted an item and when.
+	 * Who muted an item, where from and when.
 	 *
-	 * @param array{from_code: bool, time: int, user: int} $row The mute.
+	 * @param array{from_code: bool, time: int, user: int, source: string} $row The mute.
 	 *
 	 * @return string
 	 */
@@ -189,25 +189,53 @@ class Muted_Tab {
 		}
 
 		$when = $row['time'] > 0 ? Settings_Page::format_site_time( $row['time'] ) : '';
-		if ( $row['user'] <= 0 ) {
-			return $when;
+		$who  = '';
+		if ( $row['user'] > 0 ) {
+			$user = get_userdata( $row['user'] );
+			$who  = false === $user ? __( 'Unknown user', 'wp-updates-notifier' ) : $user->display_name;
 		}
 
-		$user = get_userdata( $row['user'] );
-		$who  = false === $user ? __( 'Unknown user', 'wp-updates-notifier' ) : $user->display_name;
-		if ( '' === $when ) {
-			return $who;
+		$from = Mute_Store::source_label( $row['source'] );
+		if ( '' !== $from ) {
+			// translators: %s: Where the mute was set from, for example "WP-CLI".
+			$from = sprintf( __( 'from %s', 'wp-updates-notifier' ), $from );
+			$who  = '' === $who ? ucfirst( $from ) : sprintf( /* translators: 1: Name of the user who muted. 2: "from" and where the mute was set from. */ __( '%1$s, %2$s', 'wp-updates-notifier' ), $who, $from );
+		}
+		if ( '' === $who || '' === $when ) {
+			return '' === $who ? $when : $who;
 		}
 
-		// translators: 1: Name of the user who muted. 2: Date and time.
+		// translators: 1: Name of the user who muted, and where from. 2: Date and time.
 		return sprintf( __( '%1$s, %2$s', 'wp-updates-notifier' ), $who, $when );
+	}
+
+	/**
+	 * What a mute covers: always, a version, a time, or a version for at most a time.
+	 *
+	 * @param array{until: ?string, expires: ?int} $row The mute.
+	 *
+	 * @return string
+	 */
+	private static function mute_text( array $row ): string {
+		if ( null === $row['expires'] ) {
+			return null === $row['until'] ? __( 'Always', 'wp-updates-notifier' ) : sprintf( /* translators: %s: Version that is skipped. */ __( 'Version %s', 'wp-updates-notifier' ), $row['until'] );
+		}
+
+		$when = Settings_Page::format_site_time( $row['expires'] );
+		if ( null === $row['until'] ) {
+			// translators: %s: Date and time the snooze ends.
+			return sprintf( __( 'Snoozed until %s', 'wp-updates-notifier' ), $when );
+		}
+
+		// translators: 1: Version that is skipped. 2: Date and time the mute ends at the latest.
+		return sprintf( __( 'Version %1$s, until %2$s', 'wp-updates-notifier' ), $row['until'], $when );
 	}
 
 	/**
 	 * Output a row of the list.
 	 *
-	 * @param array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string} $row The mute.
-	 * @param bool                                                                                                                     $can Whether the user may unmute.
+	 * @param array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string, expires: ?int, source: string} $row The mute.
+	 * @param bool                                                                                                                                                    $can Whether the user may unmute.
 	 *
 	 * @return void
 	 */
@@ -230,7 +258,7 @@ class Muted_Tab {
 			</td>
 			<td class="sc-wpun-muted-mute" data-colname="<?php esc_attr_e( 'Mute', 'wp-updates-notifier' ); ?>">
 				<?php
-				echo esc_html( null === $row['until'] ? __( 'Always', 'wp-updates-notifier' ) : sprintf( /* translators: %s: Version that is skipped. */ __( 'Version %s', 'wp-updates-notifier' ), $row['until'] ) );
+				echo esc_html( self::mute_text( $row ) );
 				?>
 			</td>
 			<td class="sc-wpun-muted-by" data-colname="<?php esc_attr_e( 'Muted by', 'wp-updates-notifier' ); ?>"><?php echo esc_html( self::muted_by( $row ) ); ?></td>
@@ -308,6 +336,11 @@ class Muted_Tab {
 				</p>
 				<p class="description" id="sc-wpun-mute-skip-description"><?php esc_html_e( 'Notifications start again when a newer version than the waiting one is offered. It needs an update to be waiting.', 'wp-updates-notifier' ); ?></p>
 			</fieldset>
+			<p>
+				<label for="sc-wpun-mute-snooze-until"><?php esc_html_e( 'Snooze until', 'wp-updates-notifier' ); ?></label>
+				<input type="datetime-local" id="sc-wpun-mute-snooze-until" name="snooze_until" aria-describedby="sc-wpun-mute-snooze-description" />
+			</p>
+			<p class="description" id="sc-wpun-mute-snooze-description"><?php esc_html_e( 'Optional, in the time zone of the site. Notifications start again at that time. With "Skip the waiting version" they start again at that time or when a newer version is offered, whichever is first.', 'wp-updates-notifier' ); ?></p>
 			<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Mute', 'wp-updates-notifier' ); ?></button></p>
 		</form>
 		<?php
@@ -364,9 +397,42 @@ class Muted_Tab {
 			return true;
 		}
 
-		$this->notices->add( ...$this->actions->mute( $item[0], $item[1], self::SOURCE, 'skip' === $this->field( 'mode' ) ) );
+		$expires = null;
+		$snooze  = $this->field( 'snooze_until' );
+		if ( '' !== $snooze ) {
+			$expires = self::parse_snooze( $snooze );
+			if ( null === $expires ) {
+				$this->notices->add( false, __( 'Enter the end of the snooze as a date and time.', 'wp-updates-notifier' ) );
+				return true;
+			}
+			if ( $expires <= time() ) {
+				$this->notices->add( false, __( 'The end of the snooze must be in the future.', 'wp-updates-notifier' ) );
+				return true;
+			}
+		}
+
+		$this->notices->add( ...$this->actions->mute( $item[0], $item[1], self::SOURCE, 'skip' === $this->field( 'mode' ), null, $expires ) );
 
 		return true;
+	}
+
+	/**
+	 * The time a date and time field holds, in the site's timezone.
+	 *
+	 * @param string $value Value of a `datetime-local` field, `YYYY-MM-DDTHH:MM` with optional seconds.
+	 *
+	 * @return int|null Unix timestamp; null if it is not a real date and time.
+	 */
+	private static function parse_snooze( string $value ): ?int {
+		foreach ( array( '!Y-m-d\TH:i', '!Y-m-d\TH:i:s' ) as $format ) {
+			$parsed = \DateTimeImmutable::createFromFormat( $format, $value, wp_timezone() );
+			$errors = \DateTimeImmutable::getLastErrors();
+			if ( false !== $parsed && ( false === $errors || ( 0 === $errors['warning_count'] && 0 === $errors['error_count'] ) ) ) {
+				return $parsed->getTimestamp();
+			}
+		}
+
+		return null;
 	}
 
 	/**

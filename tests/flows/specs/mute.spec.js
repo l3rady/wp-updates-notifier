@@ -65,6 +65,31 @@ test.describe( 'muting', () => {
 		await expect( page.locator( '.sc-wpun-notice' ) ).toHaveText( 'Update notifications for Example Backup are on again.' );
 	} );
 
+	test( 'snoozing from the update notice, then undoing it', async ( { page, request } ) => {
+		await resetSite( request, { channels: OFFICE } );
+
+		const notice = page.locator( 'tr.plugin-update-tr[data-plugin="example-backup/example-backup.php"]' );
+		await page.goto( PLUGINS );
+		await notice.getByRole( 'link', { name: '1 week' } ).click();
+		await expect( page.locator( '.sc-wpun-notice' ) ).toHaveClass( /notice-success/ );
+		await expect( page.locator( '.sc-wpun-notice' ) ).toContainText( 'Update notifications for Example Backup are snoozed until' );
+		await expect( notice ).toContainText( 'Notifications snoozed until' );
+		await expect( notice.locator( 'a.sc-wpun-snooze' ) ).toHaveCount( 0 );
+
+		await runCheck( request );
+		const [ mail ] = await waitForMail( request, 1 );
+		expect( mail.Text, 'a snoozed plugin is not named' ).not.toContain( 'Example Backup' );
+
+		await page.goto( MUTED );
+		const item = page.locator( 'tr.sc-wpun-muted-item', { hasText: 'Example Backup' } );
+		await expect( item ).toContainText( 'Snoozed until' );
+
+		await page.goto( PLUGINS );
+		await notice.locator( 'a.sc-wpun-unmute' ).click();
+		await expect( page.locator( '.sc-wpun-notice' ) ).toHaveText( 'Update notifications for Example Backup are on again.' );
+		await expect( notice.getByRole( 'link', { name: '1 week' } ) ).toBeVisible();
+	} );
+
 	test( 'the Muted tab mutes and unmutes a plugin', async ( { page, request } ) => {
 		await resetSite( request, { channels: OFFICE } );
 

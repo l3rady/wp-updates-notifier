@@ -21,7 +21,8 @@ use WPUN\Network_Context;
  * The hooks are added while the Plugins screen loads (`load-plugins.php`), so no other request has them. The links
  * are GET links to `admin-post.php` with a security token for the action and the plugin, as core's Activate and
  * Deactivate links are: the rows are inside core's bulk form, and forms cannot be nested. Skipping a version has the
- * version in its token, so a link only skips the version it was made for. Network-activated, only the network Plugins
+ * version in its token, so a link only skips the version it was made for. A snooze link has the length in seconds in
+ * its token, and the handler accepts only lengths that `sc_wpun_snooze_durations` lists. Network-activated, only the network Plugins
  * screen has them, as the sites' own Plugins screens are not where the plugin is managed.
  *
  * @internal
@@ -30,6 +31,7 @@ class Plugins_Screen_Mutes {
 	const MUTE_ACTION   = 'sc_wpun_mute';
 	const UNMUTE_ACTION = 'sc_wpun_unmute';
 	const SKIP_ACTION   = 'sc_wpun_skip';
+	const SNOOZE_ACTION = 'sc_wpun_snooze';
 	const BULK_MUTE     = 'sc_wpun_bulk_mute';
 	const BULK_UNMUTE   = 'sc_wpun_bulk_unmute';
 	const SOURCE        = 'plugins_screen';
@@ -136,11 +138,11 @@ class Plugins_Screen_Mutes {
 	}
 
 	/**
-	 * The action of a security token, for the action and the plugin (and the version, when skipping it).
+	 * The action of a security token, for the action and the plugin (and the version, when skipping it, or the seconds, when snoozing).
 	 *
 	 * @param string $action  The admin-post action.
 	 * @param string $file    Plugin file.
-	 * @param string $version The version the link skips; empty for the other actions.
+	 * @param string $version The version the link skips, or the length of the snooze in seconds; empty for the other actions.
 	 *
 	 * @return string
 	 */
@@ -154,10 +156,11 @@ class Plugins_Screen_Mutes {
 	 * @param string $action  The admin-post action.
 	 * @param string $file    Plugin file.
 	 * @param string $version The version to skip, for the skip action.
+	 * @param int    $seconds The length of the snooze, for the snooze action.
 	 *
 	 * @return string Not escaped for HTML.
 	 */
-	private function link_url( string $action, string $file, string $version = '' ): string {
+	private function link_url( string $action, string $file, string $version = '', int $seconds = 0 ): string {
 		$args = array(
 			'action' => $action,
 			'type'   => 'plugin',
@@ -166,7 +169,10 @@ class Plugins_Screen_Mutes {
 		if ( '' !== $version ) {
 			$args['version'] = rawurlencode( $version );
 		}
-		$args['_wpnonce'] = wp_create_nonce( self::token_action( $action, $file, $version ) );
+		if ( $seconds > 0 ) {
+			$args['seconds'] = (string) $seconds;
+		}
+		$args['_wpnonce'] = wp_create_nonce( self::token_action( $action, $file, $seconds > 0 ? (string) $seconds : $version ) );
 
 		return add_query_arg( $args, admin_url( 'admin-post.php' ) );
 	}
@@ -180,11 +186,12 @@ class Plugins_Screen_Mutes {
 	 * @param string $name    Accessible name, with the name of the plugin.
 	 * @param string $class_name   CSS class.
 	 * @param string $version The version to skip, for the skip action.
+	 * @param int    $seconds The length of the snooze, for the snooze action.
 	 *
 	 * @return string The escaped markup.
 	 */
-	private function link( string $action, string $file, string $text, string $name, string $class_name, string $version = '' ): string {
-		return '<a class="' . esc_attr( $class_name ) . '" href="' . esc_url( $this->link_url( $action, $file, $version ) ) . '" aria-label="' . esc_attr( $name ) . '">' . esc_html( $text ) . '</a>';
+	private function link( string $action, string $file, string $text, string $name, string $class_name, string $version = '', int $seconds = 0 ): string {
+		return '<a class="' . esc_attr( $class_name ) . '" href="' . esc_url( $this->link_url( $action, $file, $version, $seconds ) ) . '" aria-label="' . esc_attr( $name ) . '">' . esc_html( $text ) . '</a>';
 	}
 
 	/**
@@ -218,10 +225,10 @@ class Plugins_Screen_Mutes {
 	}
 
 	/**
-	 * Say in the row meta that a plugin is muted, and offer to skip the waiting version when core hides its notice.
+	 * Say in the row meta that a plugin is muted, and offer to skip or snooze the waiting version when core hides its notice.
 	 *
 	 * Core shows the update notice to users who can update plugins only, and takes that away with
-	 * `DISALLOW_FILE_MODS`, so for the others the skip link and its undo are here.
+	 * `DISALLOW_FILE_MODS`, so for the others the skip and snooze links and their undo are here.
 	 *
 	 * @param mixed $meta   The details.
 	 * @param mixed $file   Plugin file.
@@ -242,14 +249,15 @@ class Plugins_Screen_Mutes {
 		if ( null === $mute ) {
 			if ( $hidden ) {
 				$meta[] = $this->skip_link( $file, $offered );
+				$meta[] = $this->snooze_links( $file );
 			}
 
 			return $meta;
 		}
 
 		$meta[] = '<span class="sc-wpun-muted-note">' . esc_html( $this->note( $mute ) ) . '</span>';
-		if ( $hidden && ! $mute->is_always() && ! $mute->is_from_code() ) {
-			$meta[] = $this->link( self::UNMUTE_ACTION, $file, __( 'Undo', 'wp-updates-notifier' ), __( 'Undo skipping the version', 'wp-updates-notifier' ), 'sc-wpun-unmute' );
+		if ( $hidden && $this->can_undo( $mute ) ) {
+			$meta[] = $this->undo_link( $file, $mute );
 		}
 
 		return $meta;
@@ -263,7 +271,14 @@ class Plugins_Screen_Mutes {
 	 * @return string
 	 */
 	private function note( Mute $mute ): string {
-		if ( $mute->is_always() ) {
+		$expires = $mute->get_expires();
+		if ( null !== $expires && $mute->is_always() ) {
+			// translators: %s: Date and time.
+			$text = sprintf( __( 'Notifications snoozed until %s', 'wp-updates-notifier' ), Settings_Page::format_site_time( $expires ) );
+		} elseif ( null !== $expires ) {
+			// translators: 1: Version that is skipped. 2: Date and time.
+			$text = sprintf( __( 'Notifications for version %1$s are skipped until %2$s', 'wp-updates-notifier' ), (string) $mute->get_until(), Settings_Page::format_site_time( $expires ) );
+		} elseif ( $mute->is_always() ) {
 			$text = __( 'Update notifications muted', 'wp-updates-notifier' );
 		} else {
 			// translators: %s: Version that is skipped.
@@ -294,7 +309,54 @@ class Plugins_Screen_Mutes {
 	}
 
 	/**
-	 * Add to core's update notice of a plugin: the skip link, or what was skipped and the undo. Inline: core prints it inside a paragraph.
+	 * The links that snooze the notifications about a plugin, one for each length.
+	 *
+	 * @param string $file Plugin file.
+	 *
+	 * @return string The escaped markup; empty if no length is offered.
+	 */
+	private function snooze_links( string $file ): string {
+		$links = array();
+		foreach ( Mute_Store::snooze_durations() as $seconds => $label ) {
+			// translators: %s: Length of the snooze, for example "1 week".
+			$name    = sprintf( __( 'Snooze update notifications for %s', 'wp-updates-notifier' ), $label );
+			$links[] = $this->link( self::SNOOZE_ACTION, $file, $label, $name, 'sc-wpun-snooze', '', $seconds );
+		}
+		if ( array() === $links ) {
+			return '';
+		}
+
+		// translators: Label before the lengths of a snooze, for example "Snooze: 1 day · 1 week".
+		return '<span class="sc-wpun-snooze-links">' . esc_html__( 'Snooze:', 'wp-updates-notifier' ) . ' ' . implode( ' &middot; ', $links ) . '</span>';
+	}
+
+	/**
+	 * Whether a mute can be undone from the Plugins screen: a skipped version or a snooze that is not set in code.
+	 *
+	 * @param Mute $mute The mute.
+	 *
+	 * @return bool
+	 */
+	private function can_undo( Mute $mute ): bool {
+		return ( ! $mute->is_always() || null !== $mute->get_expires() ) && ! $mute->is_from_code();
+	}
+
+	/**
+	 * The link that undoes a skipped version or a snooze.
+	 *
+	 * @param string $file Plugin file.
+	 * @param Mute   $mute The mute.
+	 *
+	 * @return string The escaped markup.
+	 */
+	private function undo_link( string $file, Mute $mute ): string {
+		$name = null !== $mute->get_expires() ? __( 'Undo snoozing', 'wp-updates-notifier' ) : __( 'Undo skipping the version', 'wp-updates-notifier' );
+
+		return $this->link( self::UNMUTE_ACTION, $file, __( 'Undo', 'wp-updates-notifier' ), $name, 'sc-wpun-unmute' );
+	}
+
+	/**
+	 * Add to core's update notice of a plugin: the skip and snooze links, or what was skipped or snoozed and the undo. Inline: core prints it inside a paragraph.
 	 *
 	 * @param string $file Plugin file.
 	 *
@@ -308,11 +370,15 @@ class Plugins_Screen_Mutes {
 
 		$mute = $this->store->get( 'plugin', $file );
 		if ( null === $mute ) {
-			echo ' ' . $this->skip_link( $file, $offered ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built.
-		} elseif ( ! $mute->is_always() && ! $mute->is_from_code() ) {
-			// translators: %s: Version that is skipped.
-			echo ' ' . esc_html( sprintf( __( 'Notifications for version %s are skipped.', 'wp-updates-notifier' ), (string) $mute->get_until() ) ) . ' ';
-			echo $this->link( self::UNMUTE_ACTION, $file, __( 'Undo', 'wp-updates-notifier' ), __( 'Undo skipping the version', 'wp-updates-notifier' ), 'sc-wpun-unmute' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built.
+			echo ' ' . $this->skip_link( $file, $offered ) . ' ' . $this->snooze_links( $file ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built.
+		} elseif ( $this->can_undo( $mute ) ) {
+			if ( null !== $mute->get_expires() ) {
+				echo ' ' . esc_html( $this->note( $mute ) . '.' ) . ' ';
+			} else {
+				// translators: %s: Version that is skipped.
+				echo ' ' . esc_html( sprintf( __( 'Notifications for version %s are skipped.', 'wp-updates-notifier' ), (string) $mute->get_until() ) ) . ' ';
+			}
+			echo $this->undo_link( $file, $mute ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built.
 		}
 	}
 
@@ -388,14 +454,14 @@ class Plugins_Screen_Mutes {
 	}
 
 	/**
-	 * Check a link's request: the capability, the plugin type, and the security token for the action, plugin and version.
+	 * Check a link's request: the capability, the plugin type, and the security token for the action, plugin and extra value.
 	 *
-	 * @param string $action       The admin-post action.
-	 * @param bool   $with_version Whether the link carries the version it skips.
+	 * @param string $action The admin-post action.
+	 * @param string $extra  The query argument the link carries as well, `version` or `seconds`; empty for none.
 	 *
-	 * @return array{0: string, 1: string}|null The plugin file and the version (empty if none); null if the request is refused.
+	 * @return array{0: string, 1: string}|null The plugin file and the extra value (empty if none); null if the request is refused.
 	 */
-	private function authorise( string $action, bool $with_version ): ?array {
+	private function authorise( string $action, string $extra = '' ): ?array {
 		if ( ! Mute_Actions::can_mute() || ! isset( $_GET['type'], $_GET['key'], $_GET['_wpnonce'] ) || ! is_string( $_GET['type'] ) || ! is_string( $_GET['key'] ) || ! is_string( $_GET['_wpnonce'] ) ) {
 			return null;
 		}
@@ -405,11 +471,11 @@ class Plugins_Screen_Mutes {
 
 		$file    = sanitize_text_field( wp_unslash( $_GET['key'] ) );
 		$version = '';
-		if ( $with_version ) {
-			if ( ! isset( $_GET['version'] ) || ! is_string( $_GET['version'] ) ) {
+		if ( '' !== $extra ) {
+			if ( ! isset( $_GET[ $extra ] ) || ! is_string( $_GET[ $extra ] ) ) {
 				return null;
 			}
-			$version = sanitize_text_field( wp_unslash( $_GET['version'] ) );
+			$version = sanitize_text_field( wp_unslash( $_GET[ $extra ] ) );
 			if ( '' === $version ) {
 				return null;
 			}
@@ -428,7 +494,7 @@ class Plugins_Screen_Mutes {
 	 * @return bool False if the user may not do it or the security token is not valid.
 	 */
 	public function process_mute(): bool {
-		$request = $this->authorise( self::MUTE_ACTION, false );
+		$request = $this->authorise( self::MUTE_ACTION );
 		if ( null === $request ) {
 			return false;
 		}
@@ -444,7 +510,7 @@ class Plugins_Screen_Mutes {
 	 * @return bool False if the user may not do it or the security token is not valid.
 	 */
 	public function process_skip(): bool {
-		$request = $this->authorise( self::SKIP_ACTION, true );
+		$request = $this->authorise( self::SKIP_ACTION, 'version' );
 		if ( null === $request ) {
 			return false;
 		}
@@ -455,12 +521,37 @@ class Plugins_Screen_Mutes {
 	}
 
 	/**
+	 * Check a request to snooze a plugin and do it.
+	 *
+	 * The length must still be one that `sc_wpun_snooze_durations` lists; a link made before the list changed
+	 * gets a notice instead.
+	 *
+	 * @return bool False if the user may not do it or the security token is not valid.
+	 */
+	public function process_snooze(): bool {
+		$request = $this->authorise( self::SNOOZE_ACTION, 'seconds' );
+		if ( null === $request ) {
+			return false;
+		}
+
+		$seconds = 1 === preg_match( '/^[1-9][0-9]*$/D', $request[1] ) ? (int) $request[1] : 0;
+		if ( ! isset( Mute_Store::snooze_durations()[ $seconds ] ) ) {
+			$this->notices->add( false, __( 'That length of snooze is not offered. Reload the page and try again.', 'wp-updates-notifier' ) );
+			return true;
+		}
+
+		$this->notices->add( ...$this->actions->mute( 'plugin', $request[0], self::SOURCE, false, null, time() + $seconds ) );
+
+		return true;
+	}
+
+	/**
 	 * Check a request to unmute a plugin and do it.
 	 *
 	 * @return bool False if the user may not do it or the security token is not valid.
 	 */
 	public function process_unmute(): bool {
-		$request = $this->authorise( self::UNMUTE_ACTION, false );
+		$request = $this->authorise( self::UNMUTE_ACTION );
 		if ( null === $request ) {
 			return false;
 		}
@@ -486,6 +577,15 @@ class Plugins_Screen_Mutes {
 	 */
 	public function handle_skip(): void {
 		$this->finish( $this->process_skip() );
+	}
+
+	/**
+	 * Handle the snooze link (admin-post.php), then go back.
+	 *
+	 * @return void
+	 */
+	public function handle_snooze(): void {
+		$this->finish( $this->process_snooze() );
 	}
 
 	/**

@@ -474,6 +474,8 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 				'time'      => $rows[0]['time'],
 				'user'      => self::$admin_id,
 				'offered'   => '2.0.0',
+				'expires'   => null,
+				'source'    => 'api',
 			),
 			$rows[0]
 		);
@@ -486,5 +488,129 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 		sc_wpun_mutes()->mute( 'theme', get_stylesheet() );
 		$names = wp_list_pluck( sc_wpun()->status_report()->muted(), 'name' );
 		$this->assertContains( $theme, $names );
+	}
+
+	// Snoozing (#346).
+
+	/**
+	 * A snooze shows its end in the site's timezone, and a version bound as well.
+	 */
+	public function test_a_snooze_shows_its_end_in_the_site_timezone() {
+		update_option( 'timezone_string', 'Europe/Berlin' );
+		$expires = gmmktime( 12, 0, 0, 6, 1, 2036 ); // 14:00 in Berlin.
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php', null, 'settings', $expires );
+		sc_wpun_mutes()->mute( 'theme', get_stylesheet(), '9.9.9', 'settings', $expires );
+
+		$berlin = wp_date( (string) get_option( 'time_format' ), $expires, new DateTimeZone( 'Europe/Berlin' ) );
+		$utc    = wp_date( (string) get_option( 'time_format' ), $expires, new DateTimeZone( 'UTC' ) );
+		$this->assertNotSame( $berlin, $utc );
+
+		$cells = $this->tab()->query( '//td[contains(@class,"sc-wpun-muted-mute")]' );
+		$this->assertSame( 2, $cells->length );
+		$first = preg_replace( '/\s+/', ' ', trim( $cells->item( 0 )->textContent ) );
+		$this->assertStringStartsWith( 'Snoozed until June 1, 2036', $first );
+		$this->assertStringEndsWith( $berlin, $first );
+		$this->assertStringStartsWith( 'Version 9.9.9, until June 1, 2036', preg_replace( '/\s+/', ' ', trim( $cells->item( 1 )->textContent ) ) );
+	}
+
+	/**
+	 * The source is shown next to the user, and left out when unknown.
+	 */
+	public function test_muted_by_shows_the_source() {
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php', null, 'cli' );
+		sc_wpun_mutes()->mute( 'theme', 'gone-theme', null, 'helpdesk' );
+		sc_wpun_mutes()->mute( 'theme', 'old-theme' );
+		$option                                 = sc_wpun()->network_context()->get_option( 'sc_wpun_muted' );
+		$option['theme']['old-theme']['source'] = null;
+		unset( $option['theme']['old-theme']['source'] );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_muted', $option );
+
+		$by = array();
+		foreach ( $this->tab()->query( '//td[contains(@class,"sc-wpun-muted-by")]' ) as $cell ) {
+			$by[] = preg_replace( '/\s+/', ' ', trim( $cell->textContent ) );
+		}
+		$this->assertCount( 3, $by );
+		$this->assertStringStartsWith( 'Ada Admin, from WP-CLI, ', $by[0] );
+		$this->assertStringStartsWith( 'Ada Admin, from helpdesk, ', $by[1] );
+		$this->assertStringNotContainsString( 'from', $by[2] );
+		$this->assertStringStartsWith( 'Ada Admin, ', $by[2] );
+	}
+
+	/**
+	 * The form has a labelled, described snooze field.
+	 */
+	public function test_the_form_has_a_snooze_field() {
+		$xpath = $this->tab();
+
+		$this->assertSame( 1, $xpath->query( '//label[@for="sc-wpun-mute-snooze-until"]' )->length );
+		$input = $xpath->query( '//input[@type="datetime-local"][@id="sc-wpun-mute-snooze-until"][@name="snooze_until"]' )->item( 0 );
+		$this->assertNotNull( $input );
+		$this->assertSame( 1, $xpath->query( '//*[@id="' . $input->getAttribute( 'aria-describedby' ) . '"]' )->length );
+	}
+
+	/**
+	 * A valid time snoozes in the site's timezone; with Skip it bounds the skip; empty is no expiry.
+	 */
+	public function test_adding_a_snooze() {
+		update_option( 'timezone_string', 'Europe/Berlin' );
+		$base = array(
+			'item' => 'plugin:hello.php',
+			'mode' => 'always',
+		);
+
+		$this->submit( Muted_Tab::ADD_ACTION, $base + array( 'snooze_until' => '2036-06-01T09:30' ), Muted_Tab::ADD_ACTION );
+		$mute = sc_wpun_mutes()->get( 'plugin', 'hello.php' );
+		$this->assertSame( gmmktime( 7, 30, 0, 6, 1, 2036 ), $mute->get_expires() );
+		$this->assertTrue( $mute->is_always() );
+		$this->assertSame( 'settings', $mute->get_source() );
+		$this->assertStringContainsString( 'are snoozed until', $this->notice()['message'] );
+
+		sc_wpun_mutes()->unmute( 'plugin', 'hello.php' );
+		$this->submit(
+			Muted_Tab::ADD_ACTION,
+			array_merge(
+				$base,
+				array(
+					'mode'         => 'skip',
+					'snooze_until' => '2036-06-01T09:30:15',
+				)
+			),
+			Muted_Tab::ADD_ACTION
+		); // phpcs:ignore WordPress.Arrays.MultipleStatementAlignment
+		$mute = sc_wpun_mutes()->get( 'plugin', 'hello.php' );
+		$this->assertSame( '2.0.0', $mute->get_until() );
+		$this->assertSame( gmmktime( 7, 30, 15, 6, 1, 2036 ), $mute->get_expires() );
+		$this->assertStringContainsString( 'skipped, until', $this->notice()['message'] );
+
+		sc_wpun_mutes()->unmute( 'plugin', 'hello.php' );
+		$this->submit( Muted_Tab::ADD_ACTION, $base + array( 'snooze_until' => '' ), Muted_Tab::ADD_ACTION );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_expires() );
+	}
+
+	/**
+	 * A past or unparsable time shows an error and saves nothing.
+	 */
+	public function test_a_bad_snooze_time_saves_nothing() {
+		foreach ( array(
+			'past'       => '2001-01-01T10:00',
+			'garbage'    => 'next tuesday',
+			'impossible' => '2036-02-31T10:00',
+			'date only'  => '2036-06-01',
+			'bad month'  => '2036-13-01T10:00',
+		) as $name => $value ) {
+			$this->submit(
+				Muted_Tab::ADD_ACTION,
+				array(
+					'item'         => 'plugin:hello.php',
+					'mode'         => 'always',
+					'snooze_until' => $value,
+				),
+				Muted_Tab::ADD_ACTION
+			);
+			$notice = $this->notice();
+			$this->assertFalse( $notice['success'], $name );
+			$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ), $name );
+		}
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 	}
 }

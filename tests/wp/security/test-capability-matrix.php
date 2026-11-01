@@ -174,7 +174,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		foreach ( $this->actions() as $name => $action ) {
 			$this->assertArrayHasKey( 'admin_post_' . $action, $found, "Endpoint $name was not discovered." );
 		}
-		$this->assertCount( 12, $found, 'The plugin registers twelve admin-post endpoints: ' . implode( ', ', array_keys( $found ) ) );
+		$this->assertCount( 13, $found, 'The plugin registers thirteen admin-post endpoints: ' . implode( ', ', array_keys( $found ) ) );
 	}
 
 	/**
@@ -242,6 +242,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 			'mute'      => Plugins_Screen_Mutes::MUTE_ACTION,
 			'unmute'    => Plugins_Screen_Mutes::UNMUTE_ACTION,
 			'skip'      => Plugins_Screen_Mutes::SKIP_ACTION,
+			'snooze'    => Plugins_Screen_Mutes::SNOOZE_ACTION,
 			'muted_add' => Muted_Tab::ADD_ACTION,
 			'muted_del' => Muted_Tab::REMOVE_ACTION,
 		);
@@ -409,6 +410,24 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 				),
 				function () {
 					$this->assertSame( '2.0.0', sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_until(), 'The version was not skipped.' );
+				},
+				null,
+				'hello.php'
+			),
+			$row(
+				$actions['snooze'],
+				'GET',
+				$actions['snooze'] . '|plugin|%s|' . WEEK_IN_SECONDS,
+				true,
+				array(
+					'type'    => 'plugin',
+					'key'     => 'hello.php',
+					'seconds' => (string) WEEK_IN_SECONDS,
+				),
+				function () {
+					$mute = sc_wpun_mutes()->get( 'plugin', 'hello.php' );
+					$this->assertNotNull( $mute, 'The plugin was not snoozed.' );
+					$this->assertNotNull( $mute->get_expires(), 'The snooze has no end.' );
 				},
 				null,
 				'hello.php'

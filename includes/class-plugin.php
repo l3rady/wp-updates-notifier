@@ -742,6 +742,7 @@ class Plugin {
 		add_action( 'admin_post_' . Plugins_Screen_Mutes::MUTE_ACTION, array( $this->plugins_screen_mutes(), 'handle_mute' ) ); // Mute a plugin for good.
 		add_action( 'admin_post_' . Plugins_Screen_Mutes::UNMUTE_ACTION, array( $this->plugins_screen_mutes(), 'handle_unmute' ) ); // Unmute a plugin.
 		add_action( 'admin_post_' . Plugins_Screen_Mutes::SKIP_ACTION, array( $this->plugins_screen_mutes(), 'handle_skip' ) ); // Skip the waiting version of a plugin.
+		add_action( 'admin_post_' . Plugins_Screen_Mutes::SNOOZE_ACTION, array( $this->plugins_screen_mutes(), 'handle_snooze' ) ); // Snooze a plugin for a while.
 		add_action( 'admin_post_' . Muted_Tab::ADD_ACTION, array( $this->muted_tab(), 'handle_add' ) ); // Mute a plugin or theme from the Muted tab.
 		add_action( 'admin_post_' . Muted_Tab::REMOVE_ACTION, array( $this->muted_tab(), 'handle_remove' ) ); // Unmute from the Muted tab.
 	}

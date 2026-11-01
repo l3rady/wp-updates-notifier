@@ -109,10 +109,11 @@ class Mute_Actions {
 	 * @param string      $source   Where the request came from, for the `sc_wpun_item_muted` action.
 	 * @param bool        $skip     Whether to skip the waiting version instead of muting for good.
 	 * @param string|null $expected The version the user saw when asking to skip it; null for any.
+	 * @param int|null    $expires  When the mute ends, as a Unix timestamp (a snooze); null for no time limit.
 	 *
 	 * @return array{0: bool, 1: string} Whether it worked, and the text for the user.
 	 */
-	public function mute( string $type, string $key, string $source, bool $skip = false, ?string $expected = null ): array {
+	public function mute( string $type, string $key, string $source, bool $skip = false, ?string $expected = null, ?int $expires = null ): array {
 		$name = $this->installed()[ $type ][ $key ] ?? null;
 		if ( null === $name ) {
 			return array( false, __( 'That plugin or theme is not installed.', 'wp-updates-notifier' ) );
@@ -131,9 +132,20 @@ class Mute_Actions {
 			}
 		}
 
-		$result = $this->store->mute( $type, $key, $until, $source );
+		$result = $this->store->mute( $type, $key, $until, $source, $expires );
 		if ( is_wp_error( $result ) ) {
 			return array( false, $result->get_error_message() );
+		}
+
+		if ( null !== $expires ) {
+			$when = Settings_Page::format_site_time( $expires );
+			if ( null === $until ) {
+				// translators: 1: Name of the plugin or theme. 2: Date and time.
+				return array( true, sprintf( __( 'Update notifications for %1$s are snoozed until %2$s.', 'wp-updates-notifier' ), $name, $when ) );
+			}
+
+			// translators: 1: Name of the plugin or theme. 2: Version that is skipped. 3: Date and time.
+			return array( true, sprintf( __( 'Update notifications for %1$s version %2$s are skipped, until %3$s at the latest.', 'wp-updates-notifier' ), $name, $until, $when ) );
 		}
 
 		if ( null === $until ) {

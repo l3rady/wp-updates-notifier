@@ -724,8 +724,8 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 		sc_wpun_mutes()->mute( 'plugin', 'hello.php', '2.0.0' );
 
 		$out = $this->run_command( 'muted' );
-		$this->assertStringContainsString( "type\tname\tkey\tmute\tset_in_code\tmuted_by\tmuted_at\tupdate", $out );
-		$this->assertMatchesRegularExpression( '/plugin\tHello Dolly\thello\.php\tversion 2\.0\.0\tno\tmuter\t\d{4}-\d\d-\d\d [^\t]+\t2\.0\.0/', $out );
+		$this->assertStringContainsString( "type\tname\tkey\tmute\texpires\tset_in_code\tmuted_by\tsource\tmuted_at\tupdate", $out );
+		$this->assertMatchesRegularExpression( '/plugin\tHello Dolly\thello\.php\tversion 2\.0\.0\t\tno\tmuter\tapi\t\d{4}-\d\d-\d\d [^\t]+\t2\.0\.0/', $out );
 
 		WP_CLI::reset();
 		$this->assertSame( '1', $this->run_command( 'muted', array( 'format' => 'count' ) ) );
@@ -738,5 +738,158 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 		WP_CLI::reset();
 		$data = json_decode( $this->run_command( 'status', array( 'format' => 'json' ) ), true );
 		$this->assertSame( 'hello.php', $data['muted'][0]['key'] );
+		$this->assertArrayHasKey( 'expires', $data['muted'][0] );
+		$this->assertNull( $data['muted'][0]['expires'] );
+		$this->assertSame( 'api', $data['muted'][0]['source'] );
+	}
+
+	// Snoozing (#346).
+
+	/**
+	 * --for takes hours, days and weeks.
+	 *
+	 * @dataProvider data_for
+	 *
+	 * @param string $duration Value of --for.
+	 * @param int    $seconds Length it means.
+	 */
+	public function test_mute_for( $duration, $seconds ) {
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+		$before = time();
+
+		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'for' => $duration ) ) );
+
+		$mute = sc_wpun_mutes()->get( 'plugin', 'hello.php' );
+		$this->assertGreaterThanOrEqual( $before + $seconds, $mute->get_expires() );
+		$this->assertLessThanOrEqual( time() + $seconds, $mute->get_expires() );
+		$this->assertTrue( $mute->is_always() );
+		$this->assertSame( 'cli', $mute->get_source() );
+		$this->assertStringContainsString( 'snoozed until', WP_CLI::text() );
+	}
+
+	/**
+	 * Cases.
+	 *
+	 * @return array
+	 */
+	public function data_for() {
+		return array(
+			'hours' => array( '12h', 12 * HOUR_IN_SECONDS ),
+			'days'  => array( '3d', 3 * DAY_IN_SECONDS ),
+			'weeks' => array( '2w', 2 * WEEK_IN_SECONDS ),
+			'one'   => array( '1d', DAY_IN_SECONDS ),
+		);
+	}
+
+	/**
+	 * A wrong --for is an error and saves nothing.
+	 */
+	public function test_mute_for_bad_values() {
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+		foreach ( array( '0d', '5m', 'abc', '', 'd', '-1d', '1.5d', '1 d', '1D', '1000000d' ) as $bad ) {
+			$this->assertNotNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'for' => $bad ) ), "'$bad' was accepted." );
+		}
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
+	}
+
+	/**
+	 * --until-date is read in the site's timezone, as a date or a date and time.
+	 */
+	public function test_mute_until_date_in_the_site_timezone() {
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+		update_option( 'timezone_string', 'Europe/Berlin' );
+
+		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'until-date' => '2036-06-01 09:30' ) ) );
+		$this->assertSame( gmmktime( 7, 30, 0, 6, 1, 2036 ), sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_expires() );
+
+		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'until-date' => '2036-06-02' ) ) );
+		$this->assertSame( gmmktime( 22, 0, 0, 6, 1, 2036 ), sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_expires(), 'The start of the day in Berlin.' );
+	}
+
+	/**
+	 * A past, wrong or doubled date is an error and saves nothing.
+	 */
+	public function test_mute_until_date_bad_values() {
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+		foreach ( array( '2001-01-01', '2001-01-01 10:00', 'tomorrow', '', '2036-02-31', '2036-6-1', '2036-06-01 25:00', '01/06/2036' ) as $bad ) {
+			$this->assertNotNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'until-date' => $bad ) ), "'$bad' was accepted." );
+		}
+		$error = $this->fails_with(
+			'mute',
+			array( 'plugin', 'hello' ),
+			array(
+				'for'        => '1d',
+				'until-date' => '2036-06-01',
+			)
+		);
+		$this->assertStringContainsString( 'not both', (string) $error );
+		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
+	}
+
+	/**
+	 * A snooze combines with --until-next-version.
+	 */
+	public function test_mute_snooze_with_until_next_version() {
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+		$this->waiting();
+
+		$this->assertNull(
+			$this->fails_with(
+				'mute',
+				array( 'plugin', 'hello' ),
+				array(
+					'until-next-version' => true,
+					'for'                => '1w',
+				)
+			)
+		);
+		$mute = sc_wpun_mutes()->get( 'plugin', 'hello.php' );
+		$this->assertSame( '2.0.0', $mute->get_until() );
+		$this->assertEqualsWithDelta( time() + WEEK_IN_SECONDS, $mute->get_expires(), 5 );
+
+		$this->assertNull(
+			$this->fails_with(
+				'mute',
+				array( 'plugin', 'hello' ),
+				array(
+					'until-next-version' => true,
+					'until-date'         => '2036-06-01',
+				)
+			)
+		);
+		$this->assertSame( '2.0.0', sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_until() );
+		$this->assertGreaterThan( time() + YEAR_IN_SECONDS, sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_expires() );
+	}
+
+	/**
+	 * Snoozing an item that is muted for good changes it, and the same snooze is not a warning only when it differs.
+	 */
+	public function test_mute_snooze_replaces_a_plain_mute() {
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+
+		$this->assertNull( $this->fails_with( 'mute', array( 'plugin', 'hello' ), array( 'for' => '1d' ) ) );
+		$this->assertNotNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_expires() );
+		$this->assertStringNotContainsString( 'already muted', WP_CLI::text() );
+	}
+
+	/**
+	 * The muted list and the status JSON carry the expiry and source.
+	 */
+	public function test_muted_list_shows_expires_and_source() {
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+		update_option( 'timezone_string', 'Europe/Berlin' );
+		$expires = gmmktime( 7, 30, 0, 6, 1, 2036 );
+		$this->waiting();
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php', null, 'helpdesk', $expires );
+
+		$out = $this->run_command( 'muted' );
+		$this->assertStringContainsString( "mute\texpires\tset_in_code\tmuted_by\tsource", $out );
+		$this->assertMatchesRegularExpression( '/\talways\t2036-06-01 09:30:00 CEST\tno\t[^\t]*\thelpdesk\t/', $out );
+
+		WP_CLI::reset();
+		$data = json_decode( $this->run_command( 'status', array( 'format' => 'json' ) ), true );
+		$this->assertSame( $expires, $data['muted'][0]['expires'] );
+		$this->assertSame( 'helpdesk', $data['muted'][0]['source'] );
 	}
 }
