@@ -4366,6 +4366,8 @@ one of its keys falls back to the built-in default.</p>
 <h3 id="sc_wpun_get_options_filter"><code>sc_wpun_get_options_filter</code><a class="headerlink" href="#sc_wpun_get_options_filter" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 1.4.0</p>
 <p>Filters a setting option of the plugin after it is read.</p>
+<p>When the plugin runs for a network (see <code>sc_wpun_is_network()</code>), the options are network
+options, under the same names.</p>
 <table>
 <thead>
 <tr>
@@ -4413,6 +4415,8 @@ yes or on), so variables a host happens to set never change the plugin's behavio
 <h3 id="sc_wpun_put_options_filter"><code>sc_wpun_put_options_filter</code><a class="headerlink" href="#sc_wpun_put_options_filter" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 1.4.0</p>
 <p>Filters a setting option of the plugin before it is stored.</p>
+<p>When the plugin runs for a network (see <code>sc_wpun_is_network()</code>), the options are network
+options, under the same names.</p>
 <table>
 <thead>
 <tr>
