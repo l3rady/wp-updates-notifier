@@ -360,7 +360,7 @@ class Update_Checker {
 					}
 					$channels[ $id ]['notified'][ $type ] = $waiting;
 					foreach ( array_keys( array_intersect_key( $waiting, $snoozed[ $type ] ?? array() ) ) as $key ) {
-						$channels[ $id ]['notified_meta'][ $type ][ $key ]            = $channels[ $id ]['notified_meta'][ $type ][ $key ] ?? array(
+						$channels[ $id ]['notified_meta'][ $type ][ $key ]          ??= array(
 							'name'            => '',
 							'current_version' => '',
 							'links'           => array(),
