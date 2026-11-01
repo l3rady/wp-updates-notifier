@@ -276,7 +276,8 @@ class Test_Network_Admin extends WPUN_Test_Case {
 
 		ob_start();
 		sc_wpun()->check_now()->render();
-		$this->assertStringContainsString( esc_attr( $this->network_url( 'channels' ) ), (string) ob_get_clean() );
+		// Decoded, as wp_kses() writes the & of the link as &#038; on WordPress 6.7 and as &amp; on 7.1.
+		$this->assertStringContainsString( 'href="' . $this->network_url( 'channels' ) . '"', html_entity_decode( (string) ob_get_clean(), ENT_QUOTES ) );
 
 		ob_start();
 		$this->call( sc_wpun()->muted_tab(), 'render_empty' );
