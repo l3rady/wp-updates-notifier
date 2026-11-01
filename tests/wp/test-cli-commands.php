@@ -25,24 +25,47 @@ class Test_Cli_Channel extends Test_Channel {
 	public $constraint = '';
 
 	/**
+	 * Whether the fields carry a `group` and an `applies_when`.
+	 *
+	 * @var bool
+	 */
+	public $grouped = false;
+
+	/**
 	 * Add a secret and a plain field to the fields of the test channel.
 	 *
 	 * @return array
 	 */
 	public function get_fields(): array {
+		$extra = $this->grouped
+			? array(
+				'group'        => 'main',
+				'applies_when' => array( 'behaviour' => 'succeed' ),
+			)
+			: array();
+
 		return array_merge(
 			parent::get_fields(),
 			array(
 				'token' => array(
 					'type'  => 'secret',
 					'label' => 'Token',
-				),
+				) + $extra,
 				'note'  => array(
 					'type'  => 'text',
 					'label' => 'Note',
-				),
+				) + $extra,
 			)
 		);
+	}
+
+	/**
+	 * A group, when the fields use one.
+	 *
+	 * @return array
+	 */
+	public function get_field_groups(): array {
+		return $this->grouped ? array( 'main' => array( 'label' => 'Main' ) ) : array();
 	}
 
 	/**
@@ -413,6 +436,40 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 		$this->assertMatchesRegularExpression( '/plugin\t[^\t]*\t[^\t]*\t2\.0\.0\tnotified\tno/', $out );
 		$this->assertMatchesRegularExpression( '/core\tWordPress\t[^\t]*\t99\.0\.0\tnew\tno/', $out );
 		$this->assertStringContainsString( 'never', $out );
+	}
+
+	/**
+	 * Fields with a `group` and an `applies_when` change neither the status nor the channels list.
+	 */
+	public function test_groups_and_conditions_do_not_change_the_output() {
+		$this->add( 'a' );
+		$this->waiting();
+
+		$plain                  = $this->listings();
+		$this->channel->grouped = true;
+		$grouped                = $this->listings();
+
+		$this->assertStringContainsString( "token\tset\tdatabase", $plain['status'] );
+		$this->assertSame( $plain, $grouped );
+	}
+
+	/**
+	 * The status table, the JSON status and the channels list, each from a clean output.
+	 *
+	 * @return array<string, string>
+	 */
+	private function listings(): array {
+		$out = array();
+
+		WP_CLI::reset();
+		$out['status'] = $this->run_command( 'status' );
+		WP_CLI::reset();
+		$out['json'] = $this->run_command( 'status', array( 'format' => 'json' ) );
+		WP_CLI::reset();
+		( new Channels_Command() )->list_( array(), array( 'format' => 'json' ) );
+		$out['channels'] = WP_CLI::text();
+
+		return $out;
 	}
 
 	/**

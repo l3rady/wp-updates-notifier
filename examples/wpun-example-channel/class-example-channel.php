@@ -116,11 +116,28 @@ class Example_Channel extends Channel {
 				'secret'      => true,
 			),
 			// An ordinary optional field. The sanitiser keeps what the user typed free of tags and line breaks.
+			// `group` draws it inside the group declared by get_field_groups(). A field can also say when it is used, for example
+			// `'applies_when' => array( 'mode' => 'app' )`: it then gets a note, and `required` is enforced only when the condition holds.
 			'username'    => array(
+				'group'             => 'appearance',
 				'type'              => 'text',
 				'label'             => __( 'Name to post as', 'wpun-example-channel' ),
 				'description'       => __( 'Optional. Leave empty to use the name set up in the chat service.', 'wpun-example-channel' ),
 				'sanitize_callback' => 'sanitize_text_field',
+			),
+		);
+	}
+
+	/**
+	 * The groups the fields can be split in. A long form is easier to read as a few labelled groups.
+	 * A group is a fieldset with a legend, and `'collapsed' => true` would draw it closed.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function get_field_groups(): array {
+		return array(
+			'appearance' => array(
+				'label' => __( 'Appearance', 'wpun-example-channel' ),
 			),
 		);
 	}

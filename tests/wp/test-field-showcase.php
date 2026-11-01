@@ -166,6 +166,7 @@ class Test_Field_Showcase extends WPUN_Test_Case {
 		return array_merge(
 			array(
 				'text_required'       => 'Text',
+				'advanced_required'   => 'Text',
 				'url_required'        => 'https://example.org',
 				'email_list_required' => 'ops@example.org',
 				'secret_required'     => 'secret',

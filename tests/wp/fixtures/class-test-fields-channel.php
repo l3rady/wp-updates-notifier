@@ -31,6 +31,13 @@ class Test_Fields_Channel extends Channel {
 	private $fields;
 
 	/**
+	 * Field groups.
+	 *
+	 * @var array
+	 */
+	private $groups;
+
+	/**
 	 * What the channel received: instance id => notifications.
 	 *
 	 * @var array
@@ -42,10 +49,12 @@ class Test_Fields_Channel extends Channel {
 	 *
 	 * @param string $type   Channel type.
 	 * @param array  $fields Field schema.
+	 * @param array  $groups Field groups.
 	 */
-	public function __construct( $type, array $fields ) {
+	public function __construct( $type, array $fields, array $groups = array() ) {
 		$this->type   = $type;
 		$this->fields = $fields;
+		$this->groups = $groups;
 	}
 
 	/**
@@ -73,6 +82,15 @@ class Test_Fields_Channel extends Channel {
 	 */
 	public function get_fields(): array {
 		return $this->fields;
+	}
+
+	/**
+	 * Field groups.
+	 *
+	 * @return array
+	 */
+	public function get_field_groups(): array {
+		return $this->groups;
 	}
 
 	/**

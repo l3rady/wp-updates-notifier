@@ -29,3 +29,20 @@ test( 'axe: form after a failed save', async ( { page } ) => {
 	expect( violations, `${ violations.length } axe violation(s) on the form after a failed save\n\n${ describe( violations ) }\n` ).toEqual( [] );
 	expect( errors, 'console errors after a failed save' ).toEqual( [] );
 } );
+
+test( 'axe: field showcase with its collapsed group open', async ( { page } ) => {
+	const errors = watchConsole( page );
+	await page.goto( `${ CHANNELS }&action=edit&id=e2e_showcase` );
+
+	// The group is closed until its summary is activated. Its summary is the control, so a click is what a user does.
+	const details = page.locator( 'details.sc-wpun-field-group-details' );
+	await expect( details ).toBeVisible();
+	await expect( details ).not.toHaveAttribute( 'open', /.*/ );
+	await details.locator( 'summary' ).click();
+	await expect( details ).toHaveAttribute( 'open', /.*/ );
+	await expect( details.locator( 'input[name="settings[advanced_required]"]' ) ).toBeVisible();
+
+	const violations = await scan( page );
+	expect( violations, `${ violations.length } axe violation(s) on the showcase with the collapsed group open\n\n${ describe( violations ) }\n` ).toEqual( [] );
+	expect( errors, 'console errors on the showcase with the collapsed group open' ).toEqual( [] );
+} );

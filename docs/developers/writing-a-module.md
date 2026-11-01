@@ -87,6 +87,7 @@ The optional methods:
 | --- | --- | --- |
 | `get_description()` | empty | Describe the channel in one sentence on the "Add channel" screen. |
 | `get_fields()` | no fields | Describe the settings of an instance. See step 3. |
+| `get_field_groups()` | no groups | Split the fields of a long form into groups. See [Groups and conditional fields](#groups-and-conditional-fields). |
 | `get_api_constraint()` | empty: no check | Declare the API versions the channel needs, for example `'^1.0'`. The registry refuses the channel on a site whose API does not satisfy it. See "Declare the API version you need" below. |
 | `supports( $feature )` | false | Return true for `test_message` to get a "Send test message" button. |
 | `validate_settings( $settings, $stored )` | checks every field against its schema | Add checks that span several fields. Call `parent::validate_settings()` first. |
@@ -131,6 +132,55 @@ The types are `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `bool
 A field with `'required' => true` is also marked in the form: "(required)" after its label (not for a `boolean`, which is always valid) and `aria-required="true"` on its control. For a group of radio buttons the fieldset gets `role="radiogroup"` to carry it; a group of checkboxes has only the text. A `secret` that already has a saved value keeps the text but not the attribute, as leaving it empty is valid. A custom field type registered with `sc_wpun_field_types` receives the schema in its `render` callable, so read `required` there and do the same.
 
 Every instance also has a label, an on/off switch and routing (including the choice of reminders, see below). The plugin adds these; don't put them in `get_fields()`.
+
+### Groups and conditional fields
+
+A channel with many settings can sort them into groups (API 1.1.0). Declare the groups with `get_field_groups()` and put a field in one with its `group` key:
+
+```php
+public function get_field_groups(): array {
+	return array(
+		'endpoint' => array(
+			'label' => __( 'Endpoint', 'my-chat-channel' ),
+		),
+		'advanced' => array(
+			'label'       => __( 'Advanced', 'my-chat-channel' ),
+			'description' => __( 'Most sites can leave these as they are.', 'my-chat-channel' ),
+			'collapsed'   => true,
+		),
+	);
+}
+```
+
+- Fields without a group come first, then each group in the order you declare them, with its fields in schema order. A group with no fields is not drawn.
+- Each group is a fieldset with a legend and the description under it. A `collapsed` group is folded into a `<details>` element, and opens by itself when one of its fields has an error after a failed save.
+- A `group` that names no declared group draws the field without a group and raises a `_doing_it_wrong` notice. Groups have one level: there are no groups inside groups.
+
+A field that is only used for some values of another field declares `applies_when`, a map of other field names to the value, or list of values, that make it apply:
+
+```php
+'app_token' => array(
+	'type'         => 'secret',
+	'label'        => __( 'App token', 'my-chat-channel' ),
+	'required'     => true,
+	'applies_when' => array( 'mode' => 'app' ),
+),
+'channel'   => array(
+	'type'         => 'text',
+	'label'        => __( 'Channel', 'my-chat-channel' ),
+	'applies_when' => array(
+		'mode'      => array( 'app', 'bot' ),
+		'broadcast' => false,
+	),
+),
+```
+
+- Every entry must match, and any value in a list matches. The value compared is the one submitted, else the stored one, else the default, cleaned by its field's type, so `true` and `'1'` match a ticked `boolean` and an `enum` compares its option key.
+- The field is always shown, without JavaScript, with a note such as "Used only when Mode is App." tied to the control. The note uses the label of the other field and the label of the option.
+- `required` is enforced only when the field applies. A value that is there is still validated, and it is kept when the field does not apply, so switching back restores it.
+- An `applies_when` entry that names an unknown field is ignored, with a `_doing_it_wrong` notice, so the field applies.
+
+Other plugins can change the groups with the `sc_wpun_channel_field_groups` filter and move fields with `sc_wpun_channel_fields`. If you override `validate_settings()` without calling the parent, as the email channel does, honour `applies_when` yourself.
 
 ### Reminders
 
@@ -357,7 +407,8 @@ Fields drawn from `get_fields()` get the accessible markup for free:
 - the `description` tied to the control with `aria-describedby`;
 - "(required)" after the label of a required field, and `aria-required="true"` on its control (a group of checkboxes only has the text; a saved secret keeps the text but not the attribute);
 - on an error, `aria-invalid="true"`, the message under the field with a bold "Error:", and a summary at the top of the form with a link to each field. The link goes to the first control of a group of radio buttons or checkboxes;
-- a note on a saved secret ("A value is saved. Leave this empty to keep it, ..."), a clear checkbox named after the field, and a "Set by ..." note, tied to the control, for a value that comes from a constant or an environment variable.
+- a note on a saved secret ("A value is saved. Leave this empty to keep it, ..."), a clear checkbox named after the field, and a "Set by ..." note, tied to the control, for a value that comes from a constant or an environment variable;
+- a fieldset with a legend for each group of fields, opened when a collapsed group holds an error, and a "Used only when ..." note, tied to the control, for a field with `applies_when`.
 
 A page title that starts with "Error:" after a failed save and the headings are the plugin's job too. Use `render_settings()` only when no schema field can do it.
 
