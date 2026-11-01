@@ -104,7 +104,7 @@ office  Office  email   available     yes      no            success, 2026-01-01
 
 **Exit code.** 0.
 
-In the JSON the sections are `settings`, `schedule`, `channels`, `muted` and `pending`. `muted` is a list with one entry for each mute, with the keys `type`, `key`, `name` (null if the item is not installed), `until` (null for an always-on mute), `from_code`, `time`, `user` (a user id, 0 if none) and `offered` (the version waiting, or null).
+In the JSON the sections are `settings`, `schedule`, `channels`, `muted` and `pending`. `muted` is a list with one entry for each mute, with the keys `type`, `key`, `name` (null if the item is not installed), `until` (null for an always-on mute), `from_code`, `time`, `user` (a user id, 0 if none), `offered` (the version waiting, or null), `expires` (when a snooze ends, as a Unix time, or null) and `source` (where the mute was set from, an empty string if not known).
 
 !!! note
     To find what is waiting, `status` does a dry run of the check. It sends and saves nothing, but it asks WordPress to refresh its update data, as `check --dry-run` does.
@@ -114,7 +114,7 @@ In the JSON the sections are `settings`, `schedule`, `channels`, `muted` and `pe
 Mutes plugins or themes, so the notifications leave them out. See [Muting a plugin or theme](muting.md) for what that does.
 
 ```
-wp updates-notifier mute <plugin|theme> <name>... [--until-next-version]
+wp updates-notifier mute <plugin|theme> <name>... [--until-next-version] [--for=<duration>] [--until-date=<date>]
 ```
 
 A plugin is named as for `wp plugin`: its directory name, its file for a single-file plugin, or its full file path from the plugins directory. A theme is named by its stylesheet. Names must be installed.
@@ -122,11 +122,18 @@ A plugin is named as for `wp plugin`: its directory name, its file for a single-
 | Option | What it does |
 | --- | --- |
 | `--until-next-version` | Skips only the version that is waiting now, so a newer version is notified again. It fails for an item with no update waiting. |
+| `--for=<duration>` | Snoozes for this long: a whole number and `h` (hours), `d` (days) or `w` (weeks), for example `12h`, `3d` or `2w`. Not with `--until-date`. |
+| `--until-date=<date>` | Snoozes until this date, as `YYYY-MM-DD` (the start of that day) or `YYYY-MM-DD HH:MM`, in the time zone of the site. It must be in the future. Not with `--for`. |
 
 ```
 wp updates-notifier mute plugin akismet hello.php
 wp updates-notifier mute theme twentytwentyfive --until-next-version
+wp updates-notifier mute plugin akismet --for=1w
+wp updates-notifier mute plugin akismet --until-date="2026-12-01 09:00"
+wp updates-notifier mute plugin akismet --until-next-version --for=2w
 ```
+
+A snooze ends by itself, and the update is sent again at the next check. With `--until-next-version` the mute ends at the first of the two. Using `--for` and `--until-date` together, a wrong value or a date in the past is an error, and nothing is changed.
 
 Muting an item that is already muted the same way is a warning, not an error. Every name is handled even if one fails. A mute that is set in code, or that a site's code refuses, is an error with the reason.
 
@@ -150,12 +157,12 @@ Lists the muted plugins and themes, including the ones set in code.
 wp updates-notifier muted [--format=<table|json|csv|yaml|count>]
 ```
 
-The columns are `type`, `name`, `key`, `mute` (`always` or `version X`), `set_in_code`, `muted_by` (a user name, empty if not known), `muted_at` and `update` (the version waiting, if any). `--format=count` prints only the number.
+The columns are `type`, `name`, `key`, `mute` (`always` or `version X`), `expires` (when a snooze ends, in the time zone of the site, empty if the mute has no end time), `set_in_code`, `muted_by` (a user name, empty if not known), `source` (where the mute was set from: `plugins_screen`, `settings`, `cli`, `api` or an add-on's name, empty if not known), `muted_at` and `update` (the version waiting, if any). `--format=count` prints only the number.
 
 ```
-type    name         key                           mute          set_in_code  muted_by  muted_at                 update
-plugin  Akismet      akismet/akismet.php           always        no           admin     2026-01-01 08:00:01 UTC
-plugin  Hello Dolly  hello.php                     version 1.7.3 no           admin     2026-01-01 08:05:12 UTC  1.7.3
+type    name         key                  mute          expires                  set_in_code  muted_by  source  muted_at                 update
+plugin  Akismet      akismet/akismet.php  always        2026-01-08 08:00:01 UTC  no           admin     cli     2026-01-01 08:00:01 UTC
+plugin  Hello Dolly  hello.php            version 1.7.3                          no           admin     cli     2026-01-01 08:05:12 UTC  1.7.3
 ```
 
 **Exit code.** 0.

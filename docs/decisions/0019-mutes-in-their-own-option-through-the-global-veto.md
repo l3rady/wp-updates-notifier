@@ -29,3 +29,4 @@ Site owners want to stop notifications about one plugin or theme: plugins pinned
 
 - [Issue #82](https://github.com/l3rady/wp-updates-notifier/issues/82): mute notifications for a plugin or theme. Based on an idea from Alley's fork (#39, pull request #41).
 - [ADR 0005](0005-settings-state-and-channels-in-separate-options.md) and [ADR 0009](0009-no-lock-against-overlapping-update-checks.md).
+- [ADR 0023](0023-snooze-time-checked-on-read-pruned-on-next-write.md): snoozes, which end by time and follow the same rule.

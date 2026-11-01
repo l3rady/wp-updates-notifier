@@ -18,6 +18,9 @@ $result = sc_wpun_mutes()->mute( 'plugin', 'noisy/noisy.php' );
 // Skip version 2.1.0 only. A newer version is notified again.
 $result = sc_wpun_mutes()->mute( 'plugin', 'noisy/noisy.php', '2.1.0' );
 
+// Snooze for a week: the fifth argument is a Unix time. A time that has passed is refused.
+$result = sc_wpun_mutes()->mute( 'plugin', 'noisy/noisy.php', null, 'api', time() + WEEK_IN_SECONDS );
+
 if ( is_wp_error( $result ) ) {
 	error_log( $result->get_error_message() );
 }
@@ -30,6 +33,39 @@ $mute = sc_wpun_mutes()->get( 'plugin', 'noisy/noisy.php' ); // Mute or null.
 The key is the one `Notification_Item::get_key()` returns: the plugin file or the theme stylesheet. Any type registered with `sc_wpun_item_types` can be muted, so an add-on's own item types can be too. WordPress core cannot be muted. The screens and WP-CLI offer plugins and themes only.
 
 A skip mute covers the stored version and anything not newer, by `version_compare()`. `Mute::applies_to( $offered )` tells you whether it still covers a version.
+
+## Snoozes
+
+A mute with an expiry is a snooze. The `Mute` has `get_expires()` (a Unix time, or null), `is_expired( $now = null )` (true from the expiry on) and `get_source()` (where it was set from, `''` for a mute stored before 3.0.0). `applies_to()` looks at the version only. The store checks the time.
+
+- `is_muted()` is false from the expiry on, and `get()` and `all()` leave the mute out. `find()` still returns it, which the update check uses.
+- A mute with a version and an expiry ends at whichever comes first.
+- Nothing is scheduled. The update check never writes the mutes. An expired snooze is removed the next time a mute is saved or removed.
+- While a snooze is in force the check forgets the item's reported version for every channel. When the snooze ends, the waiting version is sent again as new, or in a reminder that is due. Unmuting a snooze early does the same.
+
+`sc_wpun_snooze_durations` sets the lengths the Plugins screen offers, as `seconds => label`. The Plugins screen accepts only these lengths. Entries with other keys or empty labels are dropped.
+
+```php
+add_filter(
+	'sc_wpun_snooze_durations',
+	function ( $durations ) {
+		return array( 4 * HOUR_IN_SECONDS => __( '4 hours', 'my-plugin' ) ) + $durations;
+	}
+);
+```
+
+`Mute_Store::source_label( $source )` gives the name the Muted tab shows for a source. `sc_wpun_mute_source_label` changes it, for example for the name of an add-on.
+
+```php
+add_filter(
+	'sc_wpun_mute_source_label',
+	function ( $label, $source ) {
+		return 'helpdesk' === $source ? __( 'Helpdesk', 'my-plugin' ) : $label;
+	},
+	10,
+	2
+);
+```
 
 ## Define mutes in code
 
@@ -50,11 +86,35 @@ add_filter(
 );
 ```
 
-Use `'until' => '2.1.0'` to skip a version only. A stored mute cannot be hidden by this filter. To report an item that is muted, use `sc_wpun_should_notify_item`.
+Use `'until' => '2.1.0'` to skip a version only. Add `'expires'` with a Unix time to end the mute at that time, for example `'expires' => strtotime( '2026-12-01 09:00 UTC' )`. Use a fixed time: a `time() + …` in the filter moves the end on every request, so the mute never ends. A stored mute cannot be hidden by this filter. To report an item that is muted, use `sc_wpun_should_notify_item`.
 
 ## Apply a policy
 
-`sc_wpun_pre_mute` runs before a mute is saved. Return a `WP_Error` to refuse it. The message is shown on the screen or by WP-CLI. You may also return a changed `Mute`, for example to cap a long mute, if it is for the same item.
+`sc_wpun_pre_mute` runs before a mute is saved. Return a `WP_Error` to refuse it. The message is shown on the screen or by WP-CLI. You may also return a changed `Mute`, for example to cap a long mute, if it is for the same item. A mute that comes back already expired is refused.
+
+```php
+// No snooze longer than 30 days.
+add_filter(
+	'sc_wpun_pre_mute',
+	function ( $mute ) {
+		$latest = time() + 30 * DAY_IN_SECONDS;
+		if ( $mute instanceof \WPUN\Mute && null !== $mute->get_expires() && $mute->get_expires() > $latest ) {
+			return new \WPUN\Mute(
+				array(
+					'type'    => $mute->get_type(),
+					'key'     => $mute->get_key(),
+					'until'   => $mute->get_until(),
+					'time'    => $mute->get_time(),
+					'user'    => $mute->get_user_id(),
+					'source'  => $mute->get_source(),
+					'expires' => $latest,
+				)
+			);
+		}
+		return $mute;
+	}
+);
+```
 
 ```php
 add_filter(
@@ -116,15 +176,15 @@ add_action(
 );
 ```
 
-`sc_wpun_mute_ended` fires once when a skip mute stops applying because a newer version is offered. It can be missed: if someone saves or removes any mute after WordPress offers the newer version and before the next check, the ended mute is dropped first and the action does not fire. It receives the `Mute` and the `Notification_Item` with the newer version, and never fires in a dry run.
+`sc_wpun_mute_ended` fires once when a mute ends while an update is waiting. The third argument, `$reason`, is `version` when a newer version ended a skip mute, and `expired` when the time of a snooze passed. A mute that ended both ways is reported once, as `expired`. The check records it in the run state (`ended_snoozes` for a snooze), so it does not fire again. It can be missed: if someone saves or removes any mute after the mute ended and before the next check, the ended mute is dropped first and the action does not fire. The snoozed update is still sent again. It receives the `Mute`, the `Notification_Item` that is waiting and the reason, and never fires in a dry run.
 
 ```php
 add_action(
 	'sc_wpun_mute_ended',
-	function ( $mute, $item ) {
-		error_log( sprintf( '%s is no longer skipped: %s is out.', $item->get_name(), $item->get_new_version() ) );
+	function ( $mute, $item, $reason ) {
+		error_log( sprintf( '%s is no longer muted (%s): %s is out.', $item->get_name(), $reason, $item->get_new_version() ) );
 	},
 	10,
-	2
+	3
 );
 ```

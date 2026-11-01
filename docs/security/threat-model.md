@@ -103,6 +103,7 @@ which `Plugin` registers next to the notice. There are no `admin_post_nopriv_*`,
 | `sc_wpun_mute` | `Plugins_Screen_Mutes::handle_mute` | `sc_wpun_mute_plugin_<file>` | GET |
 | `sc_wpun_unmute` | `Plugins_Screen_Mutes::handle_unmute` | `sc_wpun_unmute_plugin_<file>` | GET |
 | `sc_wpun_skip` | `Plugins_Screen_Mutes::handle_skip` | `sc_wpun_skip_plugin_<file>_<version>` | GET |
+| `sc_wpun_snooze` | `Plugins_Screen_Mutes::handle_snooze` | `sc_wpun_snooze_plugin_<file>_<seconds>` | GET |
 | `sc_wpun_muted_add` | `Muted_Tab::handle_add` | `sc_wpun_muted_add` | POST |
 | `sc_wpun_muted_remove` | `Muted_Tab::handle_remove` | `sc_wpun_muted_remove_<type>_<key>` | POST |
 
@@ -118,10 +119,12 @@ and the plugin registers none. The Semgrep rule `wpun-no-nopriv-hooks` (`make sa
 | R | An administrator denies changing a channel. | Not addressed. WordPress has no audit log, and the plugin doesn't add one. Accepted for 2.0.0. | n/a |
 | D | Repeated Check now or test sends flood a mail service. | Capability and security token limit this to administrators, who are trusted. | As above. |
 
-The mute, unmute and skip actions on the Plugins screen are state-changing GET links, the one exception to the POST
+The mute, unmute, skip and snooze actions on the Plugins screen are state-changing GET links, the one exception to the POST
 rule. The plugin rows sit inside core's bulk-action form, and forms cannot be nested, so the links are like core's own
 Activate and Deactivate links. A link carries a security token for the action and the plugin, and the skip link also
-for the version it skips, so a token made for one plugin or version cannot act on another. The handlers read `$_GET`
+for the version it skips, so a token made for one plugin or version cannot act on another. The snooze link has the
+length in seconds in its token, and the handler accepts only a length that the `sc_wpun_snooze_durations` filter lists
+(never arbitrary seconds); it needs the same capability as mute. The handlers read `$_GET`
 only (fields sent by POST are refused), accept the `plugin` type only, and act only on installed plugins. They need
 the mute capability (`sc_wpun_mute_capability`, which defaults to the settings capability). The Plugins screen bulk
 actions run through core's own bulk form, which checks its security token, and the handler checks the mute

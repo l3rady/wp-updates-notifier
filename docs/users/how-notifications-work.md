@@ -40,7 +40,7 @@ To stop being told about minor WordPress releases, choose **Yes, but only major 
 
 A channel can repeat the updates you have not installed yet. Set **Reminders** to **Daily**, **Weekly** or **Every check** in the channel's [routing](channels.md#reminders). The default is **Never**.
 
-- A [muted](muting.md) plugin or theme is not in a reminder.
+- A [muted](muting.md) plugin or theme is not in a reminder. A snoozed one is left out too, and comes back after the snooze ends.
 - The reminder is one message listing all updates still waiting for that channel, not only the ones that were reported before. It is marked as a reminder (see below).
 - New updates are not held back. They are sent at once, as a normal message.
 - If a new update is found in the same check as a reminder that is due, you get one message: the reminder, with the new update in it. You never get two.

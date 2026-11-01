@@ -73,7 +73,7 @@ You are already not told about most of them. A scheduled check runs WordPress's 
 
 = How do I stop notifications for one plugin or theme? =
 
-Mute it. On the Plugins screen, click "Mute update notifications" under the plugin's name. When an update is waiting, "Don't notify me about this version" skips only that version. Themes are muted on the Muted tab of Settings > Updates Notifier, or with `wp updates-notifier mute`. A muted item is left out of every channel, and you can unmute it at any time.
+Mute it. On the Plugins screen, click "Mute update notifications" under the plugin's name. When an update is waiting, "Don't notify me about this version" skips only that version, and "Snooze" mutes it for 1 day, 1 week or 30 days, after which it is sent again. Themes are muted on the Muted tab of Settings > Updates Notifier, or with `wp updates-notifier mute` (add `--for=1w` to snooze). A muted item is left out of every channel, and you can unmute it at any time.
 
 = How do I send WordPress's automatic update emails to another address? =
 
