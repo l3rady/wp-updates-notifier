@@ -1148,6 +1148,8 @@
       
         
       
+        
+      
     
     
     
@@ -1818,6 +1820,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0023-snooze-time-checked-on-read-pruned-on-next-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0023 Snooze
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2194,14 +2224,14 @@ office  Office  email   available     yes      no            success, 2026-01-01
 </code></pre></div>
 <p><strong>Secrets are never shown.</strong> A secret setting, such as an API token or a webhook address, shows only <code>set</code> or <code>not set</code>, in the table and in the JSON. If the module of a channel instance is not available, its settings are not shown at all, because without the module the plugin can not tell which ones are secret.</p>
 <p><strong>Exit code.</strong> 0.</p>
-<p>In the JSON the sections are <code>settings</code>, <code>schedule</code>, <code>channels</code>, <code>muted</code> and <code>pending</code>. <code>muted</code> is a list with one entry for each mute, with the keys <code>type</code>, <code>key</code>, <code>name</code> (null if the item is not installed), <code>until</code> (null for an always-on mute), <code>from_code</code>, <code>time</code>, <code>user</code> (a user id, 0 if none) and <code>offered</code> (the version waiting, or null).</p>
+<p>In the JSON the sections are <code>settings</code>, <code>schedule</code>, <code>channels</code>, <code>muted</code> and <code>pending</code>. <code>muted</code> is a list with one entry for each mute, with the keys <code>type</code>, <code>key</code>, <code>name</code> (null if the item is not installed), <code>until</code> (null for an always-on mute), <code>from_code</code>, <code>time</code>, <code>user</code> (a user id, 0 if none), <code>offered</code> (the version waiting, or null), <code>expires</code> (when a snooze ends, as a Unix time, or null) and <code>source</code> (where the mute was set from, an empty string if not known).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>To find what is waiting, <code>status</code> does a dry run of the check. It sends and saves nothing, but it asks WordPress to refresh its update data, as <code>check --dry-run</code> does.</p>
 </div>
 <h2 id="mute">mute<a class="headerlink" href="#mute" title="Permanent link">&para;</a></h2>
 <p>Mutes plugins or themes, so the notifications leave them out. See <a href="../muting/">Muting a plugin or theme</a> for what that does.</p>
-<div class="highlight"><pre><span></span><code>wp updates-notifier mute &lt;plugin|theme&gt; &lt;name&gt;... [--until-next-version]
+<div class="highlight"><pre><span></span><code>wp updates-notifier mute &lt;plugin|theme&gt; &lt;name&gt;... [--until-next-version] [--for=&lt;duration&gt;] [--until-date=&lt;date&gt;]
 </code></pre></div>
 <p>A plugin is named as for <code>wp plugin</code>: its directory name, its file for a single-file plugin, or its full file path from the plugins directory. A theme is named by its stylesheet. Names must be installed.</p>
 <table>
@@ -2216,11 +2246,23 @@ office  Office  email   available     yes      no            success, 2026-01-01
 <td><code>--until-next-version</code></td>
 <td>Skips only the version that is waiting now, so a newer version is notified again. It fails for an item with no update waiting.</td>
 </tr>
+<tr>
+<td><code>--for=&lt;duration&gt;</code></td>
+<td>Snoozes for this long: a whole number and <code>h</code> (hours), <code>d</code> (days) or <code>w</code> (weeks), for example <code>12h</code>, <code>3d</code> or <code>2w</code>. Not with <code>--until-date</code>.</td>
+</tr>
+<tr>
+<td><code>--until-date=&lt;date&gt;</code></td>
+<td>Snoozes until this date, as <code>YYYY-MM-DD</code> (the start of that day) or <code>YYYY-MM-DD HH:MM</code>, in the time zone of the site. It must be in the future. Not with <code>--for</code>.</td>
+</tr>
 </tbody>
 </table>
 <div class="highlight"><pre><span></span><code>wp updates-notifier mute plugin akismet hello.php
 wp updates-notifier mute theme twentytwentyfive --until-next-version
+wp updates-notifier mute plugin akismet --for=1w
+wp updates-notifier mute plugin akismet --until-date="2026-12-01 09:00"
+wp updates-notifier mute plugin akismet --until-next-version --for=2w
 </code></pre></div>
+<p>A snooze ends by itself, and the update is sent again at the next check. With <code>--until-next-version</code> the mute ends at the first of the two. Using <code>--for</code> and <code>--until-date</code> together, a wrong value or a date in the past is an error, and nothing is changed.</p>
 <p>Muting an item that is already muted the same way is a warning, not an error. Every name is handled even if one fails. A mute that is set in code, or that a site's code refuses, is an error with the reason.</p>
 <p><strong>Exit codes.</strong> 0 when every name was handled. 1 when a name is not installed, there is no update to skip, or a mute was refused. The last line then says how many names failed.</p>
 <h2 id="unmute">unmute<a class="headerlink" href="#unmute" title="Permanent link">&para;</a></h2>
@@ -2232,10 +2274,10 @@ wp updates-notifier mute theme twentytwentyfive --until-next-version
 <p>Lists the muted plugins and themes, including the ones set in code.</p>
 <div class="highlight"><pre><span></span><code>wp updates-notifier muted [--format=&lt;table|json|csv|yaml|count&gt;]
 </code></pre></div>
-<p>The columns are <code>type</code>, <code>name</code>, <code>key</code>, <code>mute</code> (<code>always</code> or <code>version X</code>), <code>set_in_code</code>, <code>muted_by</code> (a user name, empty if not known), <code>muted_at</code> and <code>update</code> (the version waiting, if any). <code>--format=count</code> prints only the number.</p>
-<div class="highlight"><pre><span></span><code>type    name         key                           mute          set_in_code  muted_by  muted_at                 update
-plugin  Akismet      akismet/akismet.php           always        no           admin     2026-01-01 08:00:01 UTC
-plugin  Hello Dolly  hello.php                     version 1.7.3 no           admin     2026-01-01 08:05:12 UTC  1.7.3
+<p>The columns are <code>type</code>, <code>name</code>, <code>key</code>, <code>mute</code> (<code>always</code> or <code>version X</code>), <code>expires</code> (when a snooze ends, in the time zone of the site, empty if the mute has no end time), <code>set_in_code</code>, <code>muted_by</code> (a user name, empty if not known), <code>source</code> (where the mute was set from: <code>plugins_screen</code>, <code>settings</code>, <code>cli</code>, <code>api</code> or an add-on's name, empty if not known), <code>muted_at</code> and <code>update</code> (the version waiting, if any). <code>--format=count</code> prints only the number.</p>
+<div class="highlight"><pre><span></span><code>type    name         key                  mute          expires                  set_in_code  muted_by  source  muted_at                 update
+plugin  Akismet      akismet/akismet.php  always        2026-01-08 08:00:01 UTC  no           admin     cli     2026-01-01 08:00:01 UTC
+plugin  Hello Dolly  hello.php            version 1.7.3                          no           admin     cli     2026-01-01 08:05:12 UTC  1.7.3
 </code></pre></div>
 <p><strong>Exit code.</strong> 0.</p>
 <h2 id="channels-list">channels list<a class="headerlink" href="#channels-list" title="Permanent link">&para;</a></h2>

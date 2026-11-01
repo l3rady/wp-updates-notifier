@@ -532,10 +532,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-two-kinds-of-mute" class="md-nav__link">
+  <a href="#the-kinds-of-mute" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The two kinds of mute
+        The kinds of mute
       
     </span>
   </a>
@@ -550,6 +550,34 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#snoozing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Snoozing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Snoozing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-a-snooze-ends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When a snooze ends
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1069,6 +1097,8 @@
       
         
           
+        
+      
         
       
         
@@ -1785,6 +1815,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0023-snooze-time-checked-on-read-pruned-on-next-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0023 Snooze
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1970,10 +2028,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-two-kinds-of-mute" class="md-nav__link">
+  <a href="#the-kinds-of-mute" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The two kinds of mute
+        The kinds of mute
       
     </span>
   </a>
@@ -1988,6 +2046,34 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#snoozing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Snoozing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Snoozing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-a-snooze-ends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When a snooze ends
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2043,10 +2129,12 @@
 
 <h1 id="muting-a-plugin-or-theme">Muting a plugin or theme<a class="headerlink" href="#muting-a-plugin-or-theme" title="Permanent link">&para;</a></h1>
 <p>Muting stops the notifications about one plugin or theme. Use it for a plugin you keep on an old version on purpose, a plugin whose updates are paid for and handled elsewhere, or one that something else looks after.</p>
-<h2 id="the-two-kinds-of-mute">The two kinds of mute<a class="headerlink" href="#the-two-kinds-of-mute" title="Permanent link">&para;</a></h2>
+<h2 id="the-kinds-of-mute">The kinds of mute<a class="headerlink" href="#the-kinds-of-mute" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Always.</strong> Nothing about that plugin or theme is sent, until you unmute it.</li>
 <li><strong>Skip this version.</strong> Only for a plugin or theme that has an update waiting. The plugin remembers the version that is waiting now and says nothing about it. When a newer version is offered, the mute has ended and you are told about the newer version as usual.</li>
+<li><strong>Snooze.</strong> Nothing is sent until a time you choose, for example one week. Then the mute ends by itself and the update is sent again. See <a href="#snoozing">Snoozing</a>.</li>
+<li><strong>Skip this version, and snooze.</strong> The mute ends at the first of the two: when the time comes, or when a newer version is offered.</li>
 </ul>
 <p>A mute is global. A muted item goes to no channel. To keep an item from some channels only, use the channel's <a href="../channels/#choose-what-each-channel-receives">routing</a>.</p>
 <p>WordPress core cannot be muted. Use <strong>Notify about WordPress updates?</strong> on the <a href="../settings/#notify-about-wordpress-updates">General tab</a>, or the channel's routing.</p>
@@ -2057,17 +2145,33 @@
 <h2 id="how-to-mute">How to mute<a class="headerlink" href="#how-to-mute" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>On the Plugins screen.</strong> Each plugin has a <strong>Mute update notifications</strong> link under its name. When an update is waiting, the yellow update notice has <strong>Don't notify me about version X</strong>, which skips that version. A muted plugin says <strong>Update notifications muted</strong> and has an <strong>Unmute update notifications</strong> link instead. You can also tick plugins and use the bulk actions <strong>Mute update notifications</strong> and <strong>Unmute update notifications</strong>. The bulk actions mute for good.</li>
-<li><strong>On the Muted tab.</strong> Open <strong>Settings → Updates Notifier → Muted</strong>. The table lists everything that is muted: the name, the kind of mute, who muted it and when, and whether an update is waiting. Use <strong>Unmute</strong> to turn notifications back on. Under the table, pick a plugin or theme, choose <strong>Always</strong> or <strong>Skip the waiting version</strong>, and click the button to mute it.</li>
+<li><strong>On the Muted tab.</strong> Open <strong>Settings → Updates Notifier → Muted</strong>. The table lists everything that is muted: the name, the kind of mute, who muted it, where from and when, and whether an update is waiting. Use <strong>Unmute</strong> to turn notifications back on. Under the table, pick a plugin or theme, choose <strong>Always</strong> or <strong>Skip the waiting version</strong>, and click the button to mute it. To snooze, also fill in <strong>Snooze until</strong>.</li>
 <li><strong>With WP-CLI.</strong> See <a href="../wp-cli/#mute"><code>mute</code>, <code>unmute</code> and <code>muted</code></a>.</li>
 </ul>
-<p><strong>Themes</strong> can only be muted on the Muted tab or with WP-CLI, because the Themes screen has no place for the link.</p>
+<p><strong>Themes</strong> can only be muted or snoozed on the Muted tab or with WP-CLI, because the Themes screen has no place for the link.</p>
 <p>You need the same permission as for the settings screen, which is <code>manage_options</code> unless a developer changed it. People without it do not see the links. The links are protected by a security token, so a link someone sends you does nothing.</p>
+<h2 id="snoozing">Snoozing<a class="headerlink" href="#snoozing" title="Permanent link">&para;</a></h2>
+<p>A snooze mutes an item until a time. You do not have to remember to unmute it.</p>
+<ul>
+<li><strong>On the Plugins screen.</strong> When an update is waiting, the yellow update notice has <strong>Snooze:</strong> with a link for each length, by default <strong>1 day</strong>, <strong>1 week</strong> and <strong>30 days</strong>. If WordPress hides the notice from you, the links are in the plugin's details line instead. A snoozed plugin says <strong>Notifications snoozed until</strong> and the date, with an <strong>Undo</strong> link.</li>
+<li><strong>On the Muted tab.</strong> Fill in <strong>Snooze until</strong> with a date and time, in the time zone of the site, and click <strong>Mute</strong>. With <strong>Always</strong> it is a snooze. With <strong>Skip the waiting version</strong> the mute ends at that time or when a newer version is offered, whichever is first. Leave the field empty for no time limit. A time in the past is refused.</li>
+<li><strong>With WP-CLI.</strong> Use <code>--for</code> or <code>--until-date</code>. See <a href="../wp-cli/#mute"><code>mute</code></a>.</li>
+</ul>
+<p>The Muted tab shows <strong>Snoozed until</strong> and the date. A developer can change the lengths the Plugins screen offers. See <a href="../../developers/muting-from-code/">Muting from code</a>.</p>
+<h3 id="when-a-snooze-ends">When a snooze ends<a class="headerlink" href="#when-a-snooze-ends" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>The update is sent again at the next check.</strong> This is so even if you were told about that version before you snoozed.</li>
+<li><strong>It is back in reminders.</strong> While it is snoozed it is left out of them.</li>
+<li><strong>Unmuting a snooze early also sends it again at the next check.</strong></li>
+<li><strong>With Reminders set to Never,</strong> it is reported once, when the snooze ends.</li>
+<li><strong>An ended snooze is hidden at once.</strong> It is removed from the list of mutes the next time any mute is saved or removed. The update check does not change the mutes.</li>
+</ul>
 <h2 id="what-happens-to-a-muted-item">What happens to a muted item<a class="headerlink" href="#what-happens-to-a-muted-item" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>It still counts as waiting.</strong> The plugin keeps its record of what each channel was told. Muting does not forget anything.</li>
 <li><strong>Unmuting an item you were already told about does not send it again.</strong> If the update has not changed, the channel stays quiet.</li>
 <li><strong>Unmuting an item you were never told about sends it at the next check.</strong> That is the scheduled check, <strong>Check for updates and notify now</strong>, or <code>wp updates-notifier check</code>.</li>
-<li><strong>Reminders leave it out.</strong> A <a href="../how-notifications-work/#reminders">reminder</a> lists only the updates that are not muted.</li>
+<li><strong>Reminders leave it out.</strong> A <a href="../how-notifications-work/#reminders">reminder</a> lists only the updates that are not muted or snoozed.</li>
 <li><strong>Messages do not mention it.</strong> Muted items are listed on the Muted tab, in <code>wp updates-notifier status</code> and in the Site Health info (<strong>Tools → Site Health → Info → WP Updates Notifier</strong>).</li>
 <li><strong>A mute survives deactivating the plugin or theme.</strong> Deleting it removes its mute.</li>
 </ul>
@@ -2075,7 +2179,7 @@
 <p>Muting only affects this plugin's notifications. WordPress's own update notices in the dashboard, the update emails WordPress sends, and automatic updates are not touched. A muted plugin still shows its update in <strong>Dashboard → Updates</strong>, and is still updated if auto-updates are on for it.</p>
 <p>For updates that WordPress installs by itself, see <a href="../how-notifications-work/#updates-wordpress-installs-automatically">Updates WordPress installs automatically</a>. Scheduled checks do not report those. Mute a plugin or theme whose updates are handled outside WordPress.</p>
 <h2 id="mutes-set-in-code">Mutes set in code<a class="headerlink" href="#mutes-set-in-code" title="Permanent link">&para;</a></h2>
-<p>A developer can define mutes in code, for example in an mu-plugin. They work like the others and are listed on the Muted tab marked <strong>Set in code</strong>, but there is no <strong>Unmute</strong> for them. A developer can also refuse a mute, or refuse an unmute, and the message they gave is shown to you. See <a href="../../developers/muting-from-code/">Muting from code</a>.</p>
+<p>A developer can define mutes in code, for example in an mu-plugin. They work like the others and are listed on the Muted tab marked <strong>Set in code</strong>, but there is no <strong>Unmute</strong> for them. A mute set in code can also have an end time (<code>expires</code>), and then it stops by itself like a snooze. A developer can also refuse a mute, or refuse an unmute, and the message they gave is shown to you. See <a href="../../developers/muting-from-code/">Muting from code</a>.</p>
 
 
 

@@ -1475,6 +1475,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_mute_source_label" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_mute_source_label
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_mutes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1501,6 +1512,17 @@
     <span class="md-ellipsis">
       
         sc_wpun_pre_unmute
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_snooze_durations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_snooze_durations
       
     </span>
   </a>
@@ -1739,6 +1761,8 @@
       
         
           
+        
+      
         
       
         
@@ -2455,6 +2479,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0023-snooze-time-checked-on-read-pruned-on-next-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0023 Snooze
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3155,6 +3207,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_mute_source_label" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_mute_source_label
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_mutes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3181,6 +3244,17 @@
     <span class="md-ellipsis">
       
         sc_wpun_pre_unmute
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_snooze_durations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_snooze_durations
       
     </span>
   </a>
@@ -4607,12 +4681,13 @@ its forms need both. WP-CLI and the PHP API are not affected: they do not check 
 <p>Fired in <code>includes/admin/class-mute-actions.php</code>.</p>
 <h3 id="sc_wpun_mute_ended"><code>sc_wpun_mute_ended</code><a class="headerlink" href="#sc_wpun_mute_ended" title="Permanent link">&para;</a></h3>
 <p><em>Action</em>, since 3.0.0</p>
-<p>Fires once when a "skip this version" mute stops applying because a newer version is offered.</p>
+<p>Fires once when a mute ends while an update is waiting: a "skip this version" mute because a newer
+version is offered, or a snooze because its time has passed.</p>
 <p>The check records the ended mute in the run state, not in the stored mutes, so the action does
 not fire on later runs. It never fires in a dry run. If two checks overlap, it can fire twice;
 see ADR 0009. It can also not fire at all: saving or removing any mute drops the ended ones, so
-if that happens after WordPress offered the newer version and before the next check, the end is
-not reported.</p>
+if that happens after the mute ended and before the next check, the end is not reported.
+A mute that ended both ways at once is reported once, with <code>expired</code>.</p>
 <table>
 <thead>
 <tr>
@@ -4630,11 +4705,51 @@ not reported.</p>
 <tr>
 <td><code>$item</code></td>
 <td><code>Notification_Item</code></td>
-<td>The item with the newer version.</td>
+<td>The item that is waiting.</td>
+</tr>
+<tr>
+<td><code>$reason</code></td>
+<td><code>string</code></td>
+<td><code>version</code> when a newer version ended a "skip this version" mute, <code>expired</code> when the time of a snooze passed.</td>
 </tr>
 </tbody>
 </table>
 <p>Fired in <code>includes/class-update-checker.php</code>.</p>
+<h3 id="sc_wpun_mute_source_label"><code>sc_wpun_mute_source_label</code><a class="headerlink" href="#sc_wpun_mute_source_label" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters the name shown for where a mute was set from.</p>
+<p>Example, show "Helpdesk" for an add-on's slug:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_mute_source_label',</span>
+<span class="x">    function ( $label, $source ) {</span>
+<span class="x">        return 'helpdesk' === $source ? __( 'Helpdesk', 'my-plugin' ) : $label;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$label</code></td>
+<td><code>string</code></td>
+<td>The label. Empty for an unknown source.</td>
+</tr>
+<tr>
+<td><code>$source</code></td>
+<td><code>string</code></td>
+<td>The source as stored.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-mute-store.php</code>.</p>
 <h3 id="sc_wpun_mutes"><code>sc_wpun_mutes</code><a class="headerlink" href="#sc_wpun_mutes" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 3.0.0</p>
 <p>Filters the mutes, to define mutes in code.</p>
@@ -4646,6 +4761,8 @@ of the <code>core</code> type and mutes of a type that is not registered with <c
 When two mutes are for the same item, the later one wins. A stored mute cannot be hidden: one
 the returned list leaves out is put back, so use <code>sc_wpun_should_notify_item</code> to report an item
 that is muted.</p>
+<p>A mute can carry an <code>expires</code> time (a Unix timestamp) to end by itself, like a snooze, and a
+<code>source</code> that says where it came from. Once the time has passed the mute counts as ended.</p>
 <p>Example, mute a plugin for good:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_mutes',</span>
@@ -4683,13 +4800,35 @@ that is muted.</p>
 <p>Receives the mute, or the <code>WP_Error</code> that says why it is refused. Return a <code>WP_Error</code> to refuse
 it; the message is shown on the screen or by WP-CLI. A returned mute must be for the same item,
 and a refusal cannot be turned into a mute. Return a changed mute to, for example, cap how long
-a mute lasts.</p>
+a mute lasts. A mute whose <code>expires</code> has passed is refused, also when the filter made it so.</p>
 <p>Example, refuse muting a security plugin:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_pre_mute',</span>
 <span class="x">    function ( $mute ) {</span>
 <span class="x">        if ( $mute instanceof \WPUN\Mute &amp;&amp; 'security/security.php' === $mute-&gt;get_key() ) {</span>
 <span class="x">            return new \WP_Error( 'my_policy', 'Security updates must be reported.' );</span>
+<span class="x">        }</span>
+<span class="x">        return $mute;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<p>Example, cap a snooze at 30 days:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_pre_mute',</span>
+<span class="x">    function ( $mute ) {</span>
+<span class="x">        $latest = time() + 30 * DAY_IN_SECONDS;</span>
+<span class="x">        if ( $mute instanceof \WPUN\Mute &amp;&amp; null !== $mute-&gt;get_expires() &amp;&amp; $mute-&gt;get_expires() &gt; $latest ) {</span>
+<span class="x">            return new \WPUN\Mute(</span>
+<span class="x">                array(</span>
+<span class="x">                    'type'    =&gt; $mute-&gt;get_type(),</span>
+<span class="x">                    'key'     =&gt; $mute-&gt;get_key(),</span>
+<span class="x">                    'until'   =&gt; $mute-&gt;get_until(),</span>
+<span class="x">                    'time'    =&gt; $mute-&gt;get_time(),</span>
+<span class="x">                    'user'    =&gt; $mute-&gt;get_user_id(),</span>
+<span class="x">                    'source'  =&gt; $mute-&gt;get_source(),</span>
+<span class="x">                    'expires' =&gt; $latest,</span>
+<span class="x">                )</span>
+<span class="x">            );</span>
 <span class="x">        }</span>
 <span class="x">        return $mute;</span>
 <span class="x">    }</span>
@@ -4755,6 +4894,36 @@ than true refuses too. Deleting the plugin or theme removes its mute without ask
 <td><code>$source</code></td>
 <td><code>string</code></td>
 <td>Where the change came from: <code>plugins_screen</code>, <code>settings</code>, <code>cli</code> or <code>api</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-mute-store.php</code>.</p>
+<h3 id="sc_wpun_snooze_durations"><code>sc_wpun_snooze_durations</code><a class="headerlink" href="#sc_wpun_snooze_durations" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters the lengths of a snooze offered on the Plugins screen, the Muted tab and in WP-CLI.</p>
+<p>A list of seconds =&gt; label. Entries whose seconds are not a positive whole number or whose label is
+not a non-empty string are dropped. Only these lengths are accepted from the Plugins screen links.</p>
+<p>Example, offer 4 hours as well:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_snooze_durations',</span>
+<span class="x">    function ( $durations ) {</span>
+<span class="x">        return array( 4 * HOUR_IN_SECONDS =&gt; __( '4 hours', 'my-plugin' ) ) + $durations;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$durations</code></td>
+<td><code>array&lt;int, string&gt;</code></td>
+<td>Label by number of seconds.</td>
 </tr>
 </tbody>
 </table>

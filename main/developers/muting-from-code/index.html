@@ -915,6 +915,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#snoozes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Snoozes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#define-mutes-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1058,6 +1069,8 @@
       
         
           
+        
+      
         
       
         
@@ -1774,6 +1787,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0023-snooze-time-checked-on-read-pruned-on-next-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0023 Snooze
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1970,6 +2011,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#snoozes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Snoozes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#define-mutes-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2034,6 +2086,9 @@
 <span class="x">// Skip version 2.1.0 only. A newer version is notified again.</span>
 <span class="x">$result = sc_wpun_mutes()-&gt;mute( 'plugin', 'noisy/noisy.php', '2.1.0' );</span>
 
+<span class="x">// Snooze for a week: the fifth argument is a Unix time. A time that has passed is refused.</span>
+<span class="x">$result = sc_wpun_mutes()-&gt;mute( 'plugin', 'noisy/noisy.php', null, 'api', time() + WEEK_IN_SECONDS );</span>
+
 <span class="x">if ( is_wp_error( $result ) ) {</span>
 <span class="x">    error_log( $result-&gt;get_error_message() );</span>
 <span class="x">}</span>
@@ -2044,6 +2099,32 @@
 </code></pre></div>
 <p>The key is the one <code>Notification_Item::get_key()</code> returns: the plugin file or the theme stylesheet. Any type registered with <code>sc_wpun_item_types</code> can be muted, so an add-on's own item types can be too. WordPress core cannot be muted. The screens and WP-CLI offer plugins and themes only.</p>
 <p>A skip mute covers the stored version and anything not newer, by <code>version_compare()</code>. <code>Mute::applies_to( $offered )</code> tells you whether it still covers a version.</p>
+<h2 id="snoozes">Snoozes<a class="headerlink" href="#snoozes" title="Permanent link">&para;</a></h2>
+<p>A mute with an expiry is a snooze. The <code>Mute</code> has <code>get_expires()</code> (a Unix time, or null), <code>is_expired( $now = null )</code> (true from the expiry on) and <code>get_source()</code> (where it was set from, <code>''</code> for a mute stored before 3.0.0). <code>applies_to()</code> looks at the version only. The store checks the time.</p>
+<ul>
+<li><code>is_muted()</code> is false from the expiry on, and <code>get()</code> and <code>all()</code> leave the mute out. <code>find()</code> still returns it, which the update check uses.</li>
+<li>A mute with a version and an expiry ends at whichever comes first.</li>
+<li>Nothing is scheduled. The update check never writes the mutes. An expired snooze is removed the next time a mute is saved or removed.</li>
+<li>While a snooze is in force the check forgets the item's reported version for every channel. When the snooze ends, the waiting version is sent again as new, or in a reminder that is due. Unmuting a snooze early does the same.</li>
+</ul>
+<p><code>sc_wpun_snooze_durations</code> sets the lengths the Plugins screen offers, as <code>seconds =&gt; label</code>. The Plugins screen accepts only these lengths. Entries with other keys or empty labels are dropped.</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_snooze_durations',</span>
+<span class="x">    function ( $durations ) {</span>
+<span class="x">        return array( 4 * HOUR_IN_SECONDS =&gt; __( '4 hours', 'my-plugin' ) ) + $durations;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<p><code>Mute_Store::source_label( $source )</code> gives the name the Muted tab shows for a source. <code>sc_wpun_mute_source_label</code> changes it, for example for the name of an add-on.</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_mute_source_label',</span>
+<span class="x">    function ( $label, $source ) {</span>
+<span class="x">        return 'helpdesk' === $source ? __( 'Helpdesk', 'my-plugin' ) : $label;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
 <h2 id="define-mutes-in-code">Define mutes in code<a class="headerlink" href="#define-mutes-in-code" title="Permanent link">&para;</a></h2>
 <p><code>sc_wpun_mutes</code> adds mutes that no screen can remove. They apply like stored ones and are listed on the Muted tab, in <code>wp updates-notifier status</code> and in Site Health, marked as set in code. This suits an mu-plugin that an agency or Composer manages.</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
@@ -2059,9 +2140,31 @@
 <span class="x">    }</span>
 <span class="x">);</span>
 </code></pre></div>
-<p>Use <code>'until' =&gt; '2.1.0'</code> to skip a version only. A stored mute cannot be hidden by this filter. To report an item that is muted, use <code>sc_wpun_should_notify_item</code>.</p>
+<p>Use <code>'until' =&gt; '2.1.0'</code> to skip a version only. Add <code>'expires'</code> with a Unix time to end the mute at that time, for example <code>'expires' =&gt; strtotime( '2026-12-01 09:00 UTC' )</code>. Use a fixed time: a <code>time() + …</code> in the filter moves the end on every request, so the mute never ends. A stored mute cannot be hidden by this filter. To report an item that is muted, use <code>sc_wpun_should_notify_item</code>.</p>
 <h2 id="apply-a-policy">Apply a policy<a class="headerlink" href="#apply-a-policy" title="Permanent link">&para;</a></h2>
-<p><code>sc_wpun_pre_mute</code> runs before a mute is saved. Return a <code>WP_Error</code> to refuse it. The message is shown on the screen or by WP-CLI. You may also return a changed <code>Mute</code>, for example to cap a long mute, if it is for the same item.</p>
+<p><code>sc_wpun_pre_mute</code> runs before a mute is saved. Return a <code>WP_Error</code> to refuse it. The message is shown on the screen or by WP-CLI. You may also return a changed <code>Mute</code>, for example to cap a long mute, if it is for the same item. A mute that comes back already expired is refused.</p>
+<div class="highlight"><pre><span></span><code><span class="x">// No snooze longer than 30 days.</span>
+<span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_pre_mute',</span>
+<span class="x">    function ( $mute ) {</span>
+<span class="x">        $latest = time() + 30 * DAY_IN_SECONDS;</span>
+<span class="x">        if ( $mute instanceof \WPUN\Mute &amp;&amp; null !== $mute-&gt;get_expires() &amp;&amp; $mute-&gt;get_expires() &gt; $latest ) {</span>
+<span class="x">            return new \WPUN\Mute(</span>
+<span class="x">                array(</span>
+<span class="x">                    'type'    =&gt; $mute-&gt;get_type(),</span>
+<span class="x">                    'key'     =&gt; $mute-&gt;get_key(),</span>
+<span class="x">                    'until'   =&gt; $mute-&gt;get_until(),</span>
+<span class="x">                    'time'    =&gt; $mute-&gt;get_time(),</span>
+<span class="x">                    'user'    =&gt; $mute-&gt;get_user_id(),</span>
+<span class="x">                    'source'  =&gt; $mute-&gt;get_source(),</span>
+<span class="x">                    'expires' =&gt; $latest,</span>
+<span class="x">                )</span>
+<span class="x">            );</span>
+<span class="x">        }</span>
+<span class="x">        return $mute;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_pre_mute',</span>
 <span class="x">    function ( $mute, $source ) {</span>
@@ -2110,14 +2213,14 @@
 <span class="x">    2</span>
 <span class="x">);</span>
 </code></pre></div>
-<p><code>sc_wpun_mute_ended</code> fires once when a skip mute stops applying because a newer version is offered. It can be missed: if someone saves or removes any mute after WordPress offers the newer version and before the next check, the ended mute is dropped first and the action does not fire. It receives the <code>Mute</code> and the <code>Notification_Item</code> with the newer version, and never fires in a dry run.</p>
+<p><code>sc_wpun_mute_ended</code> fires once when a mute ends while an update is waiting. The third argument, <code>$reason</code>, is <code>version</code> when a newer version ended a skip mute, and <code>expired</code> when the time of a snooze passed. A mute that ended both ways is reported once, as <code>expired</code>. The check records it in the run state (<code>ended_snoozes</code> for a snooze), so it does not fire again. It can be missed: if someone saves or removes any mute after the mute ended and before the next check, the ended mute is dropped first and the action does not fire. The snoozed update is still sent again. It receives the <code>Mute</code>, the <code>Notification_Item</code> that is waiting and the reason, and never fires in a dry run.</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
 <span class="x">    'sc_wpun_mute_ended',</span>
-<span class="x">    function ( $mute, $item ) {</span>
-<span class="x">        error_log( sprintf( '%s is no longer skipped: %s is out.', $item-&gt;get_name(), $item-&gt;get_new_version() ) );</span>
+<span class="x">    function ( $mute, $item, $reason ) {</span>
+<span class="x">        error_log( sprintf( '%s is no longer muted (%s): %s is out.', $item-&gt;get_name(), $reason, $item-&gt;get_new_version() ) );</span>
 <span class="x">    },</span>
 <span class="x">    10,</span>
-<span class="x">    2</span>
+<span class="x">    3</span>
 <span class="x">);</span>
 </code></pre></div>
 

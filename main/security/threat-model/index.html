@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://wpun.cariss.dev/latest/security/threat-model/">
       
       
-        <link rel="prev" href="../../decisions/0022-remind-on-every-check/">
+        <link rel="prev" href="../../decisions/0023-snooze-time-checked-on-read-pruned-on-next-write/">
       
       
         <link rel="next" href="../ai-review-2.0.0/">
@@ -1011,6 +1011,8 @@
       
         
       
+        
+      
     
     
     
@@ -1668,6 +1670,34 @@
     
   
     0022 Remind on every check
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0023-snooze-time-checked-on-read-pruned-on-next-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0023 Snooze
   
 
     
@@ -2436,6 +2466,12 @@ which <code>Plugin</code> registers next to the notice. There are no <code>admin
 <td>GET</td>
 </tr>
 <tr>
+<td><code>sc_wpun_snooze</code></td>
+<td><code>Plugins_Screen_Mutes::handle_snooze</code></td>
+<td><code>sc_wpun_snooze_plugin_&lt;file&gt;_&lt;seconds&gt;</code></td>
+<td>GET</td>
+</tr>
+<tr>
 <td><code>sc_wpun_muted_add</code></td>
 <td><code>Muted_Tab::handle_add</code></td>
 <td><code>sc_wpun_muted_add</code></td>
@@ -2499,10 +2535,12 @@ and the plugin registers none. The Semgrep rule <code>wpun-no-nopriv-hooks</code
 </tr>
 </tbody>
 </table>
-<p>The mute, unmute and skip actions on the Plugins screen are state-changing GET links, the one exception to the POST
+<p>The mute, unmute, skip and snooze actions on the Plugins screen are state-changing GET links, the one exception to the POST
 rule. The plugin rows sit inside core's bulk-action form, and forms cannot be nested, so the links are like core's own
 Activate and Deactivate links. A link carries a security token for the action and the plugin, and the skip link also
-for the version it skips, so a token made for one plugin or version cannot act on another. The handlers read <code>$_GET</code>
+for the version it skips, so a token made for one plugin or version cannot act on another. The snooze link has the
+length in seconds in its token, and the handler accepts only a length that the <code>sc_wpun_snooze_durations</code> filter lists
+(never arbitrary seconds); it needs the same capability as mute. The handlers read <code>$_GET</code>
 only (fields sent by POST are refused), accept the <code>plugin</code> type only, and act only on installed plugins. They need
 the mute capability (<code>sc_wpun_mute_capability</code>, which defaults to the settings capability). The Plugins screen bulk
 actions run through core's own bulk form, which checks its security token, and the handler checks the mute
