@@ -1117,6 +1117,8 @@
       
         
       
+        
+      
     
     
     
@@ -1815,6 +1817,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0024-resolved-items-detected-by-the-update-check/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0024 Resolved items
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2094,6 +2124,7 @@
 <p><strong>Channels and instances.</strong> A <em>channel</em> is a kind of delivery (the built-in <code>email</code>, or one your add-on registers) and is a subclass of <code>WPUN\Channel</code>. An <em>instance</em> is one configured use of a channel, for example "email to the ops team", stored as a <code>WPUN\Channel_Instance</code> with an id, a label, an enabled flag, its field values and its routing. Site owners create instances on the <strong>Channels</strong> tab. Instances can also be defined in code with the <code>SC_WPUN_CHANNELS</code> constant or the <code>sc_wpun_channels</code> filter. Channels are registered on the <code>sc_wpun_register_channels</code> action. A channel that declares an API version the site does not have (<code>get_api_constraint()</code>) is refused: it is not registered, <code>sc_wpun_channel_rejected</code> fires, and the <strong>Channels</strong> tab, a notice on the settings page and Site Health say why. Its instances are kept, but nothing is sent through them. <code>WPUN\Site_Health</code> adds the update check and channel tests to Site Health (scheduled and running, WP-Cron off, a channel able to send, modules available, last delivery) and the plugin's section to <strong>Site Info</strong>. The tests read stored state only and make no request, so they never run a check. The section lists the settings with their sources, the schedule, the channel instances and the configuration problems, and replaces every email address in it.</p>
 <p><strong>Routing.</strong> Each instance receives only the items its routing allows: which item types, all or only active plugins and themes, and all or only major WordPress releases. The <code>sc_wpun_channel_should_receive_item</code> filter adds rules of your own.</p>
 <p><strong>Delivery state.</strong> The plugin remembers, per instance, which version of each item it has told that instance about, and when it last sent a reminder. An instance is sent only what is new to it. If a send fails, nothing is recorded for that instance, so the same items go out again on the next run, while the instances that succeeded are not sent them twice.</p>
+<p><strong>Resolved items.</strong> Next to each notified version the state keeps <code>notified_meta</code>: the name, installed version, links (never the download link) and the time it was notified. When an item an instance was told about is no longer pending, and is installed at that version or newer (or a plugin or theme is gone), the check fires <code>sc_wpun_item_resolved</code> once for that instance and forgets it. Only core, plugin and theme items are reported. See ADR 0024.</p>
 <p><strong>Reminders.</strong> The <code>remind</code> routing key (<code>never</code>, <code>daily</code>, <code>weekly</code> or <code>every_check</code>) turns on reminders for an instance. The state of an instance has a <code>last_reminder</code> (a unix time) in <code>sc_wpun_state</code>, under <code>channels[id]</code>:</p>
 <ul>
 <li>While <code>remind</code> is not <code>never</code> and the instance receives at least one waiting item, the clock runs. The first check that sees this sets <code>last_reminder</code> to now and sends no reminder, so the first one comes one interval later. When <code>remind</code> is <code>never</code> or nothing is waiting, <code>last_reminder</code> is removed.</li>

@@ -1004,6 +1004,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#sc_wpun_item_resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_item_resolved
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1809,6 +1820,8 @@
       
         
       
+        
+      
     
     
     
@@ -2507,6 +2520,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0024-resolved-items-detected-by-the-update-check/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0024 Resolved items
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2730,6 +2771,17 @@
     <span class="md-ellipsis">
       
         sc_wpun_frequencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_item_resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_item_resolved
       
     </span>
   </a>
@@ -3526,6 +3578,70 @@ least an hour.</p>
 </tbody>
 </table>
 <p>Fired in <code>includes/class-frequencies.php</code>.</p>
+<h3 id="sc_wpun_item_resolved"><code>sc_wpun_item_resolved</code><a class="headerlink" href="#sc_wpun_item_resolved" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 3.0.0</p>
+<p>Fires once per channel instance when an update it reported is no longer pending.</p>
+<p>The update check compares what each instance was told (its <code>notified</code> state) with what is
+pending now. An item that was reported and is no longer pending at all is resolved, and is then
+forgotten. Use it to close a helpdesk ticket opened from a webhook notification, to log the
+time to update (see <code>Notification_Item::get_notified_at()</code>), or to post "done" to whatever
+received the alert.</p>
+<p><code>$how</code> is <code>updated</code> when the installed version of a plugin or theme is now the reported version
+or newer, <code>removed</code> when the plugin or theme is no longer installed, and <code>core</code> when WordPress
+is at or past the reported version.</p>
+<p>The check finds this out, not the install, so it does not matter how the update was installed
+(Updates screen, automatic updates, WP-CLI, a host, an uploaded zip or FTP), but it can take up
+to one check interval. Only core, plugin and theme items are reported; an item of an add-on type
+is forgotten silently. It fires for every instance that reported the item, also one that is
+switched off or waiting after a Retry-After (see <code>Channel_Instance::is_enabled()</code>), and for an
+item recorded when an instance was added with "skip what's waiting".</p>
+<p>It does not fire for an item that is muted, snoozed, replaced by a newer version or hidden by the
+<code>sc_wpun_should_notify_item</code> filter: those are still pending. An update installed while the item
+is snoozed is reported, because the check keeps the entry of a snoozed item. It never fires in a
+dry run or for a test notification. If two checks overlap it can fire twice; see ADR 0009.</p>
+<p>The item is as it was reported: its new version is the one reported, and its name, installed
+version and links (without the download link) are from then. Entries stored before 3.0.0 have
+no details: the name is the installed one, if there is one, and <code>get_notified_at()</code> is null.</p>
+<p>Example, log the time to update:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_item_resolved',</span>
+<span class="x">    function ( $item, $how, $instance ) {</span>
+<span class="x">        $since = $item-&gt;get_notified_at();</span>
+<span class="x">        if ( null !== $since ) {</span>
+<span class="x">            error_log( sprintf( '%s was %s after %d seconds.', $item-&gt;get_name(), $how, time() - $since ) );</span>
+<span class="x">        }</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$item</code></td>
+<td><code>Notification_Item</code></td>
+<td>The item as it was reported.</td>
+</tr>
+<tr>
+<td><code>$how</code></td>
+<td><code>string</code></td>
+<td><code>updated</code>, <code>removed</code> or <code>core</code>.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The channel instance that reported it.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
 <h2 id="items-and-routing">Items and routing<a class="headerlink" href="#items-and-routing" title="Permanent link">&para;</a></h2>
 <h3 id="sc_wpun_channel_should_receive_item"><code>sc_wpun_channel_should_receive_item</code><a class="headerlink" href="#sc_wpun_channel_should_receive_item" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 2.0.0</p>

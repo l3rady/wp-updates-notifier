@@ -16,7 +16,7 @@
         <link rel="prev" href="../0022-remind-on-every-check/">
       
       
-        <link rel="next" href="../../security/threat-model/">
+        <link rel="next" href="../0024-resolved-items-detected-by-the-update-check/">
       
       
         
@@ -1015,6 +1015,8 @@
       
         
       
+        
+      
     
     
     
@@ -1815,6 +1817,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0024-resolved-items-detected-by-the-update-check/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0024 Resolved items
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2072,7 +2102,7 @@
 
 
 <h1 id="0023-check-a-snoozes-time-on-read-prune-on-the-next-write">0023. Check a snooze's time on read, prune on the next write<a class="headerlink" href="#0023-check-a-snoozes-time-on-read-prune-on-the-next-write" title="Permanent link">&para;</a></h1>
-<p>Status: Accepted. Date: 2026-11-01.</p>
+<p>Status: Accepted. Date: 2026-11-01. Revised by #348 and <a href="../0024-resolved-items-detected-by-the-update-check/">ADR 0024</a>: re-notification by flagging instead of forgetting.</p>
 <h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
 <p>Snooze (#346) mutes an item until a time. When the time comes the item must be reported again, even if that version was reported before the snooze started.</p>
 <p>ADR 0019 keeps the mutes in their own option and says the update check never writes it, because the check rewrites the run state with no lock (ADR 0009) and a mute made during a run would be lost. A "skip this version" mute is already recognised as ended when read and removed the next time the option is written. A snooze ends by time instead of by version, but the same rule fits.</p>
@@ -2080,7 +2110,7 @@
 <ul>
 <li><strong>Time is checked on read.</strong> A mute with an <code>expires</code> that has passed counts as ended. <code>is_muted()</code> is false, <code>get()</code> and <code>all()</code> leave it out, and <code>find()</code> still returns it for the check. This holds from the second the time passes, with no clean-up needed.</li>
 <li><strong>Pruned on the next write.</strong> The check never writes <code>sc_wpun_muted</code>. The expired snooze is removed the next time a mute is saved or removed (ADR 0019).</li>
-<li><strong>Re-notification by forgetting.</strong> On every check, for every channel instance, the notified version of an item whose snooze is in force is forgotten. When the snooze ends, the waiting version is new again and is sent as a normal message, or folded into a reminder that is due. We do not clear the notified version when the end is seen, because another mute change can prune the expired snooze first, and then the end is never seen and the item is never sent again.</li>
+<li><strong>Re-notification by flagging.</strong> On every check, for every channel instance, the notified entry of an item whose snooze is in force is kept and flagged as snoozed (<code>snoozed</code> in its <code>notified_meta</code>). A flagged entry counts as new (<code>State::is_new()</code>), so when the snooze ends, the waiting version is sent as a normal message, or folded into a reminder that is due. Sending or recording the item clears the flag; a failed send keeps it. We do not act when the end is seen, because another mute change can prune the expired snooze first, and then the end is never seen and the item is never sent again. Keeping the entry also lets an update installed during the snooze be reported as resolved (ADR 0024).</li>
 <li><strong><code>sc_wpun_mute_ended</code> gets a <code>$reason</code>.</strong> It is <code>version</code> or <code>expired</code>. For a snooze it fires once, and the check records that in the run state under <code>ended_snoozes</code> (type, key, expiry time), kept only while the same snooze is still found. A mute that ended both ways is reported once, as <code>expired</code>. It never fires in a dry run.</li>
 <li><strong>The links sit in the update notice,</strong> next to "Don't notify me about version X", and in the row meta when core hides the notice. The user chose this over row actions.</li>
 <li><strong>Only listed lengths are accepted.</strong> The link carries the length in its security token, and the handler accepts only a length that the <code>sc_wpun_snooze_durations</code> filter lists.</li>
@@ -2092,15 +2122,16 @@
 <li>Good: no cron event, no lock and no new write path. A snooze needs no state except <code>ended_snoozes</code>.</li>
 <li>Good: the resend does not depend on the order of events.</li>
 <li>Good: a policy can cap snoozes with <code>sc_wpun_pre_mute</code>.</li>
-<li>Bad: unmuting a snooze early sends the item again at the next check, because its notified version was forgotten. This is intended.</li>
+<li>Bad: unmuting a snooze early sends the item again at the next check, because its notified entry is flagged. This is intended.</li>
 <li>Bad: <code>sc_wpun_mute_ended</code> can be missed if another mute change prunes the snooze before the next check. The resend is not missed. This is the same trade-off as ADR 0019.</li>
-<li>Bad: while an item is snoozed its history is not kept, so a version reported before the snooze is reported again after it.</li>
+<li>Bad: a version reported before the snooze is reported again after it, and its reported time starts again.</li>
 </ul>
 <h2 id="considered-options">Considered options<a class="headerlink" href="#considered-options" title="Permanent link">&para;</a></h2>
 <ul>
+<li><strong>Forgetting the notified version while snoozed.</strong> Replaced by flagging in ADR 0024: forgetting made an update installed during a snooze impossible to report as resolved.</li>
 <li><strong>A cron event per snooze.</strong> Rejected: something to schedule, unschedule and repair. Checking the time on read is enough.</li>
 <li><strong>Pruning in the check.</strong> Rejected: there is no lock (ADR 0009), so the check could overwrite a mute made at the same time.</li>
-<li><strong>Clearing the notified version at expiry.</strong> Rejected: it is lost when the expired snooze is pruned before the check sees it.</li>
+<li><strong>Clearing the notified version at expiry.</strong> Rejected: the clearing is lost when the expired snooze is pruned before the check sees it.</li>
 <li><strong>A separate <code>snooze()</code> method.</strong> Rejected: it would repeat <code>mute()</code> with one more argument.</li>
 <li><strong>Row actions on the Plugins screen.</strong> Rejected: the user chose links in the update notice, beside the skip link.</li>
 </ul>
