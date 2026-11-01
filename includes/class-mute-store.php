@@ -694,16 +694,20 @@ final class Mute_Store {
 				$label = '';
 				break;
 			case 'plugins_screen':
-				$label = __( 'Plugins screen', 'wp-updates-notifier' );
+				// translators: Follows "from" in "Jane, from %s", so word it to fit after "from".
+				$label = _x( 'Plugins screen', 'where a mute was set from', 'wp-updates-notifier' );
 				break;
 			case 'settings':
-				$label = __( 'Muted tab', 'wp-updates-notifier' );
+				// translators: Follows "from" in "Jane, from %s", so word it to fit after "from".
+				$label = _x( 'Muted tab', 'where a mute was set from', 'wp-updates-notifier' );
 				break;
 			case 'cli':
-				$label = __( 'WP-CLI', 'wp-updates-notifier' );
+				// translators: Follows "from" in "Jane, from %s", so word it to fit after "from".
+				$label = _x( 'WP-CLI', 'where a mute was set from', 'wp-updates-notifier' );
 				break;
 			case 'api':
-				$label = __( 'Code', 'wp-updates-notifier' );
+				// translators: Follows "from" in "Jane, from %s", so word it to fit after "from".
+				$label = _x( 'Code', 'where a mute was set from', 'wp-updates-notifier' );
 				break;
 			default:
 				$label = $source;

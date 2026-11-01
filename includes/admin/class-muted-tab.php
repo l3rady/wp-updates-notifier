@@ -199,13 +199,13 @@ class Muted_Tab {
 		if ( '' !== $from ) {
 			// translators: %s: Where the mute was set from, for example "WP-CLI".
 			$from = sprintf( __( 'from %s', 'wp-updates-notifier' ), $from );
-			$who  = '' === $who ? ucfirst( $from ) : sprintf( /* translators: 1: Name of the user who muted. 2: "from" and where the mute was set from. */ __( '%1$s, %2$s', 'wp-updates-notifier' ), $who, $from );
+			$who  = '' === $who ? ucfirst( $from ) : sprintf( /* translators: 1: First part, such as the name of the user who muted. 2: Next part, such as where the mute was set from, or the date and time. */ __( '%1$s, %2$s', 'wp-updates-notifier' ), $who, $from );
 		}
 		if ( '' === $who || '' === $when ) {
 			return '' === $who ? $when : $who;
 		}
 
-		// translators: 1: Name of the user who muted, and where from. 2: Date and time.
+		// translators: 1: First part, such as the name of the user who muted. 2: Next part, such as where the mute was set from, or the date and time.
 		return sprintf( __( '%1$s, %2$s', 'wp-updates-notifier' ), $who, $when );
 	}
 
