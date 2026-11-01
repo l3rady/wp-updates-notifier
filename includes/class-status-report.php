@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @phpstan-type Last_Result array{success: bool, message: string, time: string}
  * @phpstan-type Field_Row array{field: string, value: string, source: string}
  * @phpstan-type Muted_Row array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string, expires: ?int, source: string}
- * @phpstan-type Channel_Row array{id: string, label: string, module: string, availability: string, enabled: bool, code_defined: bool, last_result: ?Last_Result, last_failure: ?Last_Result, retry_at: ?string, fields: Field_Row[]}
+ * @phpstan-type Channel_Row array{id: string, label: string, module: string, availability: string, enabled: bool, code_defined: bool, last_result: ?Last_Result, last_failure: ?Last_Result, retry_at: ?string, held_until: ?string, fields: Field_Row[]}
  */
 class Status_Report {
 	const AVAILABLE = 'available';
@@ -252,6 +252,7 @@ class Status_Report {
 				'last_result'  => $last,
 				'last_failure' => null !== $last && ! $last['success'] ? $last : null,
 				'retry_at'     => isset( $entry['retry_at'] ) ? self::format_time( $entry['retry_at'] ) : null,
+				'held_until'   => isset( $entry['held_until'] ) && $entry['held_until'] > time() ? self::format_time( $entry['held_until'] ) : null,
 				'fields'       => $this->fields( $instance ),
 			);
 		}

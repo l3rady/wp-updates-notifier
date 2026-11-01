@@ -25,7 +25,7 @@ class Update_Checker {
 	 * The statuses of an instance in the plan of a check. A real run turns a send that failed into `failed`.
 	 */
 	const STATUS_DISABLED = 'disabled'; // Switched off.
-	const STATUS_WAITING  = 'waiting';  // Told to wait (Retry-After), see `retry_at`.
+	const STATUS_WAITING  = 'waiting';  // Told to wait (Retry-After) or held (deferred), see `retry_at`.
 	const STATUS_FAILED   = 'failed';   // The routing threw or the send failed.
 	const STATUS_SKIP     = 'skip';     // Items recorded without sending (or, with the module unavailable, the flag kept and nothing recorded).
 	const STATUS_REMINDER = 'reminder'; // A reminder with everything pending is (to be) sent.
@@ -378,11 +378,11 @@ class Update_Checker {
 				$plan[ $id ]['status'] = self::STATUS_DISABLED;
 				continue; // Switched off: nothing is sent or recorded, and a pending skip waits.
 			}
-			$retry_at = (int) ( $channels[ $id ]['retry_at'] ?? 0 );
-			if ( $retry_at > time() ) {
+			$retry_at = $this->state->waiting_until( $channels[ $id ] ?? array() );
+			if ( $retry_at > 0 ) {
 				$plan[ $id ]['status']   = self::STATUS_WAITING;
 				$plan[ $id ]['retry_at'] = $retry_at;
-				continue; // Told to wait (Retry-After): nothing is sent or recorded, its items go out on the first check after, and a pending skip waits.
+				continue; // Told to wait (Retry-After) or held (deferred): nothing is sent or recorded, its items go out on the first check after, and a pending skip waits.
 			}
 			$entry    = $channels[ $id ] ?? array(
 				'notified'     => array(),
@@ -460,7 +460,11 @@ class Update_Checker {
 
 					$plan[ $id ]['result'] = $result;
 					$results[ $id ]        = $result;
-					if ( $result->is_success() ) {
+					if ( $result->is_deferred() ) {
+						// Held: nothing is recorded as notified, a skip flag and the reminder clock stay, and the hold was stored by the send.
+						$plan[ $id ]['status']   = self::STATUS_WAITING;
+						$plan[ $id ]['retry_at'] = max( time(), $this->state->hold_until( $result ) );
+					} elseif ( $result->is_success() ) {
 						$entry                 = $this->record( $entry, $plan[ $id ]['items'] );
 						$entry['skip_pending'] = false; // A forced message replaces the skip.
 						if ( self::STATUS_REMINDER === $plan[ $id ]['status'] ) {
@@ -484,17 +488,20 @@ class Update_Checker {
 
 		$this->last_results = $results;
 
-		// Sending saved each instance's last result and retry time in the stored state, which the copy read at the start lacks.
+		// Sending saved each instance's last result, retry time and hold in the stored state, which the copy read at the start lacks.
 		$fresh    = $this->state->get()['channels'];
 		$resolved = $this->find_resolved( $gone, $state, $instances ); // Read before the details of what was notified are trimmed.
 		foreach ( $channels as $id => $entry ) {
 			$channels[ $id ] = $this->trim_notified_meta( $entry );
-			unset( $channels[ $id ]['last_result'], $channels[ $id ]['retry_at'] );
+			unset( $channels[ $id ]['last_result'], $channels[ $id ]['retry_at'], $channels[ $id ]['held_until'] );
 			if ( isset( $fresh[ $id ]['last_result'] ) ) {
 				$channels[ $id ]['last_result'] = $fresh[ $id ]['last_result'];
 			}
 			if ( isset( $fresh[ $id ]['retry_at'] ) ) {
 				$channels[ $id ]['retry_at'] = $fresh[ $id ]['retry_at'];
+			}
+			if ( isset( $fresh[ $id ]['held_until'] ) ) {
+				$channels[ $id ]['held_until'] = $fresh[ $id ]['held_until'];
 			}
 		}
 
@@ -551,8 +558,11 @@ class Update_Checker {
 			 * (Updates screen, automatic updates, WP-CLI, a host, an uploaded zip or FTP), but it can take up
 			 * to one check interval. Only core, plugin and theme items are reported; an item of an add-on type
 			 * is forgotten silently. It fires for every instance that reported the item, also one that is
-			 * switched off or waiting after a Retry-After (see `Channel_Instance::is_enabled()`), and for an
-			 * item recorded when an instance was added with "skip what's waiting".
+			 * switched off, waiting after a Retry-After or held by a deferred result (see
+			 * `Channel_Instance::is_enabled()` and `sc_wpun_instance_waiting_until()`), and for an
+			 * item recorded when an instance was added with "skip what's waiting". For a held instance
+			 * `get_notified_at()` is when the item was finally delivered to it, so a time to update
+			 * measured from it starts at delivery, not at detection.
 			 *
 			 * It does not fire for an item that is muted, snoozed, replaced by a newer version or hidden by the
 			 * `sc_wpun_should_notify_item` filter: those are still pending. An update installed while the item

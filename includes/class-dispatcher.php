@@ -243,13 +243,16 @@ class Dispatcher {
 			 * value sends as normal. Runs for every instance that is switched on and whose
 			 * channel is available.
 			 *
+			 * Return `Delivery_Result::deferred( $time )` to hold the instance until a Unix time without an error.
+			 * A test message ignores a deferral and is sent anyway.
+			 *
 			 * Example, hold all deliveries during maintenance:
 			 *
 			 *     add_filter(
 			 *         'sc_wpun_pre_send',
 			 *         function ( $pre, $notification, $instance ) {
 			 *             return my_maintenance_mode()
-			 *                 ? \WPUN\Delivery_Result::failure( 'Held back.', 'maintenance' )
+			 *                 ? \WPUN\Delivery_Result::deferred( time() + HOUR_IN_SECONDS, 'Maintenance.' )
 			 *                 : $pre;
 			 *         },
 			 *         10,
@@ -265,8 +268,13 @@ class Dispatcher {
 			 * @param Channel_Instance     $instance     The instance it is delivered through.
 			 */
 			$pre = apply_filters( 'sc_wpun_pre_send', null, $notification, $instance );
-			if ( $pre instanceof Delivery_Result ) {
+			if ( $pre instanceof Delivery_Result && ! ( $pre->is_deferred() && $notification->is_test() ) ) {
 				return $this->finish( $pre, $notification, $instance );
+			}
+
+			if ( $pre instanceof Delivery_Result ) {
+				// A test always sends: the channel is called and the result says a hold would have applied.
+				return $this->finish( $this->with_test_note( $channel->send( $notification, $instance ) ), $notification, $instance );
 			}
 
 			return $this->finish( $channel->send( $notification, $instance ), $notification, $instance );
@@ -286,6 +294,27 @@ class Dispatcher {
 			}
 			return $this->exception_result( $instance, $e, $notification );
 		}
+	}
+
+	/**
+	 * A channel's result with a note that a test message is not held back.
+	 *
+	 * @param Delivery_Result $result The channel's result.
+	 *
+	 * @return Delivery_Result
+	 */
+	private function with_test_note( Delivery_Result $result ): Delivery_Result {
+		if ( $result->is_deferred() ) {
+			return $result;
+		}
+
+		$note    = __( 'Not held back, because this is a test message.', 'wp-updates-notifier' );
+		$message = trim( $result->get_message() . ' ' . $note );
+		if ( $result->is_success() ) {
+			return Delivery_Result::success( $message, $result->get_context() );
+		}
+
+		return Delivery_Result::failure( $message, $result->get_code(), $result->get_status(), $result->get_retry_after(), $result->get_context() );
 	}
 
 	/**
@@ -379,7 +408,23 @@ class Dispatcher {
 	 */
 	private function finish( Delivery_Result $result, Notification $notification, Channel_Instance $instance ): Delivery_Result {
 		try {
-			if ( $result->is_success() ) {
+			if ( $result->is_deferred() ) {
+				/**
+				 * Fires when delivering a notification through a channel instance was held until later.
+				 *
+				 * A deferred result is not a failure: `sc_wpun_notification_failed` does not fire. Update checks
+				 * skip the instance until the time, at most 7 days from now, then deliver everything still pending.
+				 *
+				 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+				 *
+				 * @since 3.0.0
+				 *
+				 * @param Delivery_Result  $result       The result; `get_deferred_until()` is when the instance may next be delivered to.
+				 * @param Notification     $notification What was to be delivered.
+				 * @param Channel_Instance $instance     The instance.
+				 */
+				do_action( 'sc_wpun_notification_deferred', $result, $notification, $instance );
+			} elseif ( $result->is_success() ) {
 				/**
 				 * Fires when a notification was delivered through a channel instance.
 				 *

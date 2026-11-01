@@ -525,6 +525,33 @@ if ( ! function_exists( 'sc_wpun_mutes' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sc_wpun_instance_waiting_until' ) ) {
+	/**
+	 * When a channel instance may next be delivered to.
+	 *
+	 * Update checks skip an instance that was told to wait (a failure with a Retry-After) or held by a
+	 * deferred result (`Delivery_Result::deferred()`). This is the later of the two times, so a
+	 * `sc_wpun_item_resolved` listener or a dashboard can tell that an instance is held:
+	 *
+	 *     $until = sc_wpun_instance_waiting_until( $instance->get_id() );
+	 *     if ( null !== $until ) {
+	 *         // Not told about new updates until $until, a Unix time.
+	 *     }
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $id Id of the channel instance.
+	 *
+	 * @return int|null A Unix time in the future, or null when the instance is not waiting.
+	 */
+	function sc_wpun_instance_waiting_until( string $id ): ?int {
+		$state = sc_wpun()->state();
+		$until = $state->waiting_until( $state->get()['channels'][ $id ] ?? array() );
+
+		return $until > 0 ? $until : null;
+	}
+}
+
 if ( ! function_exists( 'sc_wpun_is_network' ) ) {
 	/**
 	 * Whether the plugin runs for a whole multisite network.

@@ -62,7 +62,14 @@ final class Delivery_Result {
 	private $context;
 
 	/**
-	 * Use success() or failure().
+	 * Unix time the delivery is held until, if it was deferred.
+	 *
+	 * @var int|null
+	 */
+	private $deferred_until;
+
+	/**
+	 * Use success(), failure() or deferred().
 	 *
 	 * @param bool                 $success     Whether delivery worked.
 	 * @param string               $message     Message.
@@ -70,14 +77,16 @@ final class Delivery_Result {
 	 * @param int|null             $status      HTTP status.
 	 * @param int|null             $retry_after Seconds to wait before trying again.
 	 * @param array<string, mixed> $context     Extra data.
+	 * @param int|null             $deferred_until Unix time the delivery is held until.
 	 */
-	private function __construct( bool $success, string $message, string $code, ?int $status, ?int $retry_after, array $context ) {
-		$this->success     = $success;
-		$this->message     = $message;
-		$this->code        = $code;
-		$this->status      = $status;
-		$this->retry_after = $retry_after;
-		$this->context     = $context;
+	private function __construct( bool $success, string $message, string $code, ?int $status, ?int $retry_after, array $context, ?int $deferred_until = null ) {
+		$this->success        = $success;
+		$this->message        = $message;
+		$this->code           = $code;
+		$this->status         = $status;
+		$this->retry_after    = $retry_after;
+		$this->context        = $context;
+		$this->deferred_until = $deferred_until;
 	}
 
 	/**
@@ -109,6 +118,27 @@ final class Delivery_Result {
 	 */
 	public static function failure( string $message, string $code = 'failed', ?int $status = null, ?int $retry_after = null, array $context = array() ): Delivery_Result {
 		return new self( false, $message, $code, $status, $retry_after, $context );
+	}
+
+	/**
+	 * Delivery is held: not now, try again at a given time. Not a failure.
+	 *
+	 * The instance is skipped by update checks until `$until`, at most 7 days from now; a time in the past holds
+	 * nothing. Nothing is recorded as notified meanwhile, and the next check after `$until` delivers everything
+	 * still pending. A hold is not an error: it fires `sc_wpun_notification_deferred`, never
+	 * `sc_wpun_notification_failed`, and leaves the instance's last delivery result alone.
+	 *
+	 *     return Delivery_Result::deferred( strtotime( 'tomorrow 09:00' ), 'Outside office hours.' );
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param int    $until   Unix time the delivery is held until (not seconds, unlike `retry_after`).
+	 * @param string $message Optional message.
+	 *
+	 * @return Delivery_Result
+	 */
+	public static function deferred( int $until, string $message = '' ): Delivery_Result {
+		return new self( false, $message, 'deferred', null, null, array(), $until );
 	}
 
 	/**
@@ -187,6 +217,28 @@ final class Delivery_Result {
 	}
 
 	/**
+	 * Whether delivery was held until later. A deferred result is neither a success nor a failure.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return bool
+	 */
+	public function is_deferred(): bool {
+		return null !== $this->deferred_until;
+	}
+
+	/**
+	 * Unix time the delivery is held until, or null if it was not deferred.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return int|null
+	 */
+	public function get_deferred_until(): ?int {
+		return $this->deferred_until;
+	}
+
+	/**
 	 * Message.
 	 *
 	 * @since 2.0.0
@@ -198,7 +250,7 @@ final class Delivery_Result {
 	}
 
 	/**
-	 * Machine readable code: "success" or the code given to failure().
+	 * Machine readable code: "success", "deferred" or the code given to failure().
 	 *
 	 * @since 2.0.0
 	 *

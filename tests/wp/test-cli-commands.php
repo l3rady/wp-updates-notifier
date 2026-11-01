@@ -502,6 +502,27 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A held instance shows its hold in `channels list` and the status report.
+	 */
+	public function test_a_hold_is_listed() {
+		$this->add( 'a' );
+		$until                  = time() + 3600;
+		$state                  = sc_wpun()->state()->get();
+		$state['channels']['a'] = array(
+			'notified'     => array(),
+			'skip_pending' => false,
+			'held_until'   => $until,
+		);
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
+
+		( new Channels_Command() )->list_( array(), array() );
+		$this->assertStringContainsString( "\tlast_result\theld_until", WP_CLI::text() );
+		$this->assertStringContainsString( Status_Report::format_time( $until ), WP_CLI::text() );
+
+		$this->assertSame( Status_Report::format_time( $until ), sc_wpun()->status_report()->channels()[0]['held_until'] );
+	}
+
+	/**
 	 * The channels list shows the columns and honours the format and fields.
 	 */
 	public function test_channels_list() {

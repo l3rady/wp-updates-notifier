@@ -260,7 +260,8 @@ final class Notification_Item {
 	 * When the item was reported to the channel instance, as a Unix time.
 	 *
 	 * Set on items built from the run state, such as those passed to `sc_wpun_item_resolved`; null otherwise,
-	 * and for items reported before 3.0.0.
+	 * and for items reported before 3.0.0. For an instance that was held by a deferred result it is the time the item
+	 * was finally delivered, because that is when the instance was told.
 	 *
 	 * @since 3.0.0
 	 *

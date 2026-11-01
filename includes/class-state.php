@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @phpstan-type Legacy_Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
  * @phpstan-type Notified_Meta array<string, array<string, array{name: string, current_version: string, links: array<string, string>, time: int, snoozed?: bool}>>
  * @phpstan-type Last_Result array{success: bool, message: string, time: int}
- * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, notified_meta?: Notified_Meta, last_result?: Last_Result, retry_at?: int, last_reminder?: int}
+ * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, notified_meta?: Notified_Meta, last_result?: Last_Result, retry_at?: int, held_until?: int, last_reminder?: int}
  * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified, ended_mutes?: Generic_Notified, ended_snoozes?: Generic_Notified}
  */
 class State {
@@ -109,6 +109,9 @@ class State {
 			}
 			if ( isset( $entry['retry_at'] ) && is_numeric( $entry['retry_at'] ) && (int) $entry['retry_at'] > 0 ) {
 				$clean['retry_at'] = (int) $entry['retry_at'];
+			}
+			if ( isset( $entry['held_until'] ) && is_numeric( $entry['held_until'] ) && (int) $entry['held_until'] > 0 ) {
+				$clean['held_until'] = (int) $entry['held_until'];
 			}
 			if ( isset( $entry['last_reminder'] ) && is_numeric( $entry['last_reminder'] ) && (int) $entry['last_reminder'] > 0 ) {
 				$clean['last_reminder'] = (int) $entry['last_reminder'];
@@ -204,8 +207,10 @@ class State {
 	/**
 	 * Remember the outcome of the latest delivery through a channel instance.
 	 *
-	 * Hooked on `sc_wpun_notification_sent` and `sc_wpun_notification_failed`. A test send never counts.
+	 * Hooked on `sc_wpun_notification_sent`, `sc_wpun_notification_failed` and `sc_wpun_notification_deferred`. A test send never counts.
 	 * A failure with a `retry_after` also stores when the instance may be tried again, `retry_at`, capped at `MAX_RETRY_AFTER`.
+	 * A deferred result only stores `held_until` (see hold_until()): the last result and `retry_at` stay as they were.
+	 * Any sent or failed result lifts a hold.
 	 *
 	 * @param mixed $result       The delivery result.
 	 * @param mixed $notification The notification.
@@ -225,6 +230,20 @@ class State {
 			'skip_pending' => false,
 		);
 
+		if ( $result->is_deferred() ) {
+			$held = $this->hold_until( $result );
+			if ( $held > 0 ) {
+				$entry['held_until'] = $held;
+			} else {
+				unset( $entry['held_until'] );
+			}
+			$state['channels'][ $id ] = $entry;
+			$this->save( $state );
+
+			return;
+		}
+
+		unset( $entry['held_until'] );
 		$entry['last_result'] = array(
 			'success' => $result->is_success(),
 			'message' => $result->get_message(),
@@ -241,6 +260,35 @@ class State {
 
 		$state['channels'][ $id ] = $entry;
 		$this->save( $state );
+	}
+
+	/**
+	 * Until when a deferred result holds an instance: its time, at most `MAX_RETRY_AFTER` from now.
+	 *
+	 * @param Delivery_Result $result The result.
+	 *
+	 * @return int A Unix time, or 0 for no hold (not deferred, or a time that is not in the future).
+	 */
+	public function hold_until( Delivery_Result $result ): int {
+		$until = $result->get_deferred_until();
+		if ( null === $until || $until <= time() ) {
+			return 0;
+		}
+
+		return min( $until, time() + self::MAX_RETRY_AFTER );
+	}
+
+	/**
+	 * When an instance may next be delivered to: the later of its Retry-After time and its hold.
+	 *
+	 * @param array<string, mixed> $entry The instance's stored state.
+	 *
+	 * @return int A Unix time in the future, or 0 when the instance is not waiting.
+	 */
+	public function waiting_until( array $entry ): int {
+		$until = max( (int) ( $entry['retry_at'] ?? 0 ), (int) ( $entry['held_until'] ?? 0 ) );
+
+		return $until > time() ? $until : 0;
 	}
 
 	/**

@@ -11,7 +11,7 @@ use WPUN\Delivery_Result;
 use WPUN\Notification;
 
 /**
- * Behaves as the `behaviour` setting of the instance says: succeed (default), fail, limit (a 429 with the `retry_after` setting), throw or invalid.
+ * Behaves as the `behaviour` setting of the instance says: succeed (default), fail, limit (a 429 with the `retry_after` setting), defer (a deferred result until `$defer_offset` seconds from now), throw or invalid.
  *
  * It records every call, so tests can see what each instance received.
  */
@@ -23,6 +23,13 @@ class Test_Channel extends Channel {
 	 * @var array<string, Notification[]>
 	 */
 	public $received = array();
+
+	/**
+	 * Seconds from now a `defer` instance holds until; negative for a time in the past.
+	 *
+	 * @var int
+	 */
+	public $defer_offset = 3600;
 
 	/**
 	 * Channel type.
@@ -95,6 +102,8 @@ class Test_Channel extends Channel {
 			case 'limit':
 				$wait = $instance->get_setting( 'retry_after', null );
 				return Delivery_Result::failure( 'It is limiting requests.', 'rate_limited', 429, null === $wait ? null : (int) $wait );
+			case 'defer':
+				return Delivery_Result::deferred( time() + $this->defer_offset, 'Held back.' );
 			case 'throw':
 				throw new RuntimeException( 'It threw.' );
 			case 'invalid':

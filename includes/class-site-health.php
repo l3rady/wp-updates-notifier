@@ -378,8 +378,8 @@ class Site_Health {
 	 * Site Health shows `value` in the site's language and copies `debug`, so the copy is in English for a support forum.
 	 * The availability and the last result come from the report, already translated.
 	 *
-	 * @param array{id: string, label: string, module: string, availability: string, enabled: bool, code_defined: bool, last_result: ?array{success: bool, message: string, time: string}, last_failure: ?array{success: bool, message: string, time: string}, retry_at: ?string, fields: array<int, array{field: string, value: string, source: string}>} $row The instance from the report.
-	 * @param bool                                                                                                                                                                                                                                                                                                                                         $translate Whether to use the site's language.
+	 * @param array{id: string, label: string, module: string, availability: string, enabled: bool, code_defined: bool, last_result: ?array{success: bool, message: string, time: string}, last_failure: ?array{success: bool, message: string, time: string}, retry_at: ?string, held_until: ?string, fields: array<int, array{field: string, value: string, source: string}>} $row The instance from the report.
+	 * @param bool                                                                                                                                                                                                                                                                                                                                                              $translate Whether to use the site's language.
 	 *
 	 * @return string
 	 */
@@ -395,6 +395,7 @@ class Site_Health {
 			'code_defined' => $translate ? __( 'Defined in code', 'wp-updates-notifier' ) : 'code-defined',
 			'last_result'  => $translate ? __( 'Last delivery', 'wp-updates-notifier' ) : 'last result',
 			'retry_at'     => $translate ? __( 'Next try after', 'wp-updates-notifier' ) : 'retry at',
+			'held_until'   => $translate ? __( 'Held until', 'wp-updates-notifier' ) : 'held until',
 		);
 		$values = array(
 			'module'       => $row['module'],
@@ -403,6 +404,7 @@ class Site_Health {
 			'code_defined' => $row['code_defined'] ? $yes : $no,
 			'last_result'  => '' === $last ? '-' : $last,
 			'retry_at'     => $row['retry_at'] ?? '-',
+			'held_until'   => $row['held_until'] ?? '-',
 		);
 
 		$parts = array();

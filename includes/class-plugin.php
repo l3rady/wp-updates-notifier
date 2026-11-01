@@ -265,7 +265,7 @@ class Plugin {
 	 * @return Check_Now
 	 */
 	public function check_now(): Check_Now {
-		$this->check_now ??= new Check_Now( $this->channel_store, $this->dispatcher, $this->notices(), $this->update_checker, $this->network_context );
+		$this->check_now ??= new Check_Now( $this->channel_store, $this->dispatcher, $this->notices(), $this->update_checker, $this->state, $this->network_context );
 
 		return $this->check_now;
 	}
@@ -595,6 +595,7 @@ class Plugin {
 		add_action( 'sc_wpun_channel_deleted', array( $this->state, 'forget_channel' ) ); // Deleting an instance deletes its delivery state.
 		add_action( 'sc_wpun_notification_sent', array( $this->state, 'record_delivery' ), 10, 3 ); // Remember each instance's latest delivery result.
 		add_action( 'sc_wpun_notification_failed', array( $this->state, 'record_delivery' ), 10, 3 );
+		add_action( 'sc_wpun_notification_deferred', array( $this->state, 'record_delivery' ), 10, 3 );
 		/**
 		 * Schedules the update check. Handled by the `Scheduler` class.
 		 *

@@ -36,7 +36,7 @@ class Channels_Command {
 	 * ---
 	 *
 	 * [--fields=<fields>]
-	 * : Limit the output to these fields: id, label, module, availability, enabled, code_defined, last_result.
+	 * : Limit the output to these fields: id, label, module, availability, enabled, code_defined, last_result, held_until.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -62,13 +62,14 @@ class Channels_Command {
 				'enabled'      => $channel['enabled'] ? 'yes' : 'no',
 				'code_defined' => $channel['code_defined'] ? 'yes' : 'no',
 				'last_result'  => Status_Report::describe_last( $channel['last_result'] ),
+				'held_until'   => (string) $channel['held_until'],
 			);
 		}
 
 		\WP_CLI\Utils\format_items(
 			(string) \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' ),
 			$rows,
-			(string) \WP_CLI\Utils\get_flag_value( $assoc_args, 'fields', 'id,label,module,availability,enabled,code_defined,last_result' )
+			(string) \WP_CLI\Utils\get_flag_value( $assoc_args, 'fields', 'id,label,module,availability,enabled,code_defined,last_result,held_until' )
 		);
 	}
 }

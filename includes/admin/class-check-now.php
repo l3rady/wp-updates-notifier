@@ -16,6 +16,7 @@ use WPUN\Delivery_Result;
 use WPUN\Dispatcher;
 use WPUN\Network_Context;
 use WPUN\Notification;
+use WPUN\State;
 use WPUN\Update_Checker;
 
 /**
@@ -58,6 +59,13 @@ class Check_Now {
 	private $checker;
 
 	/**
+	 * Run state, to tell until when a channel is held.
+	 *
+	 * @var State
+	 */
+	private $state;
+
+	/**
 	 * Where the plugin runs.
 	 *
 	 * @var Network_Context
@@ -71,13 +79,15 @@ class Check_Now {
 	 * @param Dispatcher           $dispatcher Dispatcher.
 	 * @param Notices              $notices    Notices shown after an action.
 	 * @param Update_Checker       $checker   The update check.
+	 * @param State                $state     Run state.
 	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Channel_Store $store, Dispatcher $dispatcher, Notices $notices, Update_Checker $checker, ?Network_Context $network_context = null ) {
+	public function __construct( Channel_Store $store, Dispatcher $dispatcher, Notices $notices, Update_Checker $checker, State $state, ?Network_Context $network_context = null ) {
 		$this->store           = $store;
 		$this->dispatcher      = $dispatcher;
 		$this->notices         = $notices;
 		$this->checker         = $checker;
+		$this->state           = $state;
 		$this->network_context = $network_context ?? new Network_Context();
 	}
 
@@ -177,39 +187,75 @@ class Check_Now {
 	 */
 	private function summary( array $results ): array {
 		$failed = array();
+		$held   = array();
 		foreach ( $results as $id => $result ) {
 			if ( $result instanceof Delivery_Result && $result->is_success() ) {
 				continue;
 			}
 			$instance = $this->store->get( (string) $id );
 			$label    = null === $instance ? (string) $id : $instance->get_label();
+			if ( $result instanceof Delivery_Result && $result->is_deferred() ) {
+				// Held until later: neither sent nor failed.
+				$until  = $this->state->waiting_until( $this->state->get()['channels'][ (string) $id ] ?? array() );
+				$held[] = 0 === $until ? $label : sprintf(
+					// translators: 1: Channel name. 2: The date and time (site timezone) it is held until.
+					__( '%1$s (until %2$s)', 'wp-updates-notifier' ),
+					$label,
+					Settings_Page::format_site_time( $until )
+				);
+				continue;
+			}
 			$message  = $result instanceof Delivery_Result ? $result->get_message() : '';
 			$failed[] = '' === $message ? $label : $label . ' (' . $message . ')';
 		}
 
-		$sent = count( $results ) - count( $failed );
+		$sent = count( $results ) - count( $failed ) - count( $held );
 		if ( array() === $failed ) {
+			if ( 0 === $sent ) {
+				// translators: %s: The channels that were held back and until when.
+				return array( true, sprintf( __( 'Checked just now. Held: %s', 'wp-updates-notifier' ), implode( ', ', $held ) ) );
+			}
 			// translators: %d: Number of channels the update was sent to.
-			return array( true, sprintf( _n( 'Checked just now. Sent to %d channel.', 'Checked just now. Sent to %d channels.', $sent, 'wp-updates-notifier' ), $sent ) );
+			$text = sprintf( _n( 'Checked just now. Sent to %d channel.', 'Checked just now. Sent to %d channels.', $sent, 'wp-updates-notifier' ), $sent );
+
+			return array( true, $this->with_held( $text, $held ) );
 		}
 
 		$count = count( $failed );
 		$list  = implode( ', ', $failed );
 		if ( 0 === $sent ) {
 			// translators: 1: Number of channels that failed. 2: The channels and why each failed.
-			return array( false, sprintf( _n( 'Checked just now. %1$d channel failed: %2$s', 'Checked just now. %1$d channels failed: %2$s', $count, 'wp-updates-notifier' ), $count, $list ) );
+			$text = sprintf( _n( 'Checked just now. %1$d channel failed: %2$s', 'Checked just now. %1$d channels failed: %2$s', $count, 'wp-updates-notifier' ), $count, $list );
+
+			return array( false, $this->with_held( $text, $held ) );
 		}
 
-		return array(
-			false,
-			sprintf(
-				// translators: 1: Number of channels the update was sent to. 2: Number of channels that failed. 3: The channels that failed and why.
-				_n( 'Checked just now. Sent to %1$d channel; %2$d failed: %3$s', 'Checked just now. Sent to %1$d channels; %2$d failed: %3$s', $sent, 'wp-updates-notifier' ),
-				$sent,
-				$count,
-				$list
-			),
+		$text = sprintf(
+			// translators: 1: Number of channels the update was sent to. 2: Number of channels that failed. 3: The channels that failed and why.
+			_n( 'Checked just now. Sent to %1$d channel; %2$d failed: %3$s', 'Checked just now. Sent to %1$d channels; %2$d failed: %3$s', $sent, 'wp-updates-notifier' ),
+			$sent,
+			$count,
+			$list
 		);
+
+		return array( false, $this->with_held( $text, $held ) );
+	}
+
+	/**
+	 * Add the channels that were held back to a summary.
+	 *
+	 * @param string   $text The summary.
+	 * @param string[] $held The channels that were held back and until when.
+	 *
+	 * @return string
+	 */
+	private function with_held( string $text, array $held ): string {
+		if ( array() === $held ) {
+			return $text;
+		}
+
+		// translators: %s: The channels that were held back and until when.
+		return $text . ' ' . sprintf( __( 'Held: %s', 'wp-updates-notifier' ), implode( ', ', $held ) );
 	}
 
 	/**

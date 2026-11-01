@@ -76,8 +76,11 @@ The check finds this out, not the install, so it does not matter how the update 
 (Updates screen, automatic updates, WP-CLI, a host, an uploaded zip or FTP), but it can take up
 to one check interval. Only core, plugin and theme items are reported; an item of an add-on type
 is forgotten silently. It fires for every instance that reported the item, also one that is
-switched off or waiting after a Retry-After (see `Channel_Instance::is_enabled()`), and for an
-item recorded when an instance was added with "skip what's waiting".
+switched off, waiting after a Retry-After or held by a deferred result (see
+`Channel_Instance::is_enabled()` and `sc_wpun_instance_waiting_until()`), and for an
+item recorded when an instance was added with "skip what's waiting". For a held instance
+`get_notified_at()` is when the item was finally delivered to it, so a time to update
+measured from it starts at delivery, not at detection.
 
 It does not fire for an item that is muted, snoozed, replaced by a newer version or hidden by the
 `sc_wpun_should_notify_item` filter: those are still pending. An update installed while the item
@@ -486,6 +489,25 @@ add_filter(
 
 Fired in `includes/class-notification-renderer.php`.
 
+### `sc_wpun_notification_deferred`
+
+*Action*, since 3.0.0
+
+Fires when delivering a notification through a channel instance was held until later.
+
+A deferred result is not a failure: `sc_wpun_notification_failed` does not fire. Update checks
+skip the instance until the time, at most 7 days from now, then deliver everything still pending.
+
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$result` | `Delivery_Result` | The result; `get_deferred_until()` is when the instance may next be delivered to. |
+| `$notification` | `Notification` | What was to be delivered. |
+| `$instance` | `Channel_Instance` | The instance. |
+
+Fired in `includes/class-dispatcher.php`.
+
 ### `sc_wpun_notification_failed`
 
 *Action*, since 2.0.0
@@ -533,6 +555,9 @@ Return a Delivery_Result to skip the channel and use that result; any other
 value sends as normal. Runs for every instance that is switched on and whose
 channel is available.
 
+Return `Delivery_Result::deferred( $time )` to hold the instance until a Unix time without an error.
+A test message ignores a deferral and is sent anyway.
+
 Example, hold all deliveries during maintenance:
 
 ```php
@@ -540,7 +565,7 @@ add_filter(
     'sc_wpun_pre_send',
     function ( $pre, $notification, $instance ) {
         return my_maintenance_mode()
-            ? \WPUN\Delivery_Result::failure( 'Held back.', 'maintenance' )
+            ? \WPUN\Delivery_Result::deferred( time() + HOUR_IN_SECONDS, 'Maintenance.' )
             : $pre;
     },
     10,

@@ -221,9 +221,10 @@ class Updates_Notifier_Command {
 				'last_result'  => Status_Report::describe_last( $channel['last_result'] ),
 				'last_failure' => Status_Report::describe_last( $channel['last_failure'] ),
 				'retry_at'     => (string) $channel['retry_at'],
+				'held_until'   => (string) $channel['held_until'],
 			);
 		}
-		\WP_CLI\Utils\format_items( 'table', $rows, array( 'id', 'label', 'module', 'availability', 'enabled', 'code_defined', 'last_result', 'last_failure', 'retry_at' ) );
+		\WP_CLI\Utils\format_items( 'table', $rows, array( 'id', 'label', 'module', 'availability', 'enabled', 'code_defined', 'last_result', 'last_failure', 'retry_at', 'held_until' ) );
 
 		foreach ( $data['channels'] as $channel ) {
 			if ( array() !== $channel['fields'] ) {

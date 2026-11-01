@@ -197,6 +197,48 @@ class Test_Check_Now extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A held channel is neither sent nor failed: the notice says until when.
+	 */
+	public function test_a_held_channel_is_named_not_failed() {
+		$channel = $this->register_test_channel();
+		sc_wpun_channels()->save( new Channel_Instance( 'held', 'test', 'Held one', true, array( 'behaviour' => 'defer' ) ) );
+
+		$this->assertTrue( sc_wpun()->check_now()->process() );
+
+		$this->assertArrayHasKey( 'held', $channel->received );
+		$until = sc_wpun_instance_waiting_until( 'held' );
+		$this->assertNotNull( $until );
+		$notice = $this->notice();
+		$this->assertTrue( $notice['success'] );
+		$this->assertSame( 'Checked just now. Sent to 1 channel. Held: Held one (until ' . WPUN\Admin\Settings_Page::format_site_time( $until ) . ')', $notice['message'] );
+
+		$this->assertTrue( sc_wpun()->check_now()->process() );
+		$this->assertCount( 1, $channel->received['held'], 'Check now leaves a held channel alone.' );
+	}
+
+	/**
+	 * Held and failed channels are listed apart; with nothing sent only the held ones are named.
+	 */
+	public function test_held_and_failed_channels_are_listed_apart() {
+		$this->register_test_channel();
+		sc_wpun_channels()->save( new Channel_Instance( 'held', 'test', 'Held one', true, array( 'behaviour' => 'defer' ) ) );
+		sc_wpun_channels()->save( new Channel_Instance( 'bad', 'test', 'Bad one', true, array( 'behaviour' => 'fail' ) ) );
+
+		$this->assertTrue( sc_wpun()->check_now()->process() );
+		$notice = $this->notice();
+		$this->assertFalse( $notice['success'] );
+		$this->assertStringStartsWith( 'Checked just now. Sent to 1 channel; 1 failed: Bad one (It failed.) Held: Held one (until ', $notice['message'] );
+
+		sc_wpun_channels()->delete( 'email' );
+		sc_wpun_channels()->delete( 'bad' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
+		$this->assertTrue( sc_wpun()->check_now()->process() );
+		$notice = $this->notice();
+		$this->assertTrue( $notice['success'] );
+		$this->assertStringStartsWith( 'Checked just now. Held: Held one (until ', $notice['message'] );
+	}
+
+	/**
 	 * When every channel fails, the notice does not claim anything was sent.
 	 */
 	public function test_every_channel_failing() {

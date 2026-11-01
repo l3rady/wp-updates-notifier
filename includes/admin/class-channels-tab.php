@@ -297,7 +297,7 @@ class Channels_Tab {
 			</thead>
 			<tbody>
 				<?php foreach ( $instances as $id => $instance ) : ?>
-					<?php $this->render_row( $instance, $channels[ $id ]['last_result'] ?? null, $channels[ $id ]['retry_at'] ?? null ); ?>
+					<?php $this->render_row( $instance, $channels[ $id ]['last_result'] ?? null, $channels[ $id ]['retry_at'] ?? null, $channels[ $id ]['held_until'] ?? null ); ?>
 				<?php endforeach; ?>
 			</tbody>
 		</table>
@@ -355,10 +355,11 @@ class Channels_Tab {
 	 * @param Channel_Instance                                      $instance    The instance.
 	 * @param array{success: bool, message: string, time: int}|null $last_result Its last delivery, if any.
 	 * @param int|null                                              $retry_at    When it may be tried again, if it was asked to wait.
+	 * @param int|null                                              $held_until  When it is held until, if a delivery was deferred.
 	 *
 	 * @return void
 	 */
-	private function render_row( Channel_Instance $instance, ?array $last_result, ?int $retry_at = null ): void {
+	private function render_row( Channel_Instance $instance, ?array $last_result, ?int $retry_at = null, ?int $held_until = null ): void {
 		$id           = $instance->get_id();
 		$label        = $instance->get_label();
 		$channel      = $this->registry->get( $instance->get_type() );
@@ -385,7 +386,7 @@ class Channels_Tab {
 				?>
 			</td>
 			<td class="sc-wpun-channel-routing" data-colname="<?php esc_attr_e( 'Routing', 'wp-updates-notifier' ); ?>"><?php echo esc_html( self::routing_summary( $instance->get_routing() ) ); ?></td>
-			<td class="sc-wpun-channel-last" data-colname="<?php esc_attr_e( 'Last delivery', 'wp-updates-notifier' ); ?>"><?php echo esc_html( self::last_delivery_text( $last_result, $retry_at ) ); ?></td>
+			<td class="sc-wpun-channel-last" data-colname="<?php esc_attr_e( 'Last delivery', 'wp-updates-notifier' ); ?>"><?php echo esc_html( self::last_delivery_text( $last_result, $retry_at, $held_until ) ); ?></td>
 		</tr>
 		<?php
 	}
@@ -554,10 +555,29 @@ class Channels_Tab {
 	 *
 	 * @param array{success: bool, message: string, time: int}|null $last_result The stored result.
 	 * @param int|null                                              $retry_at    When the instance may be tried again, if it was asked to wait.
+	 * @param int|null                                              $held_until  When the instance is held until, if a delivery was deferred. Shown while it lasts, not as an error.
 	 *
 	 * @return string
 	 */
-	public static function last_delivery_text( ?array $last_result, ?int $retry_at = null ): string {
+	public static function last_delivery_text( ?array $last_result, ?int $retry_at = null, ?int $held_until = null ): string {
+		$text = self::last_result_text( $last_result, $retry_at );
+		if ( null !== $held_until && $held_until > time() ) {
+			// translators: %s: Date and time the channel is held until.
+			$text .= '; ' . sprintf( __( 'Held until %s', 'wp-updates-notifier' ), Settings_Page::format_site_time( $held_until ) );
+		}
+
+		return $text;
+	}
+
+	/**
+	 * The last result of an instance as text, with the Retry-After note of a failure.
+	 *
+	 * @param array{success: bool, message: string, time: int}|null $last_result The stored result.
+	 * @param int|null                                              $retry_at    When the instance may be tried again, if it was asked to wait.
+	 *
+	 * @return string
+	 */
+	private static function last_result_text( ?array $last_result, ?int $retry_at ): string {
 		if ( null === $last_result ) {
 			return __( 'Never', 'wp-updates-notifier' );
 		}
