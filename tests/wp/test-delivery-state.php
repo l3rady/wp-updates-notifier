@@ -312,6 +312,8 @@ class Test_Delivery_State extends WPUN_Test_Case {
 								),
 								'b.php' => 'junk',
 								'c.php' => array( 'time' => '0.5' ),
+								'd.php' => array( 'snoozed' => 1 ),
+								'e.php' => array( 'snoozed' => 0 ),
 							),
 							'theme'  => 'junk',
 						),
@@ -331,6 +333,19 @@ class Test_Delivery_State extends WPUN_Test_Case {
 						'time'            => 1700000000,
 					),
 					'c.php' => array(
+						'name'            => '',
+						'current_version' => '',
+						'links'           => array(),
+						'time'            => 0,
+					),
+					'd.php' => array(
+						'name'            => '',
+						'current_version' => '',
+						'links'           => array(),
+						'time'            => 0,
+						'snoozed'         => true,
+					),
+					'e.php' => array(
 						'name'            => '',
 						'current_version' => '',
 						'links'           => array(),

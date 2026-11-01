@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @internal
  * @phpstan-type Generic_Notified array<string, array<string, string>>
  * @phpstan-type Legacy_Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
- * @phpstan-type Notified_Meta array<string, array<string, array{name: string, current_version: string, links: array<string, string>, time: int}>>
+ * @phpstan-type Notified_Meta array<string, array<string, array{name: string, current_version: string, links: array<string, string>, time: int, snoozed?: bool}>>
  * @phpstan-type Last_Result array{success: bool, message: string, time: int}
  * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, notified_meta?: Notified_Meta, last_result?: Last_Result, retry_at?: int, last_reminder?: int}
  * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified, ended_mutes?: Generic_Notified, ended_snoozes?: Generic_Notified}
@@ -142,6 +142,26 @@ class State {
 	}
 
 	/**
+	 * Whether an item is new to an instance: its version was not notified, or it was notified before a snooze.
+	 *
+	 * The update check flags the entry of a snoozed item, so that the version is sent again when the snooze ends.
+	 * Sending or recording the item clears the flag.
+	 *
+	 * @internal
+	 *
+	 * @param array<string, mixed> $entry The instance's state, `notified` and `notified_meta` are read.
+	 * @param Notification_Item    $item  The item.
+	 *
+	 * @return bool
+	 */
+	public function is_new( array $entry, Notification_Item $item ): bool {
+		$type = $item->get_type();
+		$key  = $item->get_key();
+
+		return ( $entry['notified'][ $type ][ $key ] ?? null ) !== $item->get_new_version() || ! empty( $entry['notified_meta'][ $type ][ $key ]['snoozed'] );
+	}
+
+	/**
 	 * Forget everything notified through a channel instance.
 	 *
 	 * Used when an instance is deleted, so a new instance with the same id starts clean.
@@ -241,12 +261,16 @@ class State {
 				if ( ! is_array( $details ) ) {
 					continue;
 				}
-				$clean[ (string) $type ][ (string) $key ] = array(
+				$entry = array(
 					'name'            => isset( $details['name'] ) && is_scalar( $details['name'] ) ? (string) $details['name'] : '',
 					'current_version' => isset( $details['current_version'] ) && is_scalar( $details['current_version'] ) ? (string) $details['current_version'] : '',
 					'links'           => $this->normalise_versions( $details['links'] ?? array() ),
 					'time'            => isset( $details['time'] ) && is_numeric( $details['time'] ) && (int) $details['time'] > 0 ? (int) $details['time'] : 0,
 				);
+				if ( ! empty( $details['snoozed'] ) ) {
+					$entry['snoozed'] = true;
+				}
+				$clean[ (string) $type ][ (string) $key ] = $entry;
 			}
 		}
 

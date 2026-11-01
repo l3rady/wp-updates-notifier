@@ -351,6 +351,82 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Put a snooze straight into the stored mutes, to control the time.
+	 *
+	 * @param int $expires Expiry.
+	 */
+	private function snooze( $expires ) {
+		sc_wpun()->network_context()->update_option(
+			'sc_wpun_muted',
+			array(
+				'plugin' => array(
+					self::PLUGIN => array(
+						'until'   => null,
+						'time'    => 1,
+						'user'    => 0,
+						'expires' => $expires,
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * An update installed while the item is snoozed is resolved, with the time it was first reported.
+	 */
+	public function test_an_update_installed_during_a_snooze_is_resolved() {
+		$calls = &$this->record();
+		$this->notify_plugin( '2.0' );
+		$time = $this->stored_state()['channels']['email']['notified_meta']['plugin'][ self::PLUGIN ]['time'];
+		$this->snooze( time() + 3600 );
+		$this->notify_plugin( '2.0' );
+		$this->assertCount( 0, $calls );
+
+		$this->write_plugin( '2.0' );
+		$this->check_nothing_pending();
+
+		$this->assertCount( 1, $calls );
+		$this->assertSame( 'updated', $calls[0][1] );
+		$this->assertSame( $time, $calls[0][0]->get_notified_at() );
+		$this->assertSame( 'Resolved Fixture', $calls[0][0]->get_name() );
+	}
+
+	/**
+	 * A snoozed entry stored without details is flagged with empty ones, and resolves with no time.
+	 */
+	public function test_a_snoozed_entry_without_details_resolves() {
+		$calls = &$this->record();
+		$this->save_channel_state( 'email', array( 'plugin' => array( self::PLUGIN => '2.0' ) ) );
+		$this->snooze( time() + 3600 );
+		$this->notify_plugin( '2.0' );
+		$this->assertTrue( $this->stored_state()['channels']['email']['notified_meta']['plugin'][ self::PLUGIN ]['snoozed'] );
+
+		$this->write_plugin( '2.0' );
+		$this->check_nothing_pending();
+
+		$this->assertCount( 1, $calls );
+		$this->assertNull( $calls[0][0]->get_notified_at() );
+	}
+
+	/**
+	 * After the snooze the item is sent again, which clears the flag and starts its time again.
+	 */
+	public function test_the_time_starts_again_after_a_snooze() {
+		$this->notify_plugin( '2.0' );
+		$state = $this->stored_state();
+		$state['channels']['email']['notified_meta']['plugin'][ self::PLUGIN ]['time'] = time() - 5000;
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
+		$this->snooze( time() + 3600 );
+		$this->notify_plugin( '2.0' );
+		$this->snooze( time() - 1 );
+		$this->notify_plugin( '2.0' );
+
+		$meta = $this->stored_state()['channels']['email']['notified_meta']['plugin'][ self::PLUGIN ];
+		$this->assertGreaterThan( time() - 100, $meta['time'] );
+		$this->assertArrayNotHasKey( 'snoozed', $meta );
+	}
+
+	/**
 	 * Nothing fires in a dry run, and the real run after it does.
 	 */
 	public function test_a_dry_run_does_not_fire() {

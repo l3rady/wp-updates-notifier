@@ -81,9 +81,8 @@ item recorded when an instance was added with "skip what's waiting".
 
 It does not fire for an item that is muted, snoozed, replaced by a newer version or hidden by the
 `sc_wpun_should_notify_item` filter: those are still pending. An update installed while the item
-is snoozed is never reported as resolved, because the snooze made the check forget the entry. It
-never fires in a dry run or for a test notification. If two checks overlap it can fire twice;
-see ADR 0009.
+is snoozed is reported, because the check keeps the entry of a snoozed item. It never fires in a
+dry run or for a test notification. If two checks overlap it can fire twice; see ADR 0009.
 
 The item is as it was reported: its new version is the one reported, and its name, installed
 version and links (without the download link) are from then. Entries stored before 3.0.0 have

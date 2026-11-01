@@ -326,15 +326,53 @@ class Test_Mutes_Check extends WPUN_Test_Case {
 		$this->snooze( time() + HOUR_IN_SECONDS );
 		$this->check( '2.0' );
 		$this->assertSame( 1, $this->sent_mail_count() );
-		$this->assertSame( '', $this->notified_version( 'plugin', 'hello.php' ), 'Forgotten while snoozed.' );
+		$this->assertSame( '2.0', $this->notified_version( 'plugin', 'hello.php' ), 'Kept while snoozed.' );
+		$this->assertTrue( $this->stored_state()['channels']['email']['notified_meta']['plugin']['hello.php']['snoozed'], 'And flagged.' );
 
 		$this->snooze( time() - 1 );
 		$this->check( '2.0' );
 		$this->assertSame( 2, $this->sent_mail_count() );
 		$this->assertSame( '2.0', $this->notified_version( 'plugin', 'hello.php' ) );
+		$this->assertArrayNotHasKey( 'snoozed', $this->stored_state()['channels']['email']['notified_meta']['plugin']['hello.php'], 'Sending clears the flag.' );
 
 		$this->check( '2.0' );
 		$this->assertSame( 2, $this->sent_mail_count(), 'Only once.' );
+	}
+
+	/**
+	 * A failed send after the snooze keeps the flag, so the item is tried again.
+	 */
+	public function test_a_failed_send_after_the_snooze_keeps_the_flag() {
+		$this->check( '2.0' );
+		$this->snooze( time() + HOUR_IN_SECONDS );
+		$this->check( '2.0' );
+		$this->snooze( time() - 1 );
+
+		add_filter( 'pre_wp_mail', '__return_false' );
+		$this->check( '2.0' );
+		$this->assertTrue( $this->stored_state()['channels']['email']['notified_meta']['plugin']['hello.php']['snoozed'] );
+
+		remove_filter( 'pre_wp_mail', '__return_false' );
+		$this->check( '2.0' );
+		$this->assertSame( 2, $this->sent_mail_count() );
+		$this->assertArrayNotHasKey( 'snoozed', $this->stored_state()['channels']['email']['notified_meta']['plugin']['hello.php'] );
+	}
+
+	/**
+	 * The status report counts an item notified before a snooze as new once the snooze is over.
+	 */
+	public function test_the_status_report_marks_an_item_after_a_snooze_as_new() {
+		$this->check( '2.0' );
+		$this->snooze( time() + HOUR_IN_SECONDS );
+		$this->check( '2.0' );
+		$this->snooze( time() - 1 );
+
+		$new = array();
+		foreach ( sc_wpun()->status_report()->pending()[0]['items'] as $row ) {
+			$new[ $row['key'] ] = $row['new'];
+		}
+
+		$this->assertTrue( $new['hello.php'] );
 	}
 
 	/**

@@ -301,7 +301,7 @@ class Status_Report {
 					'name'            => $item->get_name(),
 					'current_version' => $item->get_current_version(),
 					'new_version'     => $item->get_new_version(),
-					'new'             => ( $channels[ $id ]['notified'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version(),
+					'new'             => $this->state->is_new( $channels[ $id ] ?? array(), $item ),
 					'auto_update'     => true === ( $item->get_flags()['auto_update'] ?? false ),
 				);
 			}

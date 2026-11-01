@@ -289,7 +289,7 @@ class Update_Checker {
 		// Mutes a newer version or their expiry has ended, to report once. Recorded in the state, never in the mutes.
 		$ended = $this->find_ended_mutes( $items, $state );
 
-		// A snooze in force: its items are forgotten below, so they are new again when it ends.
+		// A snooze in force: its items are flagged as snoozed below, so they are new again when it ends.
 		$snoozed = array();
 		foreach ( $items as $item ) {
 			$mute = $this->mutes->find( $item->get_type(), $item->get_key() );
@@ -346,8 +346,9 @@ class Update_Checker {
 		$instances = $this->channels->all();
 		$channels  = $this->state_for_instances( $state, $instances );
 
-		// Forget what is no longer waiting for an update, and what is snoozed, for every instance whether it is on or not.
-		// A snoozed item is sent as new when the snooze ends, even if that version was notified before it started.
+		// Forget what is no longer waiting for an update, for every instance whether it is on or not, and flag what is snoozed.
+		// A snoozed item keeps its entry, flagged, so it is sent as new when the snooze ends even if that version was notified
+		// before it started (State::is_new()), and so it can still be resolved while it is snoozed.
 		// What is no longer waiting at all (not just snoozed) may be resolved, see find_resolved().
 		$gone = array(); // Instance id => item type => key => notified version, of the built-in types.
 		foreach ( $channels as $id => $entry ) {
@@ -357,7 +358,16 @@ class Update_Checker {
 					if ( in_array( $type, array( 'core', 'plugin', 'theme' ), true ) && count( $waiting ) < count( $entry['notified'][ $type ] ) ) {
 						$gone[ $id ][ $type ] = array_diff_key( $entry['notified'][ $type ], $waiting );
 					}
-					$channels[ $id ]['notified'][ $type ] = array_diff_key( $waiting, $snoozed[ $type ] ?? array() );
+					$channels[ $id ]['notified'][ $type ] = $waiting;
+					foreach ( array_keys( array_intersect_key( $waiting, $snoozed[ $type ] ?? array() ) ) as $key ) {
+						$channels[ $id ]['notified_meta'][ $type ][ $key ]            = $channels[ $id ]['notified_meta'][ $type ][ $key ] ?? array(
+							'name'            => '',
+							'current_version' => '',
+							'links'           => array(),
+							'time'            => 0,
+						); // An entry stored without details gets empty ones.
+						$channels[ $id ]['notified_meta'][ $type ][ $key ]['snoozed'] = true;
+					}
 				}
 			}
 		}
@@ -395,7 +405,7 @@ class Update_Checker {
 			$plan[ $id ]['pending'] = $pending;
 			$for_instance           = array();
 			foreach ( $pending as $item ) {
-				if ( $force || ( $entry['notified'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version() ) {
+				if ( $force || $this->state->is_new( $entry, $item ) ) {
 					$for_instance[] = $item;
 				}
 			}
@@ -546,9 +556,8 @@ class Update_Checker {
 			 *
 			 * It does not fire for an item that is muted, snoozed, replaced by a newer version or hidden by the
 			 * `sc_wpun_should_notify_item` filter: those are still pending. An update installed while the item
-			 * is snoozed is never reported as resolved, because the snooze made the check forget the entry. It
-			 * never fires in a dry run or for a test notification. If two checks overlap it can fire twice;
-			 * see ADR 0009.
+			 * is snoozed is reported, because the check keeps the entry of a snoozed item. It never fires in a
+			 * dry run or for a test notification. If two checks overlap it can fire twice; see ADR 0009.
 			 *
 			 * The item is as it was reported: its new version is the one reported, and its name, installed
 			 * version and links (without the download link) are from then. Entries stored before 3.0.0 have
@@ -908,7 +917,8 @@ class Update_Checker {
 	/**
 	 * Add items to the notified versions of an instance, with the details `sc_wpun_item_resolved` needs.
 	 *
-	 * The details and the time are stored when the version changes; a reminder or a forced send of the same
+	 * The details and the time are stored when the version changes or the entry is flagged as snoozed (and so
+	 * counts as new, see State::is_new()), which clears the flag; a reminder or a forced send of the same
 	 * version keeps them. The download link is not stored, as it can hold a licence key or a private token.
 	 *
 	 * @param Channel_State       $entry The state of one instance.
@@ -920,7 +930,7 @@ class Update_Checker {
 		foreach ( $items as $item ) {
 			$type  = $item->get_type();
 			$key   = $item->get_key();
-			$known = ( $entry['notified'][ $type ][ $key ] ?? null ) === $item->get_new_version();
+			$known = ( $entry['notified'][ $type ][ $key ] ?? null ) === $item->get_new_version() && empty( $entry['notified_meta'][ $type ][ $key ]['snoozed'] );
 
 			$entry['notified'][ $type ][ $key ] = $item->get_new_version();
 			if ( ! $known ) {
