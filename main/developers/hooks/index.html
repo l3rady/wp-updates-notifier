@@ -1215,6 +1215,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_notification_deferred" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_notification_deferred
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_notification_failed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1772,6 +1783,8 @@
       
         
           
+        
+      
         
       
         
@@ -2548,6 +2561,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0025-deferred-delivery-result-held-until/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0025 Deferred delivery result
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2981,6 +3022,17 @@
     <span class="md-ellipsis">
       
         sc_wpun_more_items_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_notification_deferred" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_notification_deferred
       
     </span>
   </a>
@@ -3593,8 +3645,11 @@ is at or past the reported version.</p>
 (Updates screen, automatic updates, WP-CLI, a host, an uploaded zip or FTP), but it can take up
 to one check interval. Only core, plugin and theme items are reported; an item of an add-on type
 is forgotten silently. It fires for every instance that reported the item, also one that is
-switched off or waiting after a Retry-After (see <code>Channel_Instance::is_enabled()</code>), and for an
-item recorded when an instance was added with "skip what's waiting".</p>
+switched off, waiting after a Retry-After or held by a deferred result (see
+<code>Channel_Instance::is_enabled()</code> and <code>sc_wpun_instance_waiting_until()</code>), and for an
+item recorded when an instance was added with "skip what's waiting". For a held instance
+<code>get_notified_at()</code> is when the item was finally delivered to it, so a time to update
+measured from it starts at delivery, not at detection.</p>
 <p>It does not fire for an item that is muted, snoozed, replaced by a newer version or hidden by the
 <code>sc_wpun_should_notify_item</code> filter: those are still pending. An update installed while the item
 is snoozed is reported, because the check keeps the entry of a snoozed item. It never fires in a
@@ -4164,6 +4219,39 @@ when at least one item was left out.</p>
 </tbody>
 </table>
 <p>Fired in <code>includes/class-notification-renderer.php</code>.</p>
+<h3 id="sc_wpun_notification_deferred"><code>sc_wpun_notification_deferred</code><a class="headerlink" href="#sc_wpun_notification_deferred" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 3.0.0</p>
+<p>Fires when delivering a notification through a channel instance was held until later.</p>
+<p>A deferred result is not a failure: <code>sc_wpun_notification_failed</code> does not fire. Update checks
+skip the instance until the time, at most 7 days from now, then deliver everything still pending.</p>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$result</code></td>
+<td><code>Delivery_Result</code></td>
+<td>The result; <code>get_deferred_until()</code> is when the instance may next be delivered to.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>What was to be delivered.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-dispatcher.php</code>.</p>
 <h3 id="sc_wpun_notification_failed"><code>sc_wpun_notification_failed</code><a class="headerlink" href="#sc_wpun_notification_failed" title="Permanent link">&para;</a></h3>
 <p><em>Action</em>, since 2.0.0</p>
 <p>Fires when delivering a notification through a channel instance failed.</p>
@@ -4235,12 +4323,14 @@ when a delivery to it was asked for.</p>
 <p>Return a Delivery_Result to skip the channel and use that result; any other
 value sends as normal. Runs for every instance that is switched on and whose
 channel is available.</p>
+<p>Return <code>Delivery_Result::deferred( $time )</code> to hold the instance until a Unix time without an error.
+A test message ignores a deferral and is sent anyway.</p>
 <p>Example, hold all deliveries during maintenance:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_pre_send',</span>
 <span class="x">    function ( $pre, $notification, $instance ) {</span>
 <span class="x">        return my_maintenance_mode()</span>
-<span class="x">            ? \WPUN\Delivery_Result::failure( 'Held back.', 'maintenance' )</span>
+<span class="x">            ? \WPUN\Delivery_Result::deferred( time() + HOUR_IN_SECONDS, 'Maintenance.' )</span>
 <span class="x">            : $pre;</span>
 <span class="x">    },</span>
 <span class="x">    10,</span>

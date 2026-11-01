@@ -1141,6 +1141,8 @@
       
         
       
+        
+      
     
     
     
@@ -1867,6 +1869,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0025-deferred-delivery-result-held-until/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0025 Deferred delivery result
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2214,7 +2244,8 @@
 <li>The reason is shown under <strong>Last delivery</strong> on the <strong>Channels</strong> tab, and in the notice after <strong>Check for updates and notify now</strong>.</li>
 </ul>
 <p>Some channels, usually ones from add-ons that talk to an online service, can be told by the service to wait before trying again. This is the HTTP <code>Retry-After</code> header. The plugin then leaves that channel alone until the time is up, at most seven days, and <strong>Last delivery</strong> says <strong>Rate limited, next try after</strong> and the time. Other channels carry on. When the wait is over, the channel is sent everything that is new to it at the next check. The built-in email channel does not do this.</p>
-<p>A test message ignores the wait.</p>
+<p>A site or an add-on can also hold a channel until a set time, for example outside office hours, without it counting as an error. <strong>Last delivery</strong> then says <strong>Held until</strong> and the time, and the channel is sent everything that is new to it at the first check after. Update checks, reminders and <strong>Check for updates and notify now</strong> all leave a held channel alone.</p>
+<p>A test message ignores the wait and any hold.</p>
 <h2 id="overlapping-checks">Overlapping checks<a class="headerlink" href="#overlapping-checks" title="Permanent link">&para;</a></h2>
 <p>The plugin does not lock checks against each other. If you click <strong>Check for updates and notify now</strong>, or something fires <code>sc_wpun_run_check</code> or runs <code>wp updates-notifier check</code>, while a scheduled check is running, both can send the same update before either records it. You then get the same notification twice. This is rare and harmless for update notices, so the plugin accepts it rather than adding a lock.</p>
 <h2 id="where-the-checks-come-from">Where the checks come from<a class="headerlink" href="#where-the-checks-come-from" title="Permanent link">&para;</a></h2>

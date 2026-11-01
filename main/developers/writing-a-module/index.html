@@ -993,6 +993,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#holding-a-delivery-until-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Holding a delivery until later
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#length-limits" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1319,6 +1330,8 @@
       
         
           
+        
+      
         
       
         
@@ -2095,6 +2108,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0025-deferred-delivery-result-held-until/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0025 Deferred delivery result
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2418,6 +2459,17 @@
     <span class="md-ellipsis">
       
         Rate limits and retries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#holding-a-delivery-until-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Holding a delivery until later
       
     </span>
   </a>
@@ -2821,6 +2873,38 @@
 <span class="x">}</span>
 </code></pre></div>
 <p>A failure with a <code>retry_after</code> defers the instance: update checks skip it until that long after the failure, and its items stay unsent and go out on the first check after. Other instances are not affected, and nothing extra is scheduled. The plugin caps the wait at 7 days. A test send ignores the deferral and does not set it, and a later success, or a failure without <code>retry_after</code>, clears it. Without a <code>retry_after</code>, the items are retried on the next scheduled check, which is at least an hour away. Don't retry inside <code>send()</code>, and don't sleep.</p>
+<h3 id="holding-a-delivery-until-later">Holding a delivery until later<a class="headerlink" href="#holding-a-delivery-until-later" title="Permanent link">&para;</a></h3>
+<p>To hold a delivery without an error, return <code>Delivery_Result::deferred( $until )</code>, with <code>$until</code> a Unix time (not seconds, unlike <code>retry_after</code>). A channel can return it, and so can a <code>sc_wpun_pre_send</code> callback, which is the easy way to add your own quiet hours. The instance is held until then, at most 7 days from now, and a time in the past holds nothing. Unlike a failure, a hold fires <code>sc_wpun_notification_deferred</code> and not <code>sc_wpun_notification_failed</code>, raises no Site Health warning, and leaves the last delivery result alone. Nothing is recorded as notified, so the first check after <code>$until</code> delivers everything still pending. A test send ignores the hold and says so in its result.</p>
+<p>This holds the email channel outside weekdays 09:00 to 18:00, site time:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_pre_send',</span>
+<span class="x">    function ( $pre, $notification, $instance ) {</span>
+<span class="x">        if ( 'email' !== $instance-&gt;get_type() || $notification-&gt;is_test() ) {</span>
+<span class="x">            return $pre;</span>
+<span class="x">        }</span>
+
+<span class="x">        $now  = new DateTimeImmutable( 'now', wp_timezone() );</span>
+<span class="x">        $day  = (int) $now-&gt;format( 'N' ); // 1 = Monday, 7 = Sunday.</span>
+<span class="x">        $hour = (int) $now-&gt;format( 'G' );</span>
+<span class="x">        if ( $day &lt;= 5 &amp;&amp; $hour &gt;= 9 &amp;&amp; $hour &lt; 18 ) {</span>
+<span class="x">            return $pre;</span>
+<span class="x">        }</span>
+
+<span class="x">        // The next 09:00 on a weekday: today if it is early on a weekday, otherwise the next weekday.</span>
+<span class="x">        $next = $now-&gt;setTime( 9, 0 );</span>
+<span class="x">        if ( $day &gt; 5 || $next &lt;= $now ) {</span>
+<span class="x">            do {</span>
+<span class="x">                $next = $next-&gt;modify( '+1 day' );</span>
+<span class="x">            } while ( (int) $next-&gt;format( 'N' ) &gt; 5 );</span>
+<span class="x">        }</span>
+
+<span class="x">        return \WPUN\Delivery_Result::deferred( $next-&gt;getTimestamp(), 'Outside office hours.' );</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<p><code>sc_wpun_instance_waiting_until( $id )</code> tells when an instance may next be delivered to, for a <code>sc_wpun_item_resolved</code> listener or a dashboard.</p>
 <h3 id="length-limits">Length limits<a class="headerlink" href="#length-limits" title="Permanent link">&para;</a></h3>
 <p>Most services limit the size of a message. Respect the limit by sending a summary rather than a message the service will refuse. <code>Notification_Renderer</code> does this for you: pass the limits to <code>plain_text()</code>, <code>markdown()</code> or <code>html()</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="x">$text = Notification_Renderer::plain_text( $notification, 4000, 50 );</span>
