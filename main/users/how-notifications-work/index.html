@@ -297,6 +297,8 @@
       
         
       
+        
+      
     
     
     
@@ -422,6 +424,34 @@
     
   
     Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multisite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multisite networks
   
 
     
@@ -2052,7 +2082,7 @@
 <li>WordPress skips its updater when its last version check was less than a minute ago, when api.wordpress.org does not answer, when another automatic update is running, or when something has switched off WordPress's version check.</li>
 <li>After WordPress installs a minor release of itself, a waiting major release is reported one check later.</li>
 <li>The update data can be up to two hours old (see <a href="../troubleshooting/#why-is-the-update-data-hours-old">Why is the update data hours old?</a>). A release that is newer than that data can be reported, and installed by WordPress later.</li>
-<li>On multisite, only the main site runs WordPress's updater (see <a href="https://github.com/l3rady/wp-updates-notifier/issues/85">#85</a>).</li>
+<li>On multisite, WordPress runs its updater only on the main site of the main network. On any other network the check does not run it first. See <a href="../multisite/#more-than-one-network">Multisite networks</a>.</li>
 </ul>
 <p>To stop being told about minor WordPress releases, choose <strong>Yes, but only major releases</strong>. To stop being told about one plugin or theme, <a href="../muting/">mute</a> it.</p>
 <h2 id="reminders">Reminders<a class="headerlink" href="#reminders" title="Permanent link">&para;</a></h2>

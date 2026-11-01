@@ -295,6 +295,8 @@
       
         
       
+        
+      
     
     
     
@@ -420,6 +422,34 @@
     
   
     Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/multisite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multisite networks
   
 
     
@@ -1097,6 +1127,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#linking-to-the-settings-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linking to the settings screen
+      
+    </span>
+  </a>
   
 </li>
       
@@ -2432,6 +2473,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#linking-to-the-settings-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linking to the settings screen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#checklist" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2763,6 +2815,10 @@
 </ul>
 <h3 id="checking">Checking<a class="headerlink" href="#checking" title="Permanent link">&para;</a></h3>
 <p><code>make a11y</code> in the plugin repository runs axe and keyboard checks of the settings screen on a throwaway site, including a form with every field type. Also tab through your form and listen to it with a screen reader.</p>
+<h2 id="linking-to-the-settings-screen">Linking to the settings screen<a class="headerlink" href="#linking-to-the-settings-screen" title="Permanent link">&para;</a></h2>
+<p>The settings screen is <code>options-general.php</code> on a single site and in the network admin on a multisite network. Use <code>sc_wpun_settings_url()</code> (API 1.1.0) for a link, and <code>sc_wpun_is_network()</code> to know which mode you are in. Never write <code>admin_url( 'options-general.php?page=…' )</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="x">$url = sc_wpun_settings_url( 'channels' ); // The Channels tab, in either mode.</span>
+</code></pre></div>
 <h2 id="checklist">Checklist<a class="headerlink" href="#checklist" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The header has <code>Requires Plugins: wp-updates-notifier</code> and <code>Requires WPUN API</code> with the constraint, and <code>boot()</code> checks <code>sc_wpun_api_satisfies( '^1.0' )</code> for code outside the channel.</li>

@@ -295,6 +295,8 @@
       
         
       
+        
+      
     
     
     
@@ -420,6 +422,34 @@
     
   
     Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/multisite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multisite networks
   
 
     
@@ -1960,7 +1990,7 @@
 
 
 <h1 id="0008-support-single-sites-only-in-200">0008. Support single sites only in 2.0.0<a class="headerlink" href="#0008-support-single-sites-only-in-200" title="Permanent link">&para;</a></h1>
-<p>Status: Accepted. Date: 2026-10-17.</p>
+<p>Status: Superseded by <a href="../0021-network-only-on-multisite/">0021</a>. Date: 2026-10-17.</p>
 <h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
 <p>On multisite, a network-activated plugin runs once per site. Each site has its own settings page, cron event and notification, so one update produces one email per site. A proper fix needs a network admin screen, one cron event on the main site, network-level settings and channel instances, and changes to activation and uninstall. That is a feature of its own, and it touches the settings, channels and tests.</p>
 <h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>

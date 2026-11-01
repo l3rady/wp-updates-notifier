@@ -297,6 +297,8 @@
       
         
       
+        
+      
     
     
     
@@ -422,6 +424,34 @@
     
   
     Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multisite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multisite networks
   
 
     
@@ -629,6 +659,17 @@
     <span class="md-ellipsis">
       
         Why did no reminder arrive?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#does-it-work-on-multisite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it work on multisite?
       
     </span>
   </a>
@@ -2048,6 +2089,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#does-it-work-on-multisite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it work on multisite?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#emails-only-arrive-after-someone-visits-the-site" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2235,8 +2287,11 @@
 <li><strong>Is the channel switched on and free to send?</strong> A channel that is switched off, or was told by a service to wait (<strong>Rate limited, next try after</strong> under <strong>Last delivery</strong>), gets no reminder until it is on and the wait is over.</li>
 <li><strong>Did the last send fail?</strong> <strong>Last delivery</strong> shows the reason. A failed reminder is tried again at the next check.</li>
 </ol>
+<h2 id="does-it-work-on-multisite">Does it work on multisite?<a class="headerlink" href="#does-it-work-on-multisite" title="Permanent link">&para;</a></h2>
+<p>Yes, when the plugin is network-activated. The network has one set of settings in the Network Admin, under <strong>Settings → Updates Notifier</strong>, one check on the main site and one notification for each update. A copy activated for a single site does nothing until a super admin network-activates it. The Multisite networks page of the documentation has the details.</p>
 <h2 id="emails-only-arrive-after-someone-visits-the-site">Emails only arrive after someone visits the site<a class="headerlink" href="#emails-only-arrive-after-someone-visits-the-site" title="Permanent link">&para;</a></h2>
 <p>The schedule is run by WP-Cron. WP-Cron is not a real clock. WordPress only looks for due tasks when a page is requested, so on a site that few people visit, a check due at 03:00 can wait until someone arrives at 09:00. A forum user put it as "I only receive emails after someone has logged in".</p>
+<p>On a multisite network, it is the visitors of the main site that matter, because the check runs there.</p>
 <p>To fix it, run WP-Cron from the server's own clock. See <a href="#how-do-i-run-the-check-from-a-system-cron-or-wp-cli">How do I run the check from a system cron or WP-CLI?</a>.</p>
 <h2 id="how-do-i-run-the-check-from-a-system-cron-or-wp-cli">How do I run the check from a system cron or WP-CLI?<a class="headerlink" href="#how-do-i-run-the-check-from-a-system-cron-or-wp-cli" title="Permanent link">&para;</a></h2>
 <p>Use the server's own clock instead of WP-Cron. There are two ways.</p>

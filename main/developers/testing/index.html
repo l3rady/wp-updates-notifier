@@ -295,6 +295,8 @@
       
         
       
+        
+      
     
     
     
@@ -420,6 +422,34 @@
     
   
     Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/multisite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multisite networks
   
 
     
@@ -2110,6 +2140,7 @@
 <p><strong>Covers.</strong> Behaviour of the plugin inside a real WordPress: the update check, scheduling, settings and validation, channels and routing, the email channel, the settings screen markup, upgrades from older versions and uninstall. WordPress, its test library and a database come from the Docker setup. Mail and HTTP are faked.</p>
 <p><strong>Lives in.</strong> <code>tests/wp/</code>, one <code>test-*.php</code> file per area, on <code>tests/wp/class-wpun-test-case.php</code>. Add a file there and it runs: they are found by name.</p>
 <p><strong>Run it.</strong> <code>make test-wp</code> for a single site, <code>make test-wp-ms</code> for multisite. Pass PHPUnit options with <code>ARGS</code>, for example <code>make test-wp ARGS="--filter Test_Routing"</code>. <code>PHP_VERSION</code> and <code>WP_VERSION</code> pick the versions.</p>
+<p><strong>Multisite.</strong> The multisite run has the plugin network-activated, as a network has it. A test class that needs the plugin as one site's copy (the dormant mode, or per-site settings) sets <code>protected $network_activated = false;</code> in <code>WPUN_Test_Case</code>. <code>set_network_activated()</code> switches it inside a test.</p>
 <p><strong>Coverage.</strong> <code>make coverage</code> runs the same suite (single site) in an image with pcov, prints the summary and the five least covered files, writes <code>build/coverage/clover.xml</code> and <code>build/coverage/html/</code>, and fails when line coverage of the shipped code (<code>wp-updates-notifier.php</code>, <code>uninstall.php</code>, <code>includes/</code>, <code>modules/</code>; files no test loads count as uncovered) is below <code>COVERAGE_MIN</code> in the <code>Makefile</code>. It is a floor that only goes up: raise it, rounded down to a whole number, when a change raises the coverage. The aim is 90% or more. <code>bin/coverage-check.php</code> computes the percentage from the Clover report, and <code>tests/bin/test-coverage-check.sh</code> tests it. The pcov image is a separate Docker stage, so <code>make test-wp</code> is unchanged. Multisite-only code paths are not measured.</p>
 <p><strong>CI.</strong> The <code>coverage</code> job in <code>ci.yml</code> runs <code>make coverage</code> on PHP 8.3 and WordPress 7.1.3 for every pull request that changes code, tests or <code>phpunit.xml.dist</code>, and keeps the report as the <code>coverage-report</code> artifact for 14 days. It is in <code>ci-gate</code>, the required check, so a pull request below the floor cannot merge. The <code>wordpress</code> job in <code>ci.yml</code> runs PHP 7.4 to 8.5 on WordPress 7.1.3, single site and multisite, and PHP 7.4 and 8.3 on WordPress 6.7.9, the oldest supported. The <code>wordpress-trunk</code> job runs the suite against WordPress trunk every night, on PHP 7.4 and 8.5.</p>
 <h2 id="mutation-testing">Mutation testing<a class="headerlink" href="#mutation-testing" title="Permanent link">&para;</a></h2>

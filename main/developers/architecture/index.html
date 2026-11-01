@@ -295,6 +295,8 @@
       
         
       
+        
+      
     
     
     
@@ -420,6 +422,34 @@
     
   
     Channels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../users/multisite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multisite networks
   
 
     
@@ -749,6 +779,17 @@
     <span class="md-ellipsis">
       
         Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multisite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multisite
       
     </span>
   </a>
@@ -1921,6 +1962,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#multisite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multisite
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#public-and-internal-code" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1994,6 +2046,16 @@
 <p><strong>Results.</strong> The last result of each instance is shown on the Channels tab. Once every instance has had its turn, the run state is saved and <code>sc_wpun_after_update_check</code> fires.</p>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
 <p>Global settings live in the <code>sc_wpun_settings</code> option, the instances in <code>sc_wpun_channels</code> and the delivery state in <code>sc_wpun_state</code>. Read instances through <code>sc_wpun_channels()</code>, not the option, so instances defined in code and values from configuration sources are included. Any setting or channel field can instead come from a <code>wp-config.php</code> constant, an environment variable or a source your add-on registers. See <a href="../configuration-sources/">Configuration sources</a>.</p>
+<h2 id="multisite">Multisite<a class="headerlink" href="#multisite" title="Permanent link">&para;</a></h2>
+<p>On multisite the plugin runs only when it is network-activated (<a href="../../decisions/0021-network-only-on-multisite/">ADR 0021</a>). One internal object, <code>WPUN\Network_Context</code>, answers every question that depends on the mode, so each screen, handler and store is registered once and asks it. Network mode is multisite plus network activation, whichever screen the request comes from.</p>
+<ul>
+<li><strong>Storage.</strong> Options are read and written with the site option functions in network mode, under the same names. The options filters wrap them the same way.</li>
+<li><strong>Screens and URLs.</strong> The settings screen is in the network admin, and its links come from <code>network_admin_url()</code>. Code outside the plugin uses <code>sc_wpun_settings_url()</code>.</li>
+<li><strong>Cron.</strong> The check is scheduled on the main site only. <code>Config_Context::get_site_id()</code> returns the main site's id.</li>
+<li><strong>Notifications.</strong> The site name, home URL and updates link in a <code>Notification</code> are the network's.</li>
+<li><strong>Not network-activated.</strong> A copy that is active on a site but not network-activated boots dormant. It registers no commands, creates no options and sends nothing. It only clears a leftover check event and shows super admins a notice and a Site Health result.</li>
+<li><strong>First run.</strong> When the network has no settings, they are copied from the main site (<code>Settings::migrate_from_main_site()</code>).</li>
+</ul>
 <h2 id="public-and-internal-code">Public and internal code<a class="headerlink" href="#public-and-internal-code" title="Permanent link">&para;</a></h2>
 <p>Everything in <code>includes/</code> is in the <code>WPUN</code> namespace. Classes and methods tagged <code>@internal</code> are not part of the public API and can change in any release. Everything else that is documented with <code>@since</code> is public; see <a href="../stability/">Stability and deprecation</a>. The built-in email module in <code>modules/email/</code> uses only the public API, and CI (<code>make check-public-api</code>) makes sure it stays that way.</p>
 <h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
