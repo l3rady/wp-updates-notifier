@@ -503,6 +503,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#download-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download links
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#settings-you-set-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2006,6 +2017,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#download-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download links
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#settings-you-set-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2079,6 +2101,12 @@
 <p><strong>Hide the WordPress update notice from users who cannot update WordPress.</strong> This is on by default.</p>
 <p>It removes WordPress's "a new version is available" banner from the admin screens of users who lack the <code>update_core</code> capability, such as editors and authors. They can not act on it. Users who can update WordPress still see WordPress's own notice.</p>
 <p>This setting does not affect your notifications.</p>
+<h2 id="download-links">Download links<a class="headerlink" href="#download-links" title="Permanent link">&para;</a></h2>
+<p><strong>Include download links in notifications.</strong> This is off by default.</p>
+<p>With it on, a plugin, theme or WordPress item gets a "Download" link to its update package, when WordPress knows the address.</p>
+<p>Be careful before you turn it on. Some paid plugins and themes put a licence key or a private token in their download address. The address is sent to everyone who receives the notifications, on every channel. Some of these links are signed and expire, so they may no longer work by the time you use them.</p>
+<p>An address that does not start with <code>http://</code> or <code>https://</code> is not made into a link: plain text leaves it out, and Markdown and HTML show the label without a link.</p>
+<p>To keep only some of the links, for example only those from WordPress.org, use the <code>sc_wpun_item_download_url</code> filter. See <a href="../../developers/hooks/">Hooks</a>.</p>
 <h2 id="settings-you-set-in-code">Settings you set in code<a class="headerlink" href="#settings-you-set-in-code" title="Permanent link">&para;</a></h2>
 <p>A setting supplied by <code>wp-config.php</code> or an environment variable is read-only here and says "Set by" and where the value comes from. See <a href="../settings-in-code/">Settings in code</a>.</p>
 

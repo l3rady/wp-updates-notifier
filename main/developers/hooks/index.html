@@ -1619,6 +1619,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_item_download_url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_item_download_url
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_loaded" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3258,6 +3269,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_item_download_url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_item_download_url
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_loaded" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4388,7 +4410,7 @@ one of its keys falls back to the built-in default.</p>
 <tr>
 <td><code>$defaults</code></td>
 <td><code>array&lt;string, mixed&gt;</code></td>
-<td>The default settings.<br>- <code>string</code> <code>$frequency</code> Name of a cron schedule.<br>- <code>string</code> <code>$notify_core</code> <code>none</code>, <code>all</code> or <code>major</code> (major releases only).<br>- <code>string</code> <code>$notify_plugins</code> <code>none</code>, <code>all</code> or <code>active</code> (active plugins only).<br>- <code>string</code> <code>$notify_themes</code> <code>none</code>, <code>all</code> or <code>active</code> (active themes only).<br>- <code>bool</code> <code>$hide_updates</code> True to hide the WordPress update notice from users who cannot update.</td>
+<td>The default settings.<br>- <code>string</code> <code>$frequency</code> Name of a cron schedule.<br>- <code>string</code> <code>$notify_core</code> <code>none</code>, <code>all</code> or <code>major</code> (major releases only).<br>- <code>string</code> <code>$notify_plugins</code> <code>none</code>, <code>all</code> or <code>active</code> (active plugins only).<br>- <code>string</code> <code>$notify_themes</code> <code>none</code>, <code>all</code> or <code>active</code> (active themes only).<br>- <code>bool</code> <code>$hide_updates</code> True to hide the WordPress update notice from users who cannot update.<br>- <code>bool</code> <code>$download_links</code> True to add download links to plugin, theme and WordPress items.</td>
 </tr>
 </tbody>
 </table>
@@ -4915,6 +4937,46 @@ installs the update later. Returning false removes the flag and the note.</p>
 <p><em>Action</em>, since 1.0.0</p>
 <p>Fires when the plugin is deactivated, to turn the scheduled check off.</p>
 <p>Fired in <code>includes/class-plugin.php</code>, <code>includes/class-scheduler.php</code>.</p>
+<h3 id="sc_wpun_item_download_url"><code>sc_wpun_item_download_url</code><a class="headerlink" href="#sc_wpun_item_download_url" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters the address of a download link before it is added to an item, when download links are on.</p>
+<p>Not run when the "Download links" setting is off. Return an empty string to leave the link out.
+The address comes from the update data and can hold a licence key or a private token.</p>
+<p>Example, keep only downloads from WordPress.org:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_item_download_url',</span>
+<span class="x">    function ( $url ) {</span>
+<span class="x">        return 0 === strpos( $url, 'https://downloads.wordpress.org/' ) ? $url : '';</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$url</code></td>
+<td><code>string</code></td>
+<td>The package address from the update data.</td>
+</tr>
+<tr>
+<td><code>$type</code></td>
+<td><code>string</code></td>
+<td>Item type: <code>plugin</code>, <code>theme</code> or <code>core</code>.</td>
+</tr>
+<tr>
+<td><code>$key</code></td>
+<td><code>string</code></td>
+<td>Plugin file, theme stylesheet or <code>core</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
 <h3 id="sc_wpun_loaded"><code>sc_wpun_loaded</code><a class="headerlink" href="#sc_wpun_loaded" title="Permanent link">&para;</a></h3>
 <p><em>Action</em>, since 2.0.0</p>
 <p>Fires when the plugin has loaded and its hooks are registered.</p>
