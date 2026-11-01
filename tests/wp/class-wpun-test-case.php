@@ -201,6 +201,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 			'notify_plugins'         => 'all',
 			'notify_themes'          => 'all',
 			'hide_updates'           => true,
+			'download_links'         => false,
 		);
 
 		return array_merge( $defaults, $overrides );
@@ -215,7 +216,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	protected function global_settings( array $overrides = array() ) {
 		return array_intersect_key(
 			$this->settings( $overrides ),
-			array_flip( array( 'frequency', 'notify_core', 'notify_plugins', 'notify_themes', 'hide_updates' ) )
+			array_flip( array( 'frequency', 'notify_core', 'notify_plugins', 'notify_themes', 'hide_updates', 'download_links' ) )
 		);
 	}
 
@@ -395,18 +396,22 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	 * @param string|null $core_version Version offered by core, or null for none.
 	 * @param array       $plugins      Plugin updates: file => [ 'new_version' => , 'slug' => , 'url' => ].
 	 * @param array       $themes       Theme updates: stylesheet => [ 'new_version' => , 'url' => ].
+	 * @param array       $core_offer   Extra properties of the core offer, for example `download` or `packages`.
 	 */
-	protected function set_updates( $core_version = null, array $plugins = array(), array $themes = array() ) {
+	protected function set_updates( $core_version = null, array $plugins = array(), array $themes = array(), array $core_offer = array() ) {
 		$core                  = new stdClass();
 		$core->last_checked    = time();
 		$core->version_checked = wp_get_wp_version();
 		$core->translations    = array();
 		$core->updates         = array(
-			(object) array(
-				'response' => $core_version ? 'upgrade' : 'latest',
-				'current'  => $core_version ? $core_version : wp_get_wp_version(),
-				'version'  => $core_version ? $core_version : wp_get_wp_version(),
-				'locale'   => 'en_US',
+			(object) array_merge(
+				array(
+					'response' => $core_version ? 'upgrade' : 'latest',
+					'current'  => $core_version ? $core_version : wp_get_wp_version(),
+					'version'  => $core_version ? $core_version : wp_get_wp_version(),
+					'locale'   => 'en_US',
+				),
+				$core_offer
 			),
 		);
 		set_site_transient( 'update_core', $core );

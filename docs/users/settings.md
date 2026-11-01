@@ -61,6 +61,18 @@ It removes WordPress's "a new version is available" banner from the admin screen
 
 This setting does not affect your notifications.
 
+## Download links
+
+**Include download links in notifications.** This is off by default.
+
+With it on, a plugin, theme or WordPress item gets a "Download" link to its update package, when WordPress knows the address.
+
+Be careful before you turn it on. Some paid plugins and themes put a licence key or a private token in their download address. The address is sent to everyone who receives the notifications, on every channel. Some of these links are signed and expire, so they may no longer work by the time you use them.
+
+An address that does not start with `http://` or `https://` is not made into a link: plain text leaves it out, and Markdown and HTML show the label without a link.
+
+To keep only some of the links, for example only those from WordPress.org, use the `sc_wpun_item_download_url` filter. See [Hooks](../developers/hooks.md).
+
 ## Settings you set in code
 
 A setting supplied by `wp-config.php` or an environment variable is read-only here and says "Set by" and where the value comes from. See [Settings in code](settings-in-code.md).

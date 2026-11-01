@@ -50,7 +50,7 @@ How the item's fields are used:
 
 - `type` and `key` identify the item. Keep the key stable between runs.
 - `new_version` is what the history remembers. An instance is told about an item once per `new_version`: the same item with the same `new_version` is not sent again, and a different `new_version` is.
-- `name`, `current_version`, `links` and `notes` appear in the message.
+- `name`, `current_version`, `links` and `notes` appear in the message. The check uses the link labels `details`, `changelog` and `download`; the renderers translate those three and turn any other label into text. `download` is the update package, and only appears when the **Download links** setting is on (see the `sc_wpun_item_download_url` filter).
 - `flags` are machine-readable facts (scalars) for routing rules and channels. They are not shown in the message.
 
 The check sets a bool `auto_update` flag on every core, plugin and theme item. It is true when WordPress is set to install the update by itself and can run on this site. The item then also has the note "Automatic updates are on, but WordPress has not installed this update yet." Items you add with `sc_wpun_update_items` get no flag from the plugin. Set it yourself if you want it.
@@ -110,4 +110,4 @@ To stop an item from going anywhere, use `sc_wpun_should_notify_item` instead. A
 
 ## In a channel
 
-A channel receives only the items routed to its instance, in `$notification->get_items()`. `get_items_of_type( 'php' )` picks one type. A channel that formats messages itself should cope with item types it does not know, since any add-on can add one. `WPUN\Notification_Renderer` lists every item the same way, whatever its type: name, versions, links and notes.
+A channel receives only the items routed to its instance, in `$notification->get_items()`. `get_items_of_type( 'php' )` picks one type. A channel that formats messages itself should cope with item types it does not know, since any add-on can add one. `WPUN\Notification_Renderer` lists every item the same way, whatever its type: name, versions, links and notes. Links whose address is not http or https are shown without a link in Markdown and HTML, and left out of plain text.

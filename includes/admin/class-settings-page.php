@@ -607,6 +607,7 @@ class Settings_Page {
 			'notify_plugins' => __( 'Choose whether to be told about plugin updates.', 'wp-updates-notifier' ),
 			'notify_themes'  => __( 'Choose whether to be told about theme updates.', 'wp-updates-notifier' ),
 			'hide_updates'   => __( 'Choose whether to hide the update notices.', 'wp-updates-notifier' ),
+			'download_links' => __( 'Choose whether to include download links.', 'wp-updates-notifier' ),
 		);
 		foreach ( $this->settings->schemas() as $name => $schema ) {
 			if ( ! array_key_exists( $name, $input ) || false === ( $schema['storage'] ?? true ) ) {
@@ -723,7 +724,7 @@ class Settings_Page {
 		if ( $unavailable ) {
 			$described_by[] = $id . '-unavailable';
 		}
-		if ( 'notify_core' === $name ) {
+		if ( in_array( $name, array( 'notify_core', 'download_links' ), true ) ) {
 			$described_by[] = $id . '-help';
 		}
 		if ( $this->is_external( $name ) ) {
@@ -742,6 +743,13 @@ class Settings_Page {
 			?>
 			<p class="description" id="<?php echo esc_attr( $id . '-help' ); ?>">
 				<?php esc_html_e( 'Scheduled checks run WordPress\'s automatic updates first, so updates it installs by itself are not reported.', 'wp-updates-notifier' ); ?>
+			</p>
+			<?php
+		}
+		if ( 'download_links' === $name ) {
+			?>
+			<p class="description" id="<?php echo esc_attr( $id . '-help' ); ?>">
+				<?php esc_html_e( 'Some paid plugins and themes put a licence key or a private token in their download address. With this on, that address is sent to everyone who receives the notifications, on every channel.', 'wp-updates-notifier' ); ?>
 			</p>
 			<?php
 		}

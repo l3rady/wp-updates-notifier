@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The plugin settings: their defaults, how they are read and written and how older ones are upgraded.
  *
  * @internal
- * @phpstan-type SettingsData array{frequency: string, notify_core: 'none'|'all'|'major', notify_plugins: 'none'|'all'|'active', notify_themes: 'none'|'all'|'active', hide_updates: bool}
+ * @phpstan-type SettingsData array{frequency: string, notify_core: 'none'|'all'|'major', notify_plugins: 'none'|'all'|'active', notify_themes: 'none'|'all'|'active', hide_updates: bool, download_links: bool}
  */
 class Settings {
 	const OPT_FIELD         = 'sc_wpun_settings';
@@ -248,6 +248,7 @@ class Settings {
 			'notify_plugins' => 'all',
 			'notify_themes'  => 'all',
 			'hide_updates'   => true,
+			'download_links' => false,
 		);
 
 		/**
@@ -277,6 +278,7 @@ class Settings {
 		 *     @type string $notify_plugins   `none`, `all` or `active` (active plugins only).
 		 *     @type string $notify_themes    `none`, `all` or `active` (active themes only).
 		 *     @type bool   $hide_updates     True to hide the WordPress update notice from users who cannot update.
+		 *     @type bool   $download_links   True to add download links to plugin, theme and WordPress items.
 		 * }
 		 */
 		$filtered = apply_filters( 'sc_wpun_default_settings', $defaults );
@@ -290,6 +292,7 @@ class Settings {
 			'notify_plugins' => $this->notify_key( 'notify_plugins', $filtered['notify_plugins'] ?? null, $defaults['notify_plugins'], false ),
 			'notify_themes'  => $this->notify_key( 'notify_themes', $filtered['notify_themes'] ?? null, $defaults['notify_themes'], false ),
 			'hide_updates'   => $this->bool_setting( $filtered, 'hide_updates', $defaults['hide_updates'] ),
+			'download_links' => $this->bool_setting( $filtered, 'download_links', $defaults['download_links'] ),
 		);
 	}
 
@@ -327,6 +330,11 @@ class Settings {
 		$hide = $this->config->resolve_typed( Config_Context::setting( 'hide_updates' ), $schemas['hide_updates'] );
 		if ( null !== $hide ) {
 			$settings['hide_updates'] = (bool) $hide->get_value();
+		}
+
+		$download = $this->config->resolve_typed( Config_Context::setting( 'download_links' ), $schemas['download_links'] );
+		if ( null !== $download ) {
+			$settings['download_links'] = (bool) $download->get_value();
 		}
 
 		return $settings;
@@ -396,6 +404,14 @@ class Settings {
 					'on' => __( 'Hide the WordPress update notice from users who cannot update WordPress', 'wp-updates-notifier' ),
 				),
 				'default' => true,
+			),
+			'download_links' => array(
+				'type'    => 'boolean',
+				'label'   => __( 'Download links', 'wp-updates-notifier' ),
+				'labels'  => array(
+					'on' => __( 'Include download links in notifications', 'wp-updates-notifier' ),
+				),
+				'default' => false,
 			),
 			'show_about'     => array(
 				'type'    => 'boolean',
@@ -499,6 +515,7 @@ class Settings {
 			'notify_plugins' => $this->notify_key( 'notify_plugins', $stored['notify_plugins'] ?? null, $defaults['notify_plugins'] ),
 			'notify_themes'  => $this->notify_key( 'notify_themes', $stored['notify_themes'] ?? null, $defaults['notify_themes'] ),
 			'hide_updates'   => $this->bool_setting( $stored, 'hide_updates', $defaults['hide_updates'] ),
+			'download_links' => $this->bool_setting( $stored, 'download_links', $defaults['download_links'] ),
 		);
 	}
 

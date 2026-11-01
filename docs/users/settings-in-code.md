@@ -25,6 +25,7 @@ Names start with `SC_WPUN_SETTING_`:
 | `SC_WPUN_SETTING_NOTIFY_PLUGINS` | `none`, `all` or `active` | **Notify about plugin updates?** |
 | `SC_WPUN_SETTING_NOTIFY_THEMES` | `none`, `all` or `active` | **Notify about theme updates?** |
 | `SC_WPUN_SETTING_HIDE_UPDATES` | `true` or `false` | **Update notice** |
+| `SC_WPUN_SETTING_DOWNLOAD_LINKS` | `true` or `false` | **Download links** |
 
 ```php
 define( 'SC_WPUN_SETTING_FREQUENCY', 'daily' );

@@ -575,7 +575,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->assertTrue( $settings->schemas()['hide_updates']['default'], 'The form offers the notice hidden by default.' );
 
 		add_filter( 'sc_wpun_default_settings', '__return_empty_string' );
-		$this->assertSame( array( 'frequency', 'notify_core', 'notify_plugins', 'notify_themes', 'hide_updates' ), array_keys( $settings->default_settings() ) );
+		$this->assertSame( array( 'frequency', 'notify_core', 'notify_plugins', 'notify_themes', 'hide_updates', 'download_links' ), array_keys( $settings->default_settings() ) );
 		remove_filter( 'sc_wpun_default_settings', '__return_empty_string' );
 
 		add_filter(

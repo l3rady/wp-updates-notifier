@@ -792,7 +792,7 @@ add_filter(
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `$defaults` | `array<string, mixed>` | The default settings.<br>- `string` `$frequency` Name of a cron schedule.<br>- `string` `$notify_core` `none`, `all` or `major` (major releases only).<br>- `string` `$notify_plugins` `none`, `all` or `active` (active plugins only).<br>- `string` `$notify_themes` `none`, `all` or `active` (active themes only).<br>- `bool` `$hide_updates` True to hide the WordPress update notice from users who cannot update. |
+| `$defaults` | `array<string, mixed>` | The default settings.<br>- `string` `$frequency` Name of a cron schedule.<br>- `string` `$notify_core` `none`, `all` or `major` (major releases only).<br>- `string` `$notify_plugins` `none`, `all` or `active` (active plugins only).<br>- `string` `$notify_themes` `none`, `all` or `active` (active themes only).<br>- `bool` `$hide_updates` True to hide the WordPress update notice from users who cannot update.<br>- `bool` `$download_links` True to add download links to plugin, theme and WordPress items. |
 
 Fired in `includes/class-settings.php`.
 
@@ -1204,6 +1204,34 @@ Fired in `includes/class-auto-update-policy.php`.
 Fires when the plugin is deactivated, to turn the scheduled check off.
 
 Fired in `includes/class-plugin.php`, `includes/class-scheduler.php`.
+
+### `sc_wpun_item_download_url`
+
+*Filter*, since 3.0.0
+
+Filters the address of a download link before it is added to an item, when download links are on.
+
+Not run when the "Download links" setting is off. Return an empty string to leave the link out.
+The address comes from the update data and can hold a licence key or a private token.
+
+Example, keep only downloads from WordPress.org:
+
+```php
+add_filter(
+    'sc_wpun_item_download_url',
+    function ( $url ) {
+        return 0 === strpos( $url, 'https://downloads.wordpress.org/' ) ? $url : '';
+    }
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$url` | `string` | The package address from the update data. |
+| `$type` | `string` | Item type: `plugin`, `theme` or `core`. |
+| `$key` | `string` | Plugin file, theme stylesheet or `core`. |
+
+Fired in `includes/class-update-checker.php`.
 
 ### `sc_wpun_loaded`
 

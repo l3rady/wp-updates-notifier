@@ -103,6 +103,13 @@ class Update_Checker {
 	private $network_actives = false;
 
 	/**
+	 * Whether items get a download link, read once per check.
+	 *
+	 * @var bool
+	 */
+	private $with_download_links = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings             $settings Settings.
@@ -210,6 +217,8 @@ class Update_Checker {
 		$state   = $this->state->get();
 		$items   = array(); // What the check finds, in the order of the message.
 		$checked = array(); // Item type => keys still waiting, for the types this run looked at.
+
+		$this->with_download_links = $options['download_links'];
 
 		if ( 'none' !== $options['notify_core'] ) { // are we to check for WP core updates?
 			$this->core_update_check( $items, $options['notify_core'], $checked ); // check the WP core for updates.
@@ -817,6 +826,7 @@ class Update_Checker {
 				'name'            => 'WordPress',
 				'current_version' => $current_version,
 				'new_version'     => $new_core_ver,
+				'links'           => $this->download_links( 'core', 'core', $this->core_package( $offer ) ),
 				'notes'           => $this->auto_update_notes( $auto_update ),
 				'flags'           => array( 'auto_update' => $auto_update ),
 			)
@@ -845,6 +855,70 @@ class Update_Checker {
 		}
 
 		return null;
+	}
+
+	/**
+	 * The package address of a core update offer.
+	 *
+	 * @param object $offer The offer from the update_core transient.
+	 *
+	 * @return string The `download` address, else the `full` package, else an empty string.
+	 */
+	private function core_package( object $offer ): string {
+		if ( isset( $offer->download ) && is_scalar( $offer->download ) && '' !== (string) $offer->download ) {
+			return (string) $offer->download;
+		}
+
+		$packages = $offer->packages ?? null;
+		if ( is_object( $packages ) ) {
+			$packages = get_object_vars( $packages );
+		}
+		if ( is_array( $packages ) && isset( $packages['full'] ) && is_scalar( $packages['full'] ) ) {
+			return (string) $packages['full'];
+		}
+
+		return '';
+	}
+
+	/**
+	 * The download link of an item, if the setting is on and there is an address.
+	 *
+	 * @param string $type    Item type: `plugin`, `theme` or `core`.
+	 * @param string $key     Plugin file, theme stylesheet or `core`.
+	 * @param string $package The package address from the update data.
+	 *
+	 * @return array<string, string> The `download` link, or nothing.
+	 */
+	private function download_links( string $type, string $key, string $package ): array {
+		if ( ! $this->with_download_links || '' === $package ) {
+			return array();
+		}
+
+		/**
+		 * Filters the address of a download link before it is added to an item, when download links are on.
+		 *
+		 * Not run when the "Download links" setting is off. Return an empty string to leave the link out.
+		 * The address comes from the update data and can hold a licence key or a private token.
+		 *
+		 * Example, keep only downloads from WordPress.org:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_item_download_url',
+		 *         function ( $url ) {
+		 *             return 0 === strpos( $url, 'https://downloads.wordpress.org/' ) ? $url : '';
+		 *         }
+		 *     );
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param string $url  The package address from the update data.
+		 * @param string $type Item type: `plugin`, `theme` or `core`.
+		 * @param string $key  Plugin file, theme stylesheet or `core`.
+		 */
+		$url = apply_filters( 'sc_wpun_item_download_url', $package, $type, $key );
+		$url = is_scalar( $url ) ? (string) $url : '';
+
+		return '' === $url ? array() : array( 'download' => $url );
 	}
 
 	/**
@@ -905,6 +979,8 @@ class Update_Checker {
 					} elseif ( '' !== $data->url ) {
 						$links['details'] = $data->url;
 					}
+					$links += $this->download_links( 'plugin', (string) $key, $data->package );
+
 					$auto_update = $this->auto_updates->is_on( 'plugin', (string) $key, $data, $data->new_version );
 					$items[]     = new Notification_Item(
 						array(
@@ -973,7 +1049,7 @@ class Update_Checker {
 							'name'            => $theme_info['Name'],
 							'current_version' => $theme_info['Version'],
 							'new_version'     => $data['new_version'],
-							'links'           => '' !== $data['url'] ? array( 'details' => $data['url'] ) : array(),
+							'links'           => ( '' !== $data['url'] ? array( 'details' => $data['url'] ) : array() ) + $this->download_links( 'theme', (string) $key, $data['package'] ),
 							'notes'           => $this->auto_update_notes( $auto_update ),
 							'flags'           => array(
 								'active'      => in_array( (string) $key, $active_themes, true ),
@@ -997,7 +1073,7 @@ class Update_Checker {
 	 *
 	 * @param mixed $response The transient's `response`.
 	 *
-	 * @return array<string, \stdClass> Entries keyed by plugin file, each with string `new_version`, `url`, `slug` and `id`.
+	 * @return array<string, \stdClass> Entries keyed by plugin file, each with string `new_version`, `url`, `slug`, `id` and `package`.
 	 */
 	public function normalise_plugin_updates( $response ): array {
 		$updates = array();
@@ -1013,7 +1089,7 @@ class Update_Checker {
 			}
 
 			$entry->new_version = (string) $entry->new_version;
-			foreach ( array( 'url', 'slug', 'id' ) as $property ) {
+			foreach ( array( 'url', 'slug', 'id', 'package' ) as $property ) {
 				$entry->$property = isset( $entry->$property ) && is_scalar( $entry->$property ) ? (string) $entry->$property : '';
 			}
 
@@ -1028,7 +1104,7 @@ class Update_Checker {
 	 *
 	 * @param mixed $response The update_themes transient's `response`.
 	 *
-	 * @return array<string, array{new_version: string, url: string}> Entries keyed by stylesheet.
+	 * @return array<string, array{new_version: string, url: string, package: string}> Entries keyed by stylesheet.
 	 */
 	private function normalise_theme_updates( $response ): array {
 		$updates = array();
@@ -1041,6 +1117,7 @@ class Update_Checker {
 
 			$entry['new_version'] = (string) $entry['new_version'];
 			$entry['url']         = isset( $entry['url'] ) && is_scalar( $entry['url'] ) ? (string) $entry['url'] : '';
+			$entry['package']     = isset( $entry['package'] ) && is_scalar( $entry['package'] ) ? (string) $entry['package'] : '';
 
 			$updates[ (string) $stylesheet ] = $entry;
 		}

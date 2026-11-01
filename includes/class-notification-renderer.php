@@ -359,6 +359,8 @@ final class Notification_Renderer {
 				return __( 'Details', 'wp-updates-notifier' );
 			case 'changelog':
 				return __( 'Changelog', 'wp-updates-notifier' );
+			case 'download':
+				return __( 'Download', 'wp-updates-notifier' );
 			default:
 				return ucfirst( str_replace( '_', ' ', $label ) );
 		}
@@ -380,6 +382,9 @@ final class Notification_Renderer {
 			case 'changelog':
 				// translators: %s: Name of the plugin, theme or WordPress.
 				return sprintf( __( '%s changelog', 'wp-updates-notifier' ), $name );
+			case 'download':
+				// translators: %s: Name of the plugin, theme or WordPress.
+				return sprintf( __( '%s download', 'wp-updates-notifier' ), $name );
 			default:
 				return $name . ' ' . self::link_label( $label );
 		}

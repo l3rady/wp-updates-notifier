@@ -94,7 +94,7 @@ final class Notification_Item {
 	 *     @type string   $name            Display name.
 	 *     @type string   $current_version Installed version.
 	 *     @type string   $new_version     Version available.
-	 *     @type array    $links           Label => URL.
+	 *     @type array    $links           Label => URL. The update check uses the labels `details`, `changelog` and `download`.
 	 *     @type string[] $notes           Extra lines.
 	 *     @type array    $flags           Name => scalar value. Plugin and theme items from the update check carry a bool `active` flag, and plugins also `tested`, `requires_php` and `requires_wp`. Core, plugin and theme items from the check carry a bool `auto_update` flag: true when WordPress is set to install the update by itself.
 	 * }
