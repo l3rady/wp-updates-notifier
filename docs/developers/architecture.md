@@ -34,6 +34,8 @@ flowchart TD
 
 **Delivery state.** The plugin remembers, per instance, which version of each item it has told that instance about, and when it last sent a reminder. An instance is sent only what is new to it. If a send fails, nothing is recorded for that instance, so the same items go out again on the next run, while the instances that succeeded are not sent them twice.
 
+**Resolved items.** Next to each notified version the state keeps `notified_meta`: the name, installed version, links (never the download link) and the time it was notified. When an item an instance was told about is no longer pending, and is installed at that version or newer (or a plugin or theme is gone), the check fires `sc_wpun_item_resolved` once for that instance and forgets it. Only core, plugin and theme items are reported. See ADR 0024.
+
 **Reminders.** The `remind` routing key (`never`, `daily`, `weekly` or `every_check`) turns on reminders for an instance. The state of an instance has a `last_reminder` (a unix time) in `sc_wpun_state`, under `channels[id]`:
 
 - While `remind` is not `never` and the instance receives at least one waiting item, the clock runs. The first check that sees this sets `last_reminder` to now and sends no reminder, so the first one comes one interval later. When `remind` is `never` or nothing is waiting, `last_reminder` is removed.
