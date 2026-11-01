@@ -46,3 +46,4 @@ The date is when the decision was made, not when the record was written.
 | [0022](0022-remind-on-every-check.md) | Remind on every check | Accepted | 2026-11-01 |
 | [0023](0023-snooze-time-checked-on-read-pruned-on-next-write.md) | Check a snooze's time on read, prune on the next write | Accepted | 2026-11-01 |
 | [0024](0024-resolved-items-detected-by-the-update-check.md) | Detect resolved items in the update check | Accepted | 2026-11-01 |
+| [0025](0025-deferred-delivery-result-held-until.md) | A deferred delivery result, held in its own state | Accepted | 2026-11-01 |

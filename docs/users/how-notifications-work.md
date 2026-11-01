@@ -83,7 +83,9 @@ If a channel fails, for example because the mail server refused the message, the
 
 Some channels, usually ones from add-ons that talk to an online service, can be told by the service to wait before trying again. This is the HTTP `Retry-After` header. The plugin then leaves that channel alone until the time is up, at most seven days, and **Last delivery** says **Rate limited, next try after** and the time. Other channels carry on. When the wait is over, the channel is sent everything that is new to it at the next check. The built-in email channel does not do this.
 
-A test message ignores the wait.
+A site or an add-on can also hold a channel until a set time, for example outside office hours, without it counting as an error. **Last delivery** then says **Held until** and the time, and the channel is sent everything that is new to it at the first check after. Update checks, reminders and **Check for updates and notify now** all leave a held channel alone.
+
+A test message ignores the wait and any hold.
 
 ## Overlapping checks
 

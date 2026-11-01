@@ -244,6 +244,44 @@ if ( 429 === $status ) {
 
 A failure with a `retry_after` defers the instance: update checks skip it until that long after the failure, and its items stay unsent and go out on the first check after. Other instances are not affected, and nothing extra is scheduled. The plugin caps the wait at 7 days. A test send ignores the deferral and does not set it, and a later success, or a failure without `retry_after`, clears it. Without a `retry_after`, the items are retried on the next scheduled check, which is at least an hour away. Don't retry inside `send()`, and don't sleep.
 
+### Holding a delivery until later
+
+To hold a delivery without an error, return `Delivery_Result::deferred( $until )`, with `$until` a Unix time (not seconds, unlike `retry_after`). A channel can return it, and so can a `sc_wpun_pre_send` callback, which is the easy way to add your own quiet hours. The instance is held until then, at most 7 days from now, and a time in the past holds nothing. Unlike a failure, a hold fires `sc_wpun_notification_deferred` and not `sc_wpun_notification_failed`, raises no Site Health warning, and leaves the last delivery result alone. Nothing is recorded as notified, so the first check after `$until` delivers everything still pending. A test send ignores the hold and says so in its result.
+
+This holds the email channel outside weekdays 09:00 to 18:00, site time:
+
+```php
+add_filter(
+	'sc_wpun_pre_send',
+	function ( $pre, $notification, $instance ) {
+		if ( 'email' !== $instance->get_type() || $notification->is_test() ) {
+			return $pre;
+		}
+
+		$now  = new DateTimeImmutable( 'now', wp_timezone() );
+		$day  = (int) $now->format( 'N' ); // 1 = Monday, 7 = Sunday.
+		$hour = (int) $now->format( 'G' );
+		if ( $day <= 5 && $hour >= 9 && $hour < 18 ) {
+			return $pre;
+		}
+
+		// The next 09:00 on a weekday: today if it is early on a weekday, otherwise the next weekday.
+		$next = $now->setTime( 9, 0 );
+		if ( $day > 5 || $next <= $now ) {
+			do {
+				$next = $next->modify( '+1 day' );
+			} while ( (int) $next->format( 'N' ) > 5 );
+		}
+
+		return \WPUN\Delivery_Result::deferred( $next->getTimestamp(), 'Outside office hours.' );
+	},
+	10,
+	3
+);
+```
+
+`sc_wpun_instance_waiting_until( $id )` tells when an instance may next be delivered to, for a `sc_wpun_item_resolved` listener or a dashboard.
+
 ### Length limits
 
 Most services limit the size of a message. Respect the limit by sending a summary rather than a message the service will refuse. `Notification_Renderer` does this for you: pass the limits to `plain_text()`, `markdown()` or `html()`.

@@ -68,6 +68,7 @@ nav:
       - 0022 Remind on every check: decisions/0022-remind-on-every-check.md
       - 0023 Snooze: decisions/0023-snooze-time-checked-on-read-pruned-on-next-write.md
       - 0024 Resolved items: decisions/0024-resolved-items-detected-by-the-update-check.md
+      - 0025 Deferred delivery result: decisions/0025-deferred-delivery-result-held-until.md
   - Security:
       - Threat model: security/threat-model.md
       - AI review for 2.0.0: security/ai-review-2.0.0.md
