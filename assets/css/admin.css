@@ -63,3 +63,29 @@
 		color: CanvasText;
 	}
 }
+
+/* Field groups of the channel form: a fieldset, or a details element when collapsed. */
+.sc-wpun-field-group {
+	margin: 1.5em 0 0;
+	padding: 0;
+	border: 0;
+}
+
+.sc-wpun-field-group > legend {
+	padding: 0;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.sc-wpun-field-group-details {
+	margin: 1.5em 0 0;
+}
+
+.sc-wpun-field-group-details > summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.sc-wpun-field-group-details > .sc-wpun-field-group {
+	margin-top: 0;
+}

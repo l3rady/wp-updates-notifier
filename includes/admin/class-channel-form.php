@@ -410,7 +410,7 @@ class Channel_Form {
 
 				$this->render_general_section( $is_new, $instance, $label, $enabled, $skip, $was_enabled, $errors );
 				$this->render_routing_section( $routing, $errors );
-				$this->render_settings_section( $custom, $form_inst, $fields, $settings, $is_new, $errors );
+				$this->render_settings_section( $custom, $form_inst, $fields, is_string( $custom ) ? array() : $channel->get_form_field_groups(), $settings, $is_new, $errors );
 
 				/**
 				 * Fires inside the add and edit form of a channel, after its last section and before the buttons.
@@ -535,10 +535,22 @@ class Channel_Form {
 	 * @return void
 	 */
 	private function row( string $title, string $target, string $controls, bool $required = false ): void {
+		$this->put( '<tr><th scope="row">' . $this->title_html( $title, $target, $required ) . '</th><td>' . $controls . '</td></tr>' );
+	}
+
+	/**
+	 * The content of the header cell of a row: the title, as a label of the control if there is a single one.
+	 *
+	 * @param string $title    Text of the row header, already escaped.
+	 * @param string $target   Id of the single control the header labels; empty if the control names itself.
+	 * @param bool   $required Whether to mark the field as required.
+	 *
+	 * @return string Escaped markup.
+	 */
+	private function title_html( string $title, string $target, bool $required ): string {
 		$title .= $required ? Field_Renderer::required_marker() : '';
-		$this->put(
-			'<tr><th scope="row">' . ( '' === $target ? $title : '<label for="' . esc_attr( $target ) . '">' . $title . '</label>' ) . '</th><td>' . $controls . '</td></tr>'
-		);
+
+		return '' === $target ? $title : '<label for="' . esc_attr( $target ) . '">' . $title . '</label>';
 	}
 
 	/**
@@ -571,17 +583,18 @@ class Channel_Form {
 	 * @param mixed                $value    Current value.
 	 * @param string               $error    Error message, if any.
 	 * @param string|null          $external Where the value comes from, if outside the database.
+	 * @param string               $applies  The note on when the field applies, if it is conditional.
 	 *
 	 * @return string The markup of the cell.
 	 */
-	private function control( array $schema, string $name, string $id, $value, string $error, ?string $external = null ): string {
+	private function control( array $schema, string $name, string $id, $value, string $error, ?string $external = null, string $applies = '' ): string {
 		$description = isset( $schema['description'] ) && is_string( $schema['description'] ) && '' !== $schema['description'] ? $schema['description'] : '';
 		if ( null !== $external && Field_Types::hides_external( $schema ) ) {
 			// A value from outside the database may be a secret the schema forgot to flag: don't print it.
 			$value = '';
 		}
 		// The field adds the id of its error after these.
-		$described_by = trim( ( '' !== $description ? $id . '-description' : '' ) . ( null !== $external ? ' ' . $id . '-external' : '' ) );
+		$described_by = trim( ( '' !== $description ? $id . '-description' : '' ) . ( null !== $external ? ' ' . $id . '-external' : '' ) . ( '' !== $applies ? ' ' . $id . '-applies-when' : '' ) );
 		$html         = Field_Renderer::field( $schema, $name, $id, $value, null !== $external, $described_by, array(), $error );
 		if ( null !== $external ) {
 			// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
@@ -589,6 +602,9 @@ class Channel_Form {
 		}
 		if ( '' !== $description ) {
 			$html .= '<p class="description" id="' . esc_attr( $id . '-description' ) . '">' . esc_html( $description ) . '</p>';
+		}
+		if ( '' !== $applies ) {
+			$html .= '<p class="description sc-wpun-applies-when" id="' . esc_attr( $id . '-applies-when' ) . '">' . esc_html( $applies ) . '</p>';
 		}
 
 		return $html;
@@ -722,13 +738,14 @@ class Channel_Form {
 	 * @param string|null                         $custom   What the module's render_settings() returned.
 	 * @param Channel_Instance                    $form_inst The instance with the submitted values.
 	 * @param array<string, array<string, mixed>> $fields   The fields of the module.
+	 * @param array<string, array<string, mixed>> $groups   The field groups of the module.
 	 * @param array<string, mixed>                $settings Values to show.
 	 * @param bool                                $is_new   Whether the channel is new.
 	 * @param array<string,string>                $errors   Messages by field key.
 	 *
 	 * @return void
 	 */
-	private function render_settings_section( ?string $custom, Channel_Instance $form_inst, array $fields, array $settings, bool $is_new, array $errors ): void {
+	private function render_settings_section( ?string $custom, Channel_Instance $form_inst, array $fields, array $groups, array $settings, bool $is_new, array $errors ): void {
 		?>
 		<h3><?php esc_html_e( 'Settings', 'wp-updates-notifier' ); ?></h3>
 		<?php
@@ -740,30 +757,176 @@ class Channel_Form {
 			<?php
 			return;
 		}
-		?>
-		<table class="form-table" role="presentation">
-			<tbody>
-				<?php
-				foreach ( $fields as $name => $schema ) {
-					$name = (string) $name;
-					if ( ! is_array( $schema ) ) {
-						continue;
-					}
-					if ( null === Field_Types::get( $schema['type'] ?? null ) ) {
-						Field_Types::unknown( $schema['type'] ?? null );
-						continue;
-					}
+		$buckets = array();
+		foreach ( $fields as $name => $schema ) {
+			$name = (string) $name;
+			if ( ! is_array( $schema ) ) {
+				continue;
+			}
+			if ( null === Field_Types::get( $schema['type'] ?? null ) ) {
+				Field_Types::unknown( $schema['type'] ?? null );
+				continue;
+			}
 
-					$id       = 'sc_wpun_channel_settings_' . $name;
-					$external = $is_new ? null : $this->store->external_source( $form_inst->get_id(), $name );
-					$value    = array_key_exists( $name, $settings ) ? $settings[ $name ] : ( $schema['default'] ?? '' );
-					$title    = isset( $schema['label'] ) && is_string( $schema['label'] ) && '' !== $schema['label'] ? $schema['label'] : $name;
-					$this->row( esc_html( $title ), $this->labels_one_control( $schema ) ? $id : '', $this->control( $schema, 'settings[' . $name . ']', $id, $value, $errors[ 'settings.' . $name ] ?? '', $external ), Field_Renderer::is_required( $schema ) );
+			$group = '';
+			if ( isset( $schema['group'] ) ) {
+				if ( is_string( $schema['group'] ) && isset( $groups[ $schema['group'] ] ) ) {
+					$group = $schema['group'];
+				} else {
+					Field_Types::unknown_group( $schema['group'] );
 				}
-				?>
-			</tbody>
-		</table>
-		<?php
+			}
+
+			$id       = 'sc_wpun_channel_settings_' . $name;
+			$external = $is_new ? null : $this->store->external_source( $form_inst->get_id(), $name );
+			$value    = array_key_exists( $name, $settings ) ? $settings[ $name ] : ( $schema['default'] ?? '' );
+			$title    = isset( $schema['label'] ) && is_string( $schema['label'] ) && '' !== $schema['label'] ? $schema['label'] : $name;
+			$applies  = $this->applies_note( $name, $schema, $fields );
+
+			$buckets[ $group ][ $name ] = '<tr><th scope="row">' . $this->title_html( esc_html( $title ), $this->labels_one_control( $schema ) ? $id : '', Field_Renderer::is_required( $schema ) ) . '</th><td>'
+				. $this->control( $schema, 'settings[' . $name . ']', $id, $value, $errors[ 'settings.' . $name ] ?? '', $external, $applies ) . '</td></tr>';
+		}
+
+		// Fields without a group first, as before; then each group that has fields, in the order declared.
+		$this->settings_table( $buckets[''] ?? array() );
+		foreach ( $groups as $group_id => $group ) {
+			$rows = $buckets[ (string) $group_id ] ?? array();
+			if ( array() === $rows ) {
+				continue;
+			}
+
+			$group_id = (string) $group_id;
+			$dom_id   = 'sc_wpun_channel_group_' . preg_replace( '/[^A-Za-z0-9_-]/', '_', $group_id );
+			$label    = (string) $group['label'];
+			$text     = isset( $group['description'] ) && is_string( $group['description'] ) && '' !== $group['description'] ? $group['description'] : '';
+			$open     = false;
+			foreach ( array_keys( $rows ) as $row_name ) {
+				$open = $open || isset( $errors[ 'settings.' . $row_name ] );
+			}
+			$collapsed = true === ( $group['collapsed'] ?? false );
+
+			if ( $collapsed ) {
+				$this->put( '<details class="sc-wpun-field-group-details"' . ( $open ? ' open' : '' ) . '><summary>' . esc_html( $label ) . '</summary>' );
+			}
+			$this->put( '<fieldset class="sc-wpun-field-group"' . ( '' !== $text ? ' aria-describedby="' . esc_attr( $dom_id . '-description' ) . '"' : '' ) . '>' );
+			$this->put( $collapsed ? '<legend class="screen-reader-text">' . esc_html( $label ) . '</legend>' : '<legend>' . esc_html( $label ) . '</legend>' );
+			if ( '' !== $text ) {
+				$this->put( '<p class="description" id="' . esc_attr( $dom_id . '-description' ) . '">' . esc_html( $text ) . '</p>' );
+			}
+			$this->settings_table( $rows );
+			$this->put( '</fieldset>' );
+			if ( $collapsed ) {
+				$this->put( '</details>' );
+			}
+		}
+	}
+
+	/**
+	 * Output a form table of settings rows, unless there are none.
+	 *
+	 * @param array<string, string> $rows The markup of the rows, escaped.
+	 *
+	 * @return void
+	 */
+	private function settings_table( array $rows ): void {
+		if ( array() === $rows ) {
+			return;
+		}
+
+		$this->put( '<table class="form-table" role="presentation"><tbody>' . implode( '', $rows ) . '</tbody></table>' );
+	}
+
+	/**
+	 * The note on when a conditional field is used.
+	 *
+	 * @param string                              $name   Name of the field.
+	 * @param array<string, mixed>                $schema Field schema.
+	 * @param array<string, array<string, mixed>> $fields The fields of the module.
+	 *
+	 * @return string Plain text, or an empty string for a field without a (usable) condition.
+	 */
+	private function applies_note( string $name, array $schema, array $fields ): string {
+		$clauses = array();
+		foreach ( Field_Types::conditions( $name, $schema, $fields ) as $other => $wanted ) {
+			$other_schema = (array) $fields[ $other ];
+			$other_label  = isset( $other_schema['label'] ) && is_string( $other_schema['label'] ) && '' !== $other_schema['label'] ? $other_schema['label'] : (string) $other;
+			$texts        = array();
+			foreach ( $wanted as $value ) {
+				$texts[] = $this->value_text( $value, $other_schema );
+			}
+			$clauses[] = sprintf(
+				// translators: 1: Label of another field, for example "Mode". 2: The value or values it must have, for example "App" or "App or Bot".
+				__( '%1$s is %2$s', 'wp-updates-notifier' ),
+				$other_label,
+				$this->join_texts( $texts, 'or' )
+			);
+		}
+		if ( array() === $clauses ) {
+			return '';
+		}
+
+		return sprintf(
+			// translators: %s: The condition, for example "Mode is App" or "Mode is App and Format is HTML".
+			__( 'Used only when %s.', 'wp-updates-notifier' ),
+			$this->join_texts( $clauses, 'and' )
+		);
+	}
+
+	/**
+	 * The words for a value a field is compared with: the label of an option, the on or off text of a boolean, or the value itself.
+	 *
+	 * @param mixed                $value  The value in the condition.
+	 * @param array<string, mixed> $schema Schema of the field it is compared with.
+	 *
+	 * @return string
+	 */
+	private function value_text( $value, array $schema ): string {
+		$type = Field_Types::canonical( $schema['type'] ?? null );
+
+		if ( 'boolean' === $type && in_array( $value, array( true, 1, '1', false, 0, '0' ), true ) ) {
+			$on     = in_array( $value, array( true, 1, '1' ), true );
+			$labels = isset( $schema['labels'] ) && is_array( $schema['labels'] ) ? $schema['labels'] : array();
+			$label  = $labels[ $on ? 'on' : 'off' ] ?? null;
+			if ( is_string( $label ) && '' !== $label ) {
+				return $label;
+			}
+
+			return $on ? __( 'Yes', 'wp-updates-notifier' ) : __( 'No', 'wp-updates-notifier' );
+		}
+
+		$raw = is_scalar( $value ) ? (string) $value : '';
+		if ( 'enum' === $type && isset( $schema['options'] ) && is_array( $schema['options'] ) && isset( $schema['options'][ $raw ] ) && is_string( $schema['options'][ $raw ] ) ) {
+			return $schema['options'][ $raw ];
+		}
+
+		return $raw;
+	}
+
+	/**
+	 * Join texts as a sentence list: "A", "A or B", "A, B or C".
+	 *
+	 * @param string[] $texts The texts.
+	 * @param string   $word  `or` or `and`.
+	 *
+	 * @return string
+	 */
+	private function join_texts( array $texts, string $word ): string {
+		$last = (string) array_pop( $texts );
+		if ( array() === $texts ) {
+			return $last;
+		}
+
+		$head = array_shift( $texts );
+		foreach ( $texts as $text ) {
+			// translators: 1: The items so far. 2: The next item. Used to join a list such as "A, B or C".
+			$head = sprintf( _x( '%1$s, %2$s', 'list of values or conditions', 'wp-updates-notifier' ), $head, $text );
+		}
+
+		return 'or' === $word
+			// translators: 1: The items so far, for example "A, B". 2: The last item. A list of values of which any is enough.
+			? sprintf( __( '%1$s or %2$s', 'wp-updates-notifier' ), $head, $last )
+			// translators: 1: The items so far, for example "A, B". 2: The last item. A list of conditions that must all hold.
+			: sprintf( __( '%1$s and %2$s', 'wp-updates-notifier' ), $head, $last );
 	}
 
 	/**

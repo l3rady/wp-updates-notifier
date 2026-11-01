@@ -19,7 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Shows every field type and display. Delivers nothing.
  *
- * The schema has no groups, so each label starts with the type and says what the field shows, and the order groups them.
+ * Each label starts with the type and says what the field shows, and the order groups them. The fields at the end show field groups
+ * (one of them collapsed, with a required field) and conditional fields (`applies_when`).
  */
 class Showcase_Channel extends Channel {
 
@@ -300,6 +301,88 @@ class Showcase_Channel extends Channel {
 				'type'              => 'text',
 				'label'             => __( 'Callback, sanitize_callback upper-cases the text', 'wpun-field-showcase' ),
 				'sanitize_callback' => array( self::class, 'shout' ),
+			),
+			// Groups and conditions. The defaults keep the conditions from holding, so the required fields below need nothing until the controlling field changes.
+			'cond_mode'             => array(
+				'type'    => 'enum',
+				'label'   => __( 'Condition, mode', 'wpun-field-showcase' ),
+				'group'   => 'conditions',
+				'default' => 'bot',
+				'options' => array(
+					'app' => __( 'App', 'wpun-field-showcase' ),
+					'bot' => __( 'Bot', 'wpun-field-showcase' ),
+					'web' => __( 'Web', 'wpun-field-showcase' ),
+				),
+			),
+			'cond_app_token'        => array(
+				'type'         => 'text',
+				'label'        => __( 'Condition, required when the mode is App', 'wpun-field-showcase' ),
+				'group'        => 'conditions',
+				'required'     => true,
+				'applies_when' => array( 'cond_mode' => 'app' ),
+			),
+			'cond_app_or_web'       => array(
+				'type'         => 'text',
+				'label'        => __( 'Condition, used when the mode is App or Web', 'wpun-field-showcase' ),
+				'group'        => 'conditions',
+				'applies_when' => array( 'cond_mode' => array( 'app', 'web' ) ),
+			),
+			'cond_toggle'           => array(
+				'type'   => 'boolean',
+				'label'  => __( 'Condition, switch', 'wpun-field-showcase' ),
+				'group'  => 'conditions',
+				'labels' => array(
+					'on' => __( 'Use a signing key', 'wpun-field-showcase' ),
+				),
+			),
+			'cond_toggle_key'       => array(
+				'type'         => 'secret',
+				'label'        => __( 'Condition, secret required when the switch is on', 'wpun-field-showcase' ),
+				'group'        => 'conditions',
+				'required'     => true,
+				'applies_when' => array( 'cond_toggle' => true ),
+			),
+			'cond_both'             => array(
+				'type'         => 'text',
+				'label'        => __( 'Condition, used when the mode is App and the switch is on', 'wpun-field-showcase' ),
+				'group'        => 'conditions',
+				'applies_when' => array(
+					'cond_mode'   => 'app',
+					'cond_toggle' => true,
+				),
+			),
+			'advanced_required'     => array(
+				'type'     => 'text',
+				'label'    => __( 'Collapsed group, text, required', 'wpun-field-showcase' ),
+				'group'    => 'advanced',
+				'required' => true,
+			),
+			'advanced_number'       => array(
+				'type'  => 'number',
+				'label' => __( 'Collapsed group, number', 'wpun-field-showcase' ),
+				'group' => 'advanced',
+			),
+		);
+	}
+
+	/**
+	 * The groups of the last fields.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function get_field_groups(): array {
+		return array(
+			'conditions' => array(
+				'label'       => __( 'Group: conditional fields', 'wpun-field-showcase' ),
+				'description' => __( 'The fields with a note are used only when the field they depend on has the value named in the note.', 'wpun-field-showcase' ),
+			),
+			'advanced'   => array(
+				'label'       => __( 'Group: collapsed, with a required field', 'wpun-field-showcase' ),
+				'description' => __( 'This group opens by itself when one of its fields has an error.', 'wpun-field-showcase' ),
+				'collapsed'   => true,
+			),
+			'unused'     => array(
+				'label' => __( 'Group: no fields, so it is not shown', 'wpun-field-showcase' ),
 			),
 		);
 	}

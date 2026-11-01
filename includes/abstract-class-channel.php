@@ -44,6 +44,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `min`, `max` (int): for a `number`, the smallest and largest value; for an `enum` with several choices, how many may be chosen.
  * - `sanitize_callback` (callable): receives the submitted value, returns the clean value.
  * - `validate_callback` (callable): receives the clean value, returns true or a WP_Error (false is an error too).
+ * - `group` (string): the id of a group declared by get_field_groups(). The form draws the field inside it. A field without a group, or
+ *   with an unknown one (which is reported to the developer), is drawn first, outside any group.
+ * - `applies_when` (array): the field is used only when other fields have given values, for example `array( 'mode' => 'app' )` or
+ *   `array( 'mode' => array( 'app', 'bot' ) )`: field names, each with a value or a list of values. All the entries must match (and),
+ *   and a list matches when any value of it does (or). A boolean matches `true`, `1` and `'1'` as on and `false`, `0` and `'0'` as off,
+ *   and a field with several choices matches when any chosen one is listed. The value of the other field is the submitted one, else the
+ *   stored one, else its `default`. The field is always shown, with a note ("Used only when Mode is App."), and `required` is enforced only
+ *   when the condition holds. A value that is submitted is kept either way. A field name the schema does not have is reported to the
+ *   developer and ignored. A channel that overrides validate_settings() must honour `applies_when` itself.
  *
  * The value types, with their displays:
  *
@@ -73,6 +82,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * schema, used by the settings screen and for values supplied from outside the database.
  *
  * The fields in use are those of get_form_fields(): get_fields() passed through the `sc_wpun_channel_fields` filter.
+ *
+ * A long form can be split in groups, declared by get_field_groups() and used by the `group` key of the fields. Each group is a
+ * fieldset with a legend, or a `<details>` when it is collapsed. The groups in use are those of get_form_field_groups().
  *
  * An `enum` stores the key of the option, never its position, so options can be added, removed or reordered.
  * Supplied from outside the database (constants, environment variables), a single choice is the key and a list is
@@ -178,6 +190,87 @@ abstract class Channel {
 		$filtered = apply_filters( 'sc_wpun_channel_fields', $fields, $this->get_type() );
 
 		return is_array( $filtered ) ? $filtered : $fields;
+	}
+
+	/**
+	 * The groups the fields of the settings form can be split in, by id.
+	 *
+	 * Each group is an array with a `label` (string, required) and optionally a `description` (string, help text) and `collapsed`
+	 * (bool, draw it closed; it opens by itself when one of its fields has an error). A field joins a group with the `group` key of
+	 * its schema. A group with no field is not drawn, and the groups are drawn in the order declared, after the fields without a group.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function get_field_groups(): array {
+		return array();
+	}
+
+	/**
+	 * The groups of the settings form: get_field_groups() after the `sc_wpun_channel_field_groups` filter.
+	 *
+	 * An entry that is not an array with a label, or that has an empty id, is dropped.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	final public function get_form_field_groups(): array {
+		$groups = $this->get_field_groups();
+
+		/**
+		 * Filters the field groups of a channel type.
+		 *
+		 * The groups split the fields of the add and edit forms; a field joins a group with its `group` key. Same schema as
+		 * Channel::get_field_groups(): an array keyed by group id, each an array with a `label`, and optionally a `description`
+		 * and `collapsed`. A group nothing joins is not drawn, and the `group` of a field can be set with the
+		 * `sc_wpun_channel_fields` filter.
+		 *
+		 * Example, move a module's rarely used fields into a collapsed "Advanced" group:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_channel_field_groups',
+		 *         function ( $groups, $channel ) {
+		 *             if ( 'email' === $channel->get_type() ) {
+		 *                 $groups['advanced'] = array(
+		 *                     'label'     => 'Advanced',
+		 *                     'collapsed' => true,
+		 *                 );
+		 *             }
+		 *             return $groups;
+		 *         },
+		 *         10,
+		 *         2
+		 *     );
+		 *     add_filter(
+		 *         'sc_wpun_channel_fields',
+		 *         function ( $fields, $type ) {
+		 *             if ( 'email' === $type && isset( $fields['reply_to'] ) ) {
+		 *                 $fields['reply_to']['group'] = 'advanced';
+		 *             }
+		 *             return $fields;
+		 *         },
+		 *         10,
+		 *         2
+		 *     );
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param array<string, array<string, mixed>> $groups  The groups by id.
+		 * @param Channel                             $channel The channel type's module.
+		 */
+		$filtered = apply_filters( 'sc_wpun_channel_field_groups', $groups, $this );
+		$filtered = is_array( $filtered ) ? $filtered : $groups;
+
+		$clean = array();
+		foreach ( $filtered as $id => $group ) {
+			if ( '' !== (string) $id && is_array( $group ) && isset( $group['label'] ) && is_string( $group['label'] ) && '' !== $group['label'] ) {
+				$clean[ (string) $id ] = $group;
+			}
+		}
+
+		return $clean;
 	}
 
 	/**

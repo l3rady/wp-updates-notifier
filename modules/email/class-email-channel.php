@@ -85,6 +85,7 @@ class Email_Channel extends Channel {
 	public function get_fields(): array {
 		return array(
 			'to'             => array(
+				'group'         => 'recipients',
 				'type'          => 'email_list',
 				'label'         => __( 'Send to', 'wp-updates-notifier' ),
 				'description'   => __( 'Separate multiple email addresses with a comma (,).', 'wp-updates-notifier' ),
@@ -92,6 +93,7 @@ class Email_Channel extends Channel {
 				'show_external' => true,
 			),
 			'from'           => array(
+				'group'             => 'message',
 				'type'              => 'text',
 				'label'             => __( 'From address', 'wp-updates-notifier' ),
 				'description'       => __( 'Leave empty to use the WordPress default. Only set an address at a domain this site is allowed to send mail for.', 'wp-updates-notifier' ),
@@ -99,12 +101,14 @@ class Email_Channel extends Channel {
 				'sanitize_callback' => 'sanitize_text_field',
 			),
 			'reply_to'       => array(
+				'group'             => 'message',
 				'type'              => 'text',
 				'label'             => __( 'Reply-To address', 'wp-updates-notifier' ),
 				'show_external'     => true,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
 			'format'         => array(
+				'group'   => 'message',
 				'type'    => 'enum',
 				'label'   => __( 'Format', 'wp-updates-notifier' ),
 				'default' => 'text',
@@ -114,10 +118,27 @@ class Email_Channel extends Channel {
 				),
 			),
 			'subject_prefix' => array(
+				'group'             => 'message',
 				'type'              => 'text',
 				'label'             => __( 'Subject prefix', 'wp-updates-notifier' ),
 				'show_external'     => true,
 				'sanitize_callback' => 'sanitize_text_field',
+			),
+		);
+	}
+
+	/**
+	 * The groups of the settings form.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function get_field_groups(): array {
+		return array(
+			'recipients' => array(
+				'label' => __( 'Recipients', 'wp-updates-notifier' ),
+			),
+			'message'    => array(
+				'label' => __( 'Message', 'wp-updates-notifier' ),
 			),
 		);
 	}

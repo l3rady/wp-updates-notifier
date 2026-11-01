@@ -600,6 +600,54 @@ Fires after a channel instance was deleted.
 
 Fired in `includes/class-channel-store.php`.
 
+### `sc_wpun_channel_field_groups`
+
+*Filter*, since 3.0.0
+
+Filters the field groups of a channel type.
+
+The groups split the fields of the add and edit forms; a field joins a group with its `group` key. Same schema as
+Channel::get_field_groups(): an array keyed by group id, each an array with a `label`, and optionally a `description`
+and `collapsed`. A group nothing joins is not drawn, and the `group` of a field can be set with the
+`sc_wpun_channel_fields` filter.
+
+Example, move a module's rarely used fields into a collapsed "Advanced" group:
+
+```php
+add_filter(
+    'sc_wpun_channel_field_groups',
+    function ( $groups, $channel ) {
+        if ( 'email' === $channel->get_type() ) {
+            $groups['advanced'] = array(
+                'label'     => 'Advanced',
+                'collapsed' => true,
+            );
+        }
+        return $groups;
+    },
+    10,
+    2
+);
+add_filter(
+    'sc_wpun_channel_fields',
+    function ( $fields, $type ) {
+        if ( 'email' === $type && isset( $fields['reply_to'] ) ) {
+            $fields['reply_to']['group'] = 'advanced';
+        }
+        return $fields;
+    },
+    10,
+    2
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$groups` | `array<string, array<string, mixed>>` | The groups by id. |
+| `$channel` | `Channel` | The channel type's module. |
+
+Fired in `includes/abstract-class-channel.php`.
+
 ### `sc_wpun_channel_fields`
 
 *Filter*, since 2.0.0

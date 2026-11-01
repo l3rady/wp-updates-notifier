@@ -182,6 +182,174 @@ final class Field_Types {
 	}
 
 	/**
+	 * Tell the developer a field names a group that is not declared (once per group).
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param mixed $group The `group` of a field schema.
+	 *
+	 * @return void
+	 */
+	public static function unknown_group( $group ): void {
+		$shown = is_string( $group ) ? $group : gettype( $group );
+		self::complain(
+			'group:' . $shown,
+			__METHOD__,
+			sprintf(
+				// translators: %s: Group id.
+				__( 'No field group "%s" is declared, so its fields are shown without a group. Declare it in get_field_groups() or with the sc_wpun_channel_field_groups filter.', 'wp-updates-notifier' ),
+				$shown
+			),
+			'3.0.0'
+		);
+	}
+
+	/**
+	 * The `applies_when` conditions of a field that can be checked.
+	 *
+	 * A condition on a field the schema does not have, or an `applies_when` that is not an array, is reported to the
+	 * developer (once) and left out, so the field applies as if it had no condition.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string                              $name   Name of the field.
+	 * @param array<string, mixed>                $field  Field schema.
+	 * @param array<string, array<string, mixed>> $fields Every field schema by name, to find the controlling fields.
+	 *
+	 * @return array<string, array<int, mixed>> Values that make the field apply, by controlling field name.
+	 */
+	public static function conditions( string $name, array $field, array $fields ): array {
+		if ( ! isset( $field['applies_when'] ) ) {
+			return array();
+		}
+
+		if ( ! is_array( $field['applies_when'] ) ) {
+			self::complain(
+				'applies_when:' . $name,
+				__METHOD__,
+				sprintf(
+					// translators: %s: Name of the field.
+					__( 'The applies_when of the field "%s" must be an array of field names and values, so the field always applies.', 'wp-updates-notifier' ),
+					$name
+				),
+				'3.0.0'
+			);
+
+			return array();
+		}
+
+		$conditions = array();
+		foreach ( $field['applies_when'] as $other => $wanted ) {
+			$other = (string) $other;
+			if ( ! isset( $fields[ $other ] ) || ! is_array( $fields[ $other ] ) ) {
+				self::complain(
+					'applies_when:' . $name . ':' . $other,
+					__METHOD__,
+					sprintf(
+						// translators: 1: Name of the field. 2: Name of the field it depends on.
+						__( 'The field "%1$s" applies only when the field "%2$s" has a value, but there is no such field, so it always applies.', 'wp-updates-notifier' ),
+						$name,
+						$other
+					),
+					'3.0.0'
+				);
+				continue;
+			}
+			$conditions[ $other ] = array_values( is_array( $wanted ) ? $wanted : array( $wanted ) );
+		}
+
+		return $conditions;
+	}
+
+	/**
+	 * Whether a field applies: every one of its `applies_when` conditions holds.
+	 *
+	 * The value of a controlling field is the one in `$values` when it has one, else its `default`, cleaned by its
+	 * type and `sanitize_callback` without raising errors: a value that is not valid never matches.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string                              $name   Name of the field.
+	 * @param array<string, mixed>                $field  Field schema.
+	 * @param array<string, array<string, mixed>> $fields Every field schema by name.
+	 * @param array<string, mixed>                $values The submitted values over the stored ones, or the values being shown.
+	 *
+	 * @return bool
+	 */
+	public static function applies( string $name, array $field, array $fields, array $values ): bool {
+		foreach ( self::conditions( $name, $field, $fields ) as $other => $wanted ) {
+			$current = self::controlling_value( (string) $other, (array) $fields[ $other ], $values );
+			if ( null === $current || ! self::matches( $current['value'], $wanted ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * The clean value of a controlling field.
+	 *
+	 * @param string               $name   Name of the controlling field.
+	 * @param array<string, mixed> $field  Its schema.
+	 * @param array<string, mixed> $values The values to read it from.
+	 *
+	 * @return array{value: mixed}|null Null when the value is not valid.
+	 */
+	private static function controlling_value( string $name, array $field, array $values ): ?array {
+		$handler = self::get( $field['type'] ?? null );
+		$schema  = $field + array( 'name' => $name );
+		$type    = self::canonical( $field['type'] ?? null );
+
+		if ( array_key_exists( $name, $values ) ) {
+			$value = $values[ $name ];
+		} elseif ( array_key_exists( 'default', $field ) ) {
+			$value = $field['default'];
+		} elseif ( 'boolean' === $type ) {
+			$value = false;
+		} elseif ( 'enum' === $type ) {
+			$value = Enum_Field::default_value( $field );
+		} else {
+			$value = '';
+		}
+
+		if ( isset( $field['sanitize_callback'] ) && is_callable( $field['sanitize_callback'] ) ) {
+			$value = call_user_func( $field['sanitize_callback'], $value );
+		}
+		if ( null !== $handler ) {
+			$value = call_user_func( $handler['sanitize'], $value, $schema );
+		}
+
+		return $value instanceof \WP_Error ? null : array( 'value' => $value );
+	}
+
+	/**
+	 * Whether a clean value is one of the wanted ones. A list (several choices) matches when any of its entries does.
+	 *
+	 * A boolean matches `true`, `1` and `'1'` as on and `false`, `0` and `'0'` as off; anything else is compared as text.
+	 *
+	 * @param mixed             $value  The clean value.
+	 * @param array<int, mixed> $wanted The values that make the field apply.
+	 *
+	 * @return bool
+	 */
+	private static function matches( $value, array $wanted ): bool {
+		foreach ( is_array( $value ) ? $value : array( $value ) as $have ) {
+			foreach ( $wanted as $want ) {
+				if ( is_bool( $have ) ) {
+					if ( in_array( $want, $have ? array( true, 1, '1' ) : array( false, 0, '0' ), true ) ) {
+						return true;
+					}
+				} elseif ( is_scalar( $have ) && is_scalar( $want ) && ! is_bool( $want ) && (string) $have === (string) $want ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Whether a field's value is kept secret: a `secret` type, or any known type with `secret` set.
 	 *
 	 * @param array<string, mixed> $field Field schema.
@@ -214,7 +382,7 @@ final class Field_Types {
 	 * Keeps only the declared fields. For each it runs `sanitize_callback`, then the sanitiser of the type, then
 	 * enforces `required` and runs `validate_callback`. A field missing from the submission stays missing, unless
 	 * it is required and nothing is stored, or it is a secret whose stored value is kept. Fields of an unknown
-	 * type are dropped.
+	 * type are dropped. `required` is enforced only when the field applies (see `applies_when`).
 	 *
 	 * @param array<string, array<string, mixed>> $fields   Field schemas by name.
 	 * @param array<string, mixed>                $settings Submitted settings.
@@ -223,7 +391,8 @@ final class Field_Types {
 	 * @return array<string, mixed>|\WP_Error The settings to store.
 	 */
 	public static function validate( array $fields, array $settings, array $stored ) {
-		$clean = array();
+		$clean  = array();
+		$values = $settings + $stored; // What the conditions see, whatever the order of the fields: the submitted value, else the stored one.
 
 		foreach ( $fields as $name => $field ) {
 			$name  = (string) $name;
@@ -235,6 +404,10 @@ final class Field_Types {
 				continue;
 			}
 
+			// A field that does not apply is cleaned and kept as usual, but nothing is required of it.
+			if ( true === ( $field['required'] ?? false ) && ! self::applies( $name, $field, $fields, $values ) ) {
+				$field['required'] = false;
+			}
 			$required = true === ( $field['required'] ?? false );
 			$schema   = $field + array( 'name' => $name );
 			$present  = array_key_exists( $name, $settings );
@@ -729,14 +902,15 @@ final class Field_Types {
 	 * @param string $key     What it is about.
 	 * @param string $method  The method to report.
 	 * @param string $message Message.
+	 * @param string $since   The version that introduced the rule being reported.
 	 *
 	 * @return void
 	 */
-	private static function complain( string $key, string $method, string $message ): void {
+	private static function complain( string $key, string $method, string $message, string $since = '2.0.0' ): void {
 		if ( isset( self::$warned[ $key ] ) ) {
 			return;
 		}
 		self::$warned[ $key ] = true;
-		_doing_it_wrong( esc_html( $method ), esc_html( $message ), '2.0.0' );
+		_doing_it_wrong( esc_html( $method ), esc_html( $message ), esc_html( $since ) );
 	}
 }
