@@ -22,8 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   `active` flag is true. Applies on top of the global "active only" settings. Default `all`.
  * - `core` (`all`|`major`): for `core` items. `major` keeps only updates that change major.minor.
  *   Default `all`.
- * - `remind` (`never`|`daily`|`weekly`): repeat every update of the instance that is still waiting,
- *   in one message, at that interval until it is installed. New updates are always sent at once.
+ * - `remind` (`never`|`daily`|`weekly`|`every_check`): repeat every update of the instance that is
+ *   still waiting, in one message, at that interval (or at every check) until it is installed.
+ *   New updates are always sent at once.
  *   Default `never`.
  *
  * Other keys are kept and ignored, so add-ons can store their own rules.
@@ -87,9 +88,10 @@ final class Routing {
 				'label'       => __( 'Reminders', 'wp-updates-notifier' ),
 				'description' => __( 'Repeat every update that is still waiting, in one message, until it is installed. New updates are still sent at once.', 'wp-updates-notifier' ),
 				'options'     => array(
-					'never'  => __( 'Never', 'wp-updates-notifier' ),
-					'daily'  => __( 'Daily', 'wp-updates-notifier' ),
-					'weekly' => __( 'Weekly', 'wp-updates-notifier' ),
+					'never'       => __( 'Never', 'wp-updates-notifier' ),
+					'daily'       => __( 'Daily', 'wp-updates-notifier' ),
+					'weekly'      => __( 'Weekly', 'wp-updates-notifier' ),
+					'every_check' => __( 'Every check', 'wp-updates-notifier' ),
 				),
 				'default'     => 'never',
 				'display'     => 'radio',

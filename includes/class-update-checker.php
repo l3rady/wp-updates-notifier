@@ -187,9 +187,10 @@ class Update_Checker {
 	 *
 	 * An instance with reminders on (the `remind` routing key) also gets one message, marked as a
 	 * reminder, with everything still waiting for it once its interval has passed since the last
-	 * reminder. The interval starts when something first waits for the instance, and stops when
-	 * nothing does. A due reminder replaces the message of new items of that run; new items
-	 * between reminders are sent at once as usual. A failed reminder does not restart the interval.
+	 * reminder (with `every_check`, at every check after the first). The interval starts when
+	 * something first waits for the instance, and stops when nothing does. A due reminder replaces
+	 * the message of new items of that run; new items between reminders are sent at once as usual.
+	 * A failed reminder does not restart the interval.
 	 *
 	 * @param string $source  What started the check, kept in the notification context.
 	 * @param bool   $dry_run Whether to only report, see run_check().
@@ -379,14 +380,15 @@ class Update_Checker {
 			}
 
 			// The reminder clock runs while the instance wants reminders and something is waiting for it.
-			$interval = $this->reminder_interval( Routing::normalise( $instance->get_routing() )['remind'] );
+			$remind   = Routing::normalise( $instance->get_routing() )['remind'];
+			$interval = $this->reminder_interval( $remind );
 			$due      = false;
 			if ( 0 === $interval || array() === $pending ) {
 				unset( $entry['last_reminder'] );
 			} elseif ( ! isset( $entry['last_reminder'] ) ) {
 				$entry['last_reminder'] = time(); // Starts now: the first reminder comes one interval after items start waiting.
 			} else {
-				$due = ! $force && ! $entry['skip_pending'] && $this->reminder_is_due( $entry['last_reminder'], $interval, $options );
+				$due = ! $force && ! $entry['skip_pending'] && ( 'every_check' === $remind || $this->reminder_is_due( $entry['last_reminder'], $interval, $options ) );
 			}
 
 			$store = true; // Whether the entry is kept in the state, which an unchanged "nothing new" is not.
@@ -702,11 +704,15 @@ class Update_Checker {
 	/**
 	 * The seconds between reminders for a `remind` routing value.
 	 *
-	 * @param mixed $remind The normalised `remind` routing value: never, daily or weekly.
+	 * @param mixed $remind The normalised `remind` routing value: never, daily, weekly or every_check.
 	 *
-	 * @return int 0 for never.
+	 * @return int 0 for never, 1 for every check (a reminder is due at each check, so there is no real interval).
 	 */
 	private function reminder_interval( $remind ): int {
+		if ( 'every_check' === $remind ) {
+			return 1;
+		}
+
 		if ( 'daily' === $remind ) {
 			return DAY_IN_SECONDS;
 		}

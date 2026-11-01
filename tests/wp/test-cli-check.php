@@ -393,6 +393,23 @@ class Test_Cli_Check extends WPUN_Test_Case {
 	}
 
 	/**
+	 * With reminders on every check, each run after the first is a reminder, and a dry run says so.
+	 */
+	public function test_every_check_reminds_on_each_run() {
+		$this->add( 'a', true, 'every_check' );
+		$this->waiting();
+
+		$this->assertSame( Update_Checker::STATUS_SEND, $this->check()['a']['status'] );
+		$this->assertSame( Update_Checker::STATUS_REMINDER, $this->check( true )['a']['status'] );
+
+		$plan = $this->check();
+		$this->assertSame( Update_Checker::STATUS_REMINDER, $plan['a']['status'] );
+		$this->assertTrue( $plan['a']['notification']->is_reminder() );
+		$this->assertSame( Update_Checker::STATUS_REMINDER, $this->check()['a']['status'] );
+		$this->assertSame( 3, $this->received() );
+	}
+
+	/**
 	 * Force sends a normal message, not a reminder, even if one is due, and leaves the clock.
 	 */
 	public function test_force_sends_a_normal_message_when_a_reminder_is_due() {

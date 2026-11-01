@@ -427,17 +427,125 @@ class Test_Reminders extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Every check: the first check is a normal message, the very next one a reminder with everything waiting.
+	 */
+	public function test_every_check_reminds_on_the_next_check() {
+		$this->add( 'a', 'every_check' );
+
+		$this->run_check();
+		$this->assertCount( 1, $this->received() );
+		$this->assertFalse( $this->received()[0]->is_reminder() );
+		$this->assertEqualsWithDelta( time(), $this->clock(), 5 );
+
+		$this->run_check();
+		$this->assertCount( 2, $this->received(), 'No interval: due at once.' );
+		$this->assertTrue( $this->received()[1]->is_reminder() );
+		$this->assertSame( array( 'core', 'hello.php' ), $this->keys( $this->received()[1] ) );
+
+		$this->run_check();
+		$this->assertCount( 3, $this->received() );
+		$this->assertTrue( $this->received()[2]->is_reminder() );
+	}
+
+	/**
+	 * Every check: a new item on a later check is folded into that check's reminder.
+	 */
+	public function test_every_check_folds_new_items_into_the_reminder() {
+		$this->add( 'a', 'every_check' );
+		$this->run_check( null );
+
+		$this->run_check( '2.0.0' );
+
+		$this->assertCount( 2, $this->received(), 'The first check and one reminder.' );
+		$this->assertTrue( $this->received()[1]->is_reminder() );
+		$this->assertSame( array( 'core', 'hello.php' ), $this->keys( $this->received()[1] ) );
+		$this->assertSame( '2.0.0', $this->notified_version( 'plugin', 'hello.php', 'a' ) );
+	}
+
+	/**
+	 * Every check: a forced run is a normal message and leaves the clock.
+	 */
+	public function test_every_check_force_is_a_normal_message() {
+		$this->add( 'a', 'every_check' );
+		$this->run_check();
+		$clock = $this->clock();
+
+		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
+		sc_wpun()->update_checker()->run_check( 'cli', false, true );
+
+		$this->assertCount( 2, $this->received() );
+		$this->assertFalse( $this->received()[1]->is_reminder() );
+		$this->assertSame( $clock, $this->clock() );
+	}
+
+	/**
+	 * Every check: a skip run sends nothing, starts the clock, and the next check reminds.
+	 */
+	public function test_every_check_skip_run_starts_the_clock() {
+		$this->add( 'a', 'every_check' );
+		sc_wpun()->state()->skip_pending( 'a' );
+
+		$this->run_check();
+		$this->assertCount( 0, $this->received() );
+		$this->assertEqualsWithDelta( time(), $this->clock(), 5 );
+
+		$this->run_check();
+		$this->assertCount( 1, $this->received() );
+		$this->assertTrue( $this->received()[0]->is_reminder() );
+	}
+
+	/**
+	 * Every check: a failed reminder does not move the clock and is tried again.
+	 */
+	public function test_every_check_failed_reminder_is_retried() {
+		$this->add( 'a', 'every_check' );
+		$this->run_check();
+		$this->backdate( 'a', HOUR_IN_SECONDS );
+		$clock = $this->clock();
+		$this->add( 'a', 'every_check', 'fail' );
+
+		$this->run_check();
+		$this->assertCount( 2, $this->received() );
+		$this->assertTrue( $this->received()[1]->is_reminder() );
+		$this->assertSame( $clock, $this->clock() );
+
+		$this->add( 'a', 'every_check', 'succeed' );
+		$this->run_check();
+		$this->assertCount( 3, $this->received() );
+		$this->assertTrue( $this->received()[2]->is_reminder() );
+		$this->assertGreaterThan( $clock, $this->clock() );
+	}
+
+	/**
+	 * Every check: with nothing waiting the clock is cleared and the next item is a normal message.
+	 */
+	public function test_every_check_nothing_pending_clears_the_clock() {
+		$this->add( 'a', 'every_check' );
+		$this->run_check();
+		$this->assertNotNull( $this->clock() );
+
+		$this->run_check( null, null );
+		$this->assertNull( $this->clock() );
+		$this->assertCount( 1, $this->received() );
+
+		$this->run_check( null, '100.0.0' );
+		$this->assertCount( 2, $this->received() );
+		$this->assertFalse( $this->received()[1]->is_reminder() );
+	}
+
+	/**
 	 * The reminder key is a normalised routing choice.
 	 */
 	public function test_routing_knows_remind() {
 		$fields = \WPUN\Routing::fields();
-		$this->assertSame( array( 'never', 'daily', 'weekly' ), array_keys( $fields['remind']['options'] ) );
+		$this->assertSame( array( 'never', 'daily', 'weekly', 'every_check' ), array_keys( $fields['remind']['options'] ) );
 		$this->assertSame( 'never', $fields['remind']['default'] );
 		$this->assertSame( 'radio', $fields['remind']['display'] );
 
 		$this->assertSame( 'never', \WPUN\Routing::normalise( array() )['remind'] );
 		$this->assertSame( 'never', \WPUN\Routing::normalise( array( 'remind' => 'hourly' ) )['remind'] );
 		$this->assertSame( 'weekly', \WPUN\Routing::normalise( array( 'remind' => 'weekly' ) )['remind'] );
+		$this->assertSame( 'every_check', \WPUN\Routing::normalise( array( 'remind' => 'every_check' ) )['remind'] );
 	}
 
 	/**
@@ -514,6 +622,7 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_the_routing_summary_mentions_reminders() {
 		$this->assertSame( 'All updates', \WPUN\Admin\Channels_Tab::routing_summary( array( 'remind' => 'never' ) ) );
 		$this->assertSame( 'All updates · Reminders: Weekly', \WPUN\Admin\Channels_Tab::routing_summary( array( 'remind' => 'weekly' ) ) );
+		$this->assertSame( 'All updates · Reminders: Every check', \WPUN\Admin\Channels_Tab::routing_summary( array( 'remind' => 'every_check' ) ) );
 		$this->assertSame( 'WordPress updates: Only major releases · Reminders: Daily', \WPUN\Admin\Channels_Tab::routing_summary( array( 'core' => 'major', 'remind' => 'daily' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 	}
 

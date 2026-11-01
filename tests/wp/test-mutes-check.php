@@ -185,9 +185,13 @@ class Test_Mutes_Check extends WPUN_Test_Case {
 
 	/**
 	 * Reminders leave muted items out.
+	 *
+	 * @dataProvider reminder_settings
+	 *
+	 * @param string $remind The `remind` routing value.
 	 */
-	public function test_reminders_leave_muted_items_out() {
-		sc_wpun_channels()->save( new Channel_Instance( 'email', 'email', 'Email', true, array(), array( 'remind' => 'daily' ) ) );
+	public function test_reminders_leave_muted_items_out( $remind ) {
+		sc_wpun_channels()->save( new Channel_Instance( 'email', 'email', 'Email', true, array(), array( 'remind' => $remind ) ) );
 		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
 		$this->check( '2.0' );
 		$state                                       = $this->stored_state();
@@ -197,6 +201,18 @@ class Test_Mutes_Check extends WPUN_Test_Case {
 		$this->check( '2.0' );
 
 		$this->assertSame( 0, $this->sent_mail_count() );
+	}
+
+	/**
+	 * The reminder settings that repeat items.
+	 *
+	 * @return array<string, array<string>>
+	 */
+	public static function reminder_settings() {
+		return array(
+			'daily'       => array( 'daily' ),
+			'every check' => array( 'every_check' ),
+		);
 	}
 
 	/**

@@ -754,13 +754,18 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	public function test_the_reminders_choice_is_rendered_and_saved() {
 		$xpath = $this->edit_page();
 		$this->assertSame( 1, $xpath->query( '//fieldset[@id="sc_wpun_channel_routing_remind"]/legend' )->length );
-		$this->assertSame( 3, $xpath->query( '//input[@type="radio"][@name="routing[remind]"]' )->length );
+		$this->assertSame( 4, $xpath->query( '//input[@type="radio"][@name="routing[remind]"]' )->length );
 		$this->assertSame( 'never', $xpath->query( '//input[@type="radio"][@name="routing[remind]"][@checked]' )->item( 0 )->getAttribute( 'value' ) );
 
 		$this->post_email( array( 'routing' => array( 'remind' => 'weekly' ) ) );
 		sc_wpun()->channel_form()->process_save();
 
 		$this->assertSame( 'weekly', $this->raw( 'email' )['routing']['remind'] );
+
+		$this->post_email( array( 'routing' => array( 'remind' => 'every_check' ) ) );
+		sc_wpun()->channel_form()->process_save();
+
+		$this->assertSame( 'every_check', $this->raw( 'email' )['routing']['remind'] );
 	}
 
 	/**
