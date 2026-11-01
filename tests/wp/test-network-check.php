@@ -220,7 +220,7 @@ class Test_Network_Check extends WPUN_Test_Case {
 		restore_current_blog();
 
 		$this->assertSame( 'The Network', $seen->get_site_name() );
-		$this->assertSame( network_home_url(), $seen->get_site_url() );
+		$this->assertSame( untrailingslashit( network_home_url() ), $seen->get_site_url() );
 		$this->assertSame( network_admin_url( 'update-core.php' ), $seen->get_updates_url() );
 	}
 
@@ -233,12 +233,13 @@ class Test_Network_Check extends WPUN_Test_Case {
 
 		$context = new Network_Context();
 		$this->assertSame( 'The Network', $context->site_name() );
-		$this->assertSame( network_home_url(), $context->home_url() );
+		$this->assertSame( untrailingslashit( network_home_url() ), $context->home_url() );
+		$this->assertStringEndsNotWith( '/', $context->home_url(), 'Like home_url(), without a trailing slash.' );
 		$this->assertSame( network_admin_url( 'update-core.php' ), $context->update_core_url() );
 
 		$result = sc_wpun()->dispatcher()->send_test( sc_wpun_channels()->get( 'email' ) );
 		$this->assertTrue( $result->is_success() );
-		$this->assertStringContainsString( network_home_url(), $this->sent_mail()->body );
+		$this->assertStringContainsString( '(' . untrailingslashit( network_home_url() ) . ')', $this->sent_mail()->body );
 	}
 
 	/**

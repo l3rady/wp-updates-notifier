@@ -174,7 +174,8 @@ class Network_Context {
 	 * @return string
 	 */
 	public function home_url(): string {
-		return $this->is_network() ? network_home_url() : home_url();
+		// network_home_url() ends in a slash where home_url() does not: the same form in either mode.
+		return $this->is_network() ? untrailingslashit( network_home_url() ) : home_url();
 	}
 
 	/**
