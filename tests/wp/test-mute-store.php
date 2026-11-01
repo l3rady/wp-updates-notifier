@@ -144,6 +144,105 @@ class Test_Mute_Store extends WPUN_Test_Case {
 		);
 	}
 
+	/**
+	 * The expiry and the source default to none, and the getters return what was given.
+	 */
+	public function test_expires_and_source() {
+		$plain = new Mute(
+			array(
+				'type' => 'plugin',
+				'key'  => 'a',
+			)
+		);
+		$this->assertNull( $plain->get_expires() );
+		$this->assertSame( '', $plain->get_source() );
+		$this->assertFalse( $plain->is_expired( PHP_INT_MAX ) );
+
+		$snooze = new Mute(
+			array(
+				'type'    => 'plugin',
+				'key'     => 'a',
+				'expires' => '1700000000',
+				'source'  => 'cli',
+			)
+		);
+		$this->assertSame( 1700000000, $snooze->get_expires(), 'A numeric string from storage is accepted.' );
+		$this->assertSame( 'cli', $snooze->get_source() );
+	}
+
+	/**
+	 * A mute is expired from its expiry on.
+	 */
+	public function test_is_expired_before_at_and_after() {
+		$snooze = new Mute(
+			array(
+				'type'    => 'plugin',
+				'key'     => 'a',
+				'expires' => 1700000000,
+			)
+		);
+		$this->assertFalse( $snooze->is_expired( 1699999999 ) );
+		$this->assertTrue( $snooze->is_expired( 1700000000 ) );
+		$this->assertTrue( $snooze->is_expired( 1700000001 ) );
+		$this->assertFalse(
+			( new Mute(
+				array_merge(
+					array(
+						'type' => 'plugin',
+						'key'  => 'a',
+					),
+					array( 'expires' => time() + 100 )
+				)
+			) )->is_expired()
+		);
+		$this->assertTrue(
+			( new Mute(
+				array_merge(
+					array(
+						'type' => 'plugin',
+						'key'  => 'a',
+					),
+					array( 'expires' => time() - 100 )
+				)
+			) )->is_expired()
+		);
+	}
+
+	/**
+	 * Bad expiries throw.
+	 *
+	 * @dataProvider data_bad_expires
+	 *
+	 * @param mixed $expires Expiry.
+	 */
+	public function test_bad_expires_throw( $expires ) {
+		$this->expectException( InvalidArgumentException::class );
+		new Mute(
+			array(
+				'type'    => 'plugin',
+				'key'     => 'a',
+				'expires' => $expires,
+			)
+		);
+	}
+
+	/**
+	 * Cases.
+	 *
+	 * @return array
+	 */
+	public function data_bad_expires() {
+		return array(
+			'zero'      => array( 0 ),
+			'negative'  => array( -5 ),
+			'text'      => array( 'soon' ),
+			'float'     => array( 1.5 ),
+			'array'     => array( array( 1 ) ),
+			'empty'     => array( '' ),
+			'bool true' => array( true ),
+		);
+	}
+
 	// The store.
 
 	/**
@@ -499,5 +598,256 @@ class Test_Mute_Store extends WPUN_Test_Case {
 		$this->assertSame( 'deleted', $unmuted[0][1] );
 		$this->assertSame( 'a/a.php', $unmuted[0][0]->get_key() );
 		$this->assertCount( 0, $pre );
+	}
+
+	// Snoozes (#346).
+
+	/**
+	 * Put a stored mute row straight into the option, to control the time.
+	 *
+	 * @param string      $key     Plugin file.
+	 * @param int|null    $expires Expiry.
+	 * @param string|null $until   Version.
+	 */
+	private function put( $key, $expires, $until = null ) {
+		$option = (array) sc_wpun()->network_context()->get_option( 'sc_wpun_muted' );
+		$row    = array(
+			'until' => $until,
+			'time'  => 1,
+			'user'  => 0,
+		);
+		if ( null !== $expires ) {
+			$row['expires'] = $expires;
+		}
+		$option['plugin'][ $key ] = $row;
+		sc_wpun()->network_context()->update_option( 'sc_wpun_muted', $option );
+	}
+
+	/**
+	 * A snooze stores and reloads its expiry and source.
+	 */
+	public function test_a_snooze_is_stored_with_expiry_and_source() {
+		$expires = time() + HOUR_IN_SECONDS;
+		$mute    = sc_wpun_mutes()->mute( 'plugin', 'a/a.php', null, 'cli', $expires );
+
+		$this->assertInstanceOf( Mute::class, $mute );
+		$this->assertSame( $expires, $mute->get_expires() );
+		$this->assertSame( 'cli', $mute->get_source() );
+
+		$row = sc_wpun()->network_context()->get_option( 'sc_wpun_muted' )['plugin']['a/a.php'];
+		$this->assertSame( $expires, $row['expires'] );
+		$this->assertSame( 'cli', $row['source'] );
+
+		$loaded = sc_wpun_mutes()->get( 'plugin', 'a/a.php' );
+		$this->assertSame( $expires, $loaded->get_expires() );
+		$this->assertSame( 'cli', $loaded->get_source() );
+	}
+
+	/**
+	 * The four-argument call stores no expiry, and old rows have no keys.
+	 */
+	public function test_old_calls_and_old_rows() {
+		$mute = sc_wpun_mutes()->mute( 'plugin', 'a/a.php', '2.0', 'ui' );
+		$this->assertNull( $mute->get_expires() );
+		$this->assertArrayNotHasKey( 'expires', sc_wpun()->network_context()->get_option( 'sc_wpun_muted' )['plugin']['a/a.php'] );
+
+		sc_wpun()->network_context()->update_option(
+			'sc_wpun_muted',
+			array(
+				'plugin' => array(
+					'old/old.php' => array(
+						'until' => null,
+						'time'  => 5,
+						'user'  => 2,
+					),
+				),
+			)
+		);
+		$old = sc_wpun_mutes()->get( 'plugin', 'old/old.php' );
+		$this->assertNull( $old->get_expires() );
+		$this->assertSame( '', $old->get_source() );
+	}
+
+	/**
+	 * A time that is not in the future is refused.
+	 */
+	public function test_a_past_or_present_expiry_is_refused() {
+		$this->assertSame( 'sc_wpun_mute_expired', sc_wpun_mutes()->mute( 'plugin', 'a/a.php', null, 'api', time() - 10 )->get_error_code() );
+		$this->assertWPError( sc_wpun_mutes()->mute( 'plugin', 'a/a.php', null, 'api', time() ) );
+		$this->assertSame( array(), sc_wpun_mutes()->all() );
+	}
+
+	/**
+	 * The pre-mute filter can cap a snooze, and cannot make it past.
+	 */
+	public function test_pre_mute_caps_a_snooze_and_cannot_expire_it() {
+		$latest = time() + DAY_IN_SECONDS;
+		add_filter(
+			'sc_wpun_pre_mute',
+			function ( $mute, $source ) use ( $latest ) {
+				if ( 'past' === $source ) {
+					return new Mute(
+						array(
+							'type'    => $mute->get_type(),
+							'key'     => $mute->get_key(),
+							'expires' => time() - 5,
+						)
+					);
+				}
+				if ( $mute->get_expires() > $latest ) {
+					return new Mute(
+						array(
+							'type'    => $mute->get_type(),
+							'key'     => $mute->get_key(),
+							'time'    => $mute->get_time(),
+							'source'  => $mute->get_source(),
+							'expires' => $latest,
+						)
+					);
+				}
+				return $mute;
+			},
+			10,
+			2
+		);
+
+		$capped = sc_wpun_mutes()->mute( 'plugin', 'a/a.php', null, 'cli', time() + 30 * DAY_IN_SECONDS );
+		$this->assertSame( $latest, $capped->get_expires() );
+		$this->assertSame( $latest, sc_wpun_mutes()->get( 'plugin', 'a/a.php' )->get_expires() );
+
+		$this->assertSame( 'sc_wpun_mute_expired', sc_wpun_mutes()->mute( 'plugin', 'b/b.php', null, 'past', time() + 100 )->get_error_code() );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'b/b.php' ) );
+	}
+
+	/**
+	 * Mutes set in code keep their expiry and source.
+	 */
+	public function test_code_mutes_keep_expires_and_source() {
+		$expires = time() + HOUR_IN_SECONDS;
+		add_filter(
+			'sc_wpun_mutes',
+			function ( $mutes ) use ( $expires ) {
+				$mutes[] = new Mute(
+					array(
+						'type'    => 'plugin',
+						'key'     => 'code/code.php',
+						'expires' => $expires,
+						'source'  => 'api',
+					)
+				);
+				return $mutes;
+			}
+		);
+
+		$mute = sc_wpun_mutes()->get( 'plugin', 'code/code.php' );
+		$this->assertTrue( $mute->is_from_code() );
+		$this->assertSame( $expires, $mute->get_expires() );
+		$this->assertSame( 'api', $mute->get_source() );
+	}
+
+	/**
+	 * An expired snooze is hidden, still found, and pruned on the next write.
+	 */
+	public function test_an_expired_snooze_is_hidden_found_and_pruned() {
+		$this->put( 'gone/gone.php', time() - 5 );
+		$this->put( 'live/live.php', time() + 1000 );
+
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'gone/gone.php' ) );
+		$this->assertCount( 1, sc_wpun_mutes()->all() );
+		$this->assertNotNull( sc_wpun_mutes()->find( 'plugin', 'gone/gone.php' ) );
+		$this->assertArrayHasKey( 'gone/gone.php', sc_wpun()->network_context()->get_option( 'sc_wpun_muted' )['plugin'], 'Reading does not write.' );
+		$this->assertWPError( sc_wpun_mutes()->unmute( 'plugin', 'gone/gone.php' ) );
+
+		sc_wpun_mutes()->mute( 'plugin', 'c/c.php' );
+		$option = sc_wpun()->network_context()->get_option( 'sc_wpun_muted' );
+		$this->assertArrayNotHasKey( 'gone/gone.php', $option['plugin'] );
+		$this->assertArrayHasKey( 'live/live.php', $option['plugin'] );
+	}
+
+	/**
+	 * The item is not muted once the expiry has passed, before any clean-up.
+	 */
+	public function test_is_muted_before_and_after_the_expiry() {
+		$item = $this->item( 'plugin', 'a/a.php' );
+
+		$this->put( 'a/a.php', time() + 1000 );
+		$this->assertTrue( sc_wpun_mutes()->is_muted( $item ) );
+
+		$this->put( 'a/a.php', time() );
+		$this->assertFalse( sc_wpun_mutes()->is_muted( $item ), 'At the expiry it has ended.' );
+
+		$this->put( 'a/a.php', time() - 1000 );
+		$this->assertFalse( sc_wpun_mutes()->is_muted( $item ) );
+	}
+
+	/**
+	 * With a version bound and an expiry, whichever comes first ends the mute.
+	 */
+	public function test_a_version_bound_and_an_expiry_end_at_whichever_is_first() {
+		$item = $this->item( 'plugin', 'hello.php', '1.5' );
+
+		$this->put( 'hello.php', time() + 1000, '1.5' );
+		$this->assertTrue( sc_wpun_mutes()->is_muted( $item ) );
+
+		$this->assertFalse( sc_wpun_mutes()->is_muted( $this->item( 'plugin', 'hello.php', '1.6' ) ), 'The version ends it first.' );
+
+		$this->put( 'hello.php', time() - 1, '1.5' );
+		$this->assertFalse( sc_wpun_mutes()->is_muted( $item ), 'The time ends it first.' );
+
+		$this->put( 'hello.php', time() + 1000, '1.5' );
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '1.6' ) ) );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '1.5' ) ) );
+		$this->assertNotNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+	}
+
+	/**
+	 * The snooze lengths and their filter.
+	 */
+	public function test_snooze_durations() {
+		$this->assertSame( array( DAY_IN_SECONDS, WEEK_IN_SECONDS, 30 * DAY_IN_SECONDS ), array_keys( Mute_Store::snooze_durations() ) );
+		$this->assertSame( array( '1 day', '1 week', '30 days' ), array_values( Mute_Store::snooze_durations() ) );
+
+		add_filter(
+			'sc_wpun_snooze_durations',
+			function ( $durations ) {
+				$durations[ 4 * HOUR_IN_SECONDS ] = '4 hours';
+				$durations[0]                     = 'zero';
+				$durations[-5]                    = 'negative';
+				$durations[99]                    = '';
+				$durations[98]                    = 5;
+				$durations['soon']                = 'text key';
+				return $durations;
+			}
+		);
+		$this->assertSame( array( DAY_IN_SECONDS, WEEK_IN_SECONDS, 30 * DAY_IN_SECONDS, 4 * HOUR_IN_SECONDS ), array_keys( Mute_Store::snooze_durations() ) );
+		$this->assertSame( '4 hours', Mute_Store::snooze_durations()[ 4 * HOUR_IN_SECONDS ] );
+
+		add_filter( 'sc_wpun_snooze_durations', '__return_null', 20 );
+		$this->assertSame( array(), Mute_Store::snooze_durations() );
+	}
+
+	/**
+	 * The source labels and their filter.
+	 */
+	public function test_source_labels() {
+		$this->assertSame( 'Plugins screen', Mute_Store::source_label( 'plugins_screen' ) );
+		$this->assertSame( 'Muted tab', Mute_Store::source_label( 'settings' ) );
+		$this->assertSame( 'WP-CLI', Mute_Store::source_label( 'cli' ) );
+		$this->assertSame( 'Code', Mute_Store::source_label( 'api' ) );
+		$this->assertSame( '', Mute_Store::source_label( '' ) );
+		$this->assertSame( 'helpdesk', Mute_Store::source_label( 'helpdesk' ) );
+
+		add_filter(
+			'sc_wpun_mute_source_label',
+			function ( $label, $source ) {
+				return 'helpdesk' === $source ? 'Helpdesk' : ( 'cli' === $source ? array() : $label );
+			},
+			10,
+			2
+		);
+		$this->assertSame( 'Helpdesk', Mute_Store::source_label( 'helpdesk' ) );
+		$this->assertSame( 'WP-CLI', Mute_Store::source_label( 'cli' ), 'A bad value keeps the default.' );
+		$this->assertSame( 'Code', Mute_Store::source_label( 'api' ) );
 	}
 }

@@ -907,20 +907,48 @@ Fired in `includes/admin/class-mute-actions.php`.
 
 *Action*, since 3.0.0
 
-Fires once when a "skip this version" mute stops applying because a newer version is offered.
+Fires once when a mute ends while an update is waiting: a "skip this version" mute because a newer
+version is offered, or a snooze because its time has passed.
 
 The check records the ended mute in the run state, not in the stored mutes, so the action does
 not fire on later runs. It never fires in a dry run. If two checks overlap, it can fire twice;
 see ADR 0009. It can also not fire at all: saving or removing any mute drops the ended ones, so
-if that happens after WordPress offered the newer version and before the next check, the end is
-not reported.
+if that happens after the mute ended and before the next check, the end is not reported.
+A mute that ended both ways at once is reported once, with `expired`.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$mute` | `Mute` | The mute that ended. |
-| `$item` | `Notification_Item` | The item with the newer version. |
+| `$item` | `Notification_Item` | The item that is waiting. |
+| `$reason` | `string` | `version` when a newer version ended a "skip this version" mute, `expired` when the time of a snooze passed. |
 
 Fired in `includes/class-update-checker.php`.
+
+### `sc_wpun_mute_source_label`
+
+*Filter*, since 3.0.0
+
+Filters the name shown for where a mute was set from.
+
+Example, show "Helpdesk" for an add-on's slug:
+
+```php
+add_filter(
+    'sc_wpun_mute_source_label',
+    function ( $label, $source ) {
+        return 'helpdesk' === $source ? __( 'Helpdesk', 'my-plugin' ) : $label;
+    },
+    10,
+    2
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$label` | `string` | The label. Empty for an unknown source. |
+| `$source` | `string` | The source as stored. |
+
+Fired in `includes/class-mute-store.php`.
 
 ### `sc_wpun_mutes`
 
@@ -936,6 +964,9 @@ of the `core` type and mutes of a type that is not registered with `sc_wpun_item
 When two mutes are for the same item, the later one wins. A stored mute cannot be hidden: one
 the returned list leaves out is put back, so use `sc_wpun_should_notify_item` to report an item
 that is muted.
+
+A mute can carry an `expires` time (a Unix timestamp) to end by itself, like a snooze, and a
+`source` that says where it came from. Once the time has passed the mute counts as ended.
 
 Example, mute a plugin for good:
 
@@ -969,7 +1000,7 @@ Filters a mute before it is saved, to apply a policy.
 Receives the mute, or the `WP_Error` that says why it is refused. Return a `WP_Error` to refuse
 it; the message is shown on the screen or by WP-CLI. A returned mute must be for the same item,
 and a refusal cannot be turned into a mute. Return a changed mute to, for example, cap how long
-a mute lasts.
+a mute lasts. A mute whose `expires` has passed is refused, also when the filter made it so.
 
 Example, refuse muting a security plugin:
 
@@ -979,6 +1010,31 @@ add_filter(
     function ( $mute ) {
         if ( $mute instanceof \WPUN\Mute && 'security/security.php' === $mute->get_key() ) {
             return new \WP_Error( 'my_policy', 'Security updates must be reported.' );
+        }
+        return $mute;
+    }
+);
+```
+
+Example, cap a snooze at 30 days:
+
+```php
+add_filter(
+    'sc_wpun_pre_mute',
+    function ( $mute ) {
+        $latest = time() + 30 * DAY_IN_SECONDS;
+        if ( $mute instanceof \WPUN\Mute && null !== $mute->get_expires() && $mute->get_expires() > $latest ) {
+            return new \WPUN\Mute(
+                array(
+                    'type'    => $mute->get_type(),
+                    'key'     => $mute->get_key(),
+                    'until'   => $mute->get_until(),
+                    'time'    => $mute->get_time(),
+                    'user'    => $mute->get_user_id(),
+                    'source'  => $mute->get_source(),
+                    'expires' => $latest,
+                )
+            );
         }
         return $mute;
     }
@@ -1019,6 +1075,32 @@ add_filter(
 | `$allow` | `true\|WP_Error` | Whether to unmute. Default true. |
 | `$mute` | `Mute` | The mute. |
 | `$source` | `string` | Where the change came from: `plugins_screen`, `settings`, `cli` or `api`. |
+
+Fired in `includes/class-mute-store.php`.
+
+### `sc_wpun_snooze_durations`
+
+*Filter*, since 3.0.0
+
+Filters the lengths of a snooze offered on the Plugins screen, the Muted tab and in WP-CLI.
+
+A list of seconds => label. Entries whose seconds are not a positive whole number or whose label is
+not a non-empty string are dropped. Only these lengths are accepted from the Plugins screen links.
+
+Example, offer 4 hours as well:
+
+```php
+add_filter(
+    'sc_wpun_snooze_durations',
+    function ( $durations ) {
+        return array( 4 * HOUR_IN_SECONDS => __( '4 hours', 'my-plugin' ) ) + $durations;
+    }
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$durations` | `array<int, string>` | Label by number of seconds. |
 
 Fired in `includes/class-mute-store.php`.
 

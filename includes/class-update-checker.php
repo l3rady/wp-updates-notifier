@@ -286,11 +286,25 @@ class Update_Checker {
 			}
 		}
 
-		// Mutes a newer version has ended, to report once. Recorded in the state, never in the mutes.
+		// Mutes a newer version or their expiry has ended, to report once. Recorded in the state, never in the mutes.
 		$ended = $this->find_ended_mutes( $items, $state );
+
+		// A snooze in force: its items are forgotten below, so they are new again when it ends.
+		$snoozed = array();
+		foreach ( $items as $item ) {
+			$mute = $this->mutes->find( $item->get_type(), $item->get_key() );
+			if ( null !== $mute && null !== $mute->get_expires() && $this->mutes->is_muted( $item ) ) {
+				$snoozed[ $item->get_type() ][ $item->get_key() ] = true;
+			}
+		}
 
 		// The global veto comes after, so a vetoed item still counts as waiting.
 		$items = array_values( array_filter( $items, array( $this, 'should_notify' ) ) );
+
+		// A snoozed item a filter reports anyway is remembered as usual, or it would be sent at every check.
+		foreach ( $items as $item ) {
+			unset( $snoozed[ $item->get_type() ][ $item->get_key() ] );
+		}
 
 		$notification = new Notification( $this->network_context->site_name(), $this->network_context->home_url(), $this->network_context->update_core_url(), $items, array( 'source' => $source ) );
 
@@ -332,11 +346,15 @@ class Update_Checker {
 		$instances = $this->channels->all();
 		$channels  = $this->state_for_instances( $state, $instances );
 
-		// Forget what is no longer waiting for an update, for every instance whether it is on or not.
+		// Forget what is no longer waiting for an update, and what is snoozed, for every instance whether it is on or not.
+		// A snoozed item is sent as new when the snooze ends, even if that version was notified before it started.
 		foreach ( $channels as $id => $entry ) {
 			foreach ( $checked as $type => $pending_keys ) {
 				if ( isset( $entry['notified'][ $type ] ) ) {
-					$channels[ $id ]['notified'][ $type ] = array_intersect_key( $entry['notified'][ $type ], array_flip( $pending_keys ) );
+					$channels[ $id ]['notified'][ $type ] = array_diff_key(
+						array_intersect_key( $entry['notified'][ $type ], array_flip( $pending_keys ) ),
+						$snoozed[ $type ] ?? array()
+					);
 				}
 			}
 		}
@@ -473,24 +491,31 @@ class Update_Checker {
 		} else {
 			unset( $state['ended_mutes'] );
 		}
+		if ( array() !== $ended['snoozes'] ) {
+			$state['ended_snoozes'] = $ended['snoozes'];
+		} else {
+			unset( $state['ended_snoozes'] );
+		}
 		$this->state->save( $state );
 
-		foreach ( $ended['fire'] as [$mute, $item] ) {
+		foreach ( $ended['fire'] as [$mute, $item, $reason] ) {
 			/**
-			 * Fires once when a "skip this version" mute stops applying because a newer version is offered.
+			 * Fires once when a mute ends while an update is waiting: a "skip this version" mute because a newer
+			 * version is offered, or a snooze because its time has passed.
 			 *
 			 * The check records the ended mute in the run state, not in the stored mutes, so the action does
 			 * not fire on later runs. It never fires in a dry run. If two checks overlap, it can fire twice;
 			 * see ADR 0009. It can also not fire at all: saving or removing any mute drops the ended ones, so
-			 * if that happens after WordPress offered the newer version and before the next check, the end is
-			 * not reported.
+			 * if that happens after the mute ended and before the next check, the end is not reported.
+			 * A mute that ended both ways at once is reported once, with `expired`.
 			 *
 			 * @since 3.0.0
 			 *
-			 * @param Mute              $mute The mute that ended.
-			 * @param Notification_Item $item The item with the newer version.
+			 * @param Mute              $mute   The mute that ended.
+			 * @param Notification_Item $item   The item that is waiting.
+			 * @param string            $reason `version` when a newer version ended a "skip this version" mute, `expired` when the time of a snooze passed.
 			 */
-			do_action( 'sc_wpun_mute_ended', $mute, $item );
+			do_action( 'sc_wpun_mute_ended', $mute, $item, $reason );
 		}
 
 		if ( array() !== $results ) {
@@ -514,12 +539,14 @@ class Update_Checker {
 	}
 
 	/**
-	 * Find the "skip this version" mutes that a newer version has ended, and those not reported yet.
+	 * Find the mutes that a newer version or their expiry has ended, and those not reported yet.
+	 *
+	 * A mute that both a newer version and its expiry have ended is reported once, as expired.
 	 *
 	 * @param Notification_Item[]  $items The items found.
 	 * @param array<string, mixed> $state The run state.
 	 *
-	 * @return array{recorded: array<string, array<string, string>>, fire: array<int, array{0: Mute, 1: Notification_Item}>}
+	 * @return array{recorded: array<string, array<string, string>>, snoozes: array<string, array<string, string>>, fire: array<int, array{0: Mute, 1: Notification_Item, 2: string}>}
 	 */
 	private function find_ended_mutes( array $items, array $state ): array {
 		/**
@@ -538,21 +565,55 @@ class Update_Checker {
 			}
 		}
 
+		/**
+		 * Item type => key => the expiry time of the ended snooze, as a string.
+		 *
+		 * @var array<string, array<string, string>> $snoozes
+		 */
+		$snoozes = array();
+		$known   = is_array( $state['ended_snoozes'] ?? null ) ? $state['ended_snoozes'] : array();
+		foreach ( $known as $type => $keys ) {
+			foreach ( $keys as $key => $expires ) {
+				$mute = $this->mutes->find( (string) $type, (string) $key );
+				if ( null !== $mute && (string) $mute->get_expires() === (string) $expires ) {
+					$snoozes[ (string) $type ][ (string) $key ] = (string) $expires;
+				}
+			}
+		}
+
 		$fire = array();
 		foreach ( $items as $item ) {
-			$mute = $this->mutes->find( $item->get_type(), $item->get_key() );
-			if ( null === $mute || $mute->is_always() || $mute->applies_to( $item->get_new_version() ) ) {
+			$type = $item->get_type();
+			$key  = $item->get_key();
+			$mute = $this->mutes->find( $type, $key );
+			if ( null === $mute ) {
+				continue;
+			}
+
+			if ( $mute->is_expired() ) {
+				$expires = (string) $mute->get_expires();
+				if ( ( $snoozes[ $type ][ $key ] ?? null ) !== $expires ) {
+					$snoozes[ $type ][ $key ] = $expires;
+					if ( ! isset( $recorded[ $type ][ $key ] ) ) { // Not reported yet as ended by a newer version.
+						$fire[] = array( $mute, $item, 'expired' );
+					}
+				}
+				continue;
+			}
+
+			if ( $mute->is_always() || $mute->applies_to( $item->get_new_version() ) ) {
 				continue;
 			}
 			$until = (string) $mute->get_until();
-			if ( ( $recorded[ $item->get_type() ][ $item->get_key() ] ?? null ) !== $until ) {
-				$recorded[ $item->get_type() ][ $item->get_key() ] = $until;
-				$fire[] = array( $mute, $item );
+			if ( ( $recorded[ $type ][ $key ] ?? null ) !== $until ) {
+				$recorded[ $type ][ $key ] = $until;
+				$fire[]                    = array( $mute, $item, 'version' );
 			}
 		}
 
 		return array(
 			'recorded' => $recorded,
+			'snoozes'  => $snoozes,
 			'fire'     => $fire,
 		);
 	}

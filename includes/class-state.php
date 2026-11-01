@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @phpstan-type Legacy_Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
  * @phpstan-type Last_Result array{success: bool, message: string, time: int}
  * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, last_result?: Last_Result, retry_at?: int, last_reminder?: int}
- * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified, ended_mutes?: Generic_Notified}
+ * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified, ended_mutes?: Generic_Notified, ended_snoozes?: Generic_Notified}
  */
 class State {
 	const OPT_FIELD = 'sc_wpun_state';
@@ -126,6 +126,11 @@ class State {
 		$ended = $this->normalise_generic( $state['ended_mutes'] ?? array() ); // Item type => key => the version of the mute that ended.
 		if ( array() !== $ended ) {
 			$normalised['ended_mutes'] = $ended;
+		}
+
+		$snoozes = $this->normalise_generic( $state['ended_snoozes'] ?? array() ); // Item type => key => the expiry time of the snooze that ended, as a string.
+		if ( array() !== $snoozes ) {
+			$normalised['ended_snoozes'] = $snoozes;
 		}
 
 		return $normalised;

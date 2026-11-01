@@ -51,7 +51,7 @@ class Test_Mutes_Check extends WPUN_Test_Case {
 				$calls[] = func_get_args();
 			},
 			10,
-			2
+			3
 		);
 
 		return $calls;
@@ -151,6 +151,7 @@ class Test_Mutes_Check extends WPUN_Test_Case {
 		$this->assertSame( '2.0', $ended[0][0]->get_until() );
 		$this->assertSame( 'hello.php', $ended[0][1]->get_key() );
 		$this->assertSame( '2.1', $ended[0][1]->get_new_version() );
+		$this->assertSame( 'version', $ended[0][2] );
 		$this->assertSame( array( 'plugin' => array( 'hello.php' => '2.0' ) ), $this->stored_state()['ended_mutes'] );
 	}
 
@@ -277,5 +278,186 @@ class Test_Mutes_Check extends WPUN_Test_Case {
 		add_filter( 'sc_wpun_should_notify_item', '__return_true', 20 );
 		$this->check( '2.0' );
 		$this->assertSame( 1, $this->sent_mail_count() );
+	}
+
+	// Snoozes (#346).
+
+	/**
+	 * Put a snooze straight into the stored mutes, to control the time.
+	 *
+	 * @param int         $expires Expiry.
+	 * @param string|null $until   Version bound.
+	 */
+	private function snooze( $expires, $until = null ) {
+		sc_wpun()->network_context()->update_option(
+			'sc_wpun_muted',
+			array(
+				'plugin' => array(
+					'hello.php' => array(
+						'until'   => $until,
+						'time'    => 1,
+						'user'    => 0,
+						'expires' => $expires,
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * A snoozed item is not sent.
+	 */
+	public function test_a_snoozed_item_is_not_sent() {
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php', null, 'api', time() + HOUR_IN_SECONDS );
+
+		$this->check( '2.0' );
+
+		$this->assertSame( 0, $this->sent_mail_count() );
+		$this->assertSame( '', $this->notified_version( 'plugin', 'hello.php' ) );
+	}
+
+	/**
+	 * After the snooze the waiting version is sent again, even if it was notified before.
+	 */
+	public function test_the_item_is_sent_again_after_the_snooze() {
+		$this->check( '2.0' );
+		$this->assertSame( 1, $this->sent_mail_count() );
+
+		$this->snooze( time() + HOUR_IN_SECONDS );
+		$this->check( '2.0' );
+		$this->assertSame( 1, $this->sent_mail_count() );
+		$this->assertSame( '', $this->notified_version( 'plugin', 'hello.php' ), 'Forgotten while snoozed.' );
+
+		$this->snooze( time() - 1 );
+		$this->check( '2.0' );
+		$this->assertSame( 2, $this->sent_mail_count() );
+		$this->assertSame( '2.0', $this->notified_version( 'plugin', 'hello.php' ) );
+
+		$this->check( '2.0' );
+		$this->assertSame( 2, $this->sent_mail_count(), 'Only once.' );
+	}
+
+	/**
+	 * A snoozed item that the veto filter reports anyway is sent once, not at every check.
+	 */
+	public function test_a_snoozed_item_the_veto_reports_is_sent_once() {
+		add_filter( 'sc_wpun_should_notify_item', '__return_true', 20 );
+		$this->snooze( time() + HOUR_IN_SECONDS );
+
+		$this->check( '2.0' );
+		$this->check( '2.0' );
+
+		$this->assertSame( 1, $this->sent_mail_count() );
+		$this->assertSame( '2.0', $this->notified_version( 'plugin', 'hello.php' ) );
+	}
+
+	/**
+	 * The snooze being pruned by another mute change before the check does not stop the resend.
+	 */
+	public function test_the_item_is_sent_again_when_the_expired_snooze_was_pruned() {
+		$this->check( '2.0' );
+		$this->snooze( time() + HOUR_IN_SECONDS );
+		$this->check( '2.0' );
+		$this->assertSame( 1, $this->sent_mail_count() );
+
+		$this->snooze( time() - 1 );
+		sc_wpun_mutes()->mute( 'plugin', 'other/other.php' ); // Writing the mutes drops the expired snooze.
+		$this->assertArrayNotHasKey( 'hello.php', sc_wpun()->network_context()->get_option( 'sc_wpun_muted' )['plugin'] );
+
+		$this->check( '2.0' );
+		$this->assertSame( 2, $this->sent_mail_count() );
+	}
+
+	/**
+	 * Unmuting a snooze early sends the item at the next check.
+	 */
+	public function test_unmuting_a_snooze_early_resends() {
+		$this->check( '2.0' );
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php', null, 'api', time() + HOUR_IN_SECONDS );
+		$this->check( '2.0' );
+		sc_wpun_mutes()->unmute( 'plugin', 'hello.php' );
+		$this->check( '2.0' );
+
+		$this->assertSame( 2, $this->sent_mail_count() );
+	}
+
+	/**
+	 * The ended action fires once with expired, and never in a dry run.
+	 */
+	public function test_mute_ended_fires_once_for_an_expired_snooze() {
+		$ended = &$this->record( 'sc_wpun_mute_ended' );
+		$this->snooze( time() + HOUR_IN_SECONDS );
+		$this->check( '2.0' );
+		$this->assertCount( 0, $ended );
+
+		$this->snooze( time() - 1 );
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0' ) ) );
+		sc_wpun()->update_checker()->run_check( 'cli', true );
+		$this->assertCount( 0, $ended, 'Never in a dry run.' );
+		$this->assertArrayNotHasKey( 'ended_snoozes', $this->stored_state() );
+
+		$this->check( '2.0' );
+		$this->check( '2.0' );
+		$this->assertCount( 1, $ended );
+		$this->assertSame( 'expired', $ended[0][2] );
+		$this->assertSame( 'hello.php', $ended[0][1]->get_key() );
+		$this->assertArrayHasKey( 'hello.php', $this->stored_state()['ended_snoozes']['plugin'] );
+	}
+
+	/**
+	 * A mute ended by both a newer version and its time is reported once, as expired.
+	 */
+	public function test_mute_ended_by_both_is_reported_once() {
+		$ended = &$this->record( 'sc_wpun_mute_ended' );
+		$this->snooze( time() - 1, '1.0' );
+
+		$this->check( '2.0' );
+		$this->check( '2.0' );
+
+		$this->assertCount( 1, $ended );
+		$this->assertSame( 'expired', $ended[0][2] );
+	}
+
+	/**
+	 * An old listener that takes two arguments still works.
+	 */
+	public function test_two_argument_listeners_still_work() {
+		$seen = array();
+		add_action(
+			'sc_wpun_mute_ended',
+			function ( $mute, $item ) use ( &$seen ) {
+				$seen[] = $item->get_key();
+			},
+			10,
+			2
+		);
+		$this->snooze( time() - 1 );
+		$this->check( '2.0' );
+
+		$this->assertSame( array( 'hello.php' ), $seen );
+	}
+
+	/**
+	 * Reminders leave a snoozed item out, and have it back after the snooze.
+	 *
+	 * @dataProvider reminder_settings
+	 *
+	 * @param string $remind The `remind` routing value.
+	 */
+	public function test_reminders_leave_snoozed_items_out_until_the_snooze_ends( $remind ) {
+		sc_wpun_channels()->save( new Channel_Instance( 'email', 'email', 'Email', true, array( 'to' => 'admin@example.org' ), array( 'remind' => $remind ) ) );
+		$this->check( '2.0' );
+		$this->assertSame( 1, $this->sent_mail_count() );
+
+		$this->snooze( time() + HOUR_IN_SECONDS );
+		$state                                       = $this->stored_state();
+		$state['channels']['email']['last_reminder'] = time() - 3 * DAY_IN_SECONDS;
+		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
+		$this->check( '2.0' );
+		$this->assertSame( 1, $this->sent_mail_count(), 'No reminder while snoozed.' );
+
+		$this->snooze( time() - 1 );
+		$this->check( '2.0' );
+		$this->assertSame( 2, $this->sent_mail_count(), 'Back after the snooze.' );
 	}
 }

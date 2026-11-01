@@ -18,9 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Stores which plugins, themes and other items are muted.
  *
  * The methods all() and get() return the effective mutes: the stored ones plus those defined in code
- * (the `sc_wpun_mutes` filter), without a "skip this version" mute that a newer version has ended.
+ * (the `sc_wpun_mutes` filter), without a "skip this version" mute that a newer version has ended and
+ * without a snooze whose time has passed.
  * A mute defined in code cannot be changed or removed here. The check never writes the stored mutes;
- * an ended mute is left out when read and removed the next time a mute is saved or removed. Part of
+ * an ended or expired mute is left out when read and removed the next time a mute is saved or removed. Part of
  * the extension API.
  *
  * @since 3.0.0
@@ -65,6 +66,9 @@ final class Mute_Store {
 		 * the returned list leaves out is put back, so use `sc_wpun_should_notify_item` to report an item
 		 * that is muted.
 		 *
+		 * A mute can carry an `expires` time (a Unix timestamp) to end by itself, like a snooze, and a
+		 * `source` that says where it came from. Once the time has passed the mute counts as ended.
+		 *
 		 * Example, mute a plugin for good:
 		 *
 		 *     add_filter(
@@ -99,6 +103,8 @@ final class Mute_Store {
 						'until'     => $mute->get_until(),
 						'time'      => $mute->get_time(),
 						'user'      => $mute->get_user_id(),
+						'expires'   => $mute->get_expires(),
+						'source'    => $mute->get_source(),
 						'from_code' => true,
 					)
 				);
@@ -141,11 +147,13 @@ final class Mute_Store {
 				try {
 					$mute = new Mute(
 						array(
-							'type'  => (string) $type,
-							'key'   => (string) $key,
-							'until' => $until,
-							'time'  => $entry['time'] ?? 0,
-							'user'  => $entry['user'] ?? 0,
+							'type'    => (string) $type,
+							'key'     => (string) $key,
+							'until'   => $until,
+							'time'    => $entry['time'] ?? 0,
+							'user'    => $entry['user'] ?? 0,
+							'expires' => $entry['expires'] ?? null,
+							'source'  => $entry['source'] ?? '',
 						)
 					);
 				} catch ( InvalidArgumentException $e ) {
@@ -161,7 +169,7 @@ final class Mute_Store {
 	/**
 	 * Store the mutes, creating the option without autoload if it is missing.
 	 *
-	 * Mutes that a newer version has ended are left out.
+	 * Mutes that a newer version or their expiry has ended are left out.
 	 *
 	 * @param array<string, Mute> $mutes Mutes by "type key".
 	 *
@@ -173,11 +181,19 @@ final class Mute_Store {
 			if ( $this->has_ended( $mute ) ) {
 				continue;
 			}
-			$stored[ $mute->get_type() ][ $mute->get_key() ] = array(
+			$row = array(
 				'until' => $mute->get_until(),
 				'time'  => $mute->get_time(),
 				'user'  => $mute->get_user_id(),
 			);
+			if ( null !== $mute->get_expires() ) {
+				$row['expires'] = $mute->get_expires();
+			}
+			if ( '' !== $mute->get_source() ) {
+				$row['source'] = $mute->get_source();
+			}
+
+			$stored[ $mute->get_type() ][ $mute->get_key() ] = $row;
 		}
 
 		/** This filter is documented in includes/class-settings.php */
@@ -203,13 +219,17 @@ final class Mute_Store {
 	}
 
 	/**
-	 * Whether a "skip this version" mute no longer covers the version WordPress offers.
+	 * Whether a mute has ended: its time has passed, or a "skip this version" mute no longer covers the version WordPress offers.
 	 *
 	 * @param Mute $mute The mute.
 	 *
 	 * @return bool
 	 */
 	private function has_ended( Mute $mute ): bool {
+		if ( $mute->is_expired() ) {
+			return true;
+		}
+
 		$offered = $this->offered_version( $mute->get_type(), $mute->get_key() );
 
 		return null !== $offered && ! $mute->applies_to( $offered );
@@ -242,7 +262,7 @@ final class Mute_Store {
 	}
 
 	/**
-	 * Every effective mute, without those a newer version has ended.
+	 * Every effective mute, without those a newer version or their expiry has ended.
 	 *
 	 * @since 3.0.0
 	 *
@@ -258,7 +278,7 @@ final class Mute_Store {
 	}
 
 	/**
-	 * The effective mute of an item, unless a newer version has ended it.
+	 * The effective mute of an item, unless a newer version or its expiry has ended it.
 	 *
 	 * @since 3.0.0
 	 *
@@ -290,6 +310,8 @@ final class Mute_Store {
 	/**
 	 * Whether an item is muted for the version it reports.
 	 *
+	 * An expired mute does not mute, even before the clean-up removes it.
+	 *
 	 * Works for every item type, also for items that filters added.
 	 *
 	 * @since 3.0.0
@@ -301,7 +323,7 @@ final class Mute_Store {
 	public function is_muted( Notification_Item $item ): bool {
 		$mute = $this->find( $item->get_type(), $item->get_key() );
 
-		return null !== $mute && $mute->applies_to( $item->get_new_version() );
+		return null !== $mute && ! $mute->is_expired() && $mute->applies_to( $item->get_new_version() );
 	}
 
 	/**
@@ -313,11 +335,12 @@ final class Mute_Store {
 	 * @param string      $key    Plugin file or theme stylesheet.
 	 * @param string|null $until  The newest version to cover, or null (the default) for always.
 	 * @param string      $source Where the change came from: `plugins_screen`, `settings`, `cli` or `api`.
+	 * @param int|null    $expires When the mute ends, as a Unix timestamp (a snooze), or null (the default) for no time limit. A time that has passed is refused.
 	 *
 	 * @return Mute|WP_Error The mute, or the reason it was refused.
 	 */
-	public function mute( string $type, string $key, ?string $until = null, string $source = 'api' ) {
-		$result = $this->build( $type, $key, $until );
+	public function mute( string $type, string $key, ?string $until = null, string $source = 'api', ?int $expires = null ) {
+		$result = $this->build( $type, $key, $until, $source, $expires );
 
 		/**
 		 * Filters a mute before it is saved, to apply a policy.
@@ -325,7 +348,7 @@ final class Mute_Store {
 		 * Receives the mute, or the `WP_Error` that says why it is refused. Return a `WP_Error` to refuse
 		 * it; the message is shown on the screen or by WP-CLI. A returned mute must be for the same item,
 		 * and a refusal cannot be turned into a mute. Return a changed mute to, for example, cap how long
-		 * a mute lasts.
+		 * a mute lasts. A mute whose `expires` has passed is refused, also when the filter made it so.
 		 *
 		 * Example, refuse muting a security plugin:
 		 *
@@ -334,6 +357,29 @@ final class Mute_Store {
 		 *         function ( $mute ) {
 		 *             if ( $mute instanceof \WPUN\Mute && 'security/security.php' === $mute->get_key() ) {
 		 *                 return new \WP_Error( 'my_policy', 'Security updates must be reported.' );
+		 *             }
+		 *             return $mute;
+		 *         }
+		 *     );
+		 *
+		 * Example, cap a snooze at 30 days:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_pre_mute',
+		 *         function ( $mute ) {
+		 *             $latest = time() + 30 * DAY_IN_SECONDS;
+		 *             if ( $mute instanceof \WPUN\Mute && null !== $mute->get_expires() && $mute->get_expires() > $latest ) {
+		 *                 return new \WPUN\Mute(
+		 *                     array(
+		 *                         'type'    => $mute->get_type(),
+		 *                         'key'     => $mute->get_key(),
+		 *                         'until'   => $mute->get_until(),
+		 *                         'time'    => $mute->get_time(),
+		 *                         'user'    => $mute->get_user_id(),
+		 *                         'source'  => $mute->get_source(),
+		 *                         'expires' => $latest,
+		 *                     )
+		 *                 );
 		 *             }
 		 *             return $mute;
 		 *         }
@@ -359,13 +405,19 @@ final class Mute_Store {
 			return new WP_Error( 'sc_wpun_mute_changed_item', __( 'The mute was refused: it is for another item.', 'wp-updates-notifier' ) );
 		}
 
+		if ( $filtered->is_expired() ) {
+			return $this->expired_error();
+		}
+
 		$mute = new Mute(
 			array(
-				'type'  => $filtered->get_type(),
-				'key'   => $filtered->get_key(),
-				'until' => $filtered->get_until(),
-				'time'  => $filtered->get_time(),
-				'user'  => $filtered->get_user_id(),
+				'type'    => $filtered->get_type(),
+				'key'     => $filtered->get_key(),
+				'until'   => $filtered->get_until(),
+				'time'    => $filtered->get_time(),
+				'user'    => $filtered->get_user_id(),
+				'expires' => $filtered->get_expires(),
+				'source'  => $filtered->get_source(),
 			)
 		);
 
@@ -532,10 +584,12 @@ final class Mute_Store {
 	 * @param string      $type  Item type.
 	 * @param string      $key   Item key.
 	 * @param string|null $until Version, or null for always.
+	 * @param string      $source Where the change came from.
+	 * @param int|null    $expires When the mute ends, or null for no time limit.
 	 *
 	 * @return Mute|WP_Error
 	 */
-	private function build( string $type, string $key, ?string $until ) {
+	private function build( string $type, string $key, ?string $until, string $source, ?int $expires ) {
 		if ( 'core' === $type ) {
 			return new WP_Error( 'sc_wpun_mute_core', __( 'WordPress core cannot be muted. Use the core notification setting instead.', 'wp-updates-notifier' ) );
 		}
@@ -549,6 +603,10 @@ final class Mute_Store {
 			return new WP_Error( 'sc_wpun_mute_empty_version', __( 'The version to skip cannot be empty.', 'wp-updates-notifier' ) );
 		}
 
+		if ( null !== $expires && $expires <= time() ) {
+			return $this->expired_error();
+		}
+
 		$existing = $this->find( $type, $key );
 		if ( null !== $existing && $existing->is_from_code() ) {
 			return new WP_Error( 'sc_wpun_mute_from_code', __( 'That mute is set in code and cannot be changed here.', 'wp-updates-notifier' ) );
@@ -556,12 +614,122 @@ final class Mute_Store {
 
 		return new Mute(
 			array(
-				'type'  => $type,
-				'key'   => $key,
-				'until' => $until,
-				'time'  => time(),
-				'user'  => get_current_user_id(),
+				'type'    => $type,
+				'key'     => $key,
+				'until'   => $until,
+				'time'    => time(),
+				'user'    => get_current_user_id(),
+				'expires' => $expires,
+				'source'  => $source,
 			)
 		);
+	}
+
+	/**
+	 * The error for a mute whose end time has passed.
+	 *
+	 * @return WP_Error
+	 */
+	private function expired_error(): WP_Error {
+		return new WP_Error( 'sc_wpun_mute_expired', __( 'The end of the mute must be in the future.', 'wp-updates-notifier' ) );
+	}
+
+	/**
+	 * The lengths a snooze can have, to offer in a list.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return array<int, string> Label by number of seconds, in the order given.
+	 */
+	public static function snooze_durations(): array {
+		$defaults = array(
+			DAY_IN_SECONDS      => __( '1 day', 'wp-updates-notifier' ),
+			WEEK_IN_SECONDS     => __( '1 week', 'wp-updates-notifier' ),
+			30 * DAY_IN_SECONDS => __( '30 days', 'wp-updates-notifier' ),
+		);
+
+		/**
+		 * Filters the lengths of a snooze offered on the Plugins screen, the Muted tab and in WP-CLI.
+		 *
+		 * A list of seconds => label. Entries whose seconds are not a positive whole number or whose label is
+		 * not a non-empty string are dropped. Only these lengths are accepted from the Plugins screen links.
+		 *
+		 * Example, offer 4 hours as well:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_snooze_durations',
+		 *         function ( $durations ) {
+		 *             return array( 4 * HOUR_IN_SECONDS => __( '4 hours', 'my-plugin' ) ) + $durations;
+		 *         }
+		 *     );
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param array<int, string> $durations Label by number of seconds.
+		 */
+		$filtered = apply_filters( 'sc_wpun_snooze_durations', $defaults );
+
+		$durations = array();
+		foreach ( is_array( $filtered ) ? $filtered : array() as $seconds => $label ) {
+			if ( is_numeric( $seconds ) && (int) $seconds > 0 && (string) (int) $seconds === (string) $seconds && is_string( $label ) && '' !== $label ) {
+				$durations[ (int) $seconds ] = $label;
+			}
+		}
+
+		return $durations;
+	}
+
+	/**
+	 * A name for where a mute was set from, to show next to the user.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $source `plugins_screen`, `settings`, `cli`, `api`, an add-on's slug, or empty.
+	 *
+	 * @return string The label; empty if the source is not known.
+	 */
+	public static function source_label( string $source ): string {
+		switch ( $source ) {
+			case '':
+				$label = '';
+				break;
+			case 'plugins_screen':
+				$label = __( 'Plugins screen', 'wp-updates-notifier' );
+				break;
+			case 'settings':
+				$label = __( 'Muted tab', 'wp-updates-notifier' );
+				break;
+			case 'cli':
+				$label = __( 'WP-CLI', 'wp-updates-notifier' );
+				break;
+			case 'api':
+				$label = __( 'Code', 'wp-updates-notifier' );
+				break;
+			default:
+				$label = $source;
+		}
+
+		/**
+		 * Filters the name shown for where a mute was set from.
+		 *
+		 * Example, show "Helpdesk" for an add-on's slug:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_mute_source_label',
+		 *         function ( $label, $source ) {
+		 *             return 'helpdesk' === $source ? __( 'Helpdesk', 'my-plugin' ) : $label;
+		 *         },
+		 *         10,
+		 *         2
+		 *     );
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param string $label  The label. Empty for an unknown source.
+		 * @param string $source The source as stored.
+		 */
+		$filtered = apply_filters( 'sc_wpun_mute_source_label', $label, $source );
+
+		return is_string( $filtered ) ? $filtered : $label;
 	}
 }
