@@ -64,28 +64,93 @@
 	}
 }
 
-/* Field groups of the channel form: a fieldset, or a details element when collapsed. */
-.sc-wpun-field-group {
-	margin: 1.5em 0 0;
-	padding: 0;
-	border: 0;
+/*
+ * Sections of the channel form: Channel, Routing, Settings and each field group. Core gives a fieldset no visible frame,
+ * so each is a panel like a postbox: a white box with a grey title bar. The legend (or the summary of a collapsed
+ * group) is floated so it sits inside the box as that bar instead of on its border.
+ */
+.sc-wpun-form-section,
+.sc-wpun-field-group,
+.sc-wpun-field-group-details {
+	box-sizing: border-box;
+	min-width: 0;
+	margin: 20px 0 0;
+	padding: 0 20px 8px;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
-.sc-wpun-field-group > legend {
-	padding: 0;
+.sc-wpun-form-section > legend,
+.sc-wpun-field-group > legend:not(.screen-reader-text),
+.sc-wpun-field-group-details > summary {
+	float: left;
+	box-sizing: border-box;
+	width: calc(100% + 40px);
+	margin: 0 -20px;
+	padding: 12px 20px;
+	border-bottom: 1px solid #c3c4c7;
+	background: #f6f7f7;
+}
+
+.sc-wpun-form-section > legend h3,
+.sc-wpun-field-group > legend h3,
+.sc-wpun-field-group-details > summary {
+	margin: 0;
 	font-size: 14px;
 	font-weight: 600;
+	line-height: 1.4;
 }
 
-.sc-wpun-field-group-details {
-	margin: 1.5em 0 0;
+/* What follows the bar starts below it. */
+.sc-wpun-form-section > legend + *,
+.sc-wpun-field-group > legend + * {
+	clear: both;
 }
 
+.sc-wpun-field-group > legend + .description {
+	padding-top: 12px;
+}
+
+/* A collapsed group: the summary is the bar, with core's disclosure triangle, and the fieldset inside has no frame. */
 .sc-wpun-field-group-details > summary {
+	float: none;
+	display: list-item;
 	cursor: pointer;
-	font-weight: 600;
+}
+
+.sc-wpun-field-group-details:not([open]) {
+	padding-bottom: 0;
+}
+
+.sc-wpun-field-group-details:not([open]) > summary {
+	border-bottom: 0;
 }
 
 .sc-wpun-field-group-details > .sc-wpun-field-group {
-	margin-top: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	box-shadow: none;
+}
+
+.sc-wpun-field-group-details > summary:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: -2px;
+}
+
+@media screen and (max-width: 782px) {
+	.sc-wpun-form-section,
+	.sc-wpun-field-group,
+	.sc-wpun-field-group-details {
+		padding: 0 12px 8px;
+	}
+
+	.sc-wpun-form-section > legend,
+	.sc-wpun-field-group > legend:not(.screen-reader-text),
+	.sc-wpun-field-group-details > summary {
+		width: calc(100% + 24px);
+		margin: 0 -12px;
+		padding: 12px;
+	}
 }

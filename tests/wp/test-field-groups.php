@@ -230,12 +230,12 @@ class Test_Field_Groups extends WPUN_Test_Case {
 		$this->register( $this->grouped_fields(), $this->groups() );
 		$xpath = $this->form();
 
-		$first = $xpath->query( '//h3[normalize-space()="Settings"]/following-sibling::*[1]' )->item( 0 );
+		$first = $xpath->query( '//fieldset[legend/h3[normalize-space()="Settings"]]/legend/following-sibling::*[1]' )->item( 0 );
 		$this->assertSame( 'table', $first->nodeName );
 		$this->assertSame( 'presentation', $first->getAttribute( 'role' ) );
 		$this->assertSame(
 			array( 'settings[one]', 'settings[two]', 'settings[three]' ),
-			$this->names( $xpath, '//h3[normalize-space()="Settings"]/following-sibling::table[1]//input' )
+			$this->names( $xpath, '//fieldset[legend/h3[normalize-space()="Settings"]]/table//input' )
 		);
 
 		$sets = $xpath->query( '//fieldset[@class="sc-wpun-field-group"]' );
@@ -247,7 +247,36 @@ class Test_Field_Groups extends WPUN_Test_Case {
 		$this->assertSame( array( 'settings[a1]', 'settings[a2]' ), $this->names( $xpath, '(//fieldset[@class="sc-wpun-field-group"])[1]/table//input' ) );
 		$this->assertSame( array( 'settings[b1]' ), $this->names( $xpath, '(//fieldset[@class="sc-wpun-field-group"])[2]/table//input' ) );
 		$this->assertSame( 0, $xpath->query( '//tbody//fieldset[contains(@class,"sc-wpun-field-group")]' )->length, 'A fieldset is not inside a table.' );
-		$this->assertSame( 0, $xpath->query( '//fieldset[@class="sc-wpun-field-group"]/table/following::table[count(ancestor::fieldset) = 0][.//input[@name="settings[one]"]]' )->length );
+		$this->assertSame( 1, $xpath->query( '(//fieldset[@class="sc-wpun-field-group"])[1]/preceding::fieldset[legend/h3[normalize-space()="Settings"]]' )->length, 'The ungrouped fields come first.' );
+		$this->assertSame( 1, $xpath->query( '//fieldset[@class="sc-wpun-field-group"]/legend/h3' )->length, 'An open group is a section with a heading; the collapsed one has a summary.' );
+	}
+
+	/**
+	 * Every section of the form is a fieldset whose legend holds its heading, and the groups follow Settings at the same level.
+	 */
+	public function test_every_section_is_a_fieldset_with_a_heading() {
+		$this->register( $this->grouped_fields(), $this->groups() );
+		$xpath = $this->form();
+
+		$headings = array();
+		foreach ( $xpath->query( '//form[contains(@class,"sc-wpun-channel-form")]//h3' ) as $node ) {
+			$this->assertSame( 'legend', $node->parentNode->nodeName, $node->textContent );
+			$this->assertSame( 'fieldset', $node->parentNode->parentNode->nodeName, $node->textContent );
+			$headings[] = trim( $node->textContent );
+		}
+		$this->assertSame( array( 'Channel', 'Routing', 'Settings', 'Alpha group' ), $headings, 'The collapsed group has a summary, not a heading.' );
+		$this->assertSame( 3, $xpath->query( '//fieldset[@class="sc-wpun-form-section"]' )->length );
+		$this->assertSame( 0, $xpath->query( '//form//fieldset[contains(@class,"sc-wpun-form-section") or contains(@class,"sc-wpun-field-group")]/ancestor::fieldset[contains(@class,"sc-wpun-form-section")]' )->length, 'Sections are not nested.' );
+	}
+
+	/**
+	 * A form whose fields are all grouped has no Settings section.
+	 */
+	public function test_no_settings_section_when_every_field_is_grouped() {
+		$xpath = $this->form( 'email' );
+
+		$this->assertSame( 0, $xpath->query( '//h3[normalize-space()="Settings"]' )->length );
+		$this->assertSame( array( 'Channel', 'Routing', 'Recipients', 'Message' ), array_map( static fn( $h ) => trim( $h->textContent ), iterator_to_array( $xpath->query( '//form//legend/h3' ) ) ) );
 	}
 
 	/**
@@ -362,7 +391,7 @@ class Test_Field_Groups extends WPUN_Test_Case {
 
 		$this->assertSame(
 			array( 'settings[x]', 'settings[y]', 'settings[z]' ),
-			$this->names( $xpath, '//h3[normalize-space()="Settings"]/following-sibling::table[1]//input' )
+			$this->names( $xpath, '//fieldset[legend/h3[normalize-space()="Settings"]]/table//input' )
 		);
 		$this->assertSame( 0, $xpath->query( '//fieldset[@class="sc-wpun-field-group"]' )->length );
 		$this->assertSame( 2, $count, 'One for "nowhere" and one for the list.' );
@@ -450,6 +479,7 @@ class Test_Field_Groups extends WPUN_Test_Case {
 		sc_wpun()->channels()->unregister( 'fixture_custom' );
 
 		$this->assertSame( 0, $xpath->query( '//fieldset[@class="sc-wpun-field-group"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//fieldset[@class="sc-wpun-form-section"][legend/h3[normalize-space()="Settings"]]/div[@class="sc-wpun-custom-settings"]' )->length, 'Custom markup sits in the Settings section.' );
 	}
 
 	// Conditional fields: the note.

@@ -627,7 +627,8 @@ class Channel_Form {
 		$id       = $instance->get_id();
 		$external = $is_new ? null : $this->store->external_source( $id, 'enabled' );
 		?>
-		<h3><?php esc_html_e( 'Channel', 'wp-updates-notifier' ); ?></h3>
+		<fieldset class="sc-wpun-form-section">
+		<legend><h3><?php esc_html_e( 'Channel', 'wp-updates-notifier' ); ?></h3></legend>
 		<table class="form-table" role="presentation">
 			<tbody>
 				<?php
@@ -661,6 +662,7 @@ class Channel_Form {
 				?>
 			</tbody>
 		</table>
+		</fieldset>
 		<?php
 	}
 
@@ -675,7 +677,8 @@ class Channel_Form {
 	private function render_routing_section( array $routing, array $errors ): void {
 		$notes = $this->global_notes();
 		?>
-		<h3><?php esc_html_e( 'Routing', 'wp-updates-notifier' ); ?></h3>
+		<fieldset class="sc-wpun-form-section">
+		<legend><h3><?php esc_html_e( 'Routing', 'wp-updates-notifier' ); ?></h3></legend>
 		<table class="form-table" role="presentation">
 			<tbody>
 				<?php
@@ -694,6 +697,7 @@ class Channel_Form {
 				?>
 			</tbody>
 		</table>
+		</fieldset>
 		<?php
 	}
 
@@ -746,14 +750,14 @@ class Channel_Form {
 	 * @return void
 	 */
 	private function render_settings_section( ?string $custom, Channel_Instance $form_inst, array $fields, array $groups, array $settings, bool $is_new, array $errors ): void {
-		?>
-		<h3><?php esc_html_e( 'Settings', 'wp-updates-notifier' ); ?></h3>
-		<?php
 		if ( is_string( $custom ) ) {
 			?>
+			<fieldset class="sc-wpun-form-section">
+			<legend><h3><?php esc_html_e( 'Settings', 'wp-updates-notifier' ); ?></h3></legend>
 			<div class="sc-wpun-custom-settings">
 				<?php echo $custom; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup of the channel module. ?>
 			</div>
+			</fieldset>
 			<?php
 			return;
 		}
@@ -787,8 +791,12 @@ class Channel_Form {
 				. $this->control( $schema, 'settings[' . $name . ']', $id, $value, $errors[ 'settings.' . $name ] ?? '', $external, $applies ) . '</td></tr>';
 		}
 
-		// Fields without a group first, as before; then each group that has fields, in the order declared.
-		$this->settings_table( $buckets[''] ?? array() );
+		// Fields without a group first, under "Settings"; then each group that has fields, in the order declared, as a section of its own.
+		if ( array() !== ( $buckets[''] ?? array() ) ) {
+			$this->put( '<fieldset class="sc-wpun-form-section"><legend><h3>' . esc_html__( 'Settings', 'wp-updates-notifier' ) . '</h3></legend>' );
+			$this->settings_table( $buckets[''] );
+			$this->put( '</fieldset>' );
+		}
 		foreach ( $groups as $group_id => $group ) {
 			$rows = $buckets[ (string) $group_id ] ?? array();
 			if ( array() === $rows ) {
@@ -809,7 +817,7 @@ class Channel_Form {
 				$this->put( '<details class="sc-wpun-field-group-details"' . ( $open ? ' open' : '' ) . '><summary>' . esc_html( $label ) . '</summary>' );
 			}
 			$this->put( '<fieldset class="sc-wpun-field-group"' . ( '' !== $text ? ' aria-describedby="' . esc_attr( $dom_id . '-description' ) . '"' : '' ) . '>' );
-			$this->put( $collapsed ? '<legend class="screen-reader-text">' . esc_html( $label ) . '</legend>' : '<legend>' . esc_html( $label ) . '</legend>' );
+			$this->put( $collapsed ? '<legend class="screen-reader-text">' . esc_html( $label ) . '</legend>' : '<legend><h3>' . esc_html( $label ) . '</h3></legend>' );
 			if ( '' !== $text ) {
 				$this->put( '<p class="description" id="' . esc_attr( $dom_id . '-description' ) . '">' . esc_html( $text ) . '</p>' );
 			}
