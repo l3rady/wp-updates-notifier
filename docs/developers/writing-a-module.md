@@ -152,8 +152,8 @@ public function get_field_groups(): array {
 }
 ```
 
-- Fields without a group come first, then each group in the order you declare them, with its fields in schema order. A group with no fields is not drawn.
-- Each group is a fieldset with a legend and the description under it. A `collapsed` group is folded into a `<details>` element, and opens by itself when one of its fields has an error after a failed save.
+- Every section of the form (Channel, Routing, Settings and each group) is a panel: a fieldset whose legend holds an `<h3>`. Fields without a group are in the Settings panel, which is left out when every field has a group. The groups follow it in the order you declare them, with their fields in schema order. A group with no fields is not drawn.
+- A group's description is under its heading. A `collapsed` group is folded into a `<details>` element, and opens by itself when one of its fields has an error after a failed save.
 - A `group` that names no declared group draws the field without a group and raises a `_doing_it_wrong` notice. Groups have one level: there are no groups inside groups.
 
 A field that is only used for some values of another field declares `applies_when`, a map of other field names to the value, or list of values, that make it apply:
@@ -408,7 +408,7 @@ Fields drawn from `get_fields()` get the accessible markup for free:
 - "(required)" after the label of a required field, and `aria-required="true"` on its control (a group of checkboxes only has the text; a saved secret keeps the text but not the attribute);
 - on an error, `aria-invalid="true"`, the message under the field with a bold "Error:", and a summary at the top of the form with a link to each field. The link goes to the first control of a group of radio buttons or checkboxes;
 - a note on a saved secret ("A value is saved. Leave this empty to keep it, ..."), a clear checkbox named after the field, and a "Set by ..." note, tied to the control, for a value that comes from a constant or an environment variable;
-- a fieldset with a legend for each group of fields, opened when a collapsed group holds an error, and a "Used only when ..." note, tied to the control, for a field with `applies_when`.
+- a panel with a heading for each group of fields, opened when a collapsed group holds an error, and a "Used only when ..." note, tied to the control, for a field with `applies_when`.
 
 A page title that starts with "Error:" after a failed save and the headings are the plugin's job too. Use `render_settings()` only when no schema field can do it.
 
