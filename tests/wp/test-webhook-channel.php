@@ -1707,7 +1707,7 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 		do_action( 'sc_wpun_item_resolved', $item, 'updated', 'not an instance' );
 		do_action( 'sc_wpun_after_update_check', 'not a notification', array() );
 		$this->assertCount( 0, $this->received() );
-		$this->assertSame( 1, count( array_filter( $GLOBALS['wp_filter']['sc_wpun_item_resolved']->callbacks[10] ?? array(), static fn( $callback ) => $callback['function'] instanceof Closure && ( new ReflectionFunction( $callback['function'] ) )->getNamespaceName() === 'WPUN\Modules\Webhook' ) ), 'Added once, at load.' );
+		$this->assertSame( 1, count( array_filter( $GLOBALS['wp_filter']['sc_wpun_item_resolved']->callbacks[10] ?? array(), static fn( $callback ) => $callback['function'] instanceof Closure && str_ends_with( (string) ( new ReflectionFunction( $callback['function'] ) )->getFileName(), '/modules/webhook/webhook.php' ) ) ), 'Added once, at load.' );
 	}
 
 	/**
