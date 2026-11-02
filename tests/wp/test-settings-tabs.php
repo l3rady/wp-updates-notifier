@@ -153,6 +153,25 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The status is a panel with its heading as the title, and the settings a fieldset panel whose legend holds the heading.
+	 */
+	public function test_general_tab_panels() {
+		$xpath = $this->xpath( $this->html() );
+
+		$status = $xpath->query( '//section[@class="sc-wpun-panel"][h2[@class="sc-wpun-panel-title"][normalize-space()="Status"]]' );
+		$this->assertSame( 1, $status->length );
+		$this->assertSame( 'h2', $xpath->query( '*[1]', $status->item( 0 ) )->item( 0 )->nodeName, 'The heading is the first thing in the panel.' );
+		$this->assertSame( 1, $xpath->query( './/*[contains(@class,"sc-wpun-last-check")]', $status->item( 0 ) )->length );
+		$this->assertSame( 1, $xpath->query( './/form[contains(@class,"sc-wpun-check-now")]', $status->item( 0 ) )->length );
+
+		$settings = $xpath->query( '//form[contains(@action,"options.php")]/fieldset[@class="sc-wpun-panel"][legend/h2[normalize-space()="Settings"]]' );
+		$this->assertSame( 1, $settings->length );
+		$this->assertSame( 1, $xpath->query( 'table[@class="form-table"][@role="presentation"]', $settings->item( 0 ) )->length );
+		$this->assertGreaterThan( 0, $xpath->query( 'table//input[starts-with(@name,"sc_wpun_settings[")]', $settings->item( 0 ) )->length );
+		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"options.php")]//input[starts-with(@name,"sc_wpun_settings[")][not(ancestor::fieldset[@class="sc-wpun-panel"])]' )->length, 'Every setting is in the panel.' );
+	}
+
+	/**
 	 * The Channels tab is listed, can be chosen and draws the channel list instead of the settings form.
 	 */
 	public function test_channels_is_listed_and_drawn() {

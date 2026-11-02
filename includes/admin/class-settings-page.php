@@ -501,7 +501,8 @@ class Settings_Page {
 		$options    = $this->state->get();
 		$next_check = wp_next_scheduled( Scheduler::CRON_NAME );
 		?>
-		<h2><?php esc_html_e( 'Status', 'wp-updates-notifier' ); ?></h2>
+		<section class="sc-wpun-panel">
+		<h2 class="sc-wpun-panel-title"><?php esc_html_e( 'Status', 'wp-updates-notifier' ); ?></h2>
 		<p>
 			<span class="description sc-wpun-last-check">
 			<?php
@@ -527,13 +528,22 @@ class Settings_Page {
 		</p>
 
 		<?php $this->check_now->render(); ?>
+		</section>
 
 		<form action="<?php echo esc_url( $this->network_context->is_network() ? network_admin_url( 'edit.php?action=' . self::NETWORK_SAVE_ACTION ) : admin_url( 'options.php' ) ); ?>" method="post">
 			<?php
 			// Saving goes back to the page it was sent from, which is this tab: the tab links carry `tab=general`.
 			settings_fields( 'sc_wpun_settings' );
-			do_settings_sections( 'wp-updates-notifier' );
 			?>
+			<fieldset class="sc-wpun-panel">
+				<legend><h2><?php esc_html_e( 'Settings', 'wp-updates-notifier' ); ?></h2></legend>
+				<table class="form-table" role="presentation">
+					<?php
+					// The rows only: the section's heading is the legend, so the settings are a panel like the sections of the channel form.
+					do_settings_fields( 'wp-updates-notifier', 'sc_wpun_settings_main' );
+					?>
+				</table>
+			</fieldset>
 			<?php submit_button( __( 'Save settings', 'wp-updates-notifier' ) ); ?>
 		</form>
 		<?php

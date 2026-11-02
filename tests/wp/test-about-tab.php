@@ -95,6 +95,16 @@ class Test_About_Tab extends WPUN_Test_Case {
 		$html        = $this->html();
 		$this->assertStringContainsString( 'sc-wpun-about', $html );
 		$this->assertSame( 1, preg_match_all( '/<h1[ >]/', $html ) );
+
+		// Each block is a panel whose first child is its heading.
+		$doc = new DOMDocument();
+		libxml_use_internal_errors( true );
+		$doc->loadHTML( '<html><body>' . $html . '</body></html>' );
+		libxml_clear_errors();
+		$xpath = new DOMXPath( $doc );
+		$this->assertSame( 6, $xpath->query( '//div[@class="sc-wpun-about"]//h2' )->length );
+		$this->assertSame( 6, $xpath->query( '//div[@class="sc-wpun-about"]/section[@class="sc-wpun-panel"][*[1][self::h2][@class="sc-wpun-panel-title"]]' )->length );
+		$this->assertSame( 0, $xpath->query( '//div[@class="sc-wpun-about"]/*[not(self::section)]' )->length );
 		foreach ( About_Tab::links() as $slug => $url ) {
 			$this->assertStringContainsString( 'href="' . esc_url( $url ) . '"', $html, $slug );
 		}
