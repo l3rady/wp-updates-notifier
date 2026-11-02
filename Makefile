@@ -73,10 +73,10 @@ vendor/autoload.php: composer.json composer.lock
 
 deps: vendor/autoload.php ## Install Composer dependencies
 
-test-wp: ## Run the WordPress test suite (single site)
+test-wp: deps ## Run the WordPress test suite (single site)
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
 
-test-wp-ms: ## Run the WordPress test suite as multisite
+test-wp-ms: deps ## Run the WordPress test suite as multisite
 	$(COMPOSE) run --build --rm -e WP_MULTISITE=1 wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
 
 # The WordPress suite with pcov (the wp-tests-coverage image, which only this target builds, so make test-wp stays
@@ -84,7 +84,7 @@ test-wp-ms: ## Run the WordPress test suite as multisite
 # up (see CONTRIBUTING.md); the aim is 90 or more, and it was 97.12 when set. The text summary is printed;
 # build/coverage/ gets clover.xml and html/.
 COVERAGE_MIN ?= 97
-coverage: ## Line coverage of the plugin by the WordPress suite (pcov, single site and multisite together); fails below COVERAGE_MIN; report in build/coverage/
+coverage: deps ## Line coverage of the plugin by the WordPress suite (pcov, single site and multisite together); fails below COVERAGE_MIN; report in build/coverage/
 	@mkdir -p build/coverage
 	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
 
@@ -93,11 +93,11 @@ coverage: ## Line coverage of the plugin by the WordPress suite (pcov, single si
 # ARGS goes to Infection, e.g. make mutation ARGS="--filter=includes/class-state.php". The floors are in
 # infection.json5; see CONTRIBUTING.md.
 THREADS ?= 4
-mutation: ## Mutation testing of the plugin with Infection (pcov, slow); fails below the minimums in infection.json5; logs in build/infection/
+mutation: deps ## Mutation testing of the plugin with Infection (pcov, slow); fails below the minimums in infection.json5; logs in build/infection/
 	@mkdir -p build/infection
 	$(COMPOSE) run --build --rm -v $(CURDIR)/build/infection:/infection wp-tests-coverage sh /opt/wp-updates-notifier/docker/mutation.sh --threads=$(THREADS) $(ARGS)
 
-test-known-bugs: ## Run the tests that document open bugs (they are expected to fail)
+test-known-bugs: deps ## Run the tests that document open bugs (they are expected to fail)
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 
 test: test-wp test-wp-ms test-release test-readme test-blueprint test-wporg-assets ## Run every test layer

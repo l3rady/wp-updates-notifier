@@ -216,8 +216,11 @@ jobs:
         with:
           persist-credentials: false
       # Not for a manual run on another WordPress version: a branch such as trunk moves, and its cached clone would not.
+      # vendor/ holds the test-only dependencies, such as the JSON Schema validator of the webhook tests.
       - uses: ./.github/actions/docker-cache
         if: inputs.wp_version == ''
+        with:
+          vendor: 'true'
       - name: Run the tests
         run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
 
@@ -233,6 +236,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/docker-cache
+        with:
+          vendor: 'true'
       - name: Measure the coverage
         run: make coverage
       - name: Keep the report
