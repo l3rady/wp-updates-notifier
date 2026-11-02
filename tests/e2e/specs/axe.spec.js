@@ -46,3 +46,65 @@ test( 'axe: field showcase with its collapsed group open', async ( { page } ) =>
 	expect( violations, `${ violations.length } axe violation(s) on the showcase with the collapsed group open\n\n${ describe( violations ) }\n` ).toEqual( [] );
 	expect( errors, 'console errors on the showcase with the collapsed group open' ).toEqual( [] );
 } );
+
+test( 'axe: webhook form with the Advanced group open', async ( { page } ) => {
+	const errors = watchConsole( page );
+	await page.goto( `${ CHANNELS }&action=edit&id=e2e_webhook` );
+
+	const details = page.locator( 'details.sc-wpun-field-group-details' );
+	await expect( details ).not.toHaveAttribute( 'open', /.*/ );
+	await details.locator( 'summary' ).click();
+	await expect( details ).toHaveAttribute( 'open', /.*/ );
+
+	// The extra headers are a secret textarea: empty, with the saved note and the Clear checkbox.
+	const headers = details.locator( 'textarea[name="settings[headers]"]' );
+	await expect( headers ).toBeVisible();
+	await expect( headers ).toHaveValue( '' );
+	await expect( details.locator( 'input[name="settings[headers__clear]"]' ) ).toBeVisible();
+
+	const violations = await scan( page );
+	expect( violations, `${ violations.length } axe violation(s) on the webhook form with the group open\n\n${ describe( violations ) }\n` ).toEqual( [] );
+
+	expect( errors, 'console errors on the webhook form' ).toEqual( [] );
+} );
+
+// Submit the webhook form with one field changed, to see the form after a failed save.
+async function failWebhookSave( page, field, value ) {
+	await page.goto( `${ CHANNELS }&action=edit&id=e2e_webhook` );
+	// A control in the collapsed group can only be filled once the group is open.
+	if ( field.startsWith( 'textarea' ) ) {
+		await page.locator( 'details.sc-wpun-field-group-details summary' ).click();
+	}
+	await page.fill( field, value );
+	await page.locator( 'form.sc-wpun-channel-form' ).evaluate( ( form ) => ( form.noValidate = true ) );
+	await page.locator( 'form.sc-wpun-channel-form button[type=submit]' ).click();
+	await expect( page.locator( '.sc-wpun-form-errors' ) ).toBeVisible();
+}
+
+test( 'axe: webhook form after a bad signing secret', async ( { page } ) => {
+	const errors = watchConsole( page );
+	await failWebhookSave( page, 'input[name="settings[signing_secret]"]', 'not-a-whsec-secret' );
+
+	await expect( page.locator( 'input[name="settings[signing_secret]"]' ) ).toHaveAttribute( 'aria-invalid', 'true' );
+	// The Advanced group has no error, so it stays closed.
+	await expect( page.locator( 'details.sc-wpun-field-group-details' ) ).not.toHaveAttribute( 'open', /.*/ );
+
+	const violations = await scan( page );
+	expect( violations, `${ violations.length } axe violation(s) on the webhook form after a bad signing secret\n\n${ describe( violations ) }\n` ).toEqual( [] );
+	expect( errors, 'console errors on the webhook form' ).toEqual( [] );
+} );
+
+test( 'axe: webhook form after a bad header line, with the Advanced group open by itself', async ( { page } ) => {
+	const errors = watchConsole( page );
+	await failWebhookSave( page, 'textarea[name="settings[headers]"]', 'no colon here' );
+
+	const details = page.locator( 'details.sc-wpun-field-group-details' );
+	await expect( details ).toHaveAttribute( 'open', /.*/ );
+	const area = details.locator( 'textarea[name="settings[headers]"]' );
+	await expect( area ).toHaveAttribute( 'aria-invalid', 'true' );
+	await expect( page.locator( '.sc-wpun-field-error' ) ).toContainText( 'Line 1 must be written Name: value.' );
+
+	const violations = await scan( page );
+	expect( violations, `${ violations.length } axe violation(s) on the webhook form after a bad header line\n\n${ describe( violations ) }\n` ).toEqual( [] );
+	expect( errors, 'console errors on the webhook form' ).toEqual( [] );
+} );

@@ -89,6 +89,59 @@ class Test_Field_Types extends WPUN_Test_Case {
 	}
 
 	/**
+	 * `https_only` refuses http with its own message, and changes nothing else (API 1.1.0).
+	 */
+	public function test_url_https_only() {
+		$field = array(
+			'type'       => 'url',
+			'https_only' => true,
+		);
+		$this->assertSame( array( 'f' => 'https://example.com/path?q=1' ), $this->check( $field, 'https://example.com/path?q=1' ) );
+		$this->assertSame( array( 'f' => 'https://example.com' ), $this->check( $field, 'HTTPS://example.com' ) );
+		$this->assertSame( array( 'f' => '' ), $this->check( $field, '' ), 'Empty is still allowed; `required` is a separate key.' );
+
+		foreach ( array( 'http://example.com', 'HTTP://example.com/x' ) as $http ) {
+			$error = $this->check( $field, $http );
+			$this->assertInstanceOf( WP_Error::class, $error, $http );
+			$this->assertSame( array( 'field' => 'f' ), $error->get_error_data() );
+			$this->assertSame( 'Enter a web address that starts with https://.', $error->get_error_message() );
+		}
+		foreach ( array( 'ftp://x', 'javascript:alert(1)', 'example.com' ) as $bad ) {
+			$this->assertStringContainsString( 'http:// or https://', $this->check( $field, $bad )->get_error_message(), 'Other mistakes keep their message.' );
+		}
+
+		foreach ( array( false, 0, '1', null ) as $off ) {
+			$this->assertSame( array( 'f' => 'http://example.com' ), $this->check( array( 'type' => 'url', 'https_only' => $off ), 'http://example.com' ), 'Only true turns it on.' ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		}
+	}
+
+	/**
+	 * A secret textarea keeps credentials as typed (no % or tag removal), with its line breaks, and is drawn as an empty textarea.
+	 */
+	public function test_secret_textarea() {
+		$field = array(
+			'type'   => 'textarea',
+			'secret' => true,
+		);
+		$this->assertSame( array( 'f' => "X-Api-Key: a%2Fb\nAuthorization: Bearer abc<def" ), $this->check( $field, "  X-Api-Key: a%2Fb\r\nAuthorization: Bearer abc<def\x00\x07\r\n" ) );
+		$this->assertSame( array( 'f' => "a\n\nb" ), $this->check( $field, "a\r\rb" ), 'Old Mac line breaks too.' );
+		$this->assertSame( array( 'f' => 'ab' ), $this->check( $field, "a\tb" ), 'Control characters go, a tab included.' );
+		$this->assertSame( array( 'f' => 'ab' ), $this->check( array( 'type' => 'textarea' ), 'a%2Fb' ), 'A plain textarea is still cleaned by core.' );
+
+		$html = Field_Renderer::field( $field, 'n', 'i', 'SECRET' );
+		$this->assertStringContainsString( '<textarea', $html );
+		$this->assertStringContainsString( '></textarea>', $html );
+		$this->assertStringNotContainsString( 'SECRET', $html );
+		$this->assertStringNotContainsString( 'type="password"', $html );
+		$this->assertStringContainsString( 'name="n__clear"', $html );
+		$this->assertStringContainsString( 'aria-describedby="i-saved"', $html );
+		$this->assertStringNotContainsString( '__clear', Field_Renderer::field( $field, 'n', 'i', '' ) );
+		$this->assertStringContainsString( 'disabled="disabled"', Field_Renderer::field( $field, 'n', 'i', 'SECRET', true ) );
+		$this->assertStringContainsString( 'aria-invalid="true"', Field_Renderer::field( array( 'required' => true ) + $field, 'n', 'i', '', false, '', array(), 'Bad' ) );
+		$this->assertStringContainsString( 'aria-required="true"', Field_Renderer::field( array( 'required' => true ) + $field, 'n', 'i', '' ) );
+	}
+
+	/**
 	 * Email lists.
 	 */
 	public function test_email_list() {
@@ -400,6 +453,13 @@ class Test_Field_Types extends WPUN_Test_Case {
 				$html = Field_Renderer::field( $field, 'n', 'i', $secret, $state[0], 'd', array(), $state[1] );
 				$this->assertStringNotContainsString( $secret, $html );
 				$this->assertStringNotContainsString( 'S3cr3t', $html );
+				if ( 'textarea' === $field['type'] ) {
+					// A list of secrets needs several lines, so it is an empty textarea.
+					$area = $this->xpath( $html )->query( '//textarea[@id="i"]' )->item( 0 );
+					$this->assertSame( 'large-text', $area->getAttribute( 'class' ) );
+					$this->assertSame( '', $this->xpath( $html )->evaluate( 'string(//textarea[@id="i"])' ) );
+					continue;
+				}
 				$input = $this->xpath( $html )->query( '//input[@id="i"]' )->item( 0 );
 				$this->assertSame( 'password', $input->getAttribute( 'type' ) );
 				$this->assertSame( 'new-password', $input->getAttribute( 'autocomplete' ) );

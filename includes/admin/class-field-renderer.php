@@ -234,7 +234,7 @@ final class Field_Renderer {
 	 */
 	public static function textarea( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string {
 		if ( Field_Types::is_secret( $field ) ) {
-			return self::secret( $field, $name, $id, $value, $disabled, $described_by, $error );
+			return self::secret_control( true, $field, $name, $id, $value, $disabled, $described_by, $error );
 		}
 
 		return '<textarea class="large-text" rows="5" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '"' . self::common( $disabled, $described_by, $error, self::is_required( $field ) ) . '>'
@@ -258,14 +258,38 @@ final class Field_Renderer {
 	 *
 	 * @return string
 	 */
-	public static function secret( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Same signature as the other types.
+	public static function secret( array $field, string $name, string $id, $value, bool $disabled = false, string $described_by = '', string $error = '' ): string {
+		return self::secret_control( false, $field, $name, $id, $value, $disabled, $described_by, $error );
+	}
+
+	/**
+	 * The markup of a secret: a password input, or an empty textarea for a secret of the `textarea` type, and the note and the clear checkbox.
+	 *
+	 * @param bool                 $multiline    Whether the control is a textarea.
+	 * @param array<string, mixed> $field        Field schema.
+	 * @param string               $name         The `name` attribute.
+	 * @param string               $id           The `id` attribute.
+	 * @param mixed                $value        The saved value.
+	 * @param bool                 $disabled     Whether the control is disabled.
+	 * @param string               $described_by Ids of the elements that describe the field, if any.
+	 * @param string               $error        Error message of the field, if any: the control is marked invalid.
+	 *
+	 * @return string
+	 */
+	private static function secret_control( bool $multiline, array $field, string $name, string $id, $value, bool $disabled, string $described_by, string $error ): string {
 		$has_value = is_scalar( $value ) && '' !== (string) $value;
 		$saved     = $has_value && ! $disabled;
 		$label     = isset( $field['label'] ) && is_string( $field['label'] ) ? $field['label'] : '';
 		if ( $saved ) {
 			$described_by = trim( $id . '-saved ' . $described_by );
 		}
-		$html = '<input type="password" class="regular-text" autocomplete="new-password" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value=""' . self::common( $disabled, $described_by, $error, self::is_required( $field ) && ! $has_value ) . ' />';
+		$common = self::common( $disabled, $described_by, $error, self::is_required( $field ) && ! $has_value );
+		if ( $multiline ) {
+			// Empty, like the password input: the saved value is never output.
+			$html = '<textarea class="large-text" rows="5" autocomplete="off" spellcheck="false" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '"' . $common . '></textarea>';
+		} else {
+			$html = '<input type="password" class="regular-text" autocomplete="new-password" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value=""' . $common . ' />';
+		}
 
 		if ( $saved ) {
 			$clear = ']' === substr( $name, -1 ) ? substr( $name, 0, -1 ) . '__clear]' : $name . '__clear';

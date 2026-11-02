@@ -526,7 +526,7 @@ final class Field_Types {
 	}
 
 	/**
-	 * Clean a multi-line text value.
+	 * Clean a multi-line text value. A secret one is only trimmed and stripped of control characters, see secret().
 	 *
 	 * @param mixed                $value Value.
 	 * @param array<string, mixed> $field Field schema.
@@ -538,11 +538,18 @@ final class Field_Types {
 			return self::bad();
 		}
 
+		// A secret list (credentials, one per line) keeps what it holds, like the `secret` type, except that line breaks stay.
+		if ( self::is_secret( $field ) ) {
+			$lines = str_replace( array( "\r\n", "\r" ), "\n", (string) $value );
+
+			return self::good( trim( (string) preg_replace( '/[\x00-\x09\x0B-\x1F\x7F]/', '', $lines ) ) );
+		}
+
 		return self::good( sanitize_textarea_field( (string) $value ) );
 	}
 
 	/**
-	 * Clean a URL: an empty one, or an http or https one with a host.
+	 * Clean a URL: an empty one, or an http or https one with a host (https only when the field sets `https_only`).
 	 *
 	 * No DNS lookup is made.
 	 *
@@ -564,6 +571,11 @@ final class Field_Types {
 		$parts = wp_parse_url( $value );
 		if ( ! is_array( $parts ) || ! isset( $parts['scheme'], $parts['host'] ) || '' === $parts['host'] || ! in_array( strtolower( $parts['scheme'] ), array( 'http', 'https' ), true ) ) {
 			return self::bad( __( 'Enter a full web address that starts with http:// or https://.', 'wp-updates-notifier' ) );
+		}
+
+		// A field that sets `https_only` carries something private, so plain http is refused with a message of its own.
+		if ( true === ( $field['https_only'] ?? false ) && 'https' !== strtolower( $parts['scheme'] ) ) {
+			return self::bad( __( 'Enter a web address that starts with https://.', 'wp-updates-notifier' ) );
 		}
 
 		$clean = esc_url_raw( $value, array( 'http', 'https' ) );

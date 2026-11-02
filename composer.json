@@ -29,6 +29,7 @@
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.2",
+        "opis/json-schema": "^2.3",
         "php-stubs/wordpress-stubs": "^7.1",
         "phpcompatibility/phpcompatibility-wp": "^2.1",
         "phpstan/phpstan": "^2.1",

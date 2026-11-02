@@ -16,6 +16,7 @@ const VIEWS = [
 	[ 'New Email form', `${ CHANNELS }&action=new&type=email` ],
 	[ 'Edit Email form', `${ CHANNELS }&action=edit&id=e2e_email` ],
 	[ 'Delete confirmation', `${ CHANNELS }&action=delete&id=e2e_email` ],
+	[ 'Edit Webhook form', `${ CHANNELS }&action=edit&id=e2e_webhook` ],
 	[ 'Field showcase edit form', `${ CHANNELS }&action=edit&id=e2e_showcase` ],
 ];
 

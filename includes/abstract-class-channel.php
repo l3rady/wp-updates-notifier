@@ -57,8 +57,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The value types, with their displays:
  *
  * - `text`: a string, shown as a text input. Tags and line breaks are removed.
- * - `textarea`: a string, shown as a textarea.
+ * - `textarea`: a string, shown as a textarea. As a secret (`'secret' => true`, since 3.0.0, API 1.1.0) it is drawn empty, like a `secret`, and only trimmed and cleaned of control characters, so
+ *   credentials such as `%2F` and `<` survive; line breaks stay.
  * - `url`: a string, shown as a URL input. Empty, or an http or https address with a host (no `javascript:`, `ftp:` or relative URLs).
+ *   With `'https_only' => true` (since 3.0.0, API 1.1.0) an `http://` address is refused with a message of its own, for an address that carries
+ *   a token. Site code can remove the key with the `sc_wpun_channel_fields` filter.
  * - `email_list`: addresses separated by commas, shown as a text input. One bad address makes the field invalid. Stored joined with `,`.
  * - `secret`: a string, shown as a password input, trimmed and with control characters removed. The saved value is never output. Submitting nothing (or only blanks) keeps the saved value, and a
  *   `<name>__clear` setting that is true (the "Clear" checkbox of the form) empties it. `'secret' => true` does the same for the other

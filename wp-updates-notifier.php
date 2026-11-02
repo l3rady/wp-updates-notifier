@@ -72,6 +72,7 @@ require_once __DIR__ . '/includes/class-autoloader.php';
 
 // Built-in notification modules.
 require_once __DIR__ . '/modules/email/email.php';
+require_once __DIR__ . '/modules/webhook/webhook.php';
 
 // Only load class if it hasn't already been loaded.
 if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
@@ -549,6 +550,48 @@ if ( ! function_exists( 'sc_wpun_instance_waiting_until' ) ) {
 		$until = $state->waiting_until( $state->get()['channels'][ $id ] ?? array() );
 
 		return $until > 0 ? $until : null;
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_instance_problems' ) ) {
+	/**
+	 * Why the plugin would refuse to deliver through a channel instance, apart from it being switched off or waiting.
+	 *
+	 * The codes are those of the failure the dispatcher records: `unavailable` when the channel type of the instance is not
+	 * registered (its module is missing, refused or unregistered), and `misconfigured` when a value supplied from a constant,
+	 * an environment variable or a source cannot be used. Code that sends through an instance outside the dispatcher, such
+	 * as the webhook channel's `updates.resolved` message, checks it to honour the same rules:
+	 *
+	 *     if ( array() === sc_wpun_instance_problems( $instance->get_id() ) ) {
+	 *         // Safe to deliver.
+	 *     }
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $id Id of the channel instance.
+	 *
+	 * @return string[] Empty when there is no problem, or no such instance.
+	 */
+	function sc_wpun_instance_problems( string $id ): array {
+		$instance = sc_wpun()->channel_store()->get( $id );
+		if ( null === $instance ) {
+			return array();
+		}
+
+		$problems = array();
+		if ( ! sc_wpun()->channels()->has( $instance->get_type() ) ) {
+			$problems[] = 'unavailable';
+		}
+		try {
+			if ( array() !== sc_wpun()->channel_store()->problems( $id ) ) {
+				$problems[] = 'misconfigured';
+			}
+		} catch ( \Throwable $e ) {
+			// The fields of the channel could not be read, so its values cannot be trusted.
+			$problems[] = 'misconfigured';
+		}
+
+		return array_values( array_unique( $problems ) );
 	}
 }
 

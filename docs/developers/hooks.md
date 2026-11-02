@@ -1454,6 +1454,83 @@ Add-ons can use it as the moment to start talking to the plugin's API.
 
 Fired in `includes/class-plugin.php`.
 
+### `sc_wpun_webhook_headers`
+
+*Filter*, since 3.0.0
+
+Filters the headers of a webhook message, after the signature headers are added.
+
+It runs last, on the final headers, just before the message is sent. The names of the headers are not part of what
+is signed, so renaming or adding headers is safe. The body cannot be changed here: use `sc_wpun_channel_payload_webhook`
+for that. An entry whose name is not a string, or whose value is not a string without a line break, is dropped, and a
+return value that is not an array is ignored.
+
+For an `updates.resolved` message `$notification` is the notification of the update check, copied with the items that
+were installed or removed.
+
+`$headers` and `$instance` hold secrets, such as the signature and the extra headers: don't log or dump them.
+
+Example, add a header:
+
+```php
+add_filter(
+    'sc_wpun_webhook_headers',
+    function ( $headers, $notification, $instance, $body ) {
+        $headers['X-Site'] = 'production';
+        return $headers;
+    },
+    10,
+    4
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$headers` | `array<string, string>` | The headers, by name. |
+| `$notification` | `Notification` | What is being delivered. |
+| `$instance` | `Channel_Instance` | The webhook instance. |
+| `$body` | `string` | The exact JSON that is sent and signed. |
+
+Fired in `modules/webhook/class-webhook-channel.php`.
+
+### `sc_wpun_webhook_resolved_sent`
+
+*Action*, since 3.0.0
+
+Fires after the webhook channel tried to send an `updates.resolved` message, whether it worked or not.
+
+The message is best effort: the update check has forgotten the items by then, so a failure is not retried and
+is not shown on the Channels tab. Use this to log failures. It is not sent through the dispatcher, so
+`sc_wpun_pre_send`, `sc_wpun_notification_sent` and `sc_wpun_notification_failed` do not apply. It does not fire for
+an instance that is switched off, has "Installed updates" unticked, is waiting or has a problem (see
+`sc_wpun_instance_problems()`), nor in a dry run or a test send.
+
+The filters `sc_wpun_channel_payload` and `sc_wpun_webhook_headers` receive the notification of the check, copied
+with the resolved items.
+
+Example, log failures:
+
+```php
+add_action(
+    'sc_wpun_webhook_resolved_sent',
+    function ( $result, $items, $instance ) {
+        if ( ! $result->is_success() ) {
+            error_log( sprintf( 'Webhook %s: %s', $instance->get_id(), $result->get_message() ) );
+        }
+    },
+    10,
+    3
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$result` | `Delivery_Result` | The result. It never holds the address, the signing secret or a header value. |
+| `$items` | `Notification_Item[]` | The items that were installed or removed. |
+| `$instance` | `Channel_Instance` | The webhook instance the message was sent through. |
+
+Fired in `modules/webhook/class-webhook-channel.php`.
+
 ## Actions you can fire
 
 The plugin listens to these actions but does not fire them itself. Call them with `do_action()`.
