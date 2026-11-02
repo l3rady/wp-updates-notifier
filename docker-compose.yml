@@ -296,13 +296,18 @@ services:
       # Loopback only: Mailpit shows every captured email, password-reset links included.
       - "127.0.0.1:8025:8025"
 
-  # Echoes every request it receives (a stand-in for a Slack or other webhook):
-  # http://webhook:8080 inside the network, `docker compose logs webhook` to read.
+  # Catches every webhook request, like Mailpit for mail: http://localhost:8026. Channels post to
+  # http://webhook:8080/<uuid> inside the network; the first request to a UUID path opens a session for it, which the UI
+  # shows with its headers and body. site-setup.sh adds a webhook channel to each local site that posts here.
   webhook:
     profiles: [site]
-    image: mendhak/http-https-echo:42@sha256:a265f55c86cb3baead76fdf379dc8e9e6440ed121874e101e60b833e05bce8d4
+    image: tarampampam/webhook-tester:2.3.0@sha256:85818267b450d3d386cad6510c561e09b974183ed2832c373bc83b125fc1b221
     environment:
       HTTP_PORT: "8080"
+      AUTO_CREATE_SESSIONS: "true"
+    ports:
+      # Loopback only: the UI shows the signing headers and any credentials sent as extra headers.
+      - "127.0.0.1:8026:8080"
 
   # ----- Documentation site (`make docs`), profile "docs": not started by `make up` -----
 

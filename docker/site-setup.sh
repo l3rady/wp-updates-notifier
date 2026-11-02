@@ -16,11 +16,13 @@ case "$SITE_KIND" in
 		SITE_URL="${SITE_URL:-http://localhost:8080}"
 		REDIS_PREFIX='wpun-single:'
 		NET=''
+		WEBHOOK_SESSION='00000000-0000-4000-8000-000000000001'
 		;;
 	network)
 		SITE_URL="${SITE_URL:-http://localhost:8081}"
 		REDIS_PREFIX='wpun-network:'
 		NET='--network'
+		WEBHOOK_SESSION='00000000-0000-4000-8000-000000000002'
 		;;
 	*)
 		echo "SITE_KIND must be single or network, not $SITE_KIND." >&2
@@ -134,6 +136,28 @@ if [ "$throwaway" = no ]; then
 		# The field showcase channel (#172): every settings field, for checking the channel forms by hand.
 		wp plugin is-active wpun-field-showcase $NET || wp plugin activate wpun-field-showcase $NET --quiet
 	}
+	# A webhook channel that posts to the webhook service (http://localhost:8026), as the email channel's mail goes to
+	# Mailpit. Each site has its own session there (WEBHOOK_SESSION, above). The secret is the Standard Webhooks test
+	# vector's, so the signatures can be checked by hand; it is for this local site only. Added once: changes made on
+	# the Channels tab are kept.
+	wp eval "
+		if ( ! sc_wpun_channels()->has( 'local_webhook' ) ) {
+			sc_wpun_channels()->save(
+				new WPUN\\Channel_Instance(
+					'local_webhook',
+					'webhook',
+					'Local webhook',
+					true,
+					array(
+						'url'            => 'http://webhook:8080/$WEBHOOK_SESSION',
+						// Built from its parts, as in the tests: gitleaks would read the whole literal as a credential.
+						'signing_secret' => 'whsec_' . 'MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw',
+					)
+				)
+			);
+			echo 'Webhook channel added: http://localhost:8026/s/ shows what it sends.' . PHP_EOL;
+		}
+	"
 	install_plugin query-monitor
 	install_plugin debug-bar
 	install_plugin wp-crontrol
@@ -222,7 +246,7 @@ if [ "$SITE_KIND" = network ]; then
 	wp plugin is-active hello --url="$SITE_URL/" || wp plugin activate hello --url="$SITE_URL/" --quiet
 	wp plugin is-installed wpun-dummy && { wp plugin is-active wpun-dummy --url="$SITE_URL/" || wp plugin activate wpun-dummy --url="$SITE_URL/" --quiet; }
 
-	echo "Local multisite ready: $SITE_URL (admin / admin), sub-sites alpha and beta, network admin $SITE_URL/wp-admin/network/, mail in Mailpit on http://localhost:8025"
+	echo "Local multisite ready: $SITE_URL (admin / admin), sub-sites alpha and beta, network admin $SITE_URL/wp-admin/network/, mail in Mailpit on http://localhost:8025, webhooks on http://localhost:8026/s/$WEBHOOK_SESSION"
 	exit 0
 fi
 
@@ -245,4 +269,4 @@ if [ "$SITE_MODE" != e2e ]; then
 	[ "$(wp option get stylesheet)" = twentytwentyfour ] || wp theme activate twentytwentyfour --quiet
 fi
 
-echo "Local site ready: $SITE_URL (admin / admin), mail in Mailpit on http://localhost:8025"
+echo "Local site ready: $SITE_URL (admin / admin), mail in Mailpit on http://localhost:8025, webhooks on http://localhost:8026/s/$WEBHOOK_SESSION"

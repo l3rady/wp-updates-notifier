@@ -326,7 +326,7 @@ docs-deploy: ## Commit one version to the local gh-pages branch with mike, witho
 
 security: check-workflows secrets audit sast taint ## Run every security check
 
-up: ## Start the local single site (http://localhost:8080) and multisite (http://localhost:8081) with Mailpit (:8025), then set them up
+up: ## Start the local single site (http://localhost:8080) and multisite (http://localhost:8081) with Mailpit (:8025) and the webhook catcher (:8026), then set them up
 	$(COMPOSE) --profile site up -d --build wordpress wordpress-ms mailpit webhook
 	$(MAKE) --no-print-directory site-setup
 
