@@ -104,6 +104,7 @@
 }
 
 .sc-wpun-panel > legend h2,
+.sc-wpun-panel > legend h3,
 .sc-wpun-form-section > legend h3,
 .sc-wpun-field-group > legend h3 {
 	margin: 0;
@@ -111,6 +112,7 @@
 
 .sc-wpun-panel > .sc-wpun-panel-title,
 .sc-wpun-panel > legend h2,
+.sc-wpun-panel > legend h3,
 .sc-wpun-form-section > legend h3,
 .sc-wpun-field-group > legend h3,
 .sc-wpun-field-group-details > summary {

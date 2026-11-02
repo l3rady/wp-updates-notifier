@@ -161,7 +161,7 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 	public function test_the_empty_state() {
 		$xpath = $this->tab();
 
-		$this->assertSame( 0, $xpath->query( '//table' )->length );
+		$this->assertSame( 0, $xpath->query( '//table[not(contains(@class,"form-table"))]' )->length, 'No list of mutes; the form has its own layout table.' );
 		$empty = $xpath->query( '//p[contains(@class,"sc-wpun-no-muted")]' );
 		$this->assertSame( 1, $empty->length );
 		$this->assertStringContainsString( 'Nothing is muted', $empty->item( 0 )->textContent );
@@ -260,8 +260,11 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 		$this->assertSame( 0, $xpath->query( './/option[@value="plugin:hello.php"]', $form )->length, 'A muted plugin is not offered.' );
 		$this->assertGreaterThan( 0, $xpath->query( './/optgroup[@label="Plugins"]/option[starts-with(@value,"plugin:")]', $form )->length );
 		$this->assertGreaterThan( 0, $xpath->query( './/optgroup[@label="Themes"]/option[starts-with(@value,"theme:")]', $form )->length );
-		$this->assertSame( 1, $xpath->query( './/fieldset/legend', $form )->length );
-		$this->assertSame( 2, $xpath->query( './/fieldset//input[@type="radio"][@name="mode"]', $form )->length );
+		$this->assertSame( 1, $xpath->query( './fieldset[@class="sc-wpun-panel"]/legend/h3[normalize-space()="Mute a plugin or theme"]', $form )->length, 'The form is a panel with its heading as the title.' );
+		$this->assertSame( 3, $xpath->query( './fieldset[@class="sc-wpun-panel"]/table[@class="form-table"]//tr', $form )->length );
+		$this->assertSame( 1, $xpath->query( './/td/fieldset/legend[@class="screen-reader-text"][normalize-space()="What to mute"]', $form )->length );
+		$this->assertSame( 2, $xpath->query( './/td/fieldset//input[@type="radio"][@name="mode"]', $form )->length );
+		$this->assertSame( 1, $xpath->query( './/th/label[@for="sc-wpun-mute-snooze-until"]', $form )->length );
 		$this->assertSame( 1, $xpath->query( './/input[@type="radio"][@value="always"][@checked]', $form )->length );
 		$this->assertSame( 0, $xpath->query( './/script' )->length );
 	}

@@ -303,45 +303,61 @@ class Muted_Tab {
 				}
 			}
 		}
-		?>
-		<h3><?php esc_html_e( 'Mute a plugin or theme', 'wp-updates-notifier' ); ?></h3>
-		<?php
 		if ( array() === $groups ) {
-			echo '<p class="sc-wpun-all-muted">' . esc_html__( 'Every installed plugin and theme is muted.', 'wp-updates-notifier' ) . '</p>';
+			?>
+			<section class="sc-wpun-panel">
+				<h3 class="sc-wpun-panel-title"><?php esc_html_e( 'Mute a plugin or theme', 'wp-updates-notifier' ); ?></h3>
+				<p class="sc-wpun-all-muted"><?php esc_html_e( 'Every installed plugin and theme is muted.', 'wp-updates-notifier' ); ?></p>
+			</section>
+			<?php
 			return;
 		}
 		?>
 		<form class="sc-wpun-mute-form" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::ADD_ACTION ); ?>" />
 			<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( self::ADD_ACTION ) ); ?>" />
-			<p>
-				<label for="sc-wpun-mute-item"><?php esc_html_e( 'Plugin or theme', 'wp-updates-notifier' ); ?></label>
-				<select id="sc-wpun-mute-item" name="item">
-					<?php foreach ( array( 'plugin' => __( 'Plugins', 'wp-updates-notifier' ), 'theme' => __( 'Themes', 'wp-updates-notifier' ) ) as $type => $label ) : // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound ?>
-						<?php if ( isset( $groups[ $type ] ) ) : ?>
-							<optgroup label="<?php echo esc_attr( $label ); ?>">
-								<?php foreach ( $groups[ $type ] as $key => $name ) : ?>
-									<option value="<?php echo esc_attr( $type . ':' . $key ); ?>"><?php echo esc_html( $name ); ?></option>
-								<?php endforeach; ?>
-							</optgroup>
-						<?php endif; ?>
-					<?php endforeach; ?>
-				</select>
-			</p>
-			<fieldset>
-				<legend><?php esc_html_e( 'What to mute', 'wp-updates-notifier' ); ?></legend>
-				<p>
-					<label><input type="radio" name="mode" value="always" checked="checked" /> <?php esc_html_e( 'Always', 'wp-updates-notifier' ); ?></label><br />
-					<label><input type="radio" name="mode" value="skip" aria-describedby="sc-wpun-mute-skip-description" /> <?php esc_html_e( 'Skip the waiting version', 'wp-updates-notifier' ); ?></label>
-				</p>
-				<p class="description" id="sc-wpun-mute-skip-description"><?php esc_html_e( 'Notifications start again when a newer version than the waiting one is offered. It needs an update to be waiting.', 'wp-updates-notifier' ); ?></p>
+			<fieldset class="sc-wpun-panel">
+				<legend><h3><?php esc_html_e( 'Mute a plugin or theme', 'wp-updates-notifier' ); ?></h3></legend>
+				<table class="form-table" role="presentation">
+					<tbody>
+						<tr>
+							<th scope="row"><label for="sc-wpun-mute-item"><?php esc_html_e( 'Plugin or theme', 'wp-updates-notifier' ); ?></label></th>
+							<td>
+								<select id="sc-wpun-mute-item" name="item">
+									<?php foreach ( array( 'plugin' => __( 'Plugins', 'wp-updates-notifier' ), 'theme' => __( 'Themes', 'wp-updates-notifier' ) ) as $type => $label ) : // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound ?>
+										<?php if ( isset( $groups[ $type ] ) ) : ?>
+											<optgroup label="<?php echo esc_attr( $label ); ?>">
+												<?php foreach ( $groups[ $type ] as $key => $name ) : ?>
+													<option value="<?php echo esc_attr( $type . ':' . $key ); ?>"><?php echo esc_html( $name ); ?></option>
+												<?php endforeach; ?>
+											</optgroup>
+										<?php endif; ?>
+									<?php endforeach; ?>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'What to mute', 'wp-updates-notifier' ); ?></th>
+							<td>
+								<fieldset>
+									<legend class="screen-reader-text"><?php esc_html_e( 'What to mute', 'wp-updates-notifier' ); ?></legend>
+									<label><input type="radio" name="mode" value="always" checked="checked" /> <?php esc_html_e( 'Always', 'wp-updates-notifier' ); ?></label><br />
+									<label><input type="radio" name="mode" value="skip" aria-describedby="sc-wpun-mute-skip-description" /> <?php esc_html_e( 'Skip the waiting version', 'wp-updates-notifier' ); ?></label>
+									<p class="description" id="sc-wpun-mute-skip-description"><?php esc_html_e( 'Notifications start again when a newer version than the waiting one is offered. It needs an update to be waiting.', 'wp-updates-notifier' ); ?></p>
+								</fieldset>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sc-wpun-mute-snooze-until"><?php esc_html_e( 'Snooze until', 'wp-updates-notifier' ); ?></label></th>
+							<td>
+								<input type="datetime-local" id="sc-wpun-mute-snooze-until" name="snooze_until" aria-describedby="sc-wpun-mute-snooze-description" />
+								<p class="description" id="sc-wpun-mute-snooze-description"><?php esc_html_e( 'Optional, in the time zone of the site. Notifications start again at that time. With "Skip the waiting version" they start again at that time or when a newer version is offered, whichever is first.', 'wp-updates-notifier' ); ?></p>
+							</td>
+						</tr>
+					</tbody>
+				</table>
 			</fieldset>
-			<p>
-				<label for="sc-wpun-mute-snooze-until"><?php esc_html_e( 'Snooze until', 'wp-updates-notifier' ); ?></label>
-				<input type="datetime-local" id="sc-wpun-mute-snooze-until" name="snooze_until" aria-describedby="sc-wpun-mute-snooze-description" />
-			</p>
-			<p class="description" id="sc-wpun-mute-snooze-description"><?php esc_html_e( 'Optional, in the time zone of the site. Notifications start again at that time. With "Skip the waiting version" they start again at that time or when a newer version is offered, whichever is first.', 'wp-updates-notifier' ); ?></p>
-			<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Mute', 'wp-updates-notifier' ); ?></button></p>
+			<p class="submit"><button type="submit" class="button button-primary"><?php esc_html_e( 'Mute', 'wp-updates-notifier' ); ?></button></p>
 		</form>
 		<?php
 	}
