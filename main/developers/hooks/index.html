@@ -1287,6 +1287,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_channel_field_groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_field_groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_channel_fields" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1783,6 +1794,8 @@
       
         
           
+        
+      
         
       
         
@@ -2589,6 +2602,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0026-field-groups-and-conditional-fields-without-javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0026 Field groups and conditional fields
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3094,6 +3135,17 @@
     <span class="md-ellipsis">
       
         sc_wpun_channel_deleted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_channel_field_groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_field_groups
       
     </span>
   </a>
@@ -4392,6 +4444,62 @@ A test message ignores a deferral and is sent anyway.</p>
 </tbody>
 </table>
 <p>Fired in <code>includes/class-channel-store.php</code>.</p>
+<h3 id="sc_wpun_channel_field_groups"><code>sc_wpun_channel_field_groups</code><a class="headerlink" href="#sc_wpun_channel_field_groups" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters the field groups of a channel type.</p>
+<p>The groups split the fields of the add and edit forms; a field joins a group with its <code>group</code> key. Same schema as
+Channel::get_field_groups(): an array keyed by group id, each an array with a <code>label</code>, and optionally a <code>description</code>
+and <code>collapsed</code>. A group nothing joins is not drawn, and the <code>group</code> of a field can be set with the
+<code>sc_wpun_channel_fields</code> filter.</p>
+<p>Example, move a module's rarely used fields into a collapsed "Advanced" group:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_channel_field_groups',</span>
+<span class="x">    function ( $groups, $channel ) {</span>
+<span class="x">        if ( 'email' === $channel-&gt;get_type() ) {</span>
+<span class="x">            $groups['advanced'] = array(</span>
+<span class="x">                'label'     =&gt; 'Advanced',</span>
+<span class="x">                'collapsed' =&gt; true,</span>
+<span class="x">            );</span>
+<span class="x">        }</span>
+<span class="x">        return $groups;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+<span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_channel_fields',</span>
+<span class="x">    function ( $fields, $type ) {</span>
+<span class="x">        if ( 'email' === $type &amp;&amp; isset( $fields['reply_to'] ) ) {</span>
+<span class="x">            $fields['reply_to']['group'] = 'advanced';</span>
+<span class="x">        }</span>
+<span class="x">        return $fields;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$groups</code></td>
+<td><code>array&lt;string, array&lt;string, mixed&gt;&gt;</code></td>
+<td>The groups by id.</td>
+</tr>
+<tr>
+<td><code>$channel</code></td>
+<td><code>Channel</code></td>
+<td>The channel type's module.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/abstract-class-channel.php</code>.</p>
 <h3 id="sc_wpun_channel_fields"><code>sc_wpun_channel_fields</code><a class="headerlink" href="#sc_wpun_channel_fields" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 2.0.0</p>
 <p>Filters the settings fields of a channel type.</p>

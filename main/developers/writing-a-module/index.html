@@ -899,6 +899,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#groups-and-conditional-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Groups and conditional fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#reminders" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1330,6 +1341,8 @@
       
         
           
+        
+      
         
       
         
@@ -2136,6 +2149,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0026-field-groups-and-conditional-fields-without-javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0026 Field groups and conditional fields
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2370,6 +2411,17 @@
   
     <nav class="md-nav" aria-label="3. Settings: the field schema">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#groups-and-conditional-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Groups and conditional fields
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#reminders" class="md-nav__link">
@@ -2741,6 +2793,11 @@
 <td>Describe the settings of an instance. See step 3.</td>
 </tr>
 <tr>
+<td><code>get_field_groups()</code></td>
+<td>no groups</td>
+<td>Split the fields of a long form into groups. See <a href="#groups-and-conditional-fields">Groups and conditional fields</a>.</td>
+</tr>
+<tr>
 <td><code>get_api_constraint()</code></td>
 <td>empty: no check</td>
 <td>Declare the API versions the channel needs, for example <code>'^1.0'</code>. The registry refuses the channel on a site whose API does not satisfy it. See "Declare the API version you need" below.</td>
@@ -2790,6 +2847,49 @@
 <p>The types are <code>text</code>, <code>textarea</code>, <code>url</code>, <code>email_list</code>, <code>secret</code>, <code>number</code>, <code>boolean</code> and <code>enum</code> (with <code>checkbox</code> and <code>select</code> as aliases). The full list of keys (<code>default</code>, <code>required</code>, <code>secret</code>, <code>show_external</code>, <code>options</code>, <code>multiple</code>, <code>display</code>, <code>min</code>, <code>max</code>, <code>sanitize_callback</code>, <code>validate_callback</code> and more) is documented on the <code>WPUN\Channel</code> class in <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/includes/abstract-class-channel.php"><code>includes/abstract-class-channel.php</code></a>.</p>
 <p>A field with <code>'required' =&gt; true</code> is also marked in the form: "(required)" after its label (not for a <code>boolean</code>, which is always valid) and <code>aria-required="true"</code> on its control. For a group of radio buttons the fieldset gets <code>role="radiogroup"</code> to carry it; a group of checkboxes has only the text. A <code>secret</code> that already has a saved value keeps the text but not the attribute, as leaving it empty is valid. A custom field type registered with <code>sc_wpun_field_types</code> receives the schema in its <code>render</code> callable, so read <code>required</code> there and do the same.</p>
 <p>Every instance also has a label, an on/off switch and routing (including the choice of reminders, see below). The plugin adds these; don't put them in <code>get_fields()</code>.</p>
+<h3 id="groups-and-conditional-fields">Groups and conditional fields<a class="headerlink" href="#groups-and-conditional-fields" title="Permanent link">&para;</a></h3>
+<p>A channel with many settings can sort them into groups (API 1.1.0). Declare the groups with <code>get_field_groups()</code> and put a field in one with its <code>group</code> key:</p>
+<div class="highlight"><pre><span></span><code><span class="x">public function get_field_groups(): array {</span>
+<span class="x">    return array(</span>
+<span class="x">        'endpoint' =&gt; array(</span>
+<span class="x">            'label' =&gt; __( 'Endpoint', 'my-chat-channel' ),</span>
+<span class="x">        ),</span>
+<span class="x">        'advanced' =&gt; array(</span>
+<span class="x">            'label'       =&gt; __( 'Advanced', 'my-chat-channel' ),</span>
+<span class="x">            'description' =&gt; __( 'Most sites can leave these as they are.', 'my-chat-channel' ),</span>
+<span class="x">            'collapsed'   =&gt; true,</span>
+<span class="x">        ),</span>
+<span class="x">    );</span>
+<span class="x">}</span>
+</code></pre></div>
+<ul>
+<li>Every section of the form (Channel, Routing, Settings and each group) is a panel: a fieldset whose legend holds an <code>&lt;h3&gt;</code>. Fields without a group are in the Settings panel, which is left out when every field has a group. The groups follow it in the order you declare them, with their fields in schema order. A group with no fields is not drawn.</li>
+<li>A group's description is under its heading. A <code>collapsed</code> group is folded into a <code>&lt;details&gt;</code> element, and opens by itself when one of its fields has an error after a failed save.</li>
+<li>A <code>group</code> that names no declared group draws the field without a group and raises a <code>_doing_it_wrong</code> notice. Groups have one level: there are no groups inside groups.</li>
+</ul>
+<p>A field that is only used for some values of another field declares <code>applies_when</code>, a map of other field names to the value, or list of values, that make it apply:</p>
+<div class="highlight"><pre><span></span><code><span class="x">'app_token' =&gt; array(</span>
+<span class="x">    'type'         =&gt; 'secret',</span>
+<span class="x">    'label'        =&gt; __( 'App token', 'my-chat-channel' ),</span>
+<span class="x">    'required'     =&gt; true,</span>
+<span class="x">    'applies_when' =&gt; array( 'mode' =&gt; 'app' ),</span>
+<span class="x">),</span>
+<span class="x">'channel'   =&gt; array(</span>
+<span class="x">    'type'         =&gt; 'text',</span>
+<span class="x">    'label'        =&gt; __( 'Channel', 'my-chat-channel' ),</span>
+<span class="x">    'applies_when' =&gt; array(</span>
+<span class="x">        'mode'      =&gt; array( 'app', 'bot' ),</span>
+<span class="x">        'broadcast' =&gt; false,</span>
+<span class="x">    ),</span>
+<span class="x">),</span>
+</code></pre></div>
+<ul>
+<li>Every entry must match, and any value in a list matches. The value compared is the one submitted, else the stored one, else the default, cleaned by its field's type, so <code>true</code> and <code>'1'</code> match a ticked <code>boolean</code> and an <code>enum</code> compares its option key.</li>
+<li>The field is always shown, without JavaScript, with a note such as "Used only when Mode is App." tied to the control. The note uses the label of the other field and the label of the option.</li>
+<li><code>required</code> is enforced only when the field applies. A value that is there is still validated, and it is kept when the field does not apply, so switching back restores it.</li>
+<li>An <code>applies_when</code> entry that names an unknown field is ignored, with a <code>_doing_it_wrong</code> notice, so the field applies.</li>
+</ul>
+<p>Other plugins can change the groups with the <code>sc_wpun_channel_field_groups</code> filter and move fields with <code>sc_wpun_channel_fields</code>. If you override <code>validate_settings()</code> without calling the parent, as the email channel does, honour <code>applies_when</code> yourself.</p>
 <h3 id="reminders">Reminders<a class="headerlink" href="#reminders" title="Permanent link">&para;</a></h3>
 <p>A site owner can ask for reminders of updates that are still waiting (the <code>remind</code> routing key). Your <code>send()</code> then receives a <code>Notification</code> whose <code>is_reminder()</code> is true. It lists every update that is still waiting for the instance, so most of its items were delivered before.</p>
 <ul>
@@ -2964,7 +3064,8 @@
 <li>the <code>description</code> tied to the control with <code>aria-describedby</code>;</li>
 <li>"(required)" after the label of a required field, and <code>aria-required="true"</code> on its control (a group of checkboxes only has the text; a saved secret keeps the text but not the attribute);</li>
 <li>on an error, <code>aria-invalid="true"</code>, the message under the field with a bold "Error:", and a summary at the top of the form with a link to each field. The link goes to the first control of a group of radio buttons or checkboxes;</li>
-<li>a note on a saved secret ("A value is saved. Leave this empty to keep it, ..."), a clear checkbox named after the field, and a "Set by ..." note, tied to the control, for a value that comes from a constant or an environment variable.</li>
+<li>a note on a saved secret ("A value is saved. Leave this empty to keep it, ..."), a clear checkbox named after the field, and a "Set by ..." note, tied to the control, for a value that comes from a constant or an environment variable;</li>
+<li>a panel with a heading for each group of fields, opened when a collapsed group holds an error, and a "Used only when ..." note, tied to the control, for a field with <code>applies_when</code>.</li>
 </ul>
 <p>A page title that starts with "Error:" after a failed save and the headings are the plugin's job too. Use <code>render_settings()</code> only when no schema field can do it.</p>
 <h3 id="if-you-draw-your-own-fields">If you draw your own fields<a class="headerlink" href="#if-you-draw-your-own-fields" title="Permanent link">&para;</a></h3>
