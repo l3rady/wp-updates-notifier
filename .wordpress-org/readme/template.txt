@@ -22,6 +22,7 @@ Each new version is reported once, not on every check. Version 2.0.0 is a ground
 * Checks for core, plugin and theme updates hourly, twice daily, daily or weekly.
 * Tells you about each new version once, with optional reminders (daily, weekly or at every check) about updates you haven't installed yet.
 * Sends email to one or more addresses, with a test send to check it arrives.
+* Sends a signed JSON webhook (the Standard Webhooks scheme) to Zapier, Make, n8n, Home Assistant or your own code, and tells the receiver when a reported update has been installed.
 * Lets you set up more than one email channel, each with its own recipients, its own choice of updates and its own reminders.
 * Can watch only the plugins and themes you have active.
 * Runs a check on demand with **Check for updates and notify now**.

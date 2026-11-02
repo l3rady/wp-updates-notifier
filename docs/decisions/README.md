@@ -48,3 +48,4 @@ The date is when the decision was made, not when the record was written.
 | [0024](0024-resolved-items-detected-by-the-update-check.md) | Detect resolved items in the update check | Accepted | 2026-11-01 |
 | [0025](0025-deferred-delivery-result-held-until.md) | A deferred delivery result, held in its own state | Accepted | 2026-11-01 |
 | [0026](0026-field-groups-and-conditional-fields-without-javascript.md) | Field groups and conditional fields, without JavaScript | Accepted | 2026-11-01 |
+| [0027](0027-webhook-signing-follows-standard-webhooks.md) | Webhook signing follows Standard Webhooks | Accepted | 2026-11-02 |

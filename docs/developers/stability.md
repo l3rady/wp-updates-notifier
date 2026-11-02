@@ -9,7 +9,7 @@ From 2.0.0, the hooks and the module API are public API. This page says what tha
 - The classes and methods in the `WPUN` namespace that are documented with `@since` and not tagged `@internal`. These include `Channel`, `Channel_Instance`, `Channel_Registry`, `Channel_Store`, `Delivery_Result`, `Mute`, `Mute_Store`, `Notification`, `Notification_Item`, `Notification_Renderer`, `Routing`, `Item_Types`, `Version_Constraint`, `Config_Source`, `Config_Context` and `Config_Value`.
 - The `auto_update` flag that the check sets on core, plugin and theme items, and the `sc_wpun_auto_update_enabled` filter that decides it.
 - The names that configuration can be supplied under: `SC_WPUN_SETTING_*`, `SC_WPUN_CHANNEL_<ID>__<FIELD>`, `SC_WPUN_CHANNELS` and `SC_WPUN_LOAD_FROM_ENV`.
-- The field schema keys and field types described on `WPUN\Channel`, including `'secret' => true` on a field of any type and `show_external`.
+- The field schema keys and field types described on `WPUN\Channel`, including `'secret' => true` on a field of any type, `show_external` and `https_only`.
 - The security behaviour that add-ons rely on:
   - a secret is never rendered, and a field's renderer receives only `'1'` or `''` for it;
   - `var_dump()` and `print_r()` of a `Channel_Instance` show `[redacted]` for every setting;
@@ -34,6 +34,8 @@ The public API has its own semantic version, separate from the plugin's: `SC_WPU
 
 - A **minor** bump (1.0.0 to 1.1.0) adds API.
 - A **major** bump (1.x to 2.0.0) removes or changes some, following the deprecation rules above.
+
+API 1.1.0 also adds the `https_only` key of the `url` field type, `sc_wpun_instance_problems()` and the hooks of the built-in webhook channel, `sc_wpun_webhook_headers` and `sc_wpun_webhook_resolved_sent` (see [Webhook payload](webhook-payload.md)). It also draws a secret `textarea` as an empty textarea instead of a one-line password input, and keeps its value as typed apart from control characters. A module that uses `https_only` should declare `^1.1`, because an older plugin ignores the key and would accept `http://`.
 
 State the API versions your add-on works with as a version constraint, in any of three ways:
 

@@ -193,8 +193,8 @@ malformed or leak.
 
 ### 5. Outbound requests
 
-Email is the only built-in channel, and it sends with `wp_mail()`. HTTP channels come from add-ons. The example add-on
-(`examples/wpun-example-channel/`) shows the expected pattern: `wp_safe_remote_post()`, a timeout, and
+Email sends with `wp_mail()`. The built-in webhook channel (`modules/webhook/`, #99) and HTTP channels from add-ons send
+with `wp_safe_remote_post()`. The example add-on (`examples/wpun-example-channel/`) shows the expected pattern: `wp_safe_remote_post()`, a timeout, and
 `Delivery_Result` failures that leave out the address. `Retry-After` from a response is parsed by
 `Delivery_Result::retry_after_from_response()`. It is capped at 7 days (`State::MAX_RETRY_AFTER`), and it defers only
 that instance.
@@ -205,6 +205,18 @@ that instance.
 | D | A service answers `Retry-After: 99999999` or garbage and silences the channel for good. | The header is parsed strictly, the wait is capped at a week, and the cap is per instance. | `test-retry-after.php`. |
 | I | An error message or `last_result` leaks the webhook URL. | The example's failures leave out the address, and the [module guide](../developers/writing-a-module.md#secrets) tells add-ons never to put a secret in a result, notice or log, nor to pass on the HTTP API's error messages as they are. | `test-example-channel.php` (`test_a_wp_error_is_a_failure_without_the_address`). `security/test-secrets.php` (#220) checks `last_result` and the delivery state. |
 | T | Mail header injection through the From name, the subject, the recipients or the payload filters. | Recipients and header lines with CR or LF are dropped after the payload filters (`Email_Channel::checked_payload`). The subject is built from `sanitize_text_field` values, and PHPMailer encodes it. From and Reply-To are validated email settings. | `test-hooks.php` (header lines with line breaks are dropped), `test-email-channel.php`. #228 re-checks this by hand. |
+
+The outbound webhook (#99) has three secrets: the **address** (it often holds a token), the **signing secret** and the
+**extra headers** (usually credentials such as `Authorization: Bearer ...`). All three are `secret` fields. The
+signature follows Standard Webhooks ([ADR 0027](../decisions/0027-webhook-signing-follows-standard-webhooks.md)).
+
+| STRIDE | Threat | Control | Proof |
+| --- | --- | --- | --- |
+| I/E | The webhook address is used to reach an internal service (SSRF), or to send a token in clear text. | `wp_safe_remote_post()` refuses private and loopback hosts and ports other than 80, 443 and 8080, except for the site's own host. It resolves the host before the request, so DNS rebinding between the check and the request is not covered. The address field is `https_only`, so `http://` is refused unless site code turns that off with `sc_wpun_channel_fields`. Redirects are off (`redirection => 0`), so a redirect cannot lead the request, with its signed body, to another host. | `test-webhook-channel.php` (`test_the_address_is_https_only_and_required`, `test_a_redirect_is_a_failure`). |
+| I | The address, the signing secret or a header value appears in a message, notice, log, Site Health result or Site Info entry, or is echoed back by the receiver. | A `WP_Error` becomes a fixed message, never the HTTP API's text, which can hold the URL. A non-2xx answer adds an excerpt of the body to the failure context for the site owner: tags stripped, whitespace collapsed, 200 characters, and the address (with its path and query), the signing secret and every custom header value removed from it. Secret fields are never rendered. Validation errors name the line of a header, never its value. | `test-webhook-channel.php` (`test_no_secret_in_any_output`, `test_an_error_status_has_a_safe_excerpt`, `test_a_wp_error_is_a_failure_without_the_address`). |
+| S/T | A forged or replayed message is accepted by the receiver. | Each message is signed over `{id}.{timestamp}.{body}` with HMAC-SHA256 and a random `webhook-id`; the secret must be a `whsec_` value of 24 to 64 bytes. The user guide tells receivers to compare in constant time and to reject a timestamp more than 5 minutes off. Without a secret the message is unsigned, and the user guide says to treat such an endpoint as public. | `test-webhook-channel.php` (the Standard Webhooks test vector, a round trip, no signature without a secret). |
+| T | A header name or value injects headers or overrides the signature headers or `Content-Type`. | Names must be tokens of at most 64 characters, values may not hold CR or LF, at most 20 custom headers, and reserved names (`Content-Type`, `Content-Length`, `Host`, `User-Agent`), the signature header names and duplicates ignoring case are refused. | `test-webhook-channel.php`. |
+| D | A slow receiver holds up the check, or `updates.resolved` fails and is lost. | The timeout is 1 to 10 seconds. 429 and `Retry-After` defer the instance. `updates.resolved` is best effort and is not retried (the check has forgotten the items); `sc_wpun_webhook_resolved_sent` lets site code log a failure. | `test-webhook-channel.php`, `test-retry-after.php`. |
 
 ### 6. Public hook and add-on API
 

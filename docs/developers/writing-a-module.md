@@ -2,8 +2,9 @@
 
 A notification module adds a channel type: a new way of delivering update notifications, such as a chat service, an SMS gateway or a ticketing system. Site owners then create any number of instances of it on the **Channels** tab, each with its own settings and routing.
 
-This guide builds one step by step. The finished result is the example add-on in [`examples/wpun-example-channel/`](https://github.com/l3rady/wp-updates-notifier/tree/main/examples/wpun-example-channel/), which posts to a chat webhook. Copy it as a starting point. Two more references:
+This guide builds one step by step. The finished result is the example add-on in [`examples/wpun-example-channel/`](https://github.com/l3rady/wp-updates-notifier/tree/main/examples/wpun-example-channel/), which posts to a chat webhook. Copy it as a starting point. Three more references:
 
+- [`modules/webhook/`](https://github.com/l3rady/wp-updates-notifier/tree/main/modules/webhook/): the built-in webhook channel, the reference for an HTTP channel. It has secrets, a collapsed field group, conditional fields, `Retry-After` handling and Standard Webhooks signing, using only the public API. Its payload is described in [Webhook payload](webhook-payload.md).
 - [`modules/email/`](https://github.com/l3rady/wp-updates-notifier/tree/main/modules/email/): the built-in email channel. It is written exactly like an add-on, using only the public API.
 - [`tests/fixtures/plugins/wpun-test-addon/`](https://github.com/l3rady/wp-updates-notifier/tree/main/tests/fixtures/plugins/wpun-test-addon/): the test add-on, which exercises every extension point (custom field types, configuration sources, short-circuited sends).
 
@@ -127,7 +128,9 @@ public function get_fields(): array {
 }
 ```
 
-The types are `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `boolean` and `enum` (with `checkbox` and `select` as aliases). The full list of keys (`default`, `required`, `secret`, `show_external`, `options`, `multiple`, `display`, `min`, `max`, `sanitize_callback`, `validate_callback` and more) is documented on the `WPUN\Channel` class in [`includes/abstract-class-channel.php`](https://github.com/l3rady/wp-updates-notifier/blob/main/includes/abstract-class-channel.php).
+The types are `text`, `textarea`, `url`, `email_list`, `secret`, `number`, `boolean` and `enum` (with `checkbox` and `select` as aliases). The full list of keys (`default`, `required`, `secret`, `show_external`, `https_only`, `options`, `multiple`, `display`, `min`, `max`, `sanitize_callback`, `validate_callback` and more) is documented on the `WPUN\Channel` class in [`includes/abstract-class-channel.php`](https://github.com/l3rady/wp-updates-notifier/blob/main/includes/abstract-class-channel.php).
+
+A `url` field can set `'https_only' => true` (API 1.1.0) to refuse `http://` addresses with its own message, for a field that holds a token or other credentials. Without it the field accepts `http` and `https`. A site that needs plain http for a trusted receiver can turn it off with the `sc_wpun_channel_fields` filter, as the [user guide](../users/channels.md#plain-http) shows for the webhook channel.
 
 A field with `'required' => true` is also marked in the form: "(required)" after its label (not for a `boolean`, which is always valid) and `aria-required="true"` on its control. For a group of radio buttons the fieldset gets `role="radiogroup"` to carry it; a group of checkboxes has only the text. A `secret` that already has a saved value keeps the text but not the attribute, as leaving it empty is valid. A custom field type registered with `sc_wpun_field_types` receives the schema in its `render` callable, so read `required` there and do the same.
 
@@ -213,6 +216,7 @@ Mark anything that grants access as secret: API tokens, passwords, and webhook U
 
 - is never written back into the form once saved. The form shows that a value is saved, leaving the field empty keeps it, and a "Clear" checkbox empties it;
 - is never handed to the field's renderer: a custom type's `render` callable gets `'1'` as the value when one is saved and `''` when not;
+- of the `textarea` type is drawn as an empty textarea, for a list such as one header per line, and keeps what was typed (only control characters are removed), so credentials with `<` or `%2F` survive (API 1.1.0);
 - is still stored in the database in plain text, like other plugin settings. Site owners who want it out of the database can supply it from `wp-config.php`, an environment variable or a secrets service instead. See [Configuration sources](configuration-sources.md). Your fields support this automatically, for example `SC_WPUN_CHANNEL_OPS_CHAT__WEBHOOK_URL`.
 
 A value that comes from outside the database (a constant, an environment variable or a source) is not printed on the edit screen unless the field sets `'show_external' => true`: the screen then only says "Set by ...". This holds for every type except `number`, `boolean` and `enum`, so a custom type registered with `sc_wpun_field_types` is not given the value either. Flag secrets with `secret`, and set `show_external` only for harmless values such as an address or a name.

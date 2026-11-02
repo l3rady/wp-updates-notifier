@@ -72,6 +72,7 @@ WP Updates Notifier checks your site on a schedule and emails you when WordPress
 
 - Checks for core, plugin and theme updates hourly, twice daily, daily or weekly, and tells you about each new version once.
 - Sends email to one or more addresses, with a test send to check it arrives.
+- Sends a signed JSON webhook (Standard Webhooks) to Zapier, Make, n8n, Home Assistant or your own code, and says when a reported update has been installed.
 - Can watch only active plugins and themes.
 - Lets you set channels and global settings in code: `wp-config.php` constants, environment variables or your own configuration source, so a fleet of sites can share one setup.
 - Routes each kind of update to the channels that should hear about it, and add-ons can add new kinds.
