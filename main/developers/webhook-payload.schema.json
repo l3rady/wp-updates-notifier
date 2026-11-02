@@ -1,0 +1,172 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://wpun.cariss.dev/latest/developers/webhook-payload.schema.json",
+	"title": "WP Updates Notifier webhook message",
+	"description": "The JSON body the webhook channel posts. Within schema_version 1 fields are added, never removed or retyped, so a receiver must ignore fields it does not know.",
+	"type": "object",
+	"required": ["type", "timestamp", "schema_version", "data"],
+	"properties": {
+		"type": {
+			"description": "What the message is. updates.available lists new updates, updates.reminder repeats updates that are still waiting, updates.test is the test message, and updates.resolved lists reported updates that have been installed or removed.",
+			"enum": ["updates.available", "updates.reminder", "updates.test", "updates.resolved"]
+		},
+		"timestamp": {
+			"description": "When the message was made, in ISO 8601 UTC: the same moment as the webhook-timestamp header.",
+			"type": "string",
+			"format": "date-time"
+		},
+		"schema_version": {
+			"description": "Version of this schema.",
+			"const": 1
+		},
+		"data": {
+			"type": "object",
+			"required": ["site", "notification", "items"],
+			"properties": {
+				"site": {
+					"type": "object",
+					"required": ["name", "url", "updates_url", "network"],
+					"properties": {
+						"name": {
+							"description": "The name of the site (of the network, in network mode), as plain text.",
+							"type": "string"
+						},
+						"url": {
+							"description": "The address of the site.",
+							"type": "string"
+						},
+						"updates_url": {
+							"description": "The address of the Updates screen.",
+							"type": "string"
+						},
+						"network": {
+							"description": "True when the plugin runs for a multisite network. The site fields are then the network's.",
+							"type": "boolean"
+						}
+					}
+				},
+				"notification": {
+					"type": "object",
+					"required": ["source", "is_test", "is_reminder"],
+					"properties": {
+						"source": {
+							"description": "What started the check: cron, manual, cli or test. For updates.resolved it is the source of the check that noticed the change.",
+							"type": "string"
+						},
+						"is_test": {
+							"type": "boolean"
+						},
+						"is_reminder": {
+							"type": "boolean"
+						}
+					}
+				},
+				"items": {
+					"description": "The updates. Empty for updates.test.",
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/item"
+					}
+				}
+			}
+		}
+	},
+	"if": {
+		"properties": {
+			"type": {
+				"const": "updates.resolved"
+			}
+		},
+		"required": ["type"]
+	},
+	"then": {
+		"properties": {
+			"data": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/$defs/resolved_item"
+						}
+					}
+				}
+			}
+		}
+	},
+	"$defs": {
+		"item": {
+			"description": "An update. Receivers that must not act twice deduplicate on type, key and new_version.",
+			"type": "object",
+			"required": ["type", "key", "name", "current_version", "new_version", "links", "notes", "flags"],
+			"properties": {
+				"type": {
+					"description": "core, plugin, theme or a type an add-on provides.",
+					"type": "string",
+					"pattern": "^[a-z0-9_]+$"
+				},
+				"key": {
+					"description": "The plugin file, the theme stylesheet or core.",
+					"type": "string"
+				},
+				"name": {
+					"type": "string"
+				},
+				"current_version": {
+					"description": "The installed version.",
+					"type": "string"
+				},
+				"new_version": {
+					"description": "The version that is available.",
+					"type": "string"
+				},
+				"links": {
+					"description": "Label to address, for example details and changelog. download is there only when the site shows download links.",
+					"type": "object",
+					"additionalProperties": {
+						"type": "string"
+					}
+				},
+				"notes": {
+					"description": "Extra lines of information, such as compatibility notes.",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"flags": {
+					"description": "Machine readable facts, for example active, auto_update, tested, requires_php and requires_wp.",
+					"type": "object",
+					"additionalProperties": {
+						"type": ["boolean", "string", "number"]
+					}
+				}
+			}
+		},
+		"resolved_item": {
+			"description": "An update of an updates.resolved message: the item as it was reported, without a download link.",
+			"allOf": [
+				{
+					"$ref": "#/$defs/item"
+				}
+			],
+			"required": ["resolution", "notified_at"],
+			"properties": {
+				"resolution": {
+					"description": "updated: the installed version is the reported one or newer. removed: the plugin or theme is no longer installed. core: WordPress is at or past the reported version.",
+					"enum": ["updated", "removed", "core"]
+				},
+				"notified_at": {
+					"description": "When the item was reported to this webhook, in ISO 8601 UTC. Null for an item recorded before version 3.0.0.",
+					"type": ["string", "null"],
+					"format": "date-time"
+				},
+				"links": {
+					"propertyNames": {
+						"not": {
+							"const": "download"
+						}
+					}
+				}
+			}
+		}
+	}
+}

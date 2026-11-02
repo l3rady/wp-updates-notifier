@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://wpun.cariss.dev/latest/security/threat-model/">
       
       
-        <link rel="prev" href="../../decisions/0026-field-groups-and-conditional-fields-without-javascript/">
+        <link rel="prev" href="../../decisions/0027-webhook-signing-follows-standard-webhooks/">
       
       
         <link rel="next" href="../ai-review-2.0.0/">
@@ -641,6 +641,8 @@
       
         
       
+        
+      
     
     
     
@@ -898,6 +900,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../developers/webhook-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Webhook payload
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../developers/hooks/" class="md-nav__link">
         
   
@@ -965,6 +995,8 @@
       
         
           
+        
+      
         
       
         
@@ -1788,6 +1820,34 @@
     
   
     0026 Field groups and conditional fields
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0027-webhook-signing-follows-standard-webhooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0027 Webhook signing
   
 
     
@@ -2774,8 +2834,8 @@ malformed or leak.</p>
 </tbody>
 </table>
 <h3 id="5-outbound-requests">5. Outbound requests<a class="headerlink" href="#5-outbound-requests" title="Permanent link">&para;</a></h3>
-<p>Email is the only built-in channel, and it sends with <code>wp_mail()</code>. HTTP channels come from add-ons. The example add-on
-(<code>examples/wpun-example-channel/</code>) shows the expected pattern: <code>wp_safe_remote_post()</code>, a timeout, and
+<p>Email sends with <code>wp_mail()</code>. The built-in webhook channel (<code>modules/webhook/</code>, #99) and HTTP channels from add-ons send
+with <code>wp_safe_remote_post()</code>. The example add-on (<code>examples/wpun-example-channel/</code>) shows the expected pattern: <code>wp_safe_remote_post()</code>, a timeout, and
 <code>Delivery_Result</code> failures that leave out the address. <code>Retry-After</code> from a response is parsed by
 <code>Delivery_Result::retry_after_from_response()</code>. It is capped at 7 days (<code>State::MAX_RETRY_AFTER</code>), and it defers only
 that instance.</p>
@@ -2812,6 +2872,51 @@ that instance.</p>
 <td>Mail header injection through the From name, the subject, the recipients or the payload filters.</td>
 <td>Recipients and header lines with CR or LF are dropped after the payload filters (<code>Email_Channel::checked_payload</code>). The subject is built from <code>sanitize_text_field</code> values, and PHPMailer encodes it. From and Reply-To are validated email settings.</td>
 <td><code>test-hooks.php</code> (header lines with line breaks are dropped), <code>test-email-channel.php</code>. #228 re-checks this by hand.</td>
+</tr>
+</tbody>
+</table>
+<p>The outbound webhook (#99) has three secrets: the <strong>address</strong> (it often holds a token), the <strong>signing secret</strong> and the
+<strong>extra headers</strong> (usually credentials such as <code>Authorization: Bearer ...</code>). All three are <code>secret</code> fields. The
+signature follows Standard Webhooks (<a href="../../decisions/0027-webhook-signing-follows-standard-webhooks/">ADR 0027</a>).</p>
+<table>
+<thead>
+<tr>
+<th>STRIDE</th>
+<th>Threat</th>
+<th>Control</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I/E</td>
+<td>The webhook address is used to reach an internal service (SSRF), or to send a token in clear text.</td>
+<td><code>wp_safe_remote_post()</code> refuses private and loopback hosts and ports other than 80, 443 and 8080, except for the site's own host. It resolves the host before the request, so DNS rebinding between the check and the request is not covered. The address field is <code>https_only</code>, so <code>http://</code> is refused unless site code turns that off with <code>sc_wpun_channel_fields</code>. Redirects are off (<code>redirection =&gt; 0</code>), so a redirect cannot lead the request, with its signed body, to another host.</td>
+<td><code>test-webhook-channel.php</code> (<code>test_the_address_is_https_only_and_required</code>, <code>test_a_redirect_is_a_failure</code>).</td>
+</tr>
+<tr>
+<td>I</td>
+<td>The address, the signing secret or a header value appears in a message, notice, log, Site Health result or Site Info entry, or is echoed back by the receiver.</td>
+<td>A <code>WP_Error</code> becomes a fixed message, never the HTTP API's text, which can hold the URL. A non-2xx answer adds an excerpt of the body to the failure context for the site owner: tags stripped, whitespace collapsed, 200 characters, and the address (with its path and query), the signing secret and every custom header value removed from it. Secret fields are never rendered. Validation errors name the line of a header, never its value.</td>
+<td><code>test-webhook-channel.php</code> (<code>test_no_secret_in_any_output</code>, <code>test_an_error_status_has_a_safe_excerpt</code>, <code>test_a_wp_error_is_a_failure_without_the_address</code>).</td>
+</tr>
+<tr>
+<td>S/T</td>
+<td>A forged or replayed message is accepted by the receiver.</td>
+<td>Each message is signed over <code>{id}.{timestamp}.{body}</code> with HMAC-SHA256 and a random <code>webhook-id</code>; the secret must be a <code>whsec_</code> value of 24 to 64 bytes. The user guide tells receivers to compare in constant time and to reject a timestamp more than 5 minutes off. Without a secret the message is unsigned, and the user guide says to treat such an endpoint as public.</td>
+<td><code>test-webhook-channel.php</code> (the Standard Webhooks test vector, a round trip, no signature without a secret).</td>
+</tr>
+<tr>
+<td>T</td>
+<td>A header name or value injects headers or overrides the signature headers or <code>Content-Type</code>.</td>
+<td>Names must be tokens of at most 64 characters, values may not hold CR or LF, at most 20 custom headers, and reserved names (<code>Content-Type</code>, <code>Content-Length</code>, <code>Host</code>, <code>User-Agent</code>), the signature header names and duplicates ignoring case are refused.</td>
+<td><code>test-webhook-channel.php</code>.</td>
+</tr>
+<tr>
+<td>D</td>
+<td>A slow receiver holds up the check, or <code>updates.resolved</code> fails and is lost.</td>
+<td>The timeout is 1 to 10 seconds. 429 and <code>Retry-After</code> defer the instance. <code>updates.resolved</code> is best effort and is not retried (the check has forgotten the items); <code>sc_wpun_webhook_resolved_sent</code> lets site code log a failure.</td>
+<td><code>test-webhook-channel.php</code>, <code>test-retry-after.php</code>.</td>
 </tr>
 </tbody>
 </table>

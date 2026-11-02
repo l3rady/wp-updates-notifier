@@ -113,6 +113,10 @@
          <lastmod>2026-11-02</lastmod>
     </url>
     <url>
+         <loc>https://wpun.cariss.dev/latest/decisions/0027-webhook-signing-follows-standard-webhooks/</loc>
+         <lastmod>2026-11-02</lastmod>
+    </url>
+    <url>
          <loc>https://wpun.cariss.dev/latest/developers/</loc>
          <lastmod>2026-11-02</lastmod>
     </url>
@@ -146,6 +150,10 @@
     </url>
     <url>
          <loc>https://wpun.cariss.dev/latest/developers/translations/</loc>
+         <lastmod>2026-11-02</lastmod>
+    </url>
+    <url>
+         <loc>https://wpun.cariss.dev/latest/developers/webhook-payload/</loc>
          <lastmod>2026-11-02</lastmod>
     </url>
     <url>

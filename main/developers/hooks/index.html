@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://wpun.cariss.dev/latest/developers/hooks/">
       
       
-        <link rel="prev" href="../configuration-sources/">
+        <link rel="prev" href="../webhook-payload/">
       
       
         <link rel="next" href="../stability/">
@@ -643,6 +643,8 @@
       
         
       
+        
+      
     
     
     
@@ -880,6 +882,34 @@
     
   
     Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../webhook-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Webhook payload
   
 
     
@@ -1695,6 +1725,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#sc_wpun_webhook_headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_webhook_headers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_webhook_resolved_sent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_webhook_resolved_sent
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1794,6 +1846,8 @@
       
         
           
+        
+      
         
       
         
@@ -2617,6 +2671,34 @@
     
   
     0026 Field groups and conditional fields
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0027-webhook-signing-follows-standard-webhooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0027 Webhook signing
   
 
     
@@ -3544,6 +3626,28 @@
     <span class="md-ellipsis">
       
         sc_wpun_loaded
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_webhook_headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_webhook_headers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_webhook_resolved_sent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_webhook_resolved_sent
       
     </span>
   </a>
@@ -5495,6 +5599,108 @@ The address comes from the update data and can hold a licence key or a private t
 <p>Fires when the plugin has loaded and its hooks are registered.</p>
 <p>Add-ons can use it as the moment to start talking to the plugin's API.</p>
 <p>Fired in <code>includes/class-plugin.php</code>.</p>
+<h3 id="sc_wpun_webhook_headers"><code>sc_wpun_webhook_headers</code><a class="headerlink" href="#sc_wpun_webhook_headers" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters the headers of a webhook message, after the signature headers are added.</p>
+<p>It runs last, on the final headers, just before the message is sent. The names of the headers are not part of what
+is signed, so renaming or adding headers is safe. The body cannot be changed here: use <code>sc_wpun_channel_payload_webhook</code>
+for that. An entry whose name is not a string, or whose value is not a string without a line break, is dropped, and a
+return value that is not an array is ignored.</p>
+<p>For an <code>updates.resolved</code> message <code>$notification</code> is the notification of the update check, copied with the items that
+were installed or removed.</p>
+<p><code>$headers</code> and <code>$instance</code> hold secrets, such as the signature and the extra headers: don't log or dump them.</p>
+<p>Example, add a header:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_webhook_headers',</span>
+<span class="x">    function ( $headers, $notification, $instance, $body ) {</span>
+<span class="x">        $headers['X-Site'] = 'production';</span>
+<span class="x">        return $headers;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    4</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$headers</code></td>
+<td><code>array&lt;string, string&gt;</code></td>
+<td>The headers, by name.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>What is being delivered.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The webhook instance.</td>
+</tr>
+<tr>
+<td><code>$body</code></td>
+<td><code>string</code></td>
+<td>The exact JSON that is sent and signed.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>modules/webhook/class-webhook-channel.php</code>.</p>
+<h3 id="sc_wpun_webhook_resolved_sent"><code>sc_wpun_webhook_resolved_sent</code><a class="headerlink" href="#sc_wpun_webhook_resolved_sent" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 3.0.0</p>
+<p>Fires after the webhook channel tried to send an <code>updates.resolved</code> message, whether it worked or not.</p>
+<p>The message is best effort: the update check has forgotten the items by then, so a failure is not retried and
+is not shown on the Channels tab. Use this to log failures. It is not sent through the dispatcher, so
+<code>sc_wpun_pre_send</code>, <code>sc_wpun_notification_sent</code> and <code>sc_wpun_notification_failed</code> do not apply. It does not fire for
+an instance that is switched off, has "Installed updates" unticked, is waiting or has a problem (see
+<code>sc_wpun_instance_problems()</code>), nor in a dry run or a test send.</p>
+<p>The filters <code>sc_wpun_channel_payload</code> and <code>sc_wpun_webhook_headers</code> receive the notification of the check, copied
+with the resolved items.</p>
+<p>Example, log failures:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_webhook_resolved_sent',</span>
+<span class="x">    function ( $result, $items, $instance ) {</span>
+<span class="x">        if ( ! $result-&gt;is_success() ) {</span>
+<span class="x">            error_log( sprintf( 'Webhook %s: %s', $instance-&gt;get_id(), $result-&gt;get_message() ) );</span>
+<span class="x">        }</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$result</code></td>
+<td><code>Delivery_Result</code></td>
+<td>The result. It never holds the address, the signing secret or a header value.</td>
+</tr>
+<tr>
+<td><code>$items</code></td>
+<td><code>Notification_Item[]</code></td>
+<td>The items that were installed or removed.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The webhook instance the message was sent through.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>modules/webhook/class-webhook-channel.php</code>.</p>
 <h2 id="actions-you-can-fire">Actions you can fire<a class="headerlink" href="#actions-you-can-fire" title="Permanent link">&para;</a></h2>
 <p>The plugin listens to these actions but does not fire them itself. Call them with <code>do_action()</code>.</p>
 <h3 id="sc_wpun_enable_cron"><code>sc_wpun_enable_cron</code><a class="headerlink" href="#sc_wpun_enable_cron" title="Permanent link">&para;</a></h3>

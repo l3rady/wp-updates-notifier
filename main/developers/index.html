@@ -643,6 +643,8 @@
       
         
       
+        
+      
     
     
     
@@ -900,6 +902,34 @@
   
   
     <li class="md-nav__item">
+      <a href="webhook-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Webhook payload
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="hooks/" class="md-nav__link">
         
   
@@ -967,6 +997,8 @@
       
         
           
+        
+      
         
       
         
@@ -1803,6 +1835,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decisions/0027-webhook-signing-follows-standard-webhooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0027 Webhook signing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2023,6 +2083,7 @@
 <li><a href="item-types-and-routing/">Item types and routing</a>: reporting something other than core, plugin and theme updates, and deciding which instances receive it.</li>
 <li><a href="muting-from-code/">Muting from code</a>: muting and unmuting items, defining mutes, refusing them by policy and reacting to changes.</li>
 <li><a href="configuration-sources/">Configuration sources</a>: settings and secrets from <code>wp-config.php</code> constants, environment variables or a secrets service.</li>
+<li><a href="webhook-payload/">Webhook payload</a>: the JSON document of the built-in webhook channel, its Standard Webhooks signing, the JSON Schema and the hooks that change it.</li>
 <li><a href="hooks/">Hook reference</a>: every action and filter, generated from the code.</li>
 <li><a href="stability/">Stability and deprecation</a>: what is public, how it changes, and how an add-on checks the API version with a version constraint.</li>
 <li><a href="testing/">Tests and checks</a>: the test layers, what each one catches, and the <code>make</code> target and CI job for each.</li>
@@ -2034,6 +2095,7 @@
 <ul>
 <li><a href="https://github.com/l3rady/wp-updates-notifier/tree/main/examples/wpun-example-channel/"><code>examples/wpun-example-channel/</code></a>: a complete, minimal channel add-on to copy. CI runs its tests (<a href="https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php"><code>tests/wp/test-example-channel.php</code></a>) and checks it uses only the public API.</li>
 <li><a href="https://github.com/l3rady/wp-updates-notifier/tree/main/modules/email/"><code>modules/email/</code></a>: the built-in email channel, written like any add-on.</li>
+<li><a href="https://github.com/l3rady/wp-updates-notifier/tree/main/modules/webhook/"><code>modules/webhook/</code></a>: the built-in webhook channel, the reference for an HTTP channel.</li>
 <li><a href="https://github.com/l3rady/wp-updates-notifier/tree/main/tests/fixtures/plugins/wpun-test-addon/"><code>tests/fixtures/plugins/wpun-test-addon/</code></a>: the add-on the test suite uses to exercise every extension point.</li>
 </ul>
 
