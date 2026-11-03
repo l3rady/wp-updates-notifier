@@ -157,15 +157,23 @@ jobs:
           subject-path: build/wp-updates-notifier-${{ env.VERSION }}.zip
           sbom-path: build/wp-updates-notifier-${{ env.VERSION }}.cdx.json
 
-      - name: Verify the attestation as a user would
+      # Both attestations are also published as a release asset (#380): users can verify offline with --bundle, and
+      # OpenSSF Scorecard only sees provenance attached to a release under an .intoto.jsonl name.
+      - name: Verify the attestation as a user would and keep its bundle
         if: ${{ env.REHEARSE != 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
-          gh attestation verify "build/wp-updates-notifier-$VERSION.zip" --repo "$REPO" \
-            --signer-workflow "$REPO/.github/workflows/release-please.yml" \
+          zip="build/wp-updates-notifier-$VERSION.zip"
+          set -- --signer-workflow "$REPO/.github/workflows/release-please.yml" \
             --source-ref refs/heads/main --source-digest "$SHA"
+          gh attestation verify "$zip" --repo "$REPO" "$@"
+          ( cd build && gh attestation download "../$zip" --repo "$REPO" )
+          mv build/sha256:*.jsonl "$zip.intoto.jsonl"
+          for type in https://slsa.dev/provenance/v1 https://cyclonedx.org/bom; do
+            gh attestation verify "$zip" --repo "$REPO" "$@" --bundle "$zip.intoto.jsonl" --predicate-type "$type"
+          done
 
       # The key is written to the runner's temp directory and removed as soon as this step ends, whatever the outcome
       # (the last step removes it again as a fallback).
@@ -209,6 +217,7 @@ jobs:
           gh release upload "$TAG" --repo "$REPO" --clobber \
             "build/wp-updates-notifier-$VERSION.zip" \
             "build/wp-updates-notifier-$VERSION.zip.sha256" \
+            "build/wp-updates-notifier-$VERSION.zip.intoto.jsonl" \
             "build/wp-updates-notifier-$VERSION.cdx.json"
           gh release edit "$TAG" --repo "$REPO" --draft=false --verify-tag --latest
 

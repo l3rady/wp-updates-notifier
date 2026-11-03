@@ -103,6 +103,12 @@ components, because the plugin has no runtime dependencies. The SBOM is attested
 against the zip too: add `--predicate-type https://cyclonedx.org/bom` to the
 command above to check that attestation.
 
+Both attestations are also attached to the release as
+`wp-updates-notifier-<version>.zip.intoto.jsonl`, a file of Sigstore bundles.
+Download it next to the zip and add `--bundle
+wp-updates-notifier-<version>.zip.intoto.jsonl` to the command above to verify
+without fetching the attestations from GitHub.
+
 The zip is reproducible: check out the release tag, run `make dist` and compare
 the SHA-256 of `build/wp-updates-notifier-<version>.zip` with the one you
 downloaded. The two are identical when built with the same image. The base
