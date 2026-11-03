@@ -3,6 +3,7 @@
 [![ci](https://github.com/l3rady/wp-updates-notifier/actions/workflows/ci.yml/badge.svg)](https://github.com/l3rady/wp-updates-notifier/actions/workflows/ci.yml)
 [![lint](https://github.com/l3rady/wp-updates-notifier/actions/workflows/lint.yml/badge.svg)](https://github.com/l3rady/wp-updates-notifier/actions/workflows/lint.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/l3rady/wp-updates-notifier/badge)](https://scorecard.dev/viewer/?uri=github.com/l3rady/wp-updates-notifier)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16308/badge)](https://www.bestpractices.dev/projects/16308)
 [![WordPress.org version](https://img.shields.io/wordpress/plugin/v/wp-updates-notifier)](https://wordpress.org/plugins/wp-updates-notifier/)
 [![Active installs](https://img.shields.io/wordpress/plugin/installs/wp-updates-notifier)](https://wordpress.org/plugins/wp-updates-notifier/)
 [![Licence: GPL-2.0-or-later](https://img.shields.io/badge/licence-GPL--2.0--or--later-blue)](LICENSE)

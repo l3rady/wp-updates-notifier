@@ -3,6 +3,10 @@
 Thanks for helping. Everything runs in Docker, so the only things you need are
 `docker` and `docker compose`.
 
+Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+[GOVERNANCE.md](GOVERNANCE.md) says who decides what, and the
+[roadmap](https://github.com/l3rady/wp-updates-notifier/blob/main/docs/roadmap.md) says what is planned.
+
 - Set up, tests and coding standards: see **Development** in the
   [README](README.md). `make lint`, `make stan`, `make rector` and `make test`
   must pass; CI runs them on every pull request.
