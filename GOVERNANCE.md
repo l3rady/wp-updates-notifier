@@ -11,6 +11,8 @@ can't.
 | Maintainer | Scott Cariss ([@l3rady](https://github.com/l3rady)) | Everything listed under [Maintainer tasks](#maintainer-tasks). Holds admin access to the GitHub repository, commit access to the WordPress.org plugin, and the `cariss.dev` domain the documentation site runs on. |
 | Contributors | Anyone who opens an issue or pull request | Follow [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Contributions are accepted under the project's licence, GPL-2.0-or-later. |
 | Security reporters | Anyone who finds a vulnerability | Report it privately, as [SECURITY.md](SECURITY.md) explains, and not in a public issue. |
+| Continuity contact | [@juweez](https://github.com/juweez) | Has no part in day-to-day work. Starts the [continuity](#continuity) process if the maintainer can't continue. |
+| Backup maintainer | [@rieves](https://github.com/rieves) | Has no part in day-to-day work. Takes over the project, or finds it a new home, if the maintainer can't continue. |
 
 ### Maintainer tasks
 
@@ -54,19 +56,33 @@ how they decide together, and they will be added to the table above.
 
 ## Continuity
 
-The project has a single maintainer, so its bus factor is 1. If the maintainer
-dies, is incapacitated or stops maintaining the project, the following
+The project has a single active maintainer, so its bus factor is 1. If the
+maintainer dies, is incapacitated or stops maintaining the project, these
 arrangements let someone else create and close issues, accept changes and
 release new versions within a week:
 
-<!-- TODO(maintainer): describe arrangements that are actually in place, for example:
-  - a successor named in GitHub (Settings > Account > Successor settings), who can then manage this repository;
-  - a second committer on the WordPress.org plugin, or the plugins team's process for adopting a closed plugin;
-  - who holds the cariss.dev domain and the release signing and GitHub App keys (or how they are recovered from Bitwarden);
-  - where any legal rights (will, executor) are recorded.
--->
+1. **The continuity contact confirms it.** [@juweez](https://github.com/juweez)
+   confirms that the maintainer can't continue, tells the backup maintainer,
+   and opens an issue in this repository to say so.
+2. **Access to the accounts and keys.** The continuity contact has emergency
+   access to the maintainer's password manager. It holds the GitHub and
+   WordPress.org accounts, the `cariss.dev` domain (which hosts the
+   documentation site), the release signing key and the release GitHub App's
+   key. Through it, the backup maintainer can be given what they need at once,
+   without waiting for a provider's own process.
+3. **GitHub.** [@rieves](https://github.com/rieves) is the successor named in
+   the maintainer's GitHub account, so GitHub's own process can also hand the
+   repository to them.
+4. **WordPress.org.** The backup maintainer is a committer on the
+   [WordPress.org plugin](https://wordpress.org/plugins/wp-updates-notifier/),
+   so they can publish releases from their own account.
+5. **The backup maintainer decides what happens next.** They either maintain
+   the project, or find it a new home: transfer the repository to a trusted
+   maintainer, and ask the WordPress.org plugins team to move the plugin's
+   ownership, so that sites relying on it keep getting security fixes.
 
-To be completed by the maintainer.
+The maintainer's will covers the legal rights the project needs, such as the
+domain and the copyright in the maintainer's contributions.
 
 If nobody can continue, the code stays available under GPL-2.0-or-later, and
 anyone may fork it.
