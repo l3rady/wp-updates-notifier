@@ -146,6 +146,9 @@ code scanning alerts. These checks score below 10 on purpose:
 - **Contributors**: a one-maintainer project.
 - **Fuzzing**: no fuzzing tool fits a WordPress plugin. Untrusted input is
   covered by the Psalm taint analysis (`make taint`) and the PHPUnit tests.
-- **CII-Best-Practices**: no OpenSSF Best Practices badge yet.
-- **Packaging** and **Signed-Releases**: not scored until the release workflow
-  publishes a signed release.
+- **CII-Best-Practices**: the project has the
+  [OpenSSF Best Practices](https://www.bestpractices.dev/projects/16308) silver
+  badge. Gold needs a second active maintainer, for two-person review and a bus
+  factor of 2.
+- **Packaging**: not scored. Scorecard recognises publishing to package
+  registries such as npm or PyPI, not the WordPress.org deploy.

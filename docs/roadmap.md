@@ -45,7 +45,9 @@ translations for 19 more locales
 - **Security:** a security review before each major release, fixes in the
   latest release within the times in the
   [security policy](https://github.com/l3rady/wp-updates-notifier/blob/main/SECURITY.md),
-  and the OpenSSF Scorecard and Best Practices checks kept passing.
+  the OpenSSF Scorecard checks kept passing, and the
+  [OpenSSF Best Practices](https://www.bestpractices.dev/projects/16308) silver
+  badge kept up to date.
 - **Accessibility:** WCAG 2.2 AA for every screen, checked in CI.
 - **Bugs and requests:** reply to issues and support threads, and fix bugs with
   a regression test.
