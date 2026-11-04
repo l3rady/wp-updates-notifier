@@ -81,8 +81,9 @@ release new versions within a week:
    maintainer, and ask the WordPress.org plugins team to move the plugin's
    ownership, so that sites relying on it keep getting security fixes.
 
-The maintainer's will covers the legal rights the project needs, such as the
-domain and the copyright in the maintainer's contributions.
+The legal rights the project needs, such as the domain and the copyright in the
+maintainer's contributions, pass to the continuity contact as the maintainer's
+heir.
 
 If nobody can continue, the code stays available under GPL-2.0-or-later, and
 anyone may fork it.
