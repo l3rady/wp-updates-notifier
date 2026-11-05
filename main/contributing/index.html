@@ -2353,7 +2353,7 @@
 <p>Docker and <code>docker compose</code> are the only requirements: no PHP, Composer or Node on the host.</p>
 <h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>make<span class="w"> </span>up<span class="w">      </span><span class="c1"># local sites on :8080 and :8081</span>
-make<span class="w"> </span><span class="nb">test</span><span class="w">    </span><span class="c1"># the WordPress suites and the release script tests</span>
+make<span class="w"> </span><span class="nb">test</span><span class="w">    </span><span class="c1"># the WordPress suites and the build and release script tests</span>
 make<span class="w"> </span><span class="nb">help</span><span class="w">    </span><span class="c1"># every target</span>
 </code></pre></div>
 <p><code>make up</code> starts a single site on http://localhost:8080 and a multisite on http://localhost:8081, with mail in Mailpit on :8025 and webhooks on :8026 (see <a href="local-sites/">Local sites</a>). Log in as admin / admin. <code>make test</code> runs <code>test-wp</code>, <code>test-wp-ms</code>, <code>test-release</code>, <code>test-readme</code>, <code>test-blueprint</code> and <code>test-wporg-assets</code>.</p>
@@ -2369,7 +2369,7 @@ make<span class="w"> </span>fix<span class="w">                         </span><
 make<span class="w"> </span>stan<span class="w">                        </span><span class="c1"># PHPStan level 8 with the WordPress stubs</span>
 make<span class="w"> </span>rector<span class="w">                      </span><span class="c1"># PHP 7.4 syntax upgrades still to do (none expected)</span>
 make<span class="w"> </span>commits<span class="w">                     </span><span class="c1"># check the commit messages on this branch (Conventional Commits)</span>
-make<span class="w"> </span><span class="nb">test</span><span class="w">                        </span><span class="c1"># the WordPress suites and the release script tests</span>
+make<span class="w"> </span><span class="nb">test</span><span class="w">                        </span><span class="c1"># the WordPress suites and the build and release script tests</span>
 make<span class="w"> </span>test-wp<span class="w">                     </span><span class="c1"># WordPress test suite, single site</span>
 </code></pre></div>
 <p><code>make help</code> is generated from the <code>Makefile</code>, so it lists every target and is always current. This page does not, on purpose.</p>
