@@ -91,6 +91,7 @@ Then open **Settings → Updates Notifier** to choose where notifications go.
 
 - [User guide](users/README.md): set up channels, choose what to be told about, and fix common problems.
 - [Developer guide](developers/README.md): how the plugin fits together and how to extend it.
+- [Contributor guide](contributing/README.md): run the plugin locally, test it and release it.
 - [Architecture](developers/architecture.md): one update check from start to finish.
 - [Hook reference](developers/hooks.md): every action and filter.
 - [Decision records](decisions/README.md): why the plugin is built the way it is.

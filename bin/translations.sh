@@ -12,7 +12,7 @@
 #   sh bin/translations.sh check [LOCALE]   fail unless every file is complete, valid and current
 #
 # The translations themselves are written by hand (in a Claude Code session), never by this script: it only exports,
-# merges, lists, checks and builds. See docs/developers/translations.md.
+# merges, lists, checks and builds. See docs/contributing/translations.md.
 #
 # Which PO file `todo` and `build` read: build/translations/<locale>.po when it is newer than the locale's .l10n.php
 # (a session is editing it), otherwise a fresh export of the .l10n.php. So a leftover edited file can never overwrite

@@ -34,8 +34,6 @@ nav:
   - Developers:
       - developers/README.md
       - Architecture: developers/architecture.md
-      - Tests and checks: developers/testing.md
-      - Translations: developers/translations.md
       - Writing a module: developers/writing-a-module.md
       - Item types and routing: developers/item-types-and-routing.md
       - Muting from code: developers/muting-from-code.md
@@ -43,6 +41,15 @@ nav:
       - Webhook payload: developers/webhook-payload.md
       - Hook reference: developers/hooks.md
       - Stability and deprecation: developers/stability.md
+  - Contributing:
+      - contributing/README.md
+      - Local sites: contributing/local-sites.md
+      - Tests and checks: contributing/testing.md
+      - Security checks: contributing/security-checks.md
+      - Packaging: contributing/packaging.md
+      - Translations: contributing/translations.md
+      - Documentation site: contributing/documentation-site.md
+      - Releases: contributing/releases.md
   - Decisions:
       - decisions/README.md
       - 0001 Licence: decisions/0001-licence-gpl-2-or-later.md

@@ -27,7 +27,7 @@ exclude = [
   # In a plain `make docs` build, every page's <link rel="canonical"> is its unversioned address (site_url + path).
   # Only `mike deploy` points it at /latest/ (canonical_version in mkdocs.yml), and lychee cannot skip one HTML
   # element. Links in the sources go to the root or to a versioned path, which are still checked.
-  '^https://wpun\.cariss\.dev/(users|developers|decisions|security|roadmap)(/|$)',
+  '^https://wpun\.cariss\.dev/(users|developers|contributing|decisions|security|roadmap)(/|$)',
   # LinkedIn answers every automated request with 999, whatever the page.
   '^https://www\.linkedin\.com/',
   # gnu.org times out from GitHub's runners, though the licence page is fine (#295).

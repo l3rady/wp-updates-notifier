@@ -237,7 +237,7 @@ Docker like everything else. `mkdocs.yml` holds the navigation and the theme, an
 - The plugin bundles translations for 11 locales, as `languages/*.l10n.php` files (the only translation files in the
   repository). A changed string or translators comment needs a translation session before CI is green:
   `make translations-edit`, fill in the empty entries in `build/translations/*.po`, then `make translations &&
-  make check-translations`. See [Translations](docs/developers/translations.md).
+  make check-translations`. See [Translations](docs/contributing/translations.md).
 - The site is versioned with [mike](https://github.com/jimporter/mike) and deployed by
   CI (`.github/workflows/docs.yml`): `main` on every push, and each release as its own
   version and as `latest`. Published versions are not rebuilt; to fix one, run the
