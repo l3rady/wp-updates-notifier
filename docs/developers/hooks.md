@@ -402,6 +402,8 @@ Fired in `includes/abstract-class-channel.php`.
 
 Filters the body of the email.
 
+It also runs for the preview panel of the add and edit form, for a sample notification whose source is `preview`; nothing is sent then, and on the form of a new channel the instance is a draft with an empty id.
+
 `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 
 | Parameter | Type | Description |
@@ -417,6 +419,8 @@ Fired in `includes/class-notifier.php`, `modules/email/class-email-channel.php`.
 *Filter*, since 1.4.3. Since 2.0.0 also receives the notification and the instance.
 
 Filters the subject of the email.
+
+It also runs for the preview panel of the add and edit form, for a sample notification whose source is `preview`; nothing is sent then, and on the form of a new channel the instance is a draft with an empty id.
 
 `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 
