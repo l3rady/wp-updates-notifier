@@ -11,6 +11,7 @@ use WPUN\Channel;
 use WPUN\Channel_Instance;
 use WPUN\Delivery_Result;
 use WPUN\Notification;
+use WPUN\Notification_Item;
 use WPUN\Notification_Renderer;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -144,6 +145,63 @@ class Email_Channel extends Channel {
 	}
 
 	/**
+	 * The panels of the settings form: a preview of the email.
+	 *
+	 * @param Channel_Instance $instance The instance being edited, or the draft of a new channel.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function get_form_panels( Channel_Instance $instance ): array {
+		return array(
+			'preview' => array(
+				'label'       => __( 'Preview', 'wp-updates-notifier' ),
+				'description' => __( 'What a notification from this channel looks like with these settings, for a sample plugin update. Nothing is sent.', 'wp-updates-notifier' ),
+				'content'     => $this->preview( $instance ),
+				'collapsed'   => true,
+			),
+		);
+	}
+
+	/**
+	 * Escaped markup of the preview: the recipients, the subject and the body for a sample notification.
+	 *
+	 * An HTML body is shown as source text, never as markup, as the content filter returns it unescaped.
+	 *
+	 * @param Channel_Instance $instance The instance to preview.
+	 *
+	 * @return string
+	 */
+	private function preview( Channel_Instance $instance ): string {
+		$notification = new Notification(
+			get_bloginfo( 'name' ),
+			home_url( '/' ),
+			self_admin_url( 'update-core.php' ),
+			array(
+				new Notification_Item(
+					array(
+						'type'            => 'plugin',
+						'key'             => 'example-plugin/example-plugin.php',
+						'name'            => __( 'Example plugin', 'wp-updates-notifier' ),
+						'current_version' => '1.0.0',
+						'new_version'     => '1.1.0',
+					)
+				),
+			),
+			array( 'source' => 'preview' )
+		);
+		$composed     = $this->compose( $notification, $instance );
+		$to           = $this->clean_addresses( $this->text( $instance->get_settings(), 'to' ) );
+
+		$html  = '<dl class="sc-wpun-email-preview">';
+		$html .= '<dt>' . esc_html__( 'To', 'wp-updates-notifier' ) . '</dt><dd>' . ( array() === $to ? esc_html__( 'No recipients set yet.', 'wp-updates-notifier' ) : esc_html( implode( ', ', $to ) ) ) . '</dd>';
+		$html .= '<dt>' . esc_html__( 'Subject', 'wp-updates-notifier' ) . '</dt><dd>' . esc_html( $composed['subject'] ) . '</dd>';
+		$html .= '<dt>' . ( $composed['is_html'] ? esc_html__( 'Body (HTML source)', 'wp-updates-notifier' ) : esc_html__( 'Body', 'wp-updates-notifier' ) ) . '</dt><dd><pre>' . esc_html( $composed['body'] ) . '</pre></dd>';
+		$html .= '</dl>';
+
+		return $html;
+	}
+
+	/**
 	 * Whether the channel supports a feature.
 	 *
 	 * @param string $feature Feature name.
@@ -218,56 +276,10 @@ class Email_Channel extends Channel {
 		}
 
 		$settings = $instance->get_settings();
-		$is_html  = 'html' === $this->text( $settings, 'format', 'text' );
-		$site     = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
-
-		if ( $notification->is_test() ) {
-			// translators: %s: Site name.
-			$subject = sprintf( __( 'WP Updates Notifier: test message for %s', 'wp-updates-notifier' ), $site );
-			// translators: 1: Site name. 2: Site address.
-			$body = sprintf( __( 'This is a test message from WP Updates Notifier for %1$s (%2$s). Update notifications for this site will be sent to this address.', 'wp-updates-notifier' ), $site, $notification->get_site_url() );
-			$body = $is_html ? '<p>' . esc_html( $body ) . '</p>' : $body;
-		} else {
-			if ( $notification->is_reminder() ) {
-				// translators: %s: Site name.
-				$subject = sprintf( __( 'WP Updates Notifier: reminder of updates waiting for %s', 'wp-updates-notifier' ), $site );
-			} else {
-				// translators: %s: Site name.
-				$subject = sprintf( __( 'WP Updates Notifier: updates available for %s', 'wp-updates-notifier' ), $site );
-			}
-			$body = $is_html ? Notification_Renderer::html( $notification ) : Notification_Renderer::plain_text( $notification );
-		}
-
-		$prefix = $this->text( $settings, 'subject_prefix' );
-		if ( '' !== $prefix ) {
-			$subject = $prefix . ' ' . $subject;
-		}
-
-		/**
-		 * Filters the subject of the email.
-		 *
-		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
-		 *
-		 * @since 1.4.3 Since 2.0.0 also receives the notification and the instance.
-		 *
-		 * @param string           $subject      Subject, including the prefix.
-		 * @param Notification     $notification The notification.
-		 * @param Channel_Instance $instance     The instance sending it.
-		 */
-		$subject = apply_filters( 'sc_wpun_email_subject', $subject, $notification, $instance );
-
-		/**
-		 * Filters the body of the email.
-		 *
-		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
-		 *
-		 * @since 1.4.3 Since 2.0.0 also receives the notification and the instance, and is not HTML-escaped.
-		 *
-		 * @param string           $body         Body: plain text, or HTML if the instance is set to HTML. An HTML body is a fragment: it is wrapped in a document with the language, direction and title after this filter.
-		 * @param Notification     $notification The notification.
-		 * @param Channel_Instance $instance     The instance sending it.
-		 */
-		$body = apply_filters( 'sc_wpun_email_content', $body, $notification, $instance );
+		$composed = $this->compose( $notification, $instance );
+		$is_html  = $composed['is_html'];
+		$subject  = $composed['subject'];
+		$body     = $composed['body'];
 		if ( $is_html ) {
 			$body = $this->document( (string) $body, (string) $subject );
 		}
@@ -334,6 +346,76 @@ class Email_Channel extends Channel {
 		$context = array( 'error_code' => (string) $error->get_error_code() );
 
 		return Delivery_Result::failure( $message, 'wp_mail_failed', null, null, $context );
+	}
+
+	/**
+	 * The subject and body an instance sends for a notification, after the subject prefix and the content filters.
+	 *
+	 * An HTML body is a fragment: send() wraps it in a document.
+	 *
+	 * @param Notification     $notification What to deliver.
+	 * @param Channel_Instance $instance     The configured instance.
+	 *
+	 * @return array{subject: string, body: string, is_html: bool}
+	 */
+	private function compose( Notification $notification, Channel_Instance $instance ): array {
+		$settings = $instance->get_settings();
+		$is_html  = 'html' === $this->text( $settings, 'format', 'text' );
+		$site     = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
+
+		if ( $notification->is_test() ) {
+			// translators: %s: Site name.
+			$subject = sprintf( __( 'WP Updates Notifier: test message for %s', 'wp-updates-notifier' ), $site );
+			// translators: 1: Site name. 2: Site address.
+			$body = sprintf( __( 'This is a test message from WP Updates Notifier for %1$s (%2$s). Update notifications for this site will be sent to this address.', 'wp-updates-notifier' ), $site, $notification->get_site_url() );
+			$body = $is_html ? '<p>' . esc_html( $body ) . '</p>' : $body;
+		} else {
+			if ( $notification->is_reminder() ) {
+				// translators: %s: Site name.
+				$subject = sprintf( __( 'WP Updates Notifier: reminder of updates waiting for %s', 'wp-updates-notifier' ), $site );
+			} else {
+				// translators: %s: Site name.
+				$subject = sprintf( __( 'WP Updates Notifier: updates available for %s', 'wp-updates-notifier' ), $site );
+			}
+			$body = $is_html ? Notification_Renderer::html( $notification ) : Notification_Renderer::plain_text( $notification );
+		}
+
+		$prefix = $this->text( $settings, 'subject_prefix' );
+		if ( '' !== $prefix ) {
+			$subject = $prefix . ' ' . $subject;
+		}
+
+		/**
+		 * Filters the subject of the email.
+		 *
+		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+		 *
+		 * @since 1.4.3 Since 2.0.0 also receives the notification and the instance.
+		 *
+		 * @param string           $subject      Subject, including the prefix.
+		 * @param Notification     $notification The notification.
+		 * @param Channel_Instance $instance     The instance sending it.
+		 */
+		$subject = apply_filters( 'sc_wpun_email_subject', $subject, $notification, $instance );
+
+		/**
+		 * Filters the body of the email.
+		 *
+		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+		 *
+		 * @since 1.4.3 Since 2.0.0 also receives the notification and the instance, and is not HTML-escaped.
+		 *
+		 * @param string           $body         Body: plain text, or HTML if the instance is set to HTML. An HTML body is a fragment: it is wrapped in a document with the language, direction and title after this filter.
+		 * @param Notification     $notification The notification.
+		 * @param Channel_Instance $instance     The instance sending it.
+		 */
+		$body = apply_filters( 'sc_wpun_email_content', $body, $notification, $instance );
+
+		return array(
+			'subject' => (string) $subject,
+			'body'    => (string) $body,
+			'is_html' => $is_html,
+		);
 	}
 
 	/**

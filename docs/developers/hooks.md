@@ -684,6 +684,45 @@ add_filter(
 
 Fired in `includes/abstract-class-channel.php`.
 
+### `sc_wpun_channel_form_panels`
+
+*Filter*, since 3.0.0
+
+Filters the panels of the add and edit form of a channel.
+
+Same schema as Channel::get_form_panels(): an array keyed by panel id, each an array with a `label` and a `content`
+(escaped markup, output as it is), and optionally a `description` and `collapsed`. The panels are drawn after the field
+groups, in this order. On the form of a new channel the instance is a draft with an empty id.
+
+Example, show a support contact on the form of the email channel:
+
+```php
+add_filter(
+    'sc_wpun_channel_form_panels',
+    function ( $panels, $instance, $channel ) {
+        if ( 'email' === $channel->get_type() ) {
+            $panels['runbook'] = array(
+                'label'   => 'Runbook',
+                'content' => '<p>' . esc_html( 'Problems with updates? Ask the web team.' ) . '</p>',
+            );
+        }
+        return $panels;
+    },
+    10,
+    3
+);
+```
+
+`$instance` holds the resolved settings, secrets included: never print them, and don't log or dump its settings.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$panels` | `array<string, array<string, mixed>>` | The panels by id. |
+| `$instance` | `Channel_Instance` | The instance being edited, or the draft of a new channel. |
+| `$channel` | `Channel` | The channel type's module. |
+
+Fired in `includes/abstract-class-channel.php`.
+
 ### `sc_wpun_channel_rejected`
 
 *Action*, since 2.0.0

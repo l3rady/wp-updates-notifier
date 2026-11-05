@@ -367,6 +367,8 @@ class Channel_Form {
 		}
 		$settings = $form_inst->get_settings();
 		$custom   = $channel->render_settings( $form_inst );
+		// The panels of a new channel get a draft with no id, as there is nothing stored to show yet.
+		$panel_inst = $is_new ? Channel_Instance::draft( $form_inst->get_type(), $form_inst->get_label(), $form_inst->is_enabled(), $form_inst->get_settings(), $form_inst->get_routing() ) : $form_inst;
 		// A module that draws its own fields has no field ids of ours to link its errors to.
 		$linkable = is_string( $custom ) ? array() : $fields;
 
@@ -411,6 +413,7 @@ class Channel_Form {
 				$this->render_general_section( $is_new, $instance, $label, $enabled, $skip, $was_enabled, $errors );
 				$this->render_routing_section( $routing, $errors );
 				$this->render_settings_section( $custom, $form_inst, $fields, is_string( $custom ) ? array() : $channel->get_form_field_groups(), $settings, $is_new, $errors );
+				$this->render_panels( $channel, $panel_inst );
 
 				/**
 				 * Fires inside the add and edit form of a channel, after its last section and before the buttons.
@@ -813,20 +816,66 @@ class Channel_Form {
 			}
 			$collapsed = true === ( $group['collapsed'] ?? false );
 
-			if ( $collapsed ) {
-				$this->put( '<details class="sc-wpun-field-group-details"' . ( $open ? ' open' : '' ) . '><summary>' . esc_html( $label ) . '</summary>' );
-			}
-			$this->put( '<fieldset class="sc-wpun-field-group"' . ( '' !== $text ? ' aria-describedby="' . esc_attr( $dom_id . '-description' ) . '"' : '' ) . '>' );
-			$this->put( $collapsed ? '<legend class="screen-reader-text">' . esc_html( $label ) . '</legend>' : '<legend><h3>' . esc_html( $label ) . '</h3></legend>' );
-			if ( '' !== $text ) {
-				$this->put( '<p class="description" id="' . esc_attr( $dom_id . '-description' ) . '">' . esc_html( $text ) . '</p>' );
-			}
+			$this->put( $this->frame_open( $dom_id, $label, $text, $collapsed, $open, false ) );
 			$this->settings_table( $rows );
-			$this->put( '</fieldset>' );
-			if ( $collapsed ) {
-				$this->put( '</details>' );
-			}
+			$this->put( $this->frame_close( $collapsed ) );
 		}
+	}
+
+	/**
+	 * Output the panels of a module: read-only boxes drawn after the field groups, like them.
+	 *
+	 * @param Channel          $channel The module.
+	 * @param Channel_Instance $panel_inst The instance for the panels: the stored one, or a draft with no id on the form of a new channel.
+	 *
+	 * @return void
+	 */
+	private function render_panels( Channel $channel, Channel_Instance $panel_inst ): void {
+		foreach ( $channel->get_form_panels_filtered( $panel_inst ) as $panel_id => $panel ) {
+			$dom_id    = 'sc_wpun_channel_panel_' . preg_replace( '/[^A-Za-z0-9_-]/', '_', (string) $panel_id );
+			$collapsed = $panel['collapsed'];
+
+			$this->put( $this->frame_open( $dom_id, $panel['label'], $panel['description'], $collapsed, false, true ) );
+			echo '<div class="sc-wpun-form-panel-content">' . $panel['content'] . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup of the channel module, escaped by it like a custom field.
+			$this->put( $this->frame_close( $collapsed ) );
+		}
+	}
+
+	/**
+	 * The opening markup of a field group or a panel: a fieldset with a legend, in a details element when collapsed.
+	 *
+	 * @param string $dom_id    Base of the DOM ids.
+	 * @param string $label     Title.
+	 * @param string $text      Help text, or an empty string.
+	 * @param bool   $collapsed Whether it is folded into a details element.
+	 * @param bool   $open      Whether the details element starts open.
+	 * @param bool   $is_panel  Whether it is a panel of the module, not a group of fields: it also gets the panel classes.
+	 *
+	 * @return string Escaped markup.
+	 */
+	private function frame_open( string $dom_id, string $label, string $text, bool $collapsed, bool $open, bool $is_panel ): string {
+		$html = '';
+		if ( $collapsed ) {
+			$html .= '<details class="sc-wpun-field-group-details' . ( $is_panel ? ' sc-wpun-form-panel-details' : '' ) . '"' . ( $open ? ' open' : '' ) . '><summary>' . esc_html( $label ) . '</summary>';
+		}
+		$html .= '<fieldset class="sc-wpun-field-group' . ( $is_panel ? ' sc-wpun-form-panel' : '' ) . '"' . ( '' !== $text ? ' aria-describedby="' . esc_attr( $dom_id . '-description' ) . '"' : '' ) . '>';
+		$html .= $collapsed ? '<legend class="screen-reader-text">' . esc_html( $label ) . '</legend>' : '<legend><h3>' . esc_html( $label ) . '</h3></legend>';
+		if ( '' !== $text ) {
+			$html .= '<p class="description" id="' . esc_attr( $dom_id . '-description' ) . '">' . esc_html( $text ) . '</p>';
+		}
+
+		return $html;
+	}
+
+	/**
+	 * The closing markup that goes with frame_open().
+	 *
+	 * @param bool $collapsed Whether it was folded into a details element.
+	 *
+	 * @return string
+	 */
+	private function frame_close( bool $collapsed ): string {
+		return '</fieldset>' . ( $collapsed ? '</details>' : '' );
 	}
 
 	/**

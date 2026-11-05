@@ -45,6 +45,27 @@ class Test_Fields_Channel extends Channel {
 	public $received = array();
 
 	/**
+	 * The panels to return.
+	 *
+	 * @var array
+	 */
+	public $panels = array();
+
+	/**
+	 * The instances get_form_panels() was called with.
+	 *
+	 * @var Channel_Instance[]
+	 */
+	public $panel_instances = array();
+
+	/**
+	 * The markup render_settings() returns, or null for the generic form.
+	 *
+	 * @var string|null
+	 */
+	public $custom = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $type   Channel type.
@@ -91,6 +112,28 @@ class Test_Fields_Channel extends Channel {
 	 */
 	public function get_field_groups(): array {
 		return $this->groups;
+	}
+
+	/**
+	 * The panels it was given. Records the instance.
+	 *
+	 * @param Channel_Instance $instance The instance.
+	 * @return array
+	 */
+	public function get_form_panels( Channel_Instance $instance ): array {
+		$this->panel_instances[] = $instance;
+
+		return $this->panels;
+	}
+
+	/**
+	 * Its own markup, if it was given any.
+	 *
+	 * @param Channel_Instance $instance The instance.
+	 * @return string|null
+	 */
+	public function render_settings( Channel_Instance $instance ): ?string {
+		return $this->custom;
 	}
 
 	/**

@@ -164,6 +164,23 @@
 	box-shadow: none;
 }
 
+/* The email preview panel: the body keeps its line breaks but wraps, so a long line never widens the page. */
+.sc-wpun-email-preview dt {
+	font-weight: 600;
+}
+
+.sc-wpun-email-preview dd {
+	margin: 0 0 12px;
+}
+
+.sc-wpun-email-preview pre {
+	margin: 0;
+	padding: 12px;
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+	background: #f6f7f7;
+}
+
 @media screen and (max-width: 782px) {
 	.sc-wpun-panel,
 	.sc-wpun-form-section,

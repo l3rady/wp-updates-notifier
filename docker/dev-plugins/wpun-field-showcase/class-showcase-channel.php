@@ -388,6 +388,34 @@ class Showcase_Channel extends Channel {
 	}
 
 	/**
+	 * Panels, one of each kind: open with a description, open without, and collapsed.
+	 *
+	 * @param Channel_Instance $instance The instance.
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function get_form_panels( Channel_Instance $instance ): array {
+		$id = '' === $instance->get_id() ? __( '(not saved yet)', 'wpun-field-showcase' ) : $instance->get_id();
+
+		return array(
+			'panel_open'      => array(
+				'label'       => __( 'Panel: open, with a description', 'wpun-field-showcase' ),
+				'description' => __( 'A panel is read-only and built from the instance. Nothing in it is saved.', 'wpun-field-showcase' ),
+				'content'     => '<p>' . esc_html( sprintf( /* translators: %s: Instance id. */ __( 'Instance: %s', 'wpun-field-showcase' ), $id ) ) . '</p>',
+			),
+			'panel_plain'     => array(
+				'label'   => __( 'Panel: open, no description', 'wpun-field-showcase' ),
+				'content' => '<p>' . esc_html__( 'Only a heading and some content.', 'wpun-field-showcase' ) . '</p>',
+			),
+			'panel_collapsed' => array(
+				'label'       => __( 'Panel: collapsed', 'wpun-field-showcase' ),
+				'description' => __( 'A collapsed panel is folded into a details element.', 'wpun-field-showcase' ),
+				'content'     => '<p>' . esc_html__( 'Content that starts out of sight.', 'wpun-field-showcase' ) . '</p>',
+				'collapsed'   => true,
+			),
+		);
+	}
+
+	/**
 	 * Deliver nothing. Log what would have been sent.
 	 *
 	 * @param Notification     $notification What to deliver.

@@ -237,6 +237,10 @@ class Channel_Store {
 	 */
 	public function save( Channel_Instance $instance ): bool {
 		$id = $instance->get_id();
+		if ( '' === $id ) {
+			_doing_it_wrong( __METHOD__, esc_html__( 'A draft instance without an id cannot be saved.', 'wp-updates-notifier' ), '3.0.0' );
+			return false;
+		}
 		if ( $this->is_code_defined( $id ) ) {
 			_doing_it_wrong( __METHOD__, esc_html__( 'An instance defined in code cannot be saved.', 'wp-updates-notifier' ), '2.0.0' );
 			return false;
@@ -283,6 +287,11 @@ class Channel_Store {
 	 * @return void
 	 */
 	public function save_raw( Channel_Instance $instance ): void {
+		if ( '' === $instance->get_id() ) {
+			_doing_it_wrong( __METHOD__, esc_html__( 'A draft instance without an id cannot be saved.', 'wp-updates-notifier' ), '3.0.0' );
+			return;
+		}
+
 		$stored                        = $this->read();
 		$stored[ $instance->get_id() ] = array(
 			'type'     => $instance->get_type(),

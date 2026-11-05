@@ -97,6 +97,32 @@ final class Channel_Instance {
 	}
 
 	/**
+	 * An unsaved instance that has no id yet, as the form of a new channel gives to the panels of a module.
+	 *
+	 * It can't be saved: the store refuses an empty id. Check `'' === $instance->get_id()` to tell it from a stored one.
+	 *
+	 * @internal
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string               $type     Channel type; must match /^[a-z0-9_]+$/.
+	 * @param string               $label    Label.
+	 * @param bool                 $enabled  Whether the instance is switched on.
+	 * @param array<string, mixed> $settings Settings.
+	 * @param array<string, mixed> $routing  Routing rules.
+	 *
+	 * @return self
+	 *
+	 * @throws InvalidArgumentException If the type is not valid.
+	 */
+	public static function draft( string $type, string $label, bool $enabled, array $settings = array(), array $routing = array() ): self {
+		$instance     = new self( 'draft', $type, $label, $enabled, $settings, $routing );
+		$instance->id = '';
+
+		return $instance;
+	}
+
+	/**
 	 * What var_dump() and print_r() show: the settings keys, never the values, which can be resolved secrets.
 	 *
 	 * @return array<string, mixed>
@@ -211,7 +237,10 @@ final class Channel_Instance {
 	 * @return self
 	 */
 	public function with_label( string $label ): self {
-		return new self( $this->id, $this->type, $label, $this->enabled, $this->settings, $this->routing );
+		$copy        = clone $this;
+		$copy->label = $label;
+
+		return $copy;
 	}
 
 	/**
@@ -224,7 +253,10 @@ final class Channel_Instance {
 	 * @return self
 	 */
 	public function with_enabled( bool $enabled ): self {
-		return new self( $this->id, $this->type, $this->label, $enabled, $this->settings, $this->routing );
+		$copy          = clone $this;
+		$copy->enabled = $enabled;
+
+		return $copy;
 	}
 
 	/**
@@ -237,7 +269,10 @@ final class Channel_Instance {
 	 * @return self
 	 */
 	public function with_settings( array $settings ): self {
-		return new self( $this->id, $this->type, $this->label, $this->enabled, $settings, $this->routing );
+		$copy           = clone $this;
+		$copy->settings = $settings;
+
+		return $copy;
 	}
 
 	/**
@@ -250,6 +285,9 @@ final class Channel_Instance {
 	 * @return self
 	 */
 	public function with_routing( array $routing ): self {
-		return new self( $this->id, $this->type, $this->label, $this->enabled, $this->settings, $routing );
+		$copy          = clone $this;
+		$copy->routing = $routing;
+
+		return $copy;
 	}
 }

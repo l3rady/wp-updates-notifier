@@ -277,6 +277,114 @@ abstract class Channel {
 	}
 
 	/**
+	 * Read-only panels for the add and edit form, by id.
+	 *
+	 * Each panel is an array with a `label` (string, required, not empty), a `content` (string, escaped markup, output as it is
+	 * like the control of a custom field type), and optionally a `description` (string, help text) and `collapsed` (bool, draw it
+	 * closed). The panels are drawn after the field groups, in the order returned. Nothing in them is submitted or saved.
+	 *
+	 * On the form of a new channel the instance is a draft with an empty id (`'' === $instance->get_id()`), built from the
+	 * defaults and, after a failed save, the submitted values: a module can show "Save the channel to see its callback URL".
+	 * After a failed save on the edit form the instance holds the submitted values, as in render_settings().
+	 *
+	 * The instance holds the resolved settings, secrets included: the content must never print them, and don't log or dump the settings.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param Channel_Instance $instance The instance being edited, or the draft of a new channel.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function get_form_panels( Channel_Instance $instance ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Overridable default.
+		return array();
+	}
+
+	/**
+	 * The panels of the form: get_form_panels() after the `sc_wpun_channel_form_panels` filter.
+	 *
+	 * An entry with an empty id, that is not an array, that has no label, or whose content is not a string is dropped.
+	 * What is kept has exactly the keys `label`, `content`, `description` and `collapsed`.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param Channel_Instance $instance The instance being edited, or the draft of a new channel.
+	 *
+	 * @return array<string, array{label: string, content: string, description: string, collapsed: bool}>
+	 */
+	final public function get_form_panels_filtered( Channel_Instance $instance ): array {
+		$panels = $this->get_form_panels( $instance );
+
+		/**
+		 * Filters the panels of the add and edit form of a channel.
+		 *
+		 * Same schema as Channel::get_form_panels(): an array keyed by panel id, each an array with a `label` and a `content`
+		 * (escaped markup, output as it is), and optionally a `description` and `collapsed`. The panels are drawn after the field
+		 * groups, in this order. On the form of a new channel the instance is a draft with an empty id.
+		 *
+		 * Example, show a support contact on the form of the email channel:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_channel_form_panels',
+		 *         function ( $panels, $instance, $channel ) {
+		 *             if ( 'email' === $channel->get_type() ) {
+		 *                 $panels['runbook'] = array(
+		 *                     'label'   => 'Runbook',
+		 *                     'content' => '<p>' . esc_html( 'Problems with updates? Ask the web team.' ) . '</p>',
+		 *                 );
+		 *             }
+		 *             return $panels;
+		 *         },
+		 *         10,
+		 *         3
+		 *     );
+		 *
+		 * `$instance` holds the resolved settings, secrets included: never print them, and don't log or dump its settings.
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param array<string, array<string, mixed>> $panels   The panels by id.
+		 * @param Channel_Instance                    $instance The instance being edited, or the draft of a new channel.
+		 * @param Channel                             $channel  The channel type's module.
+		 */
+		$filtered = apply_filters( 'sc_wpun_channel_form_panels', $panels, $instance, $this );
+		$filtered = is_array( $filtered ) ? $filtered : $panels;
+
+		$clean = array();
+		foreach ( $filtered as $id => $panel ) {
+			$id = (string) $id;
+			if (
+				'' === $id
+				|| ! is_array( $panel )
+				|| ! isset( $panel['label'] ) || ! is_string( $panel['label'] ) || '' === $panel['label']
+				|| ( isset( $panel['content'] ) && ! is_string( $panel['content'] ) )
+			) {
+				_doing_it_wrong(
+					__METHOD__,
+					esc_html(
+						sprintf(
+							// translators: 1: Panel id, 2: Channel type.
+							__( 'The form panel "%1$s" of the "%2$s" channel needs an id, a label, and a content that is a string. It was dropped.', 'wp-updates-notifier' ),
+							$id,
+							$this->get_type()
+						)
+					),
+					'3.0.0'
+				);
+				continue;
+			}
+
+			$clean[ $id ] = array(
+				'label'       => $panel['label'],
+				'content'     => $panel['content'] ?? '',
+				'description' => isset( $panel['description'] ) && is_string( $panel['description'] ) ? $panel['description'] : '',
+				'collapsed'   => true === ( $panel['collapsed'] ?? false ),
+			);
+		}
+
+		return $clean;
+	}
+
+	/**
 	 * The field schema of the `enabled` setting every instance has, shared by all channels.
 	 *
 	 * @since 2.0.0

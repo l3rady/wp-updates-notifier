@@ -35,12 +35,19 @@ test( 'axe: field showcase with its collapsed group open', async ( { page } ) =>
 	await page.goto( `${ CHANNELS }&action=edit&id=e2e_showcase` );
 
 	// The group is closed until its summary is activated. Its summary is the control, so a click is what a user does.
-	const details = page.locator( 'details.sc-wpun-field-group-details' );
+	const details = page.locator( 'details.sc-wpun-field-group-details:not(.sc-wpun-form-panel-details)' );
 	await expect( details ).toBeVisible();
 	await expect( details ).not.toHaveAttribute( 'open', /.*/ );
 	await details.locator( 'summary' ).click();
 	await expect( details ).toHaveAttribute( 'open', /.*/ );
 	await expect( details.locator( 'input[name="settings[advanced_required]"]' ) ).toBeVisible();
+
+	// The collapsed panel, too: its content is out of sight until its summary is activated.
+	const panel = page.locator( 'details.sc-wpun-form-panel-details' );
+	await expect( panel ).not.toHaveAttribute( 'open', /.*/ );
+	await panel.locator( 'summary' ).click();
+	await expect( panel ).toHaveAttribute( 'open', /.*/ );
+	await expect( panel.locator( '.sc-wpun-form-panel-content' ) ).toBeVisible();
 
 	const violations = await scan( page );
 	expect( violations, `${ violations.length } axe violation(s) on the showcase with the collapsed group open\n\n${ describe( violations ) }\n` ).toEqual( [] );
