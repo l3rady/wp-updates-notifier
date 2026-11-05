@@ -192,7 +192,7 @@ class Email_Channel extends Channel {
 		$composed     = $this->compose( $notification, $instance );
 		$to           = $this->clean_addresses( $this->text( $instance->get_settings(), 'to' ) );
 
-		$html  = '<dl class="sc-wpun-email-preview">';
+		$html  = '<dl class="sc-wpun-preview">';
 		$html .= '<dt>' . esc_html__( 'To', 'wp-updates-notifier' ) . '</dt><dd>' . ( array() === $to ? esc_html__( 'No recipients set yet.', 'wp-updates-notifier' ) : esc_html( implode( ', ', $to ) ) ) . '</dd>';
 		$html .= '<dt>' . esc_html__( 'Subject', 'wp-updates-notifier' ) . '</dt><dd>' . esc_html( $composed['subject'] ) . '</dd>';
 		$html .= '<dt>' . ( $composed['is_html'] ? esc_html__( 'Body (HTML source)', 'wp-updates-notifier' ) : esc_html__( 'Body', 'wp-updates-notifier' ) ) . '</dt><dd><pre>' . esc_html( $composed['body'] ) . '</pre></dd>';

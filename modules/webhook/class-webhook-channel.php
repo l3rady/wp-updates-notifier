@@ -250,6 +250,104 @@ class Webhook_Channel extends Channel {
 	}
 
 	/**
+	 * The panels of the settings form: a preview of the message.
+	 *
+	 * @param Channel_Instance $instance The instance being edited, or the draft of a new channel.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function get_form_panels( Channel_Instance $instance ): array {
+		return array(
+			'preview' => array(
+				'label'       => __( 'Preview', 'wp-updates-notifier' ),
+				'description' => __( 'The headers and body of a message from this channel with these settings, for a sample plugin update. The body is shown indented; the real one is on one line. Nothing is sent.', 'wp-updates-notifier' ),
+				'content'     => $this->preview( $instance ),
+				'collapsed'   => true,
+			),
+		);
+	}
+
+	/**
+	 * Escaped markup of the preview: the headers and the body of a sample message, built the way deliver() builds one.
+	 *
+	 * Only the headers the module sets itself show their value. The signature, the extra headers and anything a filter added
+	 * show "(hidden)", and neither the address nor the signing secret is ever printed.
+	 *
+	 * @param Channel_Instance $instance The instance to preview.
+	 *
+	 * @return string
+	 */
+	private function preview( Channel_Instance $instance ): string {
+		$notification = new Notification(
+			get_bloginfo( 'name' ),
+			home_url( '/' ),
+			self_admin_url( 'update-core.php' ),
+			array(
+				new Notification_Item(
+					array(
+						'type'            => 'plugin',
+						'key'             => 'example-plugin/example-plugin.php',
+						'name'            => __( 'Example plugin', 'wp-updates-notifier' ),
+						'current_version' => '1.0.0',
+						'new_version'     => '1.1.0',
+					)
+				),
+			),
+			array( 'source' => 'preview' )
+		);
+
+		$notes  = array();
+		$secret = $instance->get_setting( 'signing_secret', '' );
+		$key    = null;
+		if ( is_string( $secret ) && '' !== $secret ) {
+			$key = self::decode_secret( $secret );
+			if ( null === $key ) {
+				$notes[] = __( 'The signing secret is not valid, so no message is sent until it is fixed.', 'wp-updates-notifier' );
+			}
+		} else {
+			$notes[] = __( 'Not signed: no signing secret is set.', 'wp-updates-notifier' );
+		}
+
+		$extra      = array();
+		$lines_text = $instance->get_setting( 'headers', '' );
+		if ( is_string( $lines_text ) && '' !== $lines_text ) {
+			$parsed = self::parse_headers( $lines_text );
+			if ( null !== $parsed['error'] ) {
+				$notes[] = __( 'The extra headers are not valid, so no message is sent until they are fixed. They are left out here.', 'wp-updates-notifier' );
+			} else {
+				$extra = $parsed['headers'];
+			}
+		}
+
+		$items = array();
+		foreach ( $notification->get_items() as $item ) {
+			$items[] = self::item_data( $item );
+		}
+		$message = $this->build_message( 'updates.available', $notification, $instance, $items, $extra, $key );
+		if ( null === $message ) {
+			return '<p>' . esc_html__( 'The message could not be turned into JSON.', 'wp-updates-notifier' ) . '</p>';
+		}
+
+		$public = self::public_headers( $message['names'] );
+		$lines  = array();
+		foreach ( $message['headers'] as $name => $value ) {
+			$lines[] = $name . ': ' . ( in_array( strtolower( $name ), $public, true ) ? $value : __( '(hidden)', 'wp-updates-notifier' ) );
+		}
+		$json = wp_json_encode( self::with_objects( $message['payload'] ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+		$html  = '<dl class="sc-wpun-preview">';
+		$html .= '<dt>' . esc_html__( 'Headers', 'wp-updates-notifier' ) . '</dt><dd><pre>' . esc_html( implode( "\n", $lines ) ) . '</pre>';
+		foreach ( $notes as $note ) {
+			$html .= '<p>' . esc_html( $note ) . '</p>';
+		}
+		$html .= '</dd>';
+		$html .= '<dt>' . esc_html__( 'Body', 'wp-updates-notifier' ) . '</dt><dd><pre>' . esc_html( is_string( $json ) ? $json : '' ) . '</pre></dd>';
+		$html .= '</dl>';
+
+		return $html;
+	}
+
+	/**
 	 * Whether the channel supports a feature.
 	 *
 	 * @param string $feature Feature name.
@@ -562,6 +660,45 @@ class Webhook_Channel extends Channel {
 			$extra = $parsed['headers'];
 		}
 
+		$message = $this->build_message( $type, $notification, $instance, $items, $extra, $key );
+		if ( null === $message ) {
+			return Delivery_Result::failure( __( 'The message could not be turned into JSON, so nothing was sent.', 'wp-updates-notifier' ), 'encode_failed' );
+		}
+		$headers = $message['headers'];
+		$names   = $message['names'];
+		$body    = $message['body'];
+
+		$response = $this->post( $url, $headers, $body, $this->timeout( $instance ) );
+
+		// What a receiver may echo back: the secrets and the address, in every form we can think of. The header values are
+		// those sent, so a credential added by the headers filter is removed too.
+		$public  = self::public_headers( $names );
+		$secrets = array( $url );
+		foreach ( $headers as $name => $value ) {
+			if ( ! in_array( strtolower( $name ), $public, true ) ) {
+				$secrets[] = $value;
+			}
+		}
+		if ( is_string( $secret ) ) {
+			$secrets[] = $secret;
+		}
+
+		return $this->result( $response, $secrets );
+	}
+
+	/**
+	 * The payload, the exact JSON body and the final headers of a message, as deliver() sends them. Sends nothing.
+	 *
+	 * @param string                $type         The message type, for example `updates.available`.
+	 * @param Notification          $notification What is being delivered.
+	 * @param Channel_Instance      $instance     The webhook instance.
+	 * @param array<int, mixed>     $items        The items, as item_data() gives them.
+	 * @param array<string, string> $extra        The extra headers, already parsed.
+	 * @param string|null           $key          The decoded signing key, or null to leave the message unsigned.
+	 *
+	 * @return array{payload: mixed, body: string, headers: array<string, string>, names: array<string, string>}|null Null if the payload can not be encoded.
+	 */
+	private function build_message( string $type, Notification $notification, Channel_Instance $instance, array $items, array $extra, ?string $key ): ?array {
 		// One time for the payload and the timestamp header, so they agree.
 		$time     = $this->now();
 		$payload  = array(
@@ -589,7 +726,7 @@ class Webhook_Channel extends Channel {
 		// Encode once: these bytes are signed and these bytes are sent.
 		$body = wp_json_encode( self::with_objects( $payload ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 		if ( ! is_string( $body ) || '' === $body ) {
-			return Delivery_Result::failure( __( 'The message could not be turned into JSON, so nothing was sent.', 'wp-updates-notifier' ), 'encode_failed' );
+			return null;
 		}
 
 		$names = $this->header_names( $instance );
@@ -615,6 +752,8 @@ class Webhook_Channel extends Channel {
 		 *
 		 * For an `updates.resolved` message `$notification` is the notification of the update check, copied with the items that
 		 * were installed or removed.
+		 *
+		 * It also runs for the preview panel of the channel's form, with the notification source `preview`; nothing is sent.
 		 *
 		 * `$headers` and `$instance` hold secrets, such as the signature and the extra headers: don't log or dump them.
 		 *
@@ -647,22 +786,23 @@ class Webhook_Channel extends Channel {
 			}
 		}
 
-		$response = $this->post( $url, $headers, $body, $this->timeout( $instance ) );
+		return array(
+			'payload' => $payload,
+			'body'    => $body,
+			'headers' => $headers,
+			'names'   => $names,
+		);
+	}
 
-		// What a receiver may echo back: the secrets and the address, in every form we can think of. The header values are
-		// those sent, so a credential added by the headers filter is removed too.
-		$public  = array_map( 'strtolower', array( 'Content-Type', 'User-Agent', $names['id_header'], $names['timestamp_header'] ) );
-		$secrets = array( $url );
-		foreach ( $headers as $name => $value ) {
-			if ( ! in_array( strtolower( $name ), $public, true ) ) {
-				$secrets[] = $value;
-			}
-		}
-		if ( is_string( $secret ) ) {
-			$secrets[] = $secret;
-		}
-
-		return $this->result( $response, $secrets );
+	/**
+	 * The lower case names of the headers whose values are not secret: the ones the module sets itself.
+	 *
+	 * @param array<string, string> $names The names of the signature headers, from header_names().
+	 *
+	 * @return string[]
+	 */
+	private static function public_headers( array $names ): array {
+		return array_map( 'strtolower', array( 'Content-Type', 'User-Agent', $names['id_header'], $names['timestamp_header'] ) );
 	}
 
 	/**

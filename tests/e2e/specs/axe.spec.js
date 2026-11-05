@@ -58,7 +58,7 @@ test( 'axe: webhook form with the Advanced group open', async ( { page } ) => {
 	const errors = watchConsole( page );
 	await page.goto( `${ CHANNELS }&action=edit&id=e2e_webhook` );
 
-	const details = page.locator( 'details.sc-wpun-field-group-details' );
+	const details = page.locator( 'details.sc-wpun-field-group-details:not(.sc-wpun-form-panel-details)' );
 	await expect( details ).not.toHaveAttribute( 'open', /.*/ );
 	await details.locator( 'summary' ).click();
 	await expect( details ).toHaveAttribute( 'open', /.*/ );
@@ -68,6 +68,11 @@ test( 'axe: webhook form with the Advanced group open', async ( { page } ) => {
 	await expect( headers ).toBeVisible();
 	await expect( headers ).toHaveValue( '' );
 	await expect( details.locator( 'input[name="settings[headers__clear]"]' ) ).toBeVisible();
+
+	// The preview panel, too: open it so its headers and body are scanned.
+	const preview = page.locator( 'details.sc-wpun-form-panel-details' );
+	await preview.locator( 'summary' ).click();
+	await expect( preview.locator( '.sc-wpun-preview pre' ).first() ).toBeVisible();
 
 	const violations = await scan( page );
 	expect( violations, `${ violations.length } axe violation(s) on the webhook form with the group open\n\n${ describe( violations ) }\n` ).toEqual( [] );
@@ -80,7 +85,7 @@ async function failWebhookSave( page, field, value ) {
 	await page.goto( `${ CHANNELS }&action=edit&id=e2e_webhook` );
 	// A control in the collapsed group can only be filled once the group is open.
 	if ( field.startsWith( 'textarea' ) ) {
-		await page.locator( 'details.sc-wpun-field-group-details summary' ).click();
+		await page.locator( 'details.sc-wpun-field-group-details:not(.sc-wpun-form-panel-details) summary' ).click();
 	}
 	await page.fill( field, value );
 	await page.locator( 'form.sc-wpun-channel-form' ).evaluate( ( form ) => ( form.noValidate = true ) );
@@ -94,7 +99,7 @@ test( 'axe: webhook form after a bad signing secret', async ( { page } ) => {
 
 	await expect( page.locator( 'input[name="settings[signing_secret]"]' ) ).toHaveAttribute( 'aria-invalid', 'true' );
 	// The Advanced group has no error, so it stays closed.
-	await expect( page.locator( 'details.sc-wpun-field-group-details' ) ).not.toHaveAttribute( 'open', /.*/ );
+	await expect( page.locator( 'details.sc-wpun-field-group-details:not(.sc-wpun-form-panel-details)' ) ).not.toHaveAttribute( 'open', /.*/ );
 
 	const violations = await scan( page );
 	expect( violations, `${ violations.length } axe violation(s) on the webhook form after a bad signing secret\n\n${ describe( violations ) }\n` ).toEqual( [] );
@@ -105,7 +110,7 @@ test( 'axe: webhook form after a bad header line, with the Advanced group open b
 	const errors = watchConsole( page );
 	await failWebhookSave( page, 'textarea[name="settings[headers]"]', 'no colon here' );
 
-	const details = page.locator( 'details.sc-wpun-field-group-details' );
+	const details = page.locator( 'details.sc-wpun-field-group-details:not(.sc-wpun-form-panel-details)' );
 	await expect( details ).toHaveAttribute( 'open', /.*/ );
 	const area = details.locator( 'textarea[name="settings[headers]"]' );
 	await expect( area ).toHaveAttribute( 'aria-invalid', 'true' );

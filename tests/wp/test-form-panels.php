@@ -10,6 +10,7 @@
 use WPUN\Admin\Channel_Form;
 use WPUN\Channel_Instance;
 use WPUN\Modules\Email\Email_Channel;
+use WPUN\Modules\Webhook\Webhook_Channel;
 
 /**
  * Channel::get_form_panels(), the filter, the drawing, the draft instance and the email preview.
@@ -560,7 +561,188 @@ class Test_Form_Panels extends WPUN_Test_Case {
 		$xpath = $this->form( 'new', 'email' );
 
 		$this->assertSame( 1, $xpath->query( '//details[contains(@class,"sc-wpun-form-panel-details")]/summary[normalize-space()="Preview"]' )->length );
-		$this->assertSame( 1, $xpath->query( '//details//dl[@class="sc-wpun-email-preview"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//details//dl[@class="sc-wpun-preview"]' )->length );
 		$this->assertSame( 1, $xpath->query( '//details//dd[contains(.,"No recipients set yet.")]' )->length );
+	}
+
+	// The webhook preview.
+
+	/**
+	 * The webhook address of the tests, with a secret path.
+	 */
+	const HOOK_URL = 'https://hooks.example.org/in/SECRET-PATH-123?token=SECRET-QUERY-456';
+
+	/**
+	 * The key of the published Standard Webhooks test vector.
+	 */
+	const VECTOR = 'MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw';
+
+	/**
+	 * A signing secret that is valid: the published Standard Webhooks one.
+	 */
+	const HOOK_SECRET = 'whsec_' . self::VECTOR;
+
+	/**
+	 * The preview panel of a webhook instance.
+	 *
+	 * @param array  $settings Settings to override.
+	 * @param string $id       Instance id; empty for a draft.
+	 * @return array
+	 */
+	private function hook_preview( array $settings = array(), string $id = 'hook' ): array {
+		$settings = array_merge(
+			array(
+				'url'            => self::HOOK_URL,
+				'signing_secret' => self::HOOK_SECRET,
+			),
+			$settings
+		);
+		$instance = '' === $id ? Channel_Instance::draft( 'webhook', 'Hook', true, $settings ) : new Channel_Instance( $id, 'webhook', 'Hook', true, $settings );
+		$panels   = ( new Webhook_Channel() )->get_form_panels_filtered( $instance );
+		$this->assertSame( array( 'preview' ), array_keys( $panels ) );
+		$this->assertTrue( $panels['preview']['collapsed'] );
+		$this->assertSame( 'Preview', $panels['preview']['label'] );
+
+		return $panels['preview'];
+	}
+
+	/**
+	 * The headers and the body show, signed, with the secret values hidden.
+	 */
+	public function test_the_webhook_preview_shows_public_headers_and_hides_the_rest() {
+		$content = $this->hook_preview( array( 'headers' => 'X-Api-Key: EXTRA-SECRET-789' ) )['content'];
+
+		$this->assertStringContainsString( 'Content-Type: application/json', $content );
+		$this->assertStringContainsString( 'User-Agent: WP-Updates-Notifier/', $content );
+		$this->assertMatchesRegularExpression( '/webhook-id: msg_[0-9a-f]+/', $content );
+		$this->assertMatchesRegularExpression( '/webhook-timestamp: \d+/', $content );
+		$this->assertStringContainsString( 'webhook-signature: (hidden)', $content );
+		$this->assertStringContainsString( 'X-Api-Key: (hidden)', $content );
+		$this->assertStringNotContainsString( 'v1,', $content, 'No signature.' );
+		$this->assertStringNotContainsString( 'EXTRA-SECRET-789', $content );
+		$this->assertStringNotContainsString( 'SECRET-PATH-123', $content );
+		$this->assertStringNotContainsString( 'SECRET-QUERY-456', $content );
+		$this->assertStringNotContainsString( 'hooks.example.org', $content );
+		$this->assertStringNotContainsString( 'MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw', $content );
+		$this->assertStringNotContainsString( 'Not signed', $content );
+		$this->assertSame( 2, preg_match_all( '/<pre>/', $content ) );
+	}
+
+	/**
+	 * Custom names of the signature headers are followed.
+	 */
+	public function test_the_webhook_preview_follows_custom_header_names() {
+		$content = $this->hook_preview(
+			array(
+				'header_names'     => 'custom',
+				'id_header'        => 'X-Msg-Id',
+				'timestamp_header' => 'X-Msg-Time',
+				'signature_header' => 'X-Msg-Sig',
+			)
+		)['content'];
+
+		$this->assertMatchesRegularExpression( '/X-Msg-Id: msg_/', $content );
+		$this->assertMatchesRegularExpression( '/X-Msg-Time: \d+/', $content );
+		$this->assertStringContainsString( 'X-Msg-Sig: (hidden)', $content );
+		$this->assertStringNotContainsString( 'webhook-id', $content );
+	}
+
+	/**
+	 * Without a signing secret, or with a bad one, the preview says the message is not signed.
+	 */
+	public function test_the_webhook_preview_says_when_it_is_not_signed() {
+		$content = $this->hook_preview( array( 'signing_secret' => '' ) )['content'];
+		$this->assertStringContainsString( 'Not signed: no signing secret is set.', $content );
+		$this->assertStringNotContainsString( 'webhook-signature', $content );
+
+		$content = $this->hook_preview( array( 'signing_secret' => 'BAD-SECRET-555' ) )['content'];
+		$this->assertStringContainsString( 'The signing secret is not valid, so no message is sent until it is fixed.', $content );
+		$this->assertStringNotContainsString( 'BAD-SECRET-555', $content );
+		$this->assertStringNotContainsString( 'webhook-signature', $content );
+	}
+
+	/**
+	 * Extra headers that do not parse are left out, with a line saying so.
+	 */
+	public function test_the_webhook_preview_leaves_out_bad_extra_headers() {
+		$content = $this->hook_preview( array( 'headers' => 'Not a header BAD-LINE-666' ) )['content'];
+
+		$this->assertStringContainsString( 'The extra headers are not valid, so no message is sent until they are fixed. They are left out here.', $content );
+		$this->assertStringNotContainsString( 'BAD-LINE-666', $content );
+	}
+
+	/**
+	 * The body is the pretty-printed payload of a sample update.
+	 */
+	public function test_the_webhook_preview_body_is_the_sample_payload() {
+		$content = $this->hook_preview()['content'];
+
+		$this->assertSame( 1, preg_match( '#<dt>Body</dt><dd><pre>(.*?)</pre>#s', $content, $match ) );
+		$this->assertStringContainsString( "\n", $match[1], 'Indented.' );
+		$data = json_decode( html_entity_decode( $match[1], ENT_QUOTES ), true );
+		$this->assertSame( 'updates.available', $data['type'] );
+		$this->assertSame( 'preview', $data['data']['notification']['source'] );
+		$this->assertSame( 'Example plugin', $data['data']['items'][0]['name'] );
+		$this->assertSame( '1.0.0', $data['data']['items'][0]['current_version'] );
+		$this->assertSame( '1.1.0', $data['data']['items'][0]['new_version'] );
+	}
+
+	/**
+	 * The payload and headers filters run with the source `preview`, their changes show, and nothing is posted.
+	 */
+	public function test_the_webhook_preview_runs_the_filters_and_posts_nothing() {
+		$sources = array();
+		$posts   = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$posts ) {
+				++$posts;
+				return new WP_Error( 'no', 'no' );
+			}
+		);
+		add_filter(
+			'sc_wpun_channel_payload_webhook',
+			static function ( $payload, $notification ) use ( &$sources ) {
+				$sources[]          = $notification->get_source();
+				$payload['x_extra'] = 'added by filter';
+				return $payload;
+			},
+			10,
+			2
+		);
+		add_filter(
+			'sc_wpun_webhook_headers',
+			static function ( $headers, $notification ) use ( &$sources ) {
+				$sources[]             = $notification->get_source();
+				$headers['X-Filtered'] = 'FILTER-SECRET-999';
+				return $headers;
+			},
+			10,
+			2
+		);
+		$content = $this->hook_preview()['content'];
+
+		$this->assertSame( array( 'preview', 'preview' ), $sources );
+		$this->assertSame( 0, $posts );
+		$this->assertStringContainsString( 'added by filter', $content );
+		$this->assertStringContainsString( 'X-Filtered: (hidden)', $content );
+		$this->assertStringNotContainsString( 'FILTER-SECRET-999', $content );
+	}
+
+	/**
+	 * The add form shows the preview from a draft with no address and no id.
+	 */
+	public function test_the_webhook_preview_works_for_a_draft() {
+		$content = $this->hook_preview( array( 'url' => '', 'signing_secret' => '' ), '' )['content']; // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+
+		$this->assertStringContainsString( 'Content-Type: application/json', $content );
+		$this->assertStringContainsString( 'Not signed: no signing secret is set.', $content );
+
+		if ( ! sc_wpun()->channels()->has( 'webhook' ) ) {
+			sc_wpun()->channels()->register( new Webhook_Channel() );
+		}
+		$xpath = $this->form( 'new', 'webhook' );
+		$this->assertSame( 1, $xpath->query( '//details[contains(@class,"sc-wpun-form-panel-details")]/summary[normalize-space()="Preview"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//details//dl[@class="sc-wpun-preview"]' )->length );
 	}
 }

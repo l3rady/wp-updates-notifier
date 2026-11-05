@@ -128,7 +128,9 @@
 	clear: both;
 }
 
-.sc-wpun-field-group > legend + .description {
+/* The padding also keeps the first margin of a panel's content inside it: without it the margin is lost to the clearance. */
+.sc-wpun-field-group > legend + .description,
+.sc-wpun-field-group > legend + .sc-wpun-form-panel-content {
 	padding-top: 12px;
 }
 
@@ -165,15 +167,15 @@
 }
 
 /* The email preview panel: the body keeps its line breaks but wraps, so a long line never widens the page. */
-.sc-wpun-email-preview dt {
+.sc-wpun-preview dt {
 	font-weight: 600;
 }
 
-.sc-wpun-email-preview dd {
+.sc-wpun-preview dd {
 	margin: 0 0 12px;
 }
 
-.sc-wpun-email-preview pre {
+.sc-wpun-preview pre {
 	margin: 0;
 	padding: 12px;
 	overflow-wrap: anywhere;

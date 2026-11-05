@@ -511,6 +511,8 @@ abstract class Channel {
 		 *         3
 		 *     );
 		 *
+		 * A channel may also run it to build the preview panel of its form, with the notification source `preview`; nothing is sent then.
+		 *
 		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 		 *
 		 * @since 2.0.0
@@ -526,6 +528,8 @@ abstract class Channel {
 		 *
 		 * The dynamic part, `$type`, is the channel type, for example `email`. The arguments are the
 		 * same as for `sc_wpun_channel_payload`.
+		 *
+		 * A channel may also run it to build the preview panel of its form, with the notification source `preview`; nothing is sent then.
 		 *
 		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 		 *

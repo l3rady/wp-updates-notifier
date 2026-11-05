@@ -367,6 +367,8 @@ add_filter(
 );
 ```
 
+A channel may also run it to build the preview panel of its form, with the notification source `preview`; nothing is sent then.
+
 `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 
 | Parameter | Type | Description |
@@ -385,6 +387,8 @@ Filters the payload of the channels of one type just before it is sent.
 
 The dynamic part, `$type`, is the channel type, for example `email`. The arguments are the
 same as for `sc_wpun_channel_payload`.
+
+A channel may also run it to build the preview panel of its form, with the notification source `preview`; nothing is sent then.
 
 `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 
@@ -1510,6 +1514,8 @@ return value that is not an array is ignored.
 
 For an `updates.resolved` message `$notification` is the notification of the update check, copied with the items that
 were installed or removed.
+
+It also runs for the preview panel of the channel's form, with the notification source `preview`; nothing is sent.
 
 `$headers` and `$instance` hold secrets, such as the signature and the extra headers: don't log or dump them.
 
