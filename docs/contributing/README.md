@@ -8,7 +8,7 @@ Docker and `docker compose` are the only requirements: no PHP, Composer or Node 
 
 ```sh
 make up      # local sites on :8080 and :8081
-make test    # the WordPress suites and the release script tests
+make test    # the WordPress suites and the build and release script tests
 make help    # every target
 ```
 
@@ -28,7 +28,7 @@ make fix                         # auto-fix what phpcbf can
 make stan                        # PHPStan level 8 with the WordPress stubs
 make rector                      # PHP 7.4 syntax upgrades still to do (none expected)
 make commits                     # check the commit messages on this branch (Conventional Commits)
-make test                        # the WordPress suites and the release script tests
+make test                        # the WordPress suites and the build and release script tests
 make test-wp                     # WordPress test suite, single site
 ```
 

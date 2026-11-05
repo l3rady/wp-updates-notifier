@@ -55,7 +55,7 @@ Docker is the only requirement: no PHP, Composer or Node on the host.
 
 ```sh
 make up      # local sites on :8080 and :8081
-make test    # the WordPress suites and the release script tests
+make test    # the WordPress suites and the build and release script tests
 make help    # every target
 ```
 

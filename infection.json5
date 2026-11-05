@@ -246,7 +246,7 @@
             ]
         }
     },
-    // Floors that only go up: a point below the measured 92.98 / 93.52, for run-to-run noise (CONTRIBUTING.md).
+    // Floors that only go up: a point below the measured 92.98 / 93.52, for run-to-run noise (docs/contributing/testing.md).
     "minMsi": 91,
     "minCoveredMsi": 92
 }
