@@ -122,6 +122,8 @@ Renaming the headers changes only their names. The values and what is signed sta
 
 **Send test** sends a message of the type `updates.test`. Without a signing secret, messages still carry `webhook-id` and `webhook-timestamp`, but no `webhook-signature`.
 
+Below the options, **Preview** shows the headers and the body of an example message with the current settings. The body is shown indented, while the real one is on one line. Only the headers the plugin sets itself show their value: the signature and your extra headers show as hidden, and the webhook address and the signing secret are never shown. It sends nothing.
+
 Like the email options, each webhook option can be set in code. For example `SC_WPUN_CHANNEL_<ID>__SIGNING_SECRET` sets the signing secret of the channel with that id, and `SC_WPUN_CHANNEL_<ID>__URL` sets its address. See [Settings in code](settings-in-code.md) and [Configuration sources](../developers/configuration-sources.md).
 
 ### Make a signing secret
