@@ -16,7 +16,7 @@ A release produces a zip that can be checked:
 - **SBOM.** A CycloneDX software bill of materials, attached to the release.
 - **Build provenance.** The zip and the SBOM are attested, and `gh attestation verify` checks them.
 - **Signed annotated tags.** The release job creates the `vX.Y.Z` tag itself, signed with a dedicated key in the `release` environment.
-- release-please prepares a Release PR and a **draft** release. The release job waits for the maintainer's approval, then builds, attests, tags and publishes. See `CONTRIBUTING.md`.
+- release-please prepares a Release PR and a **draft** release. The release job waits for the maintainer's approval, then builds, attests, tags and publishes. See [Releases](../contributing/releases.md).
 
 ## Consequences
 

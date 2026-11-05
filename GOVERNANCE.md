@@ -23,7 +23,7 @@ can't.
   fast-forwarding `main`, so every commit stays signed.
 - **Releases:** merge the Release PR that release-please keeps open, approve the
   `release` environment, and check the release on GitHub and WordPress.org.
-  See Releases in [CONTRIBUTING.md](CONTRIBUTING.md).
+  See [Releases](https://wpun.cariss.dev/main/contributing/releases/).
 - **Security:** answer vulnerability reports within the times in
   [SECURITY.md](SECURITY.md), fix them in the latest release and publish an
   advisory.

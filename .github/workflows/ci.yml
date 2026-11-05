@@ -1,6 +1,6 @@
 name: ci
 
-# The test layers described in the README, run in the same Docker setup used
+# The test layers described in docs/contributing/testing.md, run in the same Docker setup used
 # locally (see the Makefile). Lint lives in lint.yml, commit checks in commits.yml.
 on:
   pull_request:

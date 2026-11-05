@@ -20,6 +20,8 @@ The plugin's website, with the documentation, is at **<https://wpun.cariss.dev>*
 
 Requires WordPress 6.7 or newer and PHP 7.4 or newer.
 
+![The General tab of the settings screen: when the last and next check run, a button to check now, and the settings.](.wordpress-org/screenshot-1.png)
+
 ## Installing
 
 - **WordPress.org (recommended):** search for "WP Updates Notifier" under Plugins → Add New, or download it from [wordpress.org/plugins/wp-updates-notifier](https://wordpress.org/plugins/wp-updates-notifier/).
@@ -28,152 +30,33 @@ Requires WordPress 6.7 or newer and PHP 7.4 or newer.
 
 Then open **Settings → Updates Notifier** to choose where notifications go.
 
-**Try it first:** the [Live Preview on WordPress.org](https://wordpress.org/plugins/wp-updates-notifier/?preview=1) opens the plugin in [WordPress Playground](https://wordpress.github.io/wordpress-playground/), a throwaway site in your browser with made-up pending updates and two email channels already set up. Emails are caught, not sent: Tools → Demo emails shows them. The button appears once the blueprint is deployed with the assets of 2.0.0.
+**Try it first:** the [Live Preview on WordPress.org](https://wordpress.org/plugins/wp-updates-notifier/?preview=1) opens the plugin in [WordPress Playground](https://wordpress.github.io/wordpress-playground/), a throwaway site in your browser with made-up pending updates and two email channels already set up. Emails are caught, not sent: Tools → Demo emails shows them.
 
 Checks run on WP-Cron, which only runs when the site gets visits. On a quiet site, set `DISABLE_WP_CRON` and run `wp updates-notifier check` from a real cron job. The [documentation](https://wpun.cariss.dev/) has the details.
+
+## Documentation
+
+- **Using the plugin:** the [user guide](https://wpun.cariss.dev/latest/users/).
+- **Writing an add-on:** add-ons can add notification channels, item types, routing rules and configuration sources through a public, versioned API. Start with the [developer guide](https://wpun.cariss.dev/main/developers/) and the [example add-on](examples/wpun-example-channel/).
+- **Working on the plugin:** the [contributor guide](https://wpun.cariss.dev/main/contributing/) and the rules in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Help, bugs and security
 
 - Questions: the [support forum](https://wordpress.org/support/plugin/wp-updates-notifier/).
 - Bugs and ideas: [GitHub issues](https://github.com/l3rady/wp-updates-notifier/issues).
 - Security problems: please report them privately, see [SECURITY.md](SECURITY.md).
-- Verifying a download: each release zip has build provenance you can check with
-  `gh attestation verify wp-updates-notifier-<version>.zip --repo l3rady/wp-updates-notifier`. See
-  [Verifying a release](SECURITY.md#verifying-a-release) for the full command, the checksum and the signed tag.
-
-Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
-
-## Extending the plugin
-
-Add-ons can add notification channels, item types, routing rules and configuration sources through a public, versioned API. Start with the [developer guide](https://wpun.cariss.dev/main/developers/) and the [example add-on](examples/wpun-example-channel/).
+- Verifying a download: see [Verifying a release](SECURITY.md#verifying-a-release).
 
 ## Development
 
 Docker is the only requirement: no PHP, Composer or Node on the host.
 
 ```sh
-make help                        # list every target
-make smoke PHP_VERSION=7.4       # check the environment (default PHP 8.3)
-make matrix                      # smoke test PHP 7.4 to 8.5
-make lint                        # WordPress Coding Standards (errors and warnings fail)
-make fix                         # auto-fix what phpcbf can
-make stan                        # PHPStan level 8 with the WordPress stubs
-make rector                      # PHP 7.4 syntax upgrades still to do (none expected)
-make commits                     # check the commit messages on this branch (Conventional Commits)
-make shell                       # shell in the PHP container
-make up                          # local site: http://localhost:8080, mail in Mailpit on :8025, webhooks on :8026 (see Local site)
-make down
+make up      # local sites on :8080 and :8081
+make test    # the WordPress suites and the release script tests
+make help    # every target
 ```
 
-### Building the plugin zip
-
-```sh
-make dist                        # build/wp-updates-notifier-<version>.zip, runtime files only
-make dist-check                  # check its contents
-make test-dist                   # install it into a fresh WordPress, activate, deactivate, uninstall
-make plugin-check                # WordPress.org's Plugin Check on the zip (fails on errors)
-make check-headers               # plugin header and the generated readme.txt agree and follow WordPress.org's rules
-make readme                      # preview the generated readme.txt in build/readme.txt (it is not committed)
-make test-readme                 # test the readme generator
-make blueprint                   # preview the generated WordPress Playground blueprint in build/blueprint.json (it is not committed)
-make check-blueprint             # validate it against the Playground blueprint schema (vendored in tests/bin/blueprint)
-make test-blueprint              # test the blueprint generator and that schema check
-make wporg-assets                # assemble build/wporg-assets/, what the release deploys to SVN assets/ (icons, banners, screenshots, blueprints/blueprint.json)
-make wporg-assets-check          # check it: allowed names, formats, exact sizes, screenshots against the readme captions, the SVG icon, the blueprint schema
-make test-wporg-assets           # test that check against a clean set and broken ones
-make blueprint-smoke             # run the blueprint with the zip in WordPress Playground CLI and check the demo in a browser (needs the network; not in CI)
-```
-
-`.distignore` lists what stays out of the zip; the WordPress.org deploy uses the same list.
-
-The Live Preview button of WordPress.org needs `assets/blueprints/blueprint.json` in SVN. Like `readme.txt` it is not committed: `bin/blueprint.php` generates it from `.wordpress-org/blueprint/` (the template `blueprint.json`, the demo PHP it includes with `"@file:<name>"` values, and the made-up plugins). The demo is a mail catcher (`mail-catcher.php`: nothing is sent, Tools → Demo emails shows the messages), fake offline updates (`fake-updates.php`, shared with `make screenshots`) and `seed.php`, which sets up the two channels and runs the update check once. `make check-blueprint` validates the output against the schema of the Playground version it is tested with (`tests/bin/blueprint/README.md` says which). `make blueprint-smoke` is the real test: it runs the blueprint in Playground CLI (own compose project `wpun-playground`, never touches `make up`), installing the plugin from the zip of `make dist` because WordPress.org does not have the release yet, and opens the demo in Playwright.
-
-### Security checks
-
-```sh
-make security                    # every check below: run it before a pull request
-make check-workflows             # actionlint (with shellcheck) and zizmor over .github/workflows/
-make secrets                     # gitleaks over the git history, the working tree and the built zip
-make audit                       # composer audit and OSV-Scanner over every lockfile
-make sast                        # Semgrep with the rules in .semgrep/, and the suppression checks
-make taint                       # Psalm taint analysis
-make audit-images                # Trivy over docker/ and the built image (reports only, not in make security)
-make test-wp ARGS="--group security"   # just the security tests
-```
-
-They need only Docker. Reports go to `security-reports/` (gitignored). zizmor runs its online audits only when `GITHUB_PUBLIC_TOKEN` holds a token that can read public repositories; without one it skips them. What each check covers, and the rules for suppressions, baselines and new tools, are in [CONTRIBUTING.md](CONTRIBUTING.md#security-checks).
-
-### Dynamic security scan
-
-```sh
-make dast                        # OWASP ZAP against a throwaway copy of the site (about 11 minutes)
-```
-
-`make dast` builds an isolated site as its own compose project (`wpun-dast`, from `tests/dast/compose.yml`) with the plugin active, an email channel, the field showcase and outdated plugins, scans it with OWASP ZAP and removes it again, volumes included, even when the scan fails. It publishes no ports and shares no container, volume or network with `make up`, so it never touches your local site. The scan is defined by `tests/dast/zap-plan.yaml`: it logs in as an administrator, spiders and actively scans only the plugin's settings screens and `admin-post.php` handlers, and then checks that a visitor who is not logged in is turned away from the same URLs. Any Medium or High alert fails the run; the HTML and SARIF reports are written to `security-reports/`. It is not run in CI, because the active scan alone takes about 10 minutes. Run it before each release (see [Releases](CONTRIBUTING.md#releases)).
-
-Limits: security tokens turn away most of the active scan's requests to the POST handlers. That is the plugin working, and why the capability and security token matrix tests remain the real enforcement; the scan looks at the plugin from the outside (reflected input, leaking error pages, headers, redirects), it does not replace them.
-
-### Tests
-
-```sh
-make test-wp                     # WordPress test suite, single site
-make test-wp-ms                  # the same as multisite
-make test                        # every test layer
-make coverage                    # line coverage of the plugin by the WordPress suite (pcov); fails below COVERAGE_MIN; report in build/coverage/
-make mutation                    # mutation testing of the plugin with Infection (pcov, slow, about 35 minutes); fails below the floors in infection.json5; log in build/infection/
-make test-known-bugs             # tests documenting open bugs: they are expected to FAIL
-make a11y                        # axe and keyboard checks of the settings screen in a browser (about 40 seconds)
-make e2e                         # end-to-end flows in a browser on a throwaway site: settings, channels, a real update check and its mail (about 1 minute)
-make e2e-ms                      # the same core path on a multisite with the plugin network-activated (about 1 minute)
-make e2e-upgrade                 # update the real 1.6.0 from WordPress.org to the local zip three ways; needs the network, run before a release (about 1 minute)
-make screenshots                 # regenerate .wordpress-org/screenshot-1.png to 6 from a throwaway site (about 30 seconds)
-make test-wp WP_VERSION=6.7.9 PHP_VERSION=7.4   # pick versions (WP_VERSION is a wordpress-develop tag or trunk)
-```
-
-The suite runs on WordPress's own test library with a real database, no real network (every HTTP request must be faked or the test fails) and no real mail. Tests for a bug that is still open carry `@group known-bug`, assert the *correct* behaviour, and are excluded from the normal run; the fix removes the tag.
-
-`make a11y` builds a throwaway site as its own compose project (`wpun-e2e`, from `tests/e2e/compose.yml`; it never touches `make up`) and runs Playwright from the official image against the settings screen: axe scans of every view for WCAG 2.2 A and AA, and keyboard checks of the Channels list and a channel form. Any violation fails the run and is listed with its rule and elements; the HTML report is written to `tests/e2e/reports/`. CI runs it on every pull request.
-
-`make e2e` builds its own throwaway site (compose project `wpun-flows`, from `tests/flows/compose.yml`; it touches neither `make up` nor `make a11y`) with fake pending updates (`.wordpress-org/blueprint/fake-updates.php`) and Mailpit, and runs Playwright from the official image through what a user does: the General tab and its errors, adding, editing, testing, duplicating, disabling and deleting an email channel, a real `wp cron event run sc_wpun_update_check` and the email it sends (routing, no repeat, reminders), values set in code, and the fixture add-on. Each test puts the site back to a known state first, so the specs run in any order. CI runs it on pull requests that touch the plugin. `E2E_KEEP=1` leaves the site up; `FLOWS_ARGS=runs.spec.js` runs one file.
-
-`make e2e-ms` repeats the core path on a multisite with the plugin network-activated (compose project `wpun-flows-ms`, from `tests/flows/compose.yml` plus `tests/flows/compose.multisite.yml`, so it can run beside `make e2e`): the settings in the Network Admin stored as network options, one check on the main site, one email that names the network, "active only" counting a plugin active on a sub-site, and a check left on a sub-site clearing itself. It runs only `tests/flows/specs/network.spec.js`; CI runs it with `make e2e`.
-
-`make e2e-upgrade` is the upgrade test (#89): it builds the zip with `make dist`, installs the real 1.6.0 from WordPress.org on its own throwaway site (compose project `wpun-upgrade`, from `tests/flows/upgrade/compose.yml`) and updates it to the zip (with a 2.0.0 header, in a copy) with WP-CLI, from the Plugins screen and as a background auto-update. The plugin must end deactivated with no fatal error, and activating it again must keep the settings. It needs the network, so CI does not run it: run it before each release.
-
-`make screenshots` writes the WordPress.org screenshots (`.wordpress-org/screenshot-1.png` to `screenshot-6.png`). It builds its own throwaway site (compose project `wpun-shots`, from `tests/screenshots/compose.yml`; it touches neither `make up` nor `make a11y`) with made-up data: example.com addresses, fake plugins whose updates and the offline update data come from `.wordpress-org/blueprint/fake-updates.php` (shared with the Playground blueprint), and Mailpit to catch the update email. It runs the update check once from WP-CLI before the browser opens any page, mutes a few items afterwards (`tests/screenshots/seed-mutes.sh`, plus one mute set in code), then photographs the General tab, the Channels list, a channel's form, the Muted tab and the email. A second run then breaks the site on purpose (`tests/screenshots/seed-health.sh`: an overdue check, a failed delivery, a channel without its module, WP-Cron off) and photographs Tools → Site Health. The captions are in `.wordpress-org/readme/template.txt`, in the same order as `SHOTS` in `tests/screenshots/screenshots.spec.js`. Dates and times in the files are those of the run. CI does not run it.
-
-### Local site
-
-```sh
-make up                          # start both sites and set them up (admin / admin on both)
-                                 #   single site: http://localhost:8080
-                                 #   multisite:   http://localhost:8081 (network admin: /wp-admin/network/)
-make site-setup                  # set them up again (make up runs it; safe to repeat)
-make wp ARGS="plugin list"       # WP-CLI on the single site
-make wp-ms ARGS="site list"      # WP-CLI on the multisite
-make site-log                    # follow the single site's wp-content/debug.log
-make site-log-ms                 # follow the multisite's
-make down                        # stop them; make clean also deletes their data
-```
-
-`make up` starts two WordPress sites with the plugin mounted (a single site and a multisite, described below), [Mailpit](https://mailpit.axllent.org/) (catches all outgoing mail) and an echo server standing in for a webhook. Then `make site-setup` (`docker/site-setup.sh`) installs WordPress if a site is new, sets the constants below in `wp-config.php` and installs the debugging plugins. It is safe to run again, and it works on an existing site as well as a fresh one.
-
-- **Multisite:** the second site is a subdirectory network on http://localhost:8081, with its own volume (`site-wp-ms`) and its own database (`wordpress_ms`) on the same MariaDB server as the single site. Run WP-CLI on it with `make wp-ms`. The sub-sites are http://localhost:8081/ (the main site, Twenty Twenty-Four and Akismet), http://localhost:8081/alpha/ (Twenty Twenty-Three and Classic Editor) and http://localhost:8081/beta/ (Twenty Twenty-Five and Hello Dolly), so "active only" differs from site to site. Everything else below applies to it too, with these differences: the debugging plugins, Redis Object Cache, the field showcase and WP Updates Notifier are network-activated, the outdated plugins and themes are installed once for the whole network, the cache prefix is `wpun-network:`, and mail comes from `wordpress@network.example.test` (the single site: `wordpress@single.example.test`), so Mailpit shows which site sent it. The two sites keep separate logins, as their cookie names differ (they derive from the site URL, port included). The multisite is for the local setup only: `SITE_MODE` (dast, e2e) does not apply to it.
-  - **Network or per-site copy:** the plugin starts network-activated, which is how it works on a network. `Network: true` makes WP-CLI network-activate it even without `--network`, so `plugin activate` cannot make a per-site copy. To test the dormant mode (a 2.x copy that is active on one site only), run `make wp-ms ARGS="plugin deactivate wp-updates-notifier --network"`, then add it to a site's list, keeping what is there: `make wp-ms ARGS="option update active_plugins '[\"classic-editor/classic-editor.php\",\"wp-updates-notifier/wp-updates-notifier.php\"]' --format=json --url=localhost:8081/alpha/"`. To go back, set `active_plugins` of that site to its other plugins again and run `make wp-ms ARGS="plugin activate wp-updates-notifier --network"`. `make site-setup` network-activates it again.
-- **Debugging:** `WP_DEBUG`, `WP_DEBUG_LOG`, `WP_DEBUG_DISPLAY`, `SCRIPT_DEBUG`, `SAVEQUERIES` and `WP_DEVELOPMENT_MODE` (`plugin`) are on, and `WP_ENVIRONMENT_TYPE` is `local`, for the web server and WP-CLI alike. PHP notices show on the page and go to `wp-content/debug.log` (`make site-log`). [Query Monitor](https://wordpress.org/plugins/query-monitor/) (PHP errors, hooks, HTTP API calls, queries, `doing_it_wrong` notices), [Debug Bar](https://wordpress.org/plugins/debug-bar/) and [WP Crontrol](https://wordpress.org/plugins/wp-crontrol/) (view and run `sc_wpun_update_check`) are active. They cost a little: `SCRIPT_DEBUG` turns off script concatenation (an admin page loads about 120 separate scripts and styles), and `SAVEQUERIES` and Query Monitor add 10–25 ms to every page.
-- **Persistent object cache:** the site runs [Redis Object Cache](https://wordpress.org/plugins/redis-cache/) against a [Valkey](https://valkey.io/) service, as many production sites do. Options and transients, including the `update_*` data the update check reads, then live in the cache, so check that the plugin behaves the same with it on and off. The web server and WP-CLI run the same image (`docker/Dockerfile`, target `site`) and share the cache. `make wp ARGS="redis status"` shows it, and `make wp ARGS="cache flush"` empties it. Query Monitor's Object Cache panel shows hits and misses. To test without it, run `make site-setup OBJECT_CACHE=off`, or put `OBJECT_CACHE=off` in a `.env` file at the repo root so it stays off. `make site-setup` turns it back on. Keys carry the prefix `wpun-single:` (the multisite uses `wpun-network:`), so the sites share the same Valkey.
-- **Only reachable from this machine:** the sites (8080 and 8081), Mailpit (8025) and the webhook catcher (8026) are published on `127.0.0.1`, not on every interface, because the site has a fixed admin login and debug output, and Mailpit and the webhook catcher show every email and request they catch. They still open from a Windows browser under WSL2 mirrored networking, but not from other machines on the network.
-- **Speed:** a warm page takes 20–70 ms. Three things can still make the site feel slow:
-  - From a Windows browser on WSL2 (mirrored networking), `localhost` resolves to IPv6 `::1` first, and that never answers, so each new connection waits about 0.2–0.3 s before falling back to IPv4. Apache keeps connections open for 5 minutes, so you mostly pay this once. To avoid it altogether, put `SITE_HOST=127.0.0.1` in `.env`, run `make site-setup` (it moves the site to http://127.0.0.1:8080, the multisite to http://127.0.0.1:8081), and log in again. Delete the line and run it again to go back.
-  - The first admin page after WordPress's update data expires (every 12 hours) waits about 2 s for wordpress.org. Valkey keeps its data on disk, so a restart doesn't expire it.
-  - The first request after `make up` recreates the container compiles PHP again (OPcache starts empty).
-- **Pending updates:** setup installs outdated plugins and themes from WordPress.org, so an update check finds real updates. It installs Akismet 5.6 (active), Classic Editor 1.6.7 (inactive), Hello Dolly 1.6 from WordPress.org (inactive, auto-updates on, so WordPress updates it by itself within 12 hours) and Twenty Twenty-Four 1.3 (the active theme) and Twenty Twenty-Three 1.5 (inactive). The bundled Hello Dolly stays current as the control. Run `make site-setup` again to put the old versions back after updating them. To run a check now, use the **Check now** button on the General tab, or `make wp ARGS="cron event run sc_wpun_update_check"`. The email arrives in Mailpit.
-  - For a pending update with no network, run `make wp ARGS="config set WPUN_FAKE_UPDATE true --raw --type=constant"`. WordPress then reports version 9.9.9 for the dummy plugin `docker/dev-plugins/wpun-dummy`. `config delete WPUN_FAKE_UPDATE` switches it off.
-  - For a core update, downgrade WordPress in place, for example `make wp ARGS="core update --version=7.0.7 --force"`. Update it again from Dashboard → Updates.
-  - WordPress never offers updates for the plugins mounted from the repo, and hides their Delete link (`docker/mu-plugins/mounted-plugins.php`). Updating or deleting one would delete the working tree.
-- **Field showcase:** the "Field showcase (dev only)" channel (`docker/dev-plugins/wpun-field-showcase/`, active on the local site only) has every settings field type and display, a custom field type, and callbacks that fail on demand (type `fail`). Use it to check the channel forms by hand: layout, errors, read-only values and the keyboard. It sends nothing; it writes what it would have sent to the debug log. A second module, "Field showcase: custom render", draws its own fields. To see fields set from outside, add constants for an instance (here with the id `showcase`), for example `make wp ARGS="config set SC_WPUN_CHANNEL_SHOWCASE__TEXT_REQUIRED 'Set from wp-config' --type=constant"`, or `SC_WPUN_CHANNEL_SHOWCASE__SECRET_REQUIRED` for a secret. The full list is in the plugin's main file.
-- The example add-on (`examples/wpun-example-channel/`) is mounted too: activate "WP Updates Notifier Example Channel" on the Plugins screen.
-- **Webhooks:** each local site has a "Local webhook" channel that posts to the webhook catcher ([Webhook Tester](https://github.com/tarampampam/webhook-tester)), as email goes to Mailpit. See what it sent at http://localhost:8026/s/00000000-0000-4000-8000-000000000001 (single site) and http://localhost:8026/s/00000000-0000-4000-8000-000000000002 (multisite), with every header and the body. The signing secret is the Standard Webhooks test vector's, `whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw`, so you can check a signature by hand. `docker/mu-plugins/webhook.php` lets the sites reach the `webhook` host, which is private, and lets the address use http. Other channels, such as the example add-on, can post to `http://webhook:8080/<any UUID>`: a new UUID opens a new session. Captures are kept in memory until the container restarts.
-- WP-Cron runs by itself on page loads. WP-CLI calls don't spawn it; run due events with `make wp ARGS="cron event run --due-now"`.
-
-All of this is set up by files in `docker/`, which never reach the plugin zip.
+The [contributor guide](https://wpun.cariss.dev/main/contributing/) has the rest.
