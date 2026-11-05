@@ -83,6 +83,8 @@ Reminders are worked out at each check, so they can not come more often than you
 
 The form puts **Send to** under **Recipients** and the other options under **Message**.
 
+Below the options, **Preview** shows the recipients, the subject and the body of an example notification with the current settings, so you can see the effect of the format and the prefix. Open it to read it. It shows what was saved, or what you typed if the last save failed, and sends nothing.
+
 | Option | What it does |
 | --- | --- |
 | **Send to** | Required. One or more email addresses, separated by commas. |

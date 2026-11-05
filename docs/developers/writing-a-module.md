@@ -89,6 +89,7 @@ The optional methods:
 | `get_description()` | empty | Describe the channel in one sentence on the "Add channel" screen. |
 | `get_fields()` | no fields | Describe the settings of an instance. See step 3. |
 | `get_field_groups()` | no groups | Split the fields of a long form into groups. See [Groups and conditional fields](#groups-and-conditional-fields). |
+| `get_form_panels( $instance )` | no panels | Show read-only information built from the instance next to the settings, such as a preview. See [Panels](#panels). |
 | `get_api_constraint()` | empty: no check | Declare the API versions the channel needs, for example `'^1.0'`. The registry refuses the channel on a site whose API does not satisfy it. See "Declare the API version you need" below. |
 | `supports( $feature )` | false | Return true for `test_message` to get a "Send test message" button. |
 | `validate_settings( $settings, $stored )` | checks every field against its schema | Add checks that span several fields. Call `parent::validate_settings()` first. |
@@ -184,6 +185,38 @@ A field that is only used for some values of another field declares `applies_whe
 - An `applies_when` entry that names an unknown field is ignored, with a `_doing_it_wrong` notice, so the field applies.
 
 Other plugins can change the groups with the `sc_wpun_channel_field_groups` filter and move fields with `sc_wpun_channel_fields`. If you override `validate_settings()` without calling the parent, as the email channel does, honour `applies_when` yourself.
+
+### Panels
+
+A channel can show read-only information on its form, built from the instance being edited: a preview of the message, set-up help with the callback URL filled in, or the status of the service (API 1.1.0). Return the panels from `get_form_panels()`:
+
+```php
+public function get_form_panels( Channel_Instance $instance ): array {
+	if ( '' === $instance->get_id() ) {
+		$content = '<p>' . esc_html__( 'Save the channel to see its callback URL.', 'my-chat-channel' ) . '</p>';
+	} else {
+		$content = '<p><code>' . esc_html( rest_url( 'my-chat/v1/callback/' . $instance->get_id() ) ) . '</code></p>';
+	}
+
+	return array(
+		'callback' => array(
+			'label'       => __( 'Callback URL', 'my-chat-channel' ),
+			'description' => __( 'Paste this address into the settings of the service.', 'my-chat-channel' ),
+			'content'     => $content,
+			'collapsed'   => false,
+		),
+	);
+}
+```
+
+- Each panel has a `label` (required), a `content` and optionally a `description` and `collapsed`. The content is escaped markup, drawn as it is, like the control of a custom field type.
+- Panels are drawn after the field groups, in the order you return them, in the same way as a group: a fieldset whose legend holds an `<h3>`, folded into a `<details>` element when `collapsed`. A panel never opens by itself. Do not put headings of your own in the content, or if you must, start at `<h4>`.
+- Nothing in a panel is submitted or saved. Panels are drawn with the generic form and with `render_settings()`.
+- On the form of a new channel the instance is a draft with an empty id (`'' === $instance->get_id()`), built from the default settings. After a failed save the instance holds the submitted values, on the new and the edit form.
+- The instance holds the resolved settings, secrets included. The content must never print them, and don't log or dump the settings.
+- An entry with an empty id, no label, or a content that is not a string is dropped with a `_doing_it_wrong` notice.
+
+Other plugins can add or remove panels with the `sc_wpun_channel_form_panels` filter, for example a site's own runbook or a delivery log.
 
 ### Reminders
 
