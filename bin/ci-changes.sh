@@ -150,6 +150,9 @@ tests/bin/test-coverage-check.sh coverage
 infection.json5           -
 docker/infection-bootstrap.php -
 
+# Claude Code skills (the refactor audit): instructions only, no job reads them.
+.claude/*                 -
+
 # What the release workflow runs on the Release PR, rehearsed by make test-release.
 bin/sign-release-tag.sh   release-scripts
 bin/commit-payload.php    release-scripts smoke
