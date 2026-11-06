@@ -107,14 +107,11 @@ class State {
 			if ( null !== $last_result ) {
 				$clean['last_result'] = $last_result;
 			}
-			if ( isset( $entry['retry_at'] ) && is_numeric( $entry['retry_at'] ) && (int) $entry['retry_at'] > 0 ) {
-				$clean['retry_at'] = (int) $entry['retry_at'];
-			}
-			if ( isset( $entry['held_until'] ) && is_numeric( $entry['held_until'] ) && (int) $entry['held_until'] > 0 ) {
-				$clean['held_until'] = (int) $entry['held_until'];
-			}
-			if ( isset( $entry['last_reminder'] ) && is_numeric( $entry['last_reminder'] ) && (int) $entry['last_reminder'] > 0 ) {
-				$clean['last_reminder'] = (int) $entry['last_reminder'];
+			foreach ( array( 'retry_at', 'held_until', 'last_reminder' ) as $key ) {
+				$time = self::positive_int( $entry[ $key ] ?? null );
+				if ( $time > 0 ) {
+					$clean[ $key ] = $time;
+				}
 			}
 			$channels[ (string) $id ] = $clean;
 		}
@@ -313,7 +310,7 @@ class State {
 					'name'            => isset( $details['name'] ) && is_scalar( $details['name'] ) ? (string) $details['name'] : '',
 					'current_version' => isset( $details['current_version'] ) && is_scalar( $details['current_version'] ) ? (string) $details['current_version'] : '',
 					'links'           => $this->normalise_versions( $details['links'] ?? array() ),
-					'time'            => isset( $details['time'] ) && is_numeric( $details['time'] ) && (int) $details['time'] > 0 ? (int) $details['time'] : 0,
+					'time'            => self::positive_int( $details['time'] ?? null ),
 				);
 				if ( ! empty( $details['snoozed'] ) ) {
 					$entry['snoozed'] = true;
@@ -326,6 +323,17 @@ class State {
 	}
 
 	/**
+	 * A stored Unix time as an integer, or 0 when it is missing or not a positive number.
+	 *
+	 * @param mixed $value Stored value.
+	 *
+	 * @return int
+	 */
+	private static function positive_int( $value ): int {
+		return is_numeric( $value ) && (int) $value > 0 ? (int) $value : 0;
+	}
+
+	/**
 	 * A stored last delivery result with its expected types, or null if it is not usable.
 	 *
 	 * @param mixed $last_result Stored value.
@@ -333,14 +341,14 @@ class State {
 	 * @return Last_Result|null
 	 */
 	private function normalise_last_result( $last_result ): ?array {
-		if ( ! is_array( $last_result ) || ! isset( $last_result['time'] ) || ! is_numeric( $last_result['time'] ) || (int) $last_result['time'] <= 0 ) {
+		if ( ! is_array( $last_result ) || self::positive_int( $last_result['time'] ?? null ) <= 0 ) {
 			return null;
 		}
 
 		return array(
 			'success' => ! empty( $last_result['success'] ),
 			'message' => isset( $last_result['message'] ) && is_string( $last_result['message'] ) ? $last_result['message'] : '',
-			'time'    => (int) $last_result['time'],
+			'time'    => self::positive_int( $last_result['time'] ),
 		);
 	}
 
