@@ -585,8 +585,8 @@ class Settings_Page {
 			}
 			$id   = 'sc_wpun_settings_main_' . $name;
 			$args = array( 'name' => $name );
-			// A checkbox has its own label and radios have a legend, so only a select is labelled by the row title.
-			if ( $this->is_select( $schema ) ) {
+			// A checkbox has its own label and radios have a legend, so only a single control is labelled by the row title.
+			if ( Field_Renderer::labels_one_control( $schema ) ) {
 				$args['label_for'] = $id;
 			}
 			// Core prints the title as it is, so the label is escaped and the marker (trusted markup) is added here.
@@ -680,19 +680,6 @@ class Settings_Page {
 			// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
 			echo ' <span class="description sc-wpun-external" id="' . esc_attr( $id ) . '">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $source ) ) . '</span>';
 		}
-	}
-
-	/**
-	 * Whether a schema is drawn as a select.
-	 *
-	 * @param array<string, mixed> $schema Field schema.
-	 *
-	 * @return bool
-	 */
-	private function is_select( array $schema ): bool {
-		$normalised = Boolean_Field::is_boolean( $schema ) ? Boolean_Field::normalise( $schema ) : Enum_Field::normalise( $schema );
-
-		return 'select' === ( $normalised['display'] ?? '' ) && empty( $normalised['multiple'] );
 	}
 
 	/**

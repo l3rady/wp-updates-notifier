@@ -35,13 +35,6 @@ final class Boolean_Field {
 	const DISPLAYS = array( 'checkbox', 'radio', 'select' );
 
 	/**
-	 * Fields already complained about.
-	 *
-	 * @var array<string, true>
-	 */
-	private static $warned = array();
-
-	/**
 	 * Whether a field schema is a boolean, including the `checkbox` alias.
 	 *
 	 * @param array<string, mixed> $field Field schema.
@@ -50,15 +43,6 @@ final class Boolean_Field {
 	 */
 	public static function is_boolean( array $field ): bool {
 		return isset( $field['type'] ) && in_array( $field['type'], array( 'boolean', 'checkbox' ), true );
-	}
-
-	/**
-	 * Forget which fields were complained about, for tests.
-	 *
-	 * @return void
-	 */
-	public static function forget_warnings(): void {
-		self::$warned = array();
 	}
 
 	/**
@@ -79,21 +63,16 @@ final class Boolean_Field {
 			} else {
 				$shown = is_string( $field['display'] ) ? $field['display'] : gettype( $field['display'] );
 				$id    = md5( (string) wp_json_encode( array( $shown, $field['label'] ?? null ) ) );
-				if ( ! isset( self::$warned[ $id ] ) ) {
-					self::$warned[ $id ] = true;
-					_doing_it_wrong(
-						__METHOD__,
-						esc_html(
-							sprintf(
-								// translators: 1: The display asked for. 2: The display used instead.
-								__( 'The display "%1$s" cannot show an on or off value, so "%2$s" is used.', 'wp-updates-notifier' ),
-								$shown,
-								$display
-							)
-						),
-						'2.0.0'
-					);
-				}
+				Field_Types::complain(
+					'boolean-display:' . $id,
+					__METHOD__,
+					sprintf(
+						// translators: 1: The display asked for. 2: The display used instead.
+						__( 'The display "%1$s" cannot show an on or off value, so "%2$s" is used.', 'wp-updates-notifier' ),
+						$shown,
+						$display
+					)
+				);
 			}
 		}
 

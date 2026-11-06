@@ -19,7 +19,7 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		Boolean_Field::forget_warnings();
+		\WPUN\Field_Types::forget_warnings();
 		sc_wpun()->config()->flush();
 	}
 

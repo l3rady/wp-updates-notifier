@@ -846,7 +846,7 @@ final class Field_Types {
 	 *
 	 * @return string
 	 */
-	private static function label( string $name, array $field ): string {
+	public static function label( string $name, array $field ): string {
 		return isset( $field['label'] ) && is_string( $field['label'] ) && '' !== $field['label'] ? $field['label'] : $name;
 	}
 
@@ -918,7 +918,7 @@ final class Field_Types {
 	 *
 	 * @return void
 	 */
-	private static function complain( string $key, string $method, string $message, string $since = '2.0.0' ): void {
+	public static function complain( string $key, string $method, string $message, string $since = '2.0.0' ): void {
 		if ( isset( self::$warned[ $key ] ) ) {
 			return;
 		}
