@@ -111,7 +111,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 				'enabled' => '0',
 			),
 		);
-		sc_wpun()->network_context()->add_option( 'sc_wpun_channels', $bad );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_channels', $bad, false );
 		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 
 		$this->assertSame( array( 'string_off' ), array_keys( $store->all() ) );
@@ -128,7 +128,7 @@ class Test_Channel_Store extends WPUN_Test_Case {
 	 * A stored value that is not an array is treated as empty.
 	 */
 	public function test_a_non_array_option_is_empty() {
-		sc_wpun()->network_context()->add_option( 'sc_wpun_channels', 'nonsense' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_channels', 'nonsense', false );
 		$store = new Channel_Store( sc_wpun()->config(), sc_wpun()->channels() );
 
 		$this->assertSame( array(), $store->all() );
