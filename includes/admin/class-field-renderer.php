@@ -69,7 +69,7 @@ final class Field_Renderer {
 		if ( 'select' === $field['display'] ) {
 			$html .= '<select id="' . esc_attr( $id ) . '" name="' . esc_attr( $input_name ) . '"' . ( $multiple ? ' multiple="multiple"' : '' ) . $disable . $describe . ( $required ? ' aria-required="true"' : '' ) . '>';
 			foreach ( $options as $key => $label ) {
-				$html .= '<option value="' . esc_attr( $key ) . '"' . ( in_array( $key, $chosen, true ) ? ' selected="selected"' : '' ) . '>' . esc_html( $label ) . '</option>';
+				$html .= '<option value="' . esc_attr( $key ) . '"' . ( in_array( (string) $key, $chosen, true ) ? ' selected="selected"' : '' ) . '>' . esc_html( $label ) . '</option>';
 			}
 
 			return $html . '</select>';
@@ -86,7 +86,7 @@ final class Field_Renderer {
 			$input_id = $id . '_' . $index;
 			$html    .= ( $index > 0 ? '<br />' : '' )
 				. '<label for="' . esc_attr( $input_id ) . '"><input type="' . $type . '" id="' . esc_attr( $input_id ) . '" name="' . esc_attr( $input_name ) . '" value="' . esc_attr( $key ) . '"'
-				. ( in_array( $key, $chosen, true ) ? ' checked="checked"' : '' ) . $disable . ' /> ' . esc_html( $label ) . '</label>';
+				. ( in_array( (string) $key, $chosen, true ) ? ' checked="checked"' : '' ) . $disable . ' /> ' . esc_html( $label ) . '</label>';
 			++$index;
 		}
 

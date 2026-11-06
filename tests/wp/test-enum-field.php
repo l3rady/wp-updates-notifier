@@ -426,6 +426,31 @@ class Test_Enum_Field extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Numeric option keys, which PHP stores as integers, still show the current choice.
+	 */
+	public function test_render_numeric_keys() {
+		$options = array(
+			'0' => 'Off',
+			'1' => 'On',
+			'7' => 'Weekly',
+		);
+
+		$select = array(
+			'type'    => 'select',
+			'options' => $options,
+		);
+		$xpath  = $this->xpath( Field_Renderer::enum( $select, 'opt[n]', 'opt_n', '7' ) );
+		$this->assertSame( array( '7' ), array_map( static fn( $option ) => $option->getAttribute( 'value' ), iterator_to_array( $xpath->query( '//option[@selected]' ) ) ) );
+
+		$radio = array(
+			'type'    => 'radio',
+			'options' => $options,
+		);
+		$xpath = $this->xpath( Field_Renderer::enum( $radio, 'opt[n]', 'opt_n', 0 ) );
+		$this->assertSame( array( '0' ), array_map( static fn( $input ) => $input->getAttribute( 'value' ), iterator_to_array( $xpath->query( '//input[@checked]' ) ) ) );
+	}
+
+	/**
 	 * The sentinel makes a form with nothing chosen submit an empty list.
 	 */
 	public function test_the_sentinel_sanitises_to_an_empty_list() {
