@@ -418,6 +418,35 @@ It also runs for the preview panel of the add and edit form, for a sample notifi
 
 Fired in `includes/class-notifier.php`, `modules/email/class-email-channel.php`.
 
+### `sc_wpun_email_mute_links`
+
+*Filter*, since 3.0.0
+
+Filters whether the email links each plugin and theme to the Muted tab.
+
+The "Mute in WordPress" link opens the form of the Muted tab filled in; nothing is muted until the user presses the button, and it needs the permission of the settings screen. Return false for an instance whose recipients can't log in to the site, such as a client.
+
+It also runs for the preview panel of the add and edit form, for a sample notification whose source is `preview`; nothing is sent then, and on the form of a new channel the instance is a draft with an empty id.
+
+`$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+
+```php
+add_filter(
+    'sc_wpun_email_mute_links',
+    static fn( $show, $notification, $instance ) => 'client' === $instance->get_id() ? false : $show,
+    10,
+    3
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$show` | `bool` | Whether to add the links. Default true. |
+| `$notification` | `Notification` | The notification. |
+| `$instance` | `Channel_Instance` | The instance sending it. |
+
+Fired in `modules/email/class-email-channel.php`.
+
 ### `sc_wpun_email_subject`
 
 *Filter*, since 1.4.3. Since 2.0.0 also receives the notification and the instance.

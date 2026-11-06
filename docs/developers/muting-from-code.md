@@ -84,6 +84,8 @@ $url = sc_wpun_mute_url( 'plugin', 'akismet/akismet.php', 'snooze', WEEK_IN_SECO
 printf( '<a href="%s">Mute</a>', esc_url( $url ) );
 ```
 
+The email channel uses it for the **Mute in WordPress** link under each plugin and theme. The `sc_wpun_email_mute_links` filter (see [Hooks](hooks.md)) turns the links off, for example for an instance whose recipients can't log in to the site.
+
 The length is in seconds and must be one of the [`sc_wpun_snooze_durations`](hooks.md) (a day, a week and 30 days by default), else the field stays empty. A plugin or theme that is not installed is ignored. One that is muted already gives an empty form and a note with a link to its row.
 
 ## Define mutes in code

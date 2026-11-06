@@ -574,4 +574,148 @@ class Test_Email_Channel extends WPUN_Test_Case {
 
 		$this->assertSame( 'html', $clean['format'] );
 	}
+
+	/**
+	 * A notification with a plugin, a theme and core.
+	 *
+	 * @param array $context Context.
+	 * @return Notification
+	 */
+	private function mixed_notification( array $context = array() ) {
+		$items = array(
+			new Notification_Item(
+				array(
+					'type'            => 'plugin',
+					'key'             => 'hello/hello.php',
+					'name'            => 'Hello Plugin',
+					'current_version' => '1.0',
+					'new_version'     => '2.0',
+					'links'           => array( 'details' => 'https://example.org/hello' ),
+					'notes'           => array( 'Needs PHP 9' ),
+					'notified_at'     => 1700000000,
+					'flags'           => array( 'active' => true ),
+				)
+			),
+			new Notification_Item(
+				array(
+					'type'            => 'theme',
+					'key'             => 'twenty',
+					'name'            => 'Twenty Theme',
+					'current_version' => '1.0',
+					'new_version'     => '2.0',
+				)
+			),
+			new Notification_Item(
+				array(
+					'type'            => 'core',
+					'key'             => 'core',
+					'name'            => 'WordPress',
+					'current_version' => '6.0',
+					'new_version'     => '6.1',
+				)
+			),
+		);
+
+		return new Notification( get_bloginfo(), 'http://example.org', 'http://example.org/wp-admin/update-core.php', $items, $context );
+	}
+
+	/**
+	 * The plain text email links each plugin and theme to the Muted tab, and core has none.
+	 */
+	public function test_the_plain_email_has_mute_links_for_plugins_and_themes() {
+		$this->channel->send( $this->mixed_notification(), $this->instance() );
+
+		$body = $this->sent_mail()->body;
+		$this->assertStringContainsString( 'Mute in WordPress: ' . sc_wpun_mute_url( 'plugin', 'hello/hello.php' ), $body );
+		$this->assertStringContainsString( 'Mute in WordPress: ' . sc_wpun_mute_url( 'theme', 'twenty' ), $body );
+		$this->assertSame( 2, substr_count( $body, 'Mute in WordPress' ) );
+		// The data of the item survives the copy, and the other links keep their place before the new one.
+		$this->assertStringContainsString( 'Needs PHP 9', $body );
+		$this->assertStringContainsString( 'https://example.org/hello', $body );
+		$this->assertLessThan( strpos( $body, 'Mute in WordPress' ), strpos( $body, 'https://example.org/hello' ) );
+	}
+
+	/**
+	 * The HTML email names the plugin or theme in each link, with the address escaped.
+	 */
+	public function test_the_html_email_has_mute_links_for_plugins_and_themes() {
+		$this->channel->send( $this->mixed_notification(), $this->instance( array( 'format' => 'html' ) ) );
+
+		$body = $this->sent_mail()->body;
+		$this->assertStringContainsString( '<a href="' . esc_url( sc_wpun_mute_url( 'plugin', 'hello/hello.php' ) ) . '">Mute Hello Plugin in WordPress</a>', $body );
+		$this->assertStringContainsString( '<a href="' . esc_url( sc_wpun_mute_url( 'theme', 'twenty' ) ) . '">Mute Twenty Theme in WordPress</a>', $body );
+		$this->assertStringNotContainsString( 'Mute WordPress in WordPress', $body );
+		$this->assertSame( 2, substr_count( $body, 'in WordPress</a>' ) );
+		$this->assertStringContainsString( '&#038;', $body );
+		$this->assertStringContainsString( 'Needs PHP 9', $body );
+	}
+
+	/**
+	 * A test message has no items to mute.
+	 */
+	public function test_the_test_message_has_no_mute_links() {
+		$this->channel->send( $this->mixed_notification( array( 'is_test' => true ) ), $this->instance() );
+
+		$this->assertStringNotContainsString( 'Mute', $this->sent_mail()->body );
+	}
+
+	/**
+	 * The filter turns the links off and receives the notification and the instance.
+	 */
+	public function test_the_mute_links_filter_can_remove_the_links() {
+		$seen = array();
+		add_filter(
+			'sc_wpun_email_mute_links',
+			static function ( $show, $notification, $instance ) use ( &$seen ) {
+				$seen[] = array( $show, $notification, $instance );
+				return false;
+			},
+			10,
+			3
+		);
+		$notification = $this->mixed_notification();
+		$instance     = $this->instance();
+
+		$this->channel->send( $notification, $instance );
+
+		$this->assertSame( array( array( true, $notification, $instance ) ), $seen );
+		$this->assertStringNotContainsString( 'Mute', $this->sent_mail()->body );
+		$this->assertStringContainsString( 'Hello Plugin', $this->sent_mail()->body );
+	}
+
+	/**
+	 * The content filter gets the notification as it was given, without the mute links.
+	 */
+	public function test_the_content_filter_receives_the_original_notification() {
+		$seen = null;
+		add_filter(
+			'sc_wpun_email_content',
+			static function ( $body, $notification ) use ( &$seen ) {
+				$seen = $notification;
+				return $body;
+			},
+			10,
+			2
+		);
+		$notification = $this->mixed_notification();
+
+		$this->channel->send( $notification, $this->instance() );
+
+		$this->assertSame( $notification, $seen );
+		$this->assertArrayNotHasKey( 'mute', $seen->get_items()[0]->get_links() );
+		$this->assertNull( $seen->get_items()[1]->get_notified_at() );
+	}
+
+	/**
+	 * In a network the links lead to the network admin.
+	 */
+	public function test_the_mute_links_point_to_the_network_admin_in_multisite() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Needs multisite (make test-wp-ms).' );
+		}
+
+		$this->channel->send( $this->mixed_notification(), $this->instance() );
+
+		$this->assertStringContainsString( 'Mute in WordPress: ' . network_admin_url(), $this->sent_mail()->body );
+	}
 }

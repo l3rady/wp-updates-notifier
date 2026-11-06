@@ -64,6 +64,7 @@ An email says:
 - A first line, "There are updates available for" followed by your site name and its address.
 - A line for each update: **name from version X to Y**, for example "WooCommerce from version 9.3.1 to 9.4.0".
 - Under a plugin: links to its page on WordPress.org and its changelog, when it comes from WordPress.org, or its own link if it has one. Under a theme: its link, if it has one.
+- Under each plugin and theme: a **Mute in WordPress** link. It opens the Muted tab with the form filled in. Nothing is muted until you press the button, and you need the same permission as for the settings screen.
 - Under a plugin: whether its author has tested it with your version of WordPress. The message also warns you if the new version needs a newer PHP or WordPress than your site has.
 - The address of your site's **Dashboard → Updates** screen, with a request to visit it to update. In HTML format this is a link, "Go to the Updates screen to update."
 

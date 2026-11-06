@@ -377,7 +377,8 @@ class Email_Channel extends Channel {
 				// translators: %s: Site name.
 				$subject = sprintf( __( 'WP Updates Notifier: updates available for %s', 'wp-updates-notifier' ), $site );
 			}
-			$body = $is_html ? Notification_Renderer::html( $notification ) : Notification_Renderer::plain_text( $notification );
+			$shown = $this->with_mute_links( $notification, $instance );
+			$body  = $is_html ? Notification_Renderer::html( $shown ) : Notification_Renderer::plain_text( $shown );
 		}
 
 		$prefix = $this->text( $settings, 'subject_prefix' );
@@ -420,6 +421,66 @@ class Email_Channel extends Channel {
 			'body'    => (string) $body,
 			'is_html' => $is_html,
 		);
+	}
+
+	/**
+	 * A copy of the notification whose plugins and themes carry a "Mute in WordPress" link, or the notification itself when the links are off.
+	 *
+	 * The link opens the Muted tab with the form filled in (see sc_wpun_mute_url()); core can't be muted.
+	 *
+	 * @param Notification     $notification What to deliver.
+	 * @param Channel_Instance $instance     The configured instance.
+	 *
+	 * @return Notification
+	 */
+	private function with_mute_links( Notification $notification, Channel_Instance $instance ): Notification {
+		/**
+		 * Filters whether the email links each plugin and theme to the Muted tab.
+		 *
+		 * The "Mute in WordPress" link opens the form of the Muted tab filled in; nothing is muted until the user presses the button, and it needs the permission of the settings screen. Return false for an instance whose recipients can't log in to the site, such as a client.
+		 *
+		 * It also runs for the preview panel of the add and edit form, for a sample notification whose source is `preview`; nothing is sent then, and on the form of a new channel the instance is a draft with an empty id.
+		 *
+		 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_email_mute_links',
+		 *         static fn( $show, $notification, $instance ) => 'client' === $instance->get_id() ? false : $show,
+		 *         10,
+		 *         3
+		 *     );
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param bool             $show         Whether to add the links. Default true.
+		 * @param Notification     $notification The notification.
+		 * @param Channel_Instance $instance     The instance sending it.
+		 */
+		if ( ! (bool) apply_filters( 'sc_wpun_email_mute_links', true, $notification, $instance ) ) {
+			return $notification;
+		}
+
+		$items = array();
+		foreach ( $notification->get_items() as $item ) {
+			if ( in_array( $item->get_type(), array( 'plugin', 'theme' ), true ) ) {
+				$item = new Notification_Item(
+					array(
+						'type'            => $item->get_type(),
+						'key'             => $item->get_key(),
+						'name'            => $item->get_name(),
+						'current_version' => $item->get_current_version(),
+						'new_version'     => $item->get_new_version(),
+						'links'           => array_merge( $item->get_links(), array( 'mute' => sc_wpun_mute_url( $item->get_type(), $item->get_key() ) ) ),
+						'notes'           => $item->get_notes(),
+						'notified_at'     => $item->get_notified_at(),
+						'flags'           => $item->get_flags(),
+					)
+				);
+			}
+			$items[] = $item;
+		}
+
+		return $notification->with_items( $items );
 	}
 
 	/**

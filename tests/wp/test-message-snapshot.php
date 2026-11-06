@@ -52,6 +52,7 @@ class Test_Message_Snapshot extends WPUN_Test_Case {
 				'{{php_version}}'      => PHP_VERSION,
 				'{{home_url}}'         => home_url(),
 				'{{admin_update_url}}' => admin_url( 'update-core.php' ),
+				'{{muted_url}}'        => sc_wpun_settings_url( 'muted' ),
 				'{{site_name}}'        => wp_specialchars_decode( get_bloginfo(), ENT_QUOTES ),
 				'{{own_version}}'      => $own_plugin['Version'],
 				'{{theme_name}}'       => $theme->get( 'Name' ),

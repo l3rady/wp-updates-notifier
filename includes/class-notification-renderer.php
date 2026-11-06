@@ -361,6 +361,8 @@ final class Notification_Renderer {
 				return __( 'Changelog', 'wp-updates-notifier' );
 			case 'download':
 				return __( 'Download', 'wp-updates-notifier' );
+			case 'mute':
+				return __( 'Mute in WordPress', 'wp-updates-notifier' );
 			default:
 				return ucfirst( str_replace( '_', ' ', $label ) );
 		}
@@ -385,6 +387,9 @@ final class Notification_Renderer {
 			case 'download':
 				// translators: %s: Name of the plugin, theme or WordPress.
 				return sprintf( __( '%s download', 'wp-updates-notifier' ), $name );
+			case 'mute':
+				// translators: %s: Name of the plugin or theme.
+				return sprintf( __( 'Mute %s in WordPress', 'wp-updates-notifier' ), $name );
 			default:
 				return $name . ' ' . self::link_label( $label );
 		}
