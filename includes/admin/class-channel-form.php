@@ -17,7 +17,6 @@ use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
 use WPUN\Channel_Store;
 use WPUN\Dispatcher;
-use WPUN\Enum_Field;
 use WPUN\Field_Types;
 use WPUN\Network_Context;
 use WPUN\Routing;
@@ -524,21 +523,37 @@ class Channel_Form {
 	private function first_control_id( array $schema, string $id ): string {
 		$single_checkbox = 'boolean' === Field_Types::canonical( $schema['type'] ?? null ) && 'checkbox' === Boolean_Field::normalise( $schema )['display'];
 
-		return $single_checkbox || $this->labels_one_control( $schema ) ? $id : $id . '_0';
+		return $single_checkbox || Field_Renderer::labels_one_control( $schema ) ? $id : $id . '_0';
 	}
 
 	/**
-	 * Output a row of a form table.
+	 * A row of a form table.
 	 *
 	 * @param string $title    Text of the row header, already escaped.
 	 * @param string $target      Id of the single control the header labels; empty if the control names itself.
 	 * @param string $controls Markup of the cell, already escaped.
 	 * @param bool   $required Whether to mark the field as required.
 	 *
-	 * @return void
+	 * @return string Escaped markup.
 	 */
-	private function row( string $title, string $target, string $controls, bool $required = false ): void {
-		$this->put( '<tr><th scope="row">' . $this->title_html( $title, $target, $required ) . '</th><td>' . $controls . '</td></tr>' );
+	private function row( string $title, string $target, string $controls, bool $required = false ): string {
+		return '<tr><th scope="row">' . $this->title_html( $title, $target, $required ) . '</th><td>' . $controls . '</td></tr>';
+	}
+
+	/**
+	 * A row for a field of the routing or settings section.
+	 *
+	 * The header is the field's label, or its name without one, and a label for the control when there is only one.
+	 *
+	 * @param string               $name     Field name.
+	 * @param array<string, mixed> $schema   Field schema.
+	 * @param string               $id       Id of the control.
+	 * @param string               $controls Markup of the cell, already escaped.
+	 *
+	 * @return string Escaped markup.
+	 */
+	private function field_row( string $name, array $schema, string $id, string $controls ): string {
+		return $this->row( esc_html( Field_Types::label( $name, $schema ) ), Field_Renderer::labels_one_control( $schema ) ? $id : '', $controls, Field_Renderer::is_required( $schema ) );
 	}
 
 	/**
@@ -554,27 +569,6 @@ class Channel_Form {
 		$title .= $required ? Field_Renderer::required_marker() : '';
 
 		return '' === $target ? $title : '<label for="' . esc_attr( $target ) . '">' . $title . '</label>';
-	}
-
-	/**
-	 * Whether the header of a field's row is a label for a single control.
-	 *
-	 * Checkboxes and radio buttons have their own labels, and a group of them is named by its legend.
-	 *
-	 * @param array<string, mixed> $schema Field schema.
-	 *
-	 * @return bool
-	 */
-	private function labels_one_control( array $schema ): bool {
-		$type = Field_Types::canonical( $schema['type'] ?? null );
-		if ( 'boolean' === $type ) {
-			return 'select' === Boolean_Field::normalise( $schema )['display'];
-		}
-		if ( 'enum' === $type ) {
-			return 'select' === Enum_Field::normalise( $schema )['display'];
-		}
-
-		return true;
 	}
 
 	/**
@@ -636,30 +630,34 @@ class Channel_Form {
 			<tbody>
 				<?php
 				if ( $is_new ) {
-					$this->row( esc_html__( 'ID', 'wp-updates-notifier' ), '', '<p class="description">' . esc_html__( 'The id is made from the label when the channel is saved and cannot be changed afterwards.', 'wp-updates-notifier' ) . '</p>' );
+					$this->put( $this->row( esc_html__( 'ID', 'wp-updates-notifier' ), '', '<p class="description">' . esc_html__( 'The id is made from the label when the channel is saved and cannot be changed afterwards.', 'wp-updates-notifier' ) . '</p>' ) );
 				} else {
-					$this->row(
-						esc_html__( 'ID', 'wp-updates-notifier' ),
-						'',
-						'<code class="sc-wpun-channel-id">' . esc_html( $id ) . '</code><p class="description">'
-						// translators: %s: Start of the names of the constants, for example "SC_WPUN_CHANNEL_EMAIL__".
-						. sprintf( esc_html__( 'Constants for this channel start with %s', 'wp-updates-notifier' ), '<code>' . esc_html( 'SC_WPUN_CHANNEL_' . strtoupper( $id ) . '__' ) . '</code>' ) . '</p>'
+					$this->put(
+						$this->row(
+							esc_html__( 'ID', 'wp-updates-notifier' ),
+							'',
+							'<code class="sc-wpun-channel-id">' . esc_html( $id ) . '</code><p class="description">'
+							// translators: %s: Start of the names of the constants, for example "SC_WPUN_CHANNEL_EMAIL__".
+							. sprintf( esc_html__( 'Constants for this channel start with %s', 'wp-updates-notifier' ), '<code>' . esc_html( 'SC_WPUN_CHANNEL_' . strtoupper( $id ) . '__' ) . '</code>' ) . '</p>'
+						)
 					);
 				}
 
 				$label_schema = $this->label_schema();
-				$this->row( esc_html( (string) $label_schema['label'] ), 'sc_wpun_channel_label', $this->control( $label_schema, 'label', 'sc_wpun_channel_label', $label, $errors['label'] ?? '' ), Field_Renderer::is_required( $label_schema ) );
+				$this->put( $this->row( esc_html( (string) $label_schema['label'] ), 'sc_wpun_channel_label', $this->control( $label_schema, 'label', 'sc_wpun_channel_label', $label, $errors['label'] ?? '' ), Field_Renderer::is_required( $label_schema ) ) );
 
 				$enabled_schema = Channel::enabled_field();
-				$this->row( esc_html( (string) $enabled_schema['label'] ), '', $this->control( $enabled_schema, 'enabled', 'sc_wpun_channel_enabled', $enabled, $errors['enabled'] ?? '', $external ) );
+				$this->put( $this->row( esc_html( (string) $enabled_schema['label'] ), '', $this->control( $enabled_schema, 'enabled', 'sc_wpun_channel_enabled', $enabled, $errors['enabled'] ?? '', $external ) ) );
 
 				if ( null === $external && ( $is_new || ! $was_enabled ) ) {
-					$this->row(
-						esc_html__( 'Updates already waiting', 'wp-updates-notifier' ),
-						'',
-						'<label for="sc_wpun_channel_skip_pending"><input type="checkbox" id="sc_wpun_channel_skip_pending" name="skip_pending" value="1" aria-describedby="sc_wpun_channel_skip_pending-description"' . checked( $skip, true, false ) . ' /> '
-						. esc_html__( 'Don\'t send the updates that are already waiting', 'wp-updates-notifier' ) . '</label>'
-						. '<p class="description" id="sc_wpun_channel_skip_pending-description">' . esc_html__( 'Only updates that appear after the channel is switched on are sent. Applies when the channel is saved switched on.', 'wp-updates-notifier' ) . '</p>'
+					$this->put(
+						$this->row(
+							esc_html__( 'Updates already waiting', 'wp-updates-notifier' ),
+							'',
+							'<label for="sc_wpun_channel_skip_pending"><input type="checkbox" id="sc_wpun_channel_skip_pending" name="skip_pending" value="1" aria-describedby="sc_wpun_channel_skip_pending-description"' . checked( $skip, true, false ) . ' /> '
+							. esc_html__( 'Don\'t send the updates that are already waiting', 'wp-updates-notifier' ) . '</label>'
+							. '<p class="description" id="sc_wpun_channel_skip_pending-description">' . esc_html__( 'Only updates that appear after the channel is switched on are sent. Applies when the channel is saved switched on.', 'wp-updates-notifier' ) . '</p>'
+						)
 					);
 				}
 				?>
@@ -690,12 +688,7 @@ class Channel_Form {
 					if ( isset( $notes[ $name ] ) ) {
 						$schema['description'] = trim( ( isset( $schema['description'] ) && is_string( $schema['description'] ) ? $schema['description'] : '' ) . ' ' . $notes[ $name ] );
 					}
-					$this->row(
-						esc_html( isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name ),
-						$this->labels_one_control( $schema ) ? $id : '',
-						$this->control( $schema, 'routing[' . $name . ']', $id, $routing[ $name ] ?? '', $errors[ 'routing.' . $name ] ?? '' ),
-						Field_Renderer::is_required( $schema )
-					);
+					$this->put( $this->field_row( $name, $schema, $id, $this->control( $schema, 'routing[' . $name . ']', $id, $routing[ $name ] ?? '', $errors[ 'routing.' . $name ] ?? '' ) ) );
 				}
 				?>
 			</tbody>
@@ -787,11 +780,9 @@ class Channel_Form {
 			$id       = 'sc_wpun_channel_settings_' . $name;
 			$external = $is_new ? null : $this->store->external_source( $form_inst->get_id(), $name );
 			$value    = array_key_exists( $name, $settings ) ? $settings[ $name ] : ( $schema['default'] ?? '' );
-			$title    = isset( $schema['label'] ) && is_string( $schema['label'] ) && '' !== $schema['label'] ? $schema['label'] : $name;
 			$applies  = $this->applies_note( $name, $schema, $fields );
 
-			$buckets[ $group ][ $name ] = '<tr><th scope="row">' . $this->title_html( esc_html( $title ), $this->labels_one_control( $schema ) ? $id : '', Field_Renderer::is_required( $schema ) ) . '</th><td>'
-				. $this->control( $schema, 'settings[' . $name . ']', $id, $value, $errors[ 'settings.' . $name ] ?? '', $external, $applies ) . '</td></tr>';
+			$buckets[ $group ][ $name ] = $this->field_row( $name, $schema, $id, $this->control( $schema, 'settings[' . $name . ']', $id, $value, $errors[ 'settings.' . $name ] ?? '', $external, $applies ) );
 		}
 
 		// Fields without a group first, under "Settings"; then each group that has fields, in the order declared, as a section of its own.
@@ -906,7 +897,7 @@ class Channel_Form {
 		$clauses = array();
 		foreach ( Field_Types::conditions( $name, $schema, $fields ) as $other => $wanted ) {
 			$other_schema = (array) $fields[ $other ];
-			$other_label  = isset( $other_schema['label'] ) && is_string( $other_schema['label'] ) && '' !== $other_schema['label'] ? $other_schema['label'] : (string) $other;
+			$other_label  = Field_Types::label( (string) $other, $other_schema );
 			$texts        = array();
 			foreach ( $wanted as $value ) {
 				$texts[] = $this->value_text( $value, $other_schema );

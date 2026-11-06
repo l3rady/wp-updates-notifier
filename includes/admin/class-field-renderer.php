@@ -342,6 +342,27 @@ final class Field_Renderer {
 	}
 
 	/**
+	 * Whether the header of a field's row is a label for a single control.
+	 *
+	 * Checkboxes and radio buttons have their own labels, and a group of them is named by its legend.
+	 *
+	 * @param array<string, mixed> $schema Field schema.
+	 *
+	 * @return bool
+	 */
+	public static function labels_one_control( array $schema ): bool {
+		$type = Field_Types::canonical( $schema['type'] ?? null );
+		if ( 'boolean' === $type ) {
+			return 'select' === Boolean_Field::normalise( $schema )['display'];
+		}
+		if ( 'enum' === $type ) {
+			return 'select' === Enum_Field::normalise( $schema )['display'];
+		}
+
+		return true;
+	}
+
+	/**
 	 * The marker after the label of a required field, as core has it on its user screens.
 	 *
 	 * @return string Escaped markup, with a leading space.
@@ -398,25 +419,19 @@ final class Field_Renderer {
 				. ( $on ? ' checked="checked"' : '' ) . $disable . $describe . ' /> ' . esc_html( $labels['on'] ) . '</label>';
 		}
 
-		if ( 'select' === $field['display'] ) {
-			return '<select id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '"' . $disable . $describe . '>'
-				. '<option value="1"' . ( $on ? ' selected="selected"' : '' ) . '>' . esc_html( $labels['on'] ) . '</option>'
-				. '<option value="0"' . ( $on ? '' : ' selected="selected"' ) . '>' . esc_html( $labels['off'] ) . '</option>'
-				. '</select>';
+		// Select and radio are an enum of 1 and 0. A boolean is never required, so `required` is left out.
+		$as_enum = array(
+			'type'    => 'enum',
+			'display' => $field['display'],
+			'options' => array(
+				'1' => $labels['on'],
+				'0' => $labels['off'],
+			),
+		);
+		if ( isset( $field['label'] ) ) {
+			$as_enum['label'] = $field['label'];
 		}
 
-		$legend = isset( $field['label'] ) && is_string( $field['label'] ) ? $field['label'] : '';
-		$html   = '<fieldset id="' . esc_attr( $id ) . '"' . $describe . '><legend class="screen-reader-text"><span>' . esc_html( $legend ) . '</span></legend>';
-		foreach ( array(
-			array( '1', $labels['on'], $on ),
-			array( '0', $labels['off'], ! $on ),
-		) as $index => $choice ) {
-			$input_id = $id . '_' . $index;
-			$html    .= ( $index > 0 ? '<br />' : '' )
-				. '<label for="' . esc_attr( $input_id ) . '"><input type="radio" id="' . esc_attr( $input_id ) . '" name="' . esc_attr( $name ) . '" value="' . $choice[0] . '"'
-				. ( $choice[2] ? ' checked="checked"' : '' ) . $disable . ' /> ' . esc_html( $choice[1] ) . '</label>';
-		}
-
-		return $html . '</fieldset>';
+		return self::enum( $as_enum, $name, $id, $on ? '1' : '0', $disabled, $described_by, array(), $error );
 	}
 }

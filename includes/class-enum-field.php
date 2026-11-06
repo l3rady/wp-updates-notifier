@@ -37,22 +37,6 @@ final class Enum_Field {
 	const MAX_INLINE_OPTIONS = 5;
 
 	/**
-	 * Fields already complained about.
-	 *
-	 * @var array<string, true>
-	 */
-	private static $warned = array();
-
-	/**
-	 * Forget which fields were complained about, for tests.
-	 *
-	 * @return void
-	 */
-	public static function forget_warnings(): void {
-		self::$warned = array();
-	}
-
-	/**
 	 * The schema with `type` enum and `multiple`, `display` and `options` always set to usable values.
 	 *
 	 * A display that does not fit the field falls back to the default display, with a notice to the
@@ -76,20 +60,15 @@ final class Enum_Field {
 			} else {
 				$shown = is_string( $field['display'] ) ? $field['display'] : gettype( $field['display'] );
 				$id    = md5( (string) wp_json_encode( array( $multiple, $shown, array_keys( $options ) ) ) );
-				if ( ! isset( self::$warned[ $id ] ) ) {
-					self::$warned[ $id ] = true;
-					_doing_it_wrong(
-						__METHOD__,
-						esc_html(
-							$multiple
-								// translators: 1: The display asked for. 2: The display used instead.
-								? sprintf( __( 'The display "%1$s" cannot show several choices, so "%2$s" is used.', 'wp-updates-notifier' ), $shown, $default )
-								// translators: 1: The display asked for. 2: The display used instead.
-								: sprintf( __( 'The display "%1$s" cannot show a single choice, so "%2$s" is used.', 'wp-updates-notifier' ), $shown, $default )
-						),
-						'2.0.0'
-					);
-				}
+				Field_Types::complain(
+					'enum-display:' . $id,
+					__METHOD__,
+					$multiple
+						// translators: 1: The display asked for. 2: The display used instead.
+						? sprintf( __( 'The display "%1$s" cannot show several choices, so "%2$s" is used.', 'wp-updates-notifier' ), $shown, $default )
+						// translators: 1: The display asked for. 2: The display used instead.
+						: sprintf( __( 'The display "%1$s" cannot show a single choice, so "%2$s" is used.', 'wp-updates-notifier' ), $shown, $default )
+				);
 			}
 		}
 
