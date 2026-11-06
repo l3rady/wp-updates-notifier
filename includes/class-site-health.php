@@ -67,11 +67,11 @@ class Site_Health {
 	private $registry;
 
 	/**
-	 * Config, for the problems it found.
+	 * Config report, for the problems found while resolving.
 	 *
-	 * @var Config
+	 * @var Config_Report
 	 */
-	private $config;
+	private $config_report;
 
 	/**
 	 * What the status command reports, shared with it.
@@ -94,17 +94,17 @@ class Site_Health {
 	 * @param State                $state    Run state.
 	 * @param Channel_Store        $store    Channel instances.
 	 * @param Channel_Registry     $registry Registered modules.
-	 * @param Config               $config   Resolver.
+	 * @param Config_Report        $config_report Configuration report.
 	 * @param Status_Report        $report   Report of settings, schedule and channels.
 	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Settings $settings, State $state, Channel_Store $store, Channel_Registry $registry, Config $config, Status_Report $report, ?Network_Context $network_context = null ) {
-		$this->settings = $settings;
-		$this->state    = $state;
-		$this->store    = $store;
-		$this->registry = $registry;
-		$this->config   = $config;
-		$this->report   = $report;
+	public function __construct( Settings $settings, State $state, Channel_Store $store, Channel_Registry $registry, Config_Report $config_report, Status_Report $report, ?Network_Context $network_context = null ) {
+		$this->settings      = $settings;
+		$this->state         = $state;
+		$this->store         = $store;
+		$this->registry      = $registry;
+		$this->config_report = $config_report;
+		$this->report        = $report;
 
 		$this->network_context = $network_context ?? new Network_Context();
 	}
@@ -182,7 +182,7 @@ class Site_Health {
 			$intro  = __( 'The update check is scheduled and running.', 'wp-updates-notifier' );
 		}
 
-		return $this->result( 'sc_wpun_schedule', $status, 'good' === $status ? __( 'WP Updates Notifier checks for updates', 'wp-updates-notifier' ) : __( 'WP Updates Notifier is not checking for updates', 'wp-updates-notifier' ), '<p>' . esc_html( $intro ) . '</p>' . $details );
+		return $this->settings_result( 'sc_wpun_schedule', $status, 'good' === $status ? __( 'WP Updates Notifier checks for updates', 'wp-updates-notifier' ) : __( 'WP Updates Notifier is not checking for updates', 'wp-updates-notifier' ), '<p>' . esc_html( $intro ) . '</p>' . $details );
 	}
 
 	/**
@@ -192,10 +192,10 @@ class Site_Health {
 	 */
 	public function wp_cron_result(): array {
 		if ( $this->checked_recently( $this->interval( wp_get_scheduled_event( Scheduler::CRON_NAME ) ) ) ) {
-			return $this->result( 'sc_wpun_wp_cron', 'good', __( 'WP Updates Notifier checks run from a server cron', 'wp-updates-notifier' ), '<p>' . esc_html__( 'WP-Cron is switched off, and the update checks are running from a server cron.', 'wp-updates-notifier' ) . '</p>' );
+			return $this->settings_result( 'sc_wpun_wp_cron', 'good', __( 'WP Updates Notifier checks run from a server cron', 'wp-updates-notifier' ), '<p>' . esc_html__( 'WP-Cron is switched off, and the update checks are running from a server cron.', 'wp-updates-notifier' ) . '</p>' );
 		}
 
-		return $this->result(
+		return $this->settings_result(
 			'sc_wpun_wp_cron',
 			'recommended',
 			__( 'WP-Cron is switched off, so WP Updates Notifier may not check', 'wp-updates-notifier' ),
@@ -211,11 +211,11 @@ class Site_Health {
 	public function channels_result(): array {
 		foreach ( $this->store->all() as $instance ) {
 			if ( $instance->is_enabled() && Status_Report::AVAILABLE === $this->report->availability( $instance ) ) {
-				return $this->result( 'sc_wpun_channels', 'good', __( 'WP Updates Notifier has a channel to send through', 'wp-updates-notifier' ), '<p>' . esc_html__( 'At least one channel is switched on and can send.', 'wp-updates-notifier' ) . '</p>' );
+				return $this->settings_result( 'sc_wpun_channels', 'good', __( 'WP Updates Notifier has a channel to send through', 'wp-updates-notifier' ), '<p>' . esc_html__( 'At least one channel is switched on and can send.', 'wp-updates-notifier' ) . '</p>' );
 			}
 		}
 
-		return $this->result( 'sc_wpun_channels', 'recommended', __( 'WP Updates Notifier has no channel to send through', 'wp-updates-notifier' ), '<p>' . esc_html__( 'No channel is switched on and able to send, so nothing will be sent. Switch a channel on if you want to be told about updates.', 'wp-updates-notifier' ) . '</p>' );
+		return $this->settings_result( 'sc_wpun_channels', 'recommended', __( 'WP Updates Notifier has no channel to send through', 'wp-updates-notifier' ), '<p>' . esc_html__( 'No channel is switched on and able to send, so nothing will be sent. Switch a channel on if you want to be told about updates.', 'wp-updates-notifier' ) . '</p>' );
 	}
 
 	/**
@@ -238,10 +238,10 @@ class Site_Health {
 		}
 
 		if ( '' === $items ) {
-			return $this->result( 'sc_wpun_channel_modules', 'good', __( 'The modules of the WP Updates Notifier channels are available', 'wp-updates-notifier' ), '<p>' . esc_html__( 'Every channel that is switched on has its module.', 'wp-updates-notifier' ) . '</p>' );
+			return $this->settings_result( 'sc_wpun_channel_modules', 'good', __( 'The modules of the WP Updates Notifier channels are available', 'wp-updates-notifier' ), '<p>' . esc_html__( 'Every channel that is switched on has its module.', 'wp-updates-notifier' ) . '</p>' );
 		}
 
-		return $this->result( 'sc_wpun_channel_modules', 'recommended', __( 'Some WP Updates Notifier channels cannot send', 'wp-updates-notifier' ), '<p>' . esc_html__( 'These channels are switched on, but their module is not available, so nothing is sent through them. Activate the add-on that provides the module, or switch the channel off.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>' );
+		return $this->settings_result( 'sc_wpun_channel_modules', 'recommended', __( 'Some WP Updates Notifier channels cannot send', 'wp-updates-notifier' ), '<p>' . esc_html__( 'These channels are switched on, but their module is not available, so nothing is sent through them. Activate the add-on that provides the module, or switch the channel off.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>' );
 	}
 
 	/**
@@ -258,10 +258,10 @@ class Site_Health {
 		}
 
 		if ( '' === $items ) {
-			return $this->result( 'sc_wpun_channel_delivery', 'good', __( 'The last notification of each WP Updates Notifier channel was delivered', 'wp-updates-notifier' ), '<p>' . esc_html__( 'No channel that is switched on failed its last delivery.', 'wp-updates-notifier' ) . '</p>' );
+			return $this->settings_result( 'sc_wpun_channel_delivery', 'good', __( 'The last notification of each WP Updates Notifier channel was delivered', 'wp-updates-notifier' ), '<p>' . esc_html__( 'No channel that is switched on failed its last delivery.', 'wp-updates-notifier' ) . '</p>' );
 		}
 
-		return $this->result( 'sc_wpun_channel_delivery', 'recommended', __( 'Some WP Updates Notifier channels failed to deliver', 'wp-updates-notifier' ), '<p>' . esc_html__( 'The last delivery of these channels failed. The update will be tried again at the next check.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>' );
+		return $this->settings_result( 'sc_wpun_channel_delivery', 'recommended', __( 'Some WP Updates Notifier channels failed to deliver', 'wp-updates-notifier' ), '<p>' . esc_html__( 'The last delivery of these channels failed. The update will be tried again at the next check.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>' );
 	}
 
 	/**
@@ -337,7 +337,7 @@ class Site_Health {
 			'debug' => $reason[1],
 		);
 
-		foreach ( $this->problems() as $index => $problem ) {
+		foreach ( $this->config_report->problems() as $index => $problem ) {
 			$fields[ 'problem_' . $index ] = array(
 				'label' => __( 'Configuration problem', 'wp-updates-notifier' ),
 				'value' => sprintf( '%s (%s): %s', $problem['key'], $problem['source'], $problem['message'] ),
@@ -419,20 +419,6 @@ class Site_Health {
 	}
 
 	/**
-	 * The configuration problems of this request, after making sure the settings were resolved.
-	 *
-	 * @return array<int, array{key: string, source: string, message: string}>
-	 */
-	private function problems(): array {
-		// Resolving is lazy and problems are found while doing it.
-		$this->settings->get();
-		$this->settings->show_about();
-		$this->store->all();
-
-		return $this->config->problems();
-	}
-
-	/**
 	 * The interval between checks, in seconds.
 	 *
 	 * For a frequency that is no longer offered it is what the scheduler does: an event keeps the interval WordPress stored
@@ -484,7 +470,7 @@ class Site_Health {
 	}
 
 	/**
-	 * A Site Health test result.
+	 * A Site Health test result that links to the settings.
 	 *
 	 * @param string $test        Test name.
 	 * @param string $status      good, recommended or critical.
@@ -493,7 +479,24 @@ class Site_Health {
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function result( string $test, string $status, string $label, string $description ): array {
+	private function settings_result( string $test, string $status, string $label, string $description ): array {
+		return self::result( $test, $status, $label, $description, self::settings_action( $this->network_context->settings_url() ) );
+	}
+
+	/**
+	 * A Site Health test result.
+	 *
+	 * @internal
+	 *
+	 * @param string $test        Test name.
+	 * @param string $status      good, recommended or critical.
+	 * @param string $label       Headline.
+	 * @param string $description HTML, already escaped.
+	 * @param string $actions     HTML, already escaped.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function result( string $test, string $status, string $label, string $description, string $actions ): array {
 		$colors = array(
 			'good'        => 'blue',
 			'recommended' => 'orange',
@@ -508,12 +511,25 @@ class Site_Health {
 				'color' => $colors[ $status ],
 			),
 			'description' => $description,
-			'actions'     => sprintf(
-				'<p><a href="%s">%s</a></p>',
-				esc_url( $this->network_context->settings_url() ),
-				esc_html__( 'Review the notification settings', 'wp-updates-notifier' )
-			),
+			'actions'     => $actions,
 			'test'        => $test,
+		);
+	}
+
+	/**
+	 * The action of a result that links to the settings.
+	 *
+	 * @internal
+	 *
+	 * @param string $url Settings page URL.
+	 *
+	 * @return string HTML.
+	 */
+	public static function settings_action( string $url ): string {
+		return sprintf(
+			'<p><a href="%s">%s</a></p>',
+			esc_url( $url ),
+			esc_html__( 'Review the notification settings', 'wp-updates-notifier' )
 		);
 	}
 }

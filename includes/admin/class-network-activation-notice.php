@@ -86,16 +86,12 @@ class Network_Activation_Notice {
 			esc_html__( 'Go to the network plugins', 'wp-updates-notifier' )
 		);
 
-		return array(
-			'label'       => __( 'WP Updates Notifier is not network-activated', 'wp-updates-notifier' ),
-			'status'      => 'critical',
-			'badge'       => array(
-				'label' => __( 'Updates Notifier', 'wp-updates-notifier' ),
-				'color' => 'red',
-			),
-			'description' => '<p>' . esc_html( $this->message() ) . '</p>',
-			'actions'     => $actions,
-			'test'        => 'sc_wpun_network',
+		return \WPUN\Site_Health::result(
+			'sc_wpun_network',
+			'critical',
+			__( 'WP Updates Notifier is not network-activated', 'wp-updates-notifier' ),
+			'<p>' . esc_html( $this->message() ) . '</p>',
+			$actions
 		);
 	}
 }

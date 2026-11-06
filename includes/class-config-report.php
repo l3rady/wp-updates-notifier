@@ -67,7 +67,7 @@ final class Config_Report {
 	 *
 	 * @return array<int, array{key: string, source: string, message: string}>
 	 */
-	private function problems(): array {
+	public function problems(): array {
 		// Resolving is lazy and problems are found while doing it.
 		$this->settings->get();
 		$this->settings->show_about();
@@ -127,20 +127,12 @@ final class Config_Report {
 			$items .= '<li><code>' . esc_html( $problem['key'] ) . '</code> (' . esc_html( $problem['source'] ) . '): ' . esc_html( $problem['message'] ) . '</li>';
 		}
 
-		return array(
-			'label'       => __( 'WP Updates Notifier cannot use some configuration values', 'wp-updates-notifier' ),
-			'status'      => 'recommended',
-			'badge'       => array(
-				'label' => __( 'Updates Notifier', 'wp-updates-notifier' ),
-				'color' => 'orange',
-			),
-			'description' => '<p>' . esc_html__( 'Some values supplied by constants, environment variables or other sources are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
-			'actions'     => sprintf(
-				'<p><a href="%s">%s</a></p>',
-				esc_url( $this->network_context->settings_url() ),
-				esc_html__( 'Review the notification settings', 'wp-updates-notifier' )
-			),
-			'test'        => 'sc_wpun_config',
+		return Site_Health::result(
+			'sc_wpun_config',
+			'recommended',
+			__( 'WP Updates Notifier cannot use some configuration values', 'wp-updates-notifier' ),
+			'<p>' . esc_html__( 'Some values supplied by constants, environment variables or other sources are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
+			Site_Health::settings_action( $this->network_context->settings_url() )
 		);
 	}
 }

@@ -252,20 +252,12 @@ class Slack_Notice {
 	 * @return array<string, mixed>
 	 */
 	public function site_health_result(): array {
-		return array(
-			'label'       => __( 'Slack notifications are no longer supported by WP Updates Notifier', 'wp-updates-notifier' ),
-			'status'      => 'recommended',
-			'badge'       => array(
-				'label' => __( 'Updates Notifier', 'wp-updates-notifier' ),
-				'color' => 'orange',
-			),
-			'description' => '<p>' . esc_html( __( 'Slack notifications are not supported in this version of WP Updates Notifier, so none are sent. Your Slack settings have been kept.', 'wp-updates-notifier' ) ) . '</p>',
-			'actions'     => sprintf(
-				'<p><a href="%s">%s</a></p>',
-				esc_url( $this->settings_url() ),
-				esc_html__( 'Review the notification settings', 'wp-updates-notifier' )
-			),
-			'test'        => 'sc_wpun_slack',
+		return Site_Health::result(
+			'sc_wpun_slack',
+			'recommended',
+			__( 'Slack notifications are no longer supported by WP Updates Notifier', 'wp-updates-notifier' ),
+			'<p>' . esc_html( __( 'Slack notifications are not supported in this version of WP Updates Notifier, so none are sent. Your Slack settings have been kept.', 'wp-updates-notifier' ) ) . '</p>',
+			Site_Health::settings_action( $this->settings_url() )
 		);
 	}
 }
