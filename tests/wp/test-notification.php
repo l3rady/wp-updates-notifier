@@ -420,4 +420,29 @@ class Test_Notification extends WPUN_Test_Case {
 	public function type_of( Notification_Item $item ) {
 		return $item->get_type();
 	}
+
+	/**
+	 * The sample has the site details of a real notification, an example item and the preview context by default.
+	 */
+	public function test_sample() {
+		$context = sc_wpun()->network_context();
+		$sample  = Notification::sample();
+
+		$this->assertSame( $context->site_name(), $sample->get_site_name() );
+		$this->assertSame( $context->home_url(), $sample->get_site_url() );
+		$this->assertSame( $context->update_core_url(), $sample->get_updates_url() );
+		$this->assertTrue( $sample->has_items() );
+		$this->assertSame( 'preview', $sample->get_source() );
+		$this->assertFalse( $sample->is_test() );
+
+		$other = Notification::sample(
+			array(
+				'source'      => 'cron',
+				'is_reminder' => true,
+			)
+		);
+		$this->assertSame( 'cron', $other->get_source() );
+		$this->assertTrue( $other->is_reminder() );
+		$this->assertTrue( $other->has_items() );
+	}
 }

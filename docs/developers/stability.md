@@ -35,7 +35,7 @@ The public API has its own semantic version, separate from the plugin's: `SC_WPU
 - A **minor** bump (1.0.0 to 1.1.0) adds API.
 - A **major** bump (1.x to 2.0.0) removes or changes some, following the deprecation rules above.
 
-API 1.1.0 also adds the `https_only` key of the `url` field type, `sc_wpun_instance_problems()` and the hooks of the built-in webhook channel, `sc_wpun_webhook_headers` and `sc_wpun_webhook_resolved_sent` (see [Webhook payload](webhook-payload.md)). It also draws a secret `textarea` as an empty textarea instead of a one-line password input, and keeps its value as typed apart from control characters. A module that uses `https_only` should declare `^1.1`, because an older plugin ignores the key and would accept `http://`.
+API 1.1.0 also adds `Notification::sample()`, the sample notification of a preview, the `https_only` key of the `url` field type, `sc_wpun_instance_problems()` and the hooks of the built-in webhook channel, `sc_wpun_webhook_headers` and `sc_wpun_webhook_resolved_sent` (see [Webhook payload](webhook-payload.md)). It also draws a secret `textarea` as an empty textarea instead of a one-line password input, and keeps its value as typed apart from control characters. A module that uses `https_only` should declare `^1.1`, because an older plugin ignores the key and would accept `http://`.
 
 State the API versions your add-on works with as a version constraint, in any of three ways:
 

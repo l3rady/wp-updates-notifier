@@ -211,6 +211,7 @@ public function get_form_panels( Channel_Instance $instance ): array {
 
 - Each panel has a `label` (required), a `content` and optionally a `description` and `collapsed`. The content is escaped markup, drawn as it is, like the control of a custom field type.
 - Panels are drawn after the field groups, in the order you return them, in the same way as a group: a fieldset whose legend holds an `<h3>`, folded into a `<details>` element when `collapsed`. A panel never opens by itself. Do not put headings of your own in the content, or if you must, start at `<h4>`.
+- To preview a message, build it from `Notification::sample()` (API 1.1.0). It has the site name, address and updates address a real notification gets, in network mode too, and an example plugin update, with the source `preview` unless you pass another context.
 - Nothing in a panel is submitted or saved. Panels are drawn with the generic form and with `render_settings()`.
 - On the form of a new channel the instance is a draft with an empty id (`'' === $instance->get_id()`), built from the default settings. After a failed save the instance holds the submitted values, on the new and the edit form.
 - The instance holds the resolved settings, secrets included. The content must never print them, and don't log or dump the settings.

@@ -172,23 +172,7 @@ class Email_Channel extends Channel {
 	 * @return string
 	 */
 	private function preview( Channel_Instance $instance ): string {
-		$notification = new Notification(
-			get_bloginfo( 'name' ),
-			home_url( '/' ),
-			self_admin_url( 'update-core.php' ),
-			array(
-				new Notification_Item(
-					array(
-						'type'            => 'plugin',
-						'key'             => 'example-plugin/example-plugin.php',
-						'name'            => __( 'Example plugin', 'wp-updates-notifier' ),
-						'current_version' => '1.0.0',
-						'new_version'     => '1.1.0',
-					)
-				),
-			),
-			array( 'source' => 'preview' )
-		);
+		$notification = Notification::sample();
 		$composed     = $this->compose( $notification, $instance );
 		$to           = $this->clean_addresses( $this->text( $instance->get_settings(), 'to' ) );
 

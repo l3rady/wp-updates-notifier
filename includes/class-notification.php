@@ -101,6 +101,40 @@ final class Notification {
 	}
 
 	/**
+	 * A sample notification, for a preview.
+	 *
+	 * Carries the site name, address and updates screen a real notification gets (the network's in
+	 * network mode, see `sc_wpun_is_network()`) and one example plugin update.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param array<string, mixed> $context Optional. The context, as for the constructor. Default `array( 'source' => 'preview' )`.
+	 *
+	 * @return Notification
+	 */
+	public static function sample( array $context = array( 'source' => 'preview' ) ): Notification {
+		$network = sc_wpun()->network_context();
+
+		return new self(
+			$network->site_name(),
+			$network->home_url(),
+			$network->update_core_url(),
+			array(
+				new Notification_Item(
+					array(
+						'type'            => 'plugin',
+						'key'             => 'example-plugin/example-plugin.php',
+						'name'            => __( 'Example plugin', 'wp-updates-notifier' ),
+						'current_version' => '1.0.0',
+						'new_version'     => '1.1.0',
+					)
+				),
+			),
+			$context
+		);
+	}
+
+	/**
 	 * Site name, as WordPress returns it (it may contain HTML entities). The network's name when the
 	 * plugin runs for a network (see `sc_wpun_is_network()`).
 	 *
