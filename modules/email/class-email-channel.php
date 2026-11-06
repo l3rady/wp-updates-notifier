@@ -430,19 +430,8 @@ class Email_Channel extends Channel {
 		$items = array();
 		foreach ( $notification->get_items() as $item ) {
 			if ( in_array( $item->get_type(), array( 'plugin', 'theme' ), true ) ) {
-				$item = new Notification_Item(
-					array(
-						'type'            => $item->get_type(),
-						'key'             => $item->get_key(),
-						'name'            => $item->get_name(),
-						'current_version' => $item->get_current_version(),
-						'new_version'     => $item->get_new_version(),
-						'links'           => array_merge( $item->get_links(), array( 'mute' => sc_wpun_mute_url( $item->get_type(), $item->get_key() ) ) ),
-						'notes'           => $item->get_notes(),
-						'notified_at'     => $item->get_notified_at(),
-						'flags'           => $item->get_flags(),
-					)
-				);
+				$links = array_merge( $item->get_links(), array( 'mute' => sc_wpun_mute_url( $item->get_type(), $item->get_key() ) ) );
+				$item  = new Notification_Item( array( 'links' => $links ) + $item->to_array() );
 			}
 			$items[] = $item;
 		}
