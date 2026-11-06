@@ -97,20 +97,16 @@ final class Rejected_Channels {
 			$items .= '<li>' . esc_html( $item['label'] ) . ': ' . esc_html( $item['reason'] ) . '</li>';
 		}
 
-		return array(
-			'label'       => __( 'Some WP Updates Notifier modules need a newer version', 'wp-updates-notifier' ),
-			'status'      => 'recommended',
-			'badge'       => array(
-				'label' => __( 'Updates Notifier', 'wp-updates-notifier' ),
-				'color' => 'orange',
-			),
-			'description' => '<p>' . esc_html__( 'Some notification modules need a newer version of WP Updates Notifier than this site has, so they are switched off. Their settings have been kept.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
-			'actions'     => sprintf(
+		return Site_Health::result(
+			'sc_wpun_rejected_channels',
+			'recommended',
+			__( 'Some WP Updates Notifier modules need a newer version', 'wp-updates-notifier' ),
+			'<p>' . esc_html__( 'Some notification modules need a newer version of WP Updates Notifier than this site has, so they are switched off. Their settings have been kept.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
+			sprintf(
 				'<p><a href="%s">%s</a></p>',
 				esc_url( $this->network_context->admin_page_url( 'plugins.php' ) ),
 				esc_html__( 'Update WP Updates Notifier', 'wp-updates-notifier' )
-			),
-			'test'        => 'sc_wpun_rejected_channels',
+			)
 		);
 	}
 }

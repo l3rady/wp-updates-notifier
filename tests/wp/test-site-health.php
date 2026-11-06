@@ -59,7 +59,7 @@ class Test_Site_Health extends WPUN_Test_Case {
 	private function site_health( $disabled ) {
 		$plugin = sc_wpun();
 
-		return new class( $plugin->settings(), $plugin->state(), $plugin->channel_store(), $plugin->channels(), $plugin->config(), $plugin->status_report(), $disabled ) extends Site_Health {
+		return new class( $plugin->settings(), $plugin->state(), $plugin->channel_store(), $plugin->channels(), new WPUN\Config_Report( $plugin->config(), $plugin->settings(), $plugin->channel_store() ), $plugin->status_report(), $disabled ) extends Site_Health {
 			/**
 			 * Whether DISABLE_WP_CRON is set.
 			 *
@@ -74,7 +74,7 @@ class Test_Site_Health extends WPUN_Test_Case {
 			 * @param WPUN\State            $state    State.
 			 * @param WPUN\Channel_Store    $store    Instances.
 			 * @param WPUN\Channel_Registry $registry Modules.
-			 * @param WPUN\Config           $config   Resolver.
+			 * @param WPUN\Config_Report    $config   Configuration report.
 			 * @param WPUN\Status_Report    $report   Report.
 			 * @param bool                  $disabled Whether DISABLE_WP_CRON is set.
 			 */
