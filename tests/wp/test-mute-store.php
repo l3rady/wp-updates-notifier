@@ -579,6 +579,23 @@ class Test_Mute_Store extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A version another updater stores as a number counts, as it does for the update check.
+	 */
+	public function test_offered_version_accepts_a_numeric_version() {
+		list( $theme ) = array_keys( wp_get_themes() );
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => 2.1 ) ), array( $theme => array( 'new_version' => 5 ) ) );
+		$store = new Mute_Store();
+
+		$this->assertSame( '2.1', $store->offered_version( 'plugin', 'hello.php' ) );
+		$this->assertSame( '5', $store->offered_version( 'theme', $theme ) );
+
+		$store->mute( 'plugin', 'hello.php', '2.0' );
+		$store->mute( 'theme', $theme, '4.0' );
+		$this->assertNull( $store->get( 'plugin', 'hello.php' ), 'A newer version ends a "skip this version" mute.' );
+		$this->assertNull( $store->get( 'theme', $theme ) );
+	}
+
+	/**
 	 * Deleting a plugin or theme removes its mute, but only when it was deleted.
 	 */
 	public function test_deleting_removes_the_mute() {

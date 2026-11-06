@@ -1228,7 +1228,7 @@ class Update_Checker {
 	private function plugins_update_check( array &$items, string $all_or_active, array &$checked ): void {
 		do_action( 'wp_update_plugins' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates.
-		$pending        = $this->normalise_plugin_updates( is_object( $update_plugins ) && isset( $update_plugins->response ) ? $update_plugins->response : array() );
+		$pending        = self::normalise_plugin_updates( is_object( $update_plugins ) && isset( $update_plugins->response ) ? $update_plugins->response : array() );
 
 		// Everything still waiting, before any filtering, so the instances can forget plugins that were updated or deleted.
 		$checked['plugin'] = array_map( 'strval', array_keys( $pending ) );
@@ -1245,7 +1245,7 @@ class Update_Checker {
 			 *
 			 * @param array<string, object> $plugins_need_update Update data from WordPress by plugin file (for example `hello.php`).
 			 */
-			$plugins_need_update = $this->normalise_plugin_updates( apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ) ); // additional filtering of plugins need update; filters may return anything.
+			$plugins_need_update = self::normalise_plugin_updates( apply_filters( 'sc_wpun_plugins_need_update', $plugins_need_update ) ); // additional filtering of plugins need update; filters may return anything.
 			if ( ! function_exists( 'get_plugins' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/plugin.php'; // Not loaded in cron requests.
 			}
@@ -1301,7 +1301,7 @@ class Update_Checker {
 	private function themes_update_check( array &$items, string $all_or_active, array &$checked ): void {
 		do_action( 'wp_update_themes' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_themes = get_site_transient( 'update_themes' ); // get information of updates.
-		$pending       = $this->normalise_theme_updates( is_object( $update_themes ) && isset( $update_themes->response ) ? $update_themes->response : array() );
+		$pending       = self::normalise_theme_updates( is_object( $update_themes ) && isset( $update_themes->response ) ? $update_themes->response : array() );
 
 		// Everything still waiting, before any filtering, so the instances can forget themes that were updated or deleted.
 		$checked['theme'] = array_map( 'strval', array_keys( $pending ) );
@@ -1319,7 +1319,7 @@ class Update_Checker {
 			 *
 			 * @param array<string, array<string, mixed>> $themes_need_update Update data from WordPress by theme stylesheet.
 			 */
-			$themes_need_update = $this->normalise_theme_updates( apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ) ); // additional filtering of themes need update; filters may return anything.
+			$themes_need_update = self::normalise_theme_updates( apply_filters( 'sc_wpun_themes_need_update', $themes_need_update ) ); // additional filtering of themes need update; filters may return anything.
 			$themes_need_update = array_intersect_key( $themes_need_update, wp_get_themes( array( 'errors' => null ) ) ); // Only read the files of installed themes, whatever the transient or a filter holds.
 			if ( count( $themes_need_update ) >= 1 ) { // any themes need updating after all the filtering gone on above?
 				foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating.
@@ -1358,7 +1358,7 @@ class Update_Checker {
 	 *
 	 * @return array<string, \stdClass> Entries keyed by plugin file, each with string `new_version`, `url`, `slug`, `id` and `package`.
 	 */
-	public function normalise_plugin_updates( $response ): array {
+	public static function normalise_plugin_updates( $response ): array {
 		$updates = array();
 
 		foreach ( is_array( $response ) ? $response : array() as $file => $entry ) {
@@ -1389,7 +1389,7 @@ class Update_Checker {
 	 *
 	 * @return array<string, array{new_version: string, url: string, package: string}> Entries keyed by stylesheet.
 	 */
-	private function normalise_theme_updates( $response ): array {
+	public static function normalise_theme_updates( $response ): array {
 		$updates = array();
 
 		foreach ( is_array( $response ) ? $response : array() as $stylesheet => $entry ) {
