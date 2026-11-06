@@ -3463,6 +3463,7 @@
 <p>The settings screen is <code>options-general.php</code> on a single site and in the network admin on a multisite network. Use <code>sc_wpun_settings_url()</code> (API 1.1.0) for a link, and <code>sc_wpun_is_network()</code> to know which mode you are in. Never write <code>admin_url( 'options-general.php?page=…' )</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="x">$url = sc_wpun_settings_url( 'channels' ); // The Channels tab, in either mode.</span>
 </code></pre></div>
+<p>A screen, REST route or widget of your own that changes the plugin's settings checks <code>current_user_can( sc_wpun_capability() )</code>, and one that mutes or unmutes checks <code>sc_wpun_mute_capability()</code> (both API 1.1.0). They return what the plugin checks, after its filters, so never write <code>manage_options</code>.</p>
 <h2 id="checklist">Checklist<a class="headerlink" href="#checklist" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The header has <code>Requires Plugins: wp-updates-notifier</code> and <code>Requires WPUN API</code> with the constraint, and <code>boot()</code> checks <code>sc_wpun_api_satisfies( '^1.0' )</code> for code outside the channel.</li>

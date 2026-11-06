@@ -2592,6 +2592,11 @@
 <div class="highlight"><pre><span></span><code><span class="x">// Let people who can update plugins mute and unmute.</span>
 <span class="x">add_filter( 'sc_wpun_mute_capability', fn() =&gt; 'update_plugins' );</span>
 </code></pre></div>
+<p>Code that offers muting somewhere else, such as a dashboard widget or a REST route, checks the same capability with <code>sc_wpun_mute_capability()</code> (API 1.1.0), so it stays in step with the filter and with multisite:</p>
+<div class="highlight"><pre><span></span><code><span class="x">if ( current_user_can( sc_wpun_mute_capability() ) ) {</span>
+<span class="x">    sc_wpun_mutes()-&gt;unmute( 'plugin', 'noisy/noisy.php' );</span>
+<span class="x">}</span>
+</code></pre></div>
 <h2 id="react-to-changes">React to changes<a class="headerlink" href="#react-to-changes" title="Permanent link">&para;</a></h2>
 <p><code>sc_wpun_item_muted</code> and <code>sc_wpun_item_unmuted</code> fire after a change, with the <code>Mute</code> and the source. Replacing a mute fires <code>sc_wpun_item_muted</code> again. Deleting a plugin or theme removes its mute and fires <code>sc_wpun_item_unmuted</code> with the source <code>deleted</code>, so a log can tell it from an unmute by a person.</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_action(</span>

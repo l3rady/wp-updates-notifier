@@ -5403,7 +5403,8 @@ defaults to the capability of the settings page (<code>sc_wpun_capability</code>
 site), so a site can let maintainers mute without giving them the whole settings screen. An empty or
 non-string value is ignored and the default is used.</p>
 <p>The Muted tab is part of the settings page, so seeing it still needs the settings capability, and
-its forms need both. WP-CLI and the PHP API are not affected: they do not check capabilities.</p>
+its forms need both. WP-CLI and the PHP API are not affected: they do not check capabilities.
+Code outside the plugin reads the result with <code>sc_wpun_mute_capability()</code>.</p>
 <p>Example, let users who can update plugins mute and unmute:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter( 'sc_wpun_mute_capability', fn() =&gt; 'update_plugins' );</span>
 </code></pre></div>
@@ -5777,6 +5778,7 @@ notifications go. Such a user can:</p>
 <p>Network-activated, the screen is in the network admin, which only users who can manage the
 network reach, so lowering this to <code>manage_options</code> does not let the administrators of the
 sites in. Lower it to a capability that users who manage the network have, or leave it.</p>
+<p>Code outside the plugin reads the result with <code>sc_wpun_capability()</code>.</p>
 <table>
 <thead>
 <tr>
