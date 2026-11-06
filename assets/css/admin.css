@@ -212,3 +212,9 @@
 		padding: 0 12px 8px;
 	}
 }
+
+/* The note about a form filled in from a link, and the one about an item that is muted already. */
+.sc-wpun-prefill-note,
+.sc-wpun-muted-note {
+	margin: 12px 0;
+}

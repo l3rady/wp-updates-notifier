@@ -29,6 +29,12 @@ class Muted_Tab {
 	const REMOVE_ACTION = 'sc_wpun_muted_remove';
 	const SOURCE        = 'settings';
 
+	// The arguments of a link that opens the tab with the form filled in. `sc_wpun_mute_url()` builds the link.
+	const ARG_TYPE   = 'mute_type';
+	const ARG_KEY    = 'mute_key';
+	const ARG_MODE   = 'mute_mode';
+	const ARG_SNOOZE = 'mute_snooze';
+
 	/**
 	 * Mute storage.
 	 *
@@ -232,6 +238,18 @@ class Muted_Tab {
 	}
 
 	/**
+	 * The id of a row of the list, which the note about a muted item links to. Never the raw key.
+	 *
+	 * @param string $type Item type.
+	 * @param string $key  Item key.
+	 *
+	 * @return string
+	 */
+	private static function row_id( string $type, string $key ): string {
+		return 'sc-wpun-muted-' . $type . '-' . substr( md5( $key ), 0, 12 );
+	}
+
+	/**
 	 * Output a row of the list.
 	 *
 	 * @param array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string, expires: ?int, source: string} $row The mute.
@@ -242,7 +260,7 @@ class Muted_Tab {
 	private function render_row( array $row, bool $can ): void {
 		$title = $row['name'] ?? $row['key'];
 		?>
-		<tr class="sc-wpun-muted-item">
+		<tr class="sc-wpun-muted-item" id="<?php echo esc_attr( self::row_id( $row['type'], $row['key'] ) ); ?>">
 			<td class="column-primary sc-wpun-muted-name" data-colname="<?php esc_attr_e( 'Name', 'wp-updates-notifier' ); ?>">
 				<strong><?php echo esc_html( $title ); ?></strong>
 				<span class="description">
@@ -295,14 +313,23 @@ class Muted_Tab {
 	 * @return void
 	 */
 	private function render_form(): void {
-		$groups = array();
-		foreach ( $this->actions->installed() as $type => $items ) {
+		$installed = $this->actions->installed();
+		$groups    = array();
+		foreach ( $installed as $type => $items ) {
 			foreach ( $items as $key => $name ) {
 				if ( null === $this->store->get( $type, $key ) ) {
 					$groups[ $type ][ $key ] = $name;
 				}
 			}
 		}
+
+		// A link can fill the form in. Only the type and key are looked up, in the installed list; the name shown is the list's.
+		$linked  = $this->linked_item( $installed );
+		$prefill = null !== $linked && isset( $groups[ $linked[0] ][ $linked[1] ] ) ? $this->prefill() : null;
+		if ( null !== $linked && null === $prefill ) {
+			$this->render_muted_note( $linked[0], $linked[1], $installed[ $linked[0] ][ $linked[1] ] );
+		}
+
 		if ( array() === $groups ) {
 			?>
 			<section class="sc-wpun-panel">
@@ -318,17 +345,32 @@ class Muted_Tab {
 			<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( self::ADD_ACTION ) ); ?>" />
 			<fieldset class="sc-wpun-panel">
 				<legend><h3><?php esc_html_e( 'Mute a plugin or theme', 'wp-updates-notifier' ); ?></h3></legend>
+				<?php if ( null !== $prefill ) : ?>
+					<div class="notice notice-info inline sc-wpun-prefill-note" id="sc-wpun-mute-prefilled">
+						<p>
+							<?php
+							echo esc_html(
+								sprintf(
+									// translators: %s: Name of the plugin or theme.
+									__( 'Pre-filled from a link: %s. Check and press Mute.', 'wp-updates-notifier' ),
+									$installed[ $linked[0] ][ $linked[1] ]
+								)
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
 				<table class="form-table" role="presentation">
 					<tbody>
 						<tr>
 							<th scope="row"><label for="sc-wpun-mute-item"><?php esc_html_e( 'Plugin or theme', 'wp-updates-notifier' ); ?></label></th>
 							<td>
-								<select id="sc-wpun-mute-item" name="item">
+								<select id="sc-wpun-mute-item" name="item"<?php echo null === $prefill ? '' : ' autofocus="autofocus" aria-describedby="sc-wpun-mute-prefilled"'; ?>>
 									<?php foreach ( array( 'plugin' => __( 'Plugins', 'wp-updates-notifier' ), 'theme' => __( 'Themes', 'wp-updates-notifier' ) ) as $type => $label ) : // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound ?>
 										<?php if ( isset( $groups[ $type ] ) ) : ?>
 											<optgroup label="<?php echo esc_attr( $label ); ?>">
 												<?php foreach ( $groups[ $type ] as $key => $name ) : ?>
-													<option value="<?php echo esc_attr( $type . ':' . $key ); ?>"><?php echo esc_html( $name ); ?></option>
+													<option value="<?php echo esc_attr( $type . ':' . $key ); ?>"<?php selected( null !== $linked && null !== $prefill && array( $type, (string) $key ) === $linked ); ?>><?php echo esc_html( $name ); ?></option>
 												<?php endforeach; ?>
 											</optgroup>
 										<?php endif; ?>
@@ -341,8 +383,8 @@ class Muted_Tab {
 							<td>
 								<fieldset>
 									<legend class="screen-reader-text"><?php esc_html_e( 'What to mute', 'wp-updates-notifier' ); ?></legend>
-									<label><input type="radio" name="mode" value="always" checked="checked" /> <?php esc_html_e( 'Always', 'wp-updates-notifier' ); ?></label><br />
-									<label><input type="radio" name="mode" value="skip" aria-describedby="sc-wpun-mute-skip-description" /> <?php esc_html_e( 'Skip the waiting version', 'wp-updates-notifier' ); ?></label>
+									<label><input type="radio" name="mode" value="always"<?php checked( null === $prefill || 'skip' !== $prefill['mode'] ); ?> /> <?php esc_html_e( 'Always', 'wp-updates-notifier' ); ?></label><br />
+									<label><input type="radio" name="mode" value="skip"<?php checked( null !== $prefill && 'skip' === $prefill['mode'] ); ?> aria-describedby="sc-wpun-mute-skip-description" /> <?php esc_html_e( 'Skip the waiting version', 'wp-updates-notifier' ); ?></label>
 									<p class="description" id="sc-wpun-mute-skip-description"><?php esc_html_e( 'Notifications start again when a newer version than the waiting one is offered. It needs an update to be waiting.', 'wp-updates-notifier' ); ?></p>
 								</fieldset>
 							</td>
@@ -350,7 +392,7 @@ class Muted_Tab {
 						<tr>
 							<th scope="row"><label for="sc-wpun-mute-snooze-until"><?php esc_html_e( 'Snooze until', 'wp-updates-notifier' ); ?></label></th>
 							<td>
-								<input type="datetime-local" id="sc-wpun-mute-snooze-until" name="snooze_until" aria-describedby="sc-wpun-mute-snooze-description" />
+								<input type="datetime-local" id="sc-wpun-mute-snooze-until" name="snooze_until"<?php echo null === $prefill || '' === $prefill['snooze'] ? '' : ' value="' . esc_attr( $prefill['snooze'] ) . '"'; ?> aria-describedby="sc-wpun-mute-snooze-description" />
 								<p class="description" id="sc-wpun-mute-snooze-description"><?php esc_html_e( 'Optional, in the time zone of the site. Notifications start again at that time. With "Skip the waiting version" they start again at that time or when a newer version is offered, whichever is first.', 'wp-updates-notifier' ); ?></p>
 							</td>
 						</tr>
@@ -359,6 +401,81 @@ class Muted_Tab {
 			</fieldset>
 			<p class="submit"><button type="submit" class="button button-primary"><?php esc_html_e( 'Mute', 'wp-updates-notifier' ); ?></button></p>
 		</form>
+		<?php
+	}
+
+	/**
+	 * The plugin or theme a link points to, if it is installed.
+	 *
+	 * Reads the request to choose what to show, nothing is changed. Nothing read is output: the caller uses the
+	 * installed list's own spelling and name.
+	 *
+	 * @param array{plugin: array<string, string>, theme: array<string, string>} $installed The installed items.
+	 *
+	 * @return array{0: string, 1: string}|null Type and key.
+	 */
+	private function linked_item( array $installed ): ?array {
+		if ( ! isset( $_GET[ self::ARG_TYPE ], $_GET[ self::ARG_KEY ] ) || ! is_string( $_GET[ self::ARG_TYPE ] ) || ! is_string( $_GET[ self::ARG_KEY ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Choosing what to display, nothing is changed.
+			return null;
+		}
+
+		$type = sanitize_key( wp_unslash( $_GET[ self::ARG_TYPE ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Choosing what to display, nothing is changed.
+		$key  = sanitize_text_field( wp_unslash( $_GET[ self::ARG_KEY ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Not sanitize_key(): it would strip the "/" and "." of a plugin file.
+		if ( ! isset( $installed[ $type ][ $key ] ) ) {
+			return null;
+		}
+
+		return array( $type, $key );
+	}
+
+	/**
+	 * What a link asks the form to hold: the mode, and the end of the snooze.
+	 *
+	 * @return array{mode: string, snooze: string} The mode `always` or `skip`; the snooze as `Y-m-d\TH:i` in the site's time zone, or empty.
+	 */
+	private function prefill(): array {
+		$mode = isset( $_GET[ self::ARG_MODE ] ) && is_string( $_GET[ self::ARG_MODE ] ) ? sanitize_key( wp_unslash( $_GET[ self::ARG_MODE ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Choosing what to display, nothing is changed.
+		$mode = in_array( $mode, array( 'always', 'skip', 'snooze' ), true ) ? $mode : 'always';
+
+		$snooze = '';
+		if ( 'snooze' === $mode && isset( $_GET[ self::ARG_SNOOZE ] ) && is_string( $_GET[ self::ARG_SNOOZE ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Choosing what to display, nothing is changed.
+			$length = sanitize_text_field( wp_unslash( $_GET[ self::ARG_SNOOZE ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Choosing what to display, nothing is changed.
+			if ( ctype_digit( $length ) && (string) (int) $length === $length && isset( Mute_Store::snooze_durations()[ (int) $length ] ) ) {
+				$snooze = (string) wp_date( 'Y-m-d\TH:i', time() + (int) $length, wp_timezone() );
+			}
+		}
+
+		return array(
+			'mode'   => 'skip' === $mode ? 'skip' : 'always',
+			'snooze' => $snooze,
+		);
+	}
+
+	/**
+	 * Output the note that a linked item is muted already, with a link to its row.
+	 *
+	 * @param string $type Item type.
+	 * @param string $key  Item key.
+	 * @param string $name Name of the item, from the installed list.
+	 *
+	 * @return void
+	 */
+	private function render_muted_note( string $type, string $key, string $name ): void {
+		?>
+		<div class="notice notice-info inline sc-wpun-muted-note">
+			<p>
+				<?php
+				echo esc_html(
+					sprintf(
+						// translators: %s: Name of the plugin or theme.
+						__( '%s is already muted.', 'wp-updates-notifier' ),
+						$name
+					)
+				);
+				?>
+				<a href="#<?php echo esc_attr( self::row_id( $type, $key ) ); ?>"><?php esc_html_e( 'See it in the list.', 'wp-updates-notifier' ); ?></a>
+			</p>
+		</div>
 		<?php
 	}
 

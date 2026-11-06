@@ -675,6 +675,38 @@ if ( ! function_exists( 'sc_wpun_settings_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sc_wpun_mute_url' ) ) {
+	/**
+	 * The address of the Muted tab with its form filled in for a plugin or theme.
+	 *
+	 * Link to it from another tool, for example a "mute this" link in a message. The link only fills in the form:
+	 * nothing is muted until the user checks it and presses Mute. A plugin or theme that is not installed, or is
+	 * muted already, is ignored (the tab says so for a muted one).
+	 *
+	 *     printf( '<a href="%s">Mute</a>', esc_url( sc_wpun_mute_url( 'plugin', 'akismet/akismet.php', 'snooze', WEEK_IN_SECONDS ) ) );
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $type   `plugin` or `theme`.
+	 * @param string $key    The plugin file, for example `akismet/akismet.php`, or the theme's stylesheet (its directory name).
+	 * @param string $mode   Optional. `always`, `skip` (skip the waiting version) or `snooze`. Default `always`.
+	 * @param int    $snooze Optional. With `snooze`, the length in seconds, one of those the `sc_wpun_snooze_durations` filter lists (by default a day, a week and 30 days). Fills in the end of the snooze. Default 0, none.
+	 *
+	 * @return string The address, not escaped.
+	 */
+	function sc_wpun_mute_url( string $type, string $key, string $mode = 'always', int $snooze = 0 ): string {
+		$url  = sc_wpun_settings_url( 'muted' );
+		$url .= '&' . \WPUN\Admin\Muted_Tab::ARG_TYPE . '=' . rawurlencode( $type );
+		$url .= '&' . \WPUN\Admin\Muted_Tab::ARG_KEY . '=' . rawurlencode( $key );
+		$url .= '&' . \WPUN\Admin\Muted_Tab::ARG_MODE . '=' . rawurlencode( $mode );
+		if ( $snooze > 0 ) {
+			$url .= '&' . \WPUN\Admin\Muted_Tab::ARG_SNOOZE . '=' . $snooze;
+		}
+
+		return $url;
+	}
+}
+
 if ( ! function_exists( 'sc_wpun_api_version' ) ) {
 	/**
 	 * The version of the public API, for add-ons to check what they can use.

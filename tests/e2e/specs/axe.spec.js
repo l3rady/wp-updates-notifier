@@ -1,7 +1,7 @@
 // axe scans of the plugin's settings screen for WCAG 2.2 A and AA (#225). A violation fails the test and is listed with
 // its rule, impact, elements and the help text. The console of each page must also be free of errors.
 const { test, expect } = require( '@playwright/test' );
-const { CHANNELS, VIEWS, scan, describe, watchConsole } = require( './helpers' );
+const { CHANNELS, MUTED, VIEWS, scan, describe, watchConsole } = require( './helpers' );
 
 for ( const [ name, url ] of VIEWS ) {
 	test( `axe: ${ name }`, async ( { page } ) => {
@@ -14,6 +14,19 @@ for ( const [ name, url ] of VIEWS ) {
 		expect( errors, `console errors on ${ url }` ).toEqual( [] );
 	} );
 }
+
+// A link opens the Muted tab with the form filled in (#392): the select has the focus and points to its note.
+test( 'axe: Muted tab form filled in from a link', async ( { page } ) => {
+	const errors = watchConsole( page );
+	await page.goto( `${ MUTED }&mute_type=plugin&mute_key=${ encodeURIComponent( 'akismet/akismet.php' ) }&mute_mode=snooze&mute_snooze=604800` );
+	await expect( page.locator( '#sc-wpun-mute-prefilled' ) ).toBeVisible();
+	await expect( page.locator( '#sc-wpun-mute-item' ) ).toBeFocused();
+	await expect( page.locator( '#sc-wpun-mute-snooze-until' ) ).not.toHaveValue( '' );
+
+	const violations = await scan( page );
+	expect( violations, `${ violations.length } axe violation(s) on the filled in Muted form\n\n${ describe( violations ) }\n` ).toEqual( [] );
+	expect( errors, 'console errors on the filled in Muted form' ).toEqual( [] );
+} );
 
 test( 'axe: form after a failed save', async ( { page } ) => {
 	const errors = watchConsole( page );

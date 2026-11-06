@@ -1259,10 +1259,11 @@ Fired in `includes/class-mute-store.php`.
 
 *Filter*, since 3.0.0
 
-Filters the lengths of a snooze offered on the Plugins screen, the Muted tab and in WP-CLI.
+Filters the lengths of a snooze offered on the Plugins screen.
 
 A list of seconds => label. Entries whose seconds are not a positive whole number or whose label is
-not a non-empty string are dropped. Only these lengths are accepted from the Plugins screen links.
+not a non-empty string are dropped. Only these lengths are accepted from the Plugins screen links, and by the Muted tab links that
+`sc_wpun_mute_url()` builds. The Muted tab's own form takes any end time, and WP-CLI any duration.
 
 Example, offer 4 hours as well:
 

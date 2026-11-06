@@ -616,4 +616,392 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 		}
 		$this->assertFalse( sc_wpun()->network_context()->get_option( 'sc_wpun_muted' ) );
 	}
+
+	/**
+	 * The unmuted installed items, as the form offers them, and the snapshot of the stored mutes.
+	 *
+	 * @param array $get The request's query arguments.
+	 * @return DOMXPath
+	 */
+	private function linked( array $get ) {
+		$_GET = $get;
+
+		return $this->tab();
+	}
+
+	/**
+	 * Whether the form is empty: the first option is not chosen on purpose, Always is ticked, no time, no note.
+	 *
+	 * @param DOMXPath $xpath The tab.
+	 */
+	private function assert_form_not_prefilled( DOMXPath $xpath ) {
+		$this->assertSame( 0, $xpath->query( '//option[@selected]' )->length );
+		$this->assertSame( 0, $xpath->query( '//select[@autofocus or @aria-describedby]' )->length );
+		$this->assertSame( 0, $xpath->query( '//*[@id="sc-wpun-mute-prefilled"]' )->length );
+		$this->assertSame( 1, $xpath->query( '//input[@name="mode"][@value="always"][@checked]' )->length );
+		$this->assertSame( 0, $xpath->query( '//input[@name="mode"][@value="skip"][@checked]' )->length );
+		$this->assertSame( 0, $xpath->query( '//input[@name="snooze_until"][@value]' )->length );
+		$this->assertSame( 0, $xpath->query( '//*[contains(@class,"sc-wpun-muted-note")]' )->length );
+	}
+
+	/**
+	 * A link to an installed, unmuted plugin chooses it, focuses the list and says so in a note the list points to.
+	 */
+	public function test_a_link_fills_in_the_item() {
+		$xpath = $this->linked(
+			array(
+				'mute_type' => 'plugin',
+				'mute_key'  => 'hello.php',
+			)
+		);
+
+		$this->assertSame( 1, $xpath->query( '//option[@selected]' )->length );
+		$this->assertSame( 1, $xpath->query( '//option[@value="plugin:hello.php"][@selected]' )->length );
+		$select = $xpath->query( '//select[@id="sc-wpun-mute-item"]' )->item( 0 );
+		$this->assertTrue( $select->hasAttribute( 'autofocus' ) );
+		$this->assertSame( 'sc-wpun-mute-prefilled', $select->getAttribute( 'aria-describedby' ) );
+		$note = $xpath->query( '//form//fieldset/*[@id="sc-wpun-mute-prefilled"]' )->item( 0 );
+		$this->assertNotNull( $note, 'The note is in the form.' );
+		$this->assertSame( 'Pre-filled from a link: Hello Dolly. Check and press Mute.', trim( preg_replace( '/\s+/', ' ', $note->textContent ) ) );
+		$this->assertSame( 1, $xpath->query( '//input[@name="mode"][@value="always"][@checked]' )->length );
+		$this->assertSame( 0, $xpath->query( '//input[@name="snooze_until"][@value]' )->length );
+	}
+
+	/**
+	 * A theme is chosen the same way.
+	 */
+	public function test_a_link_fills_in_a_theme() {
+		$themes = array_keys( wp_get_themes() );
+		$xpath  = $this->linked(
+			array(
+				'mute_type' => 'theme',
+				'mute_key'  => $themes[0],
+			)
+		);
+
+		$this->assertSame( 1, $xpath->query( '//option[@selected]' )->length );
+		$this->assertSame( 1, $xpath->query( '//option[@value="theme:' . $themes[0] . '"][@selected]' )->length );
+	}
+
+	/**
+	 * The mode: skip is ticked even when no update is waiting, always and snooze tick Always, anything else Always.
+	 */
+	public function test_a_link_fills_in_the_mode() {
+		$item = array(
+			'mute_type' => 'plugin',
+			'mute_key'  => 'hello.php',
+		);
+
+		$xpath = $this->linked( $item + array( 'mute_mode' => 'skip' ) );
+		$this->assertSame( 1, $xpath->query( '//input[@name="mode"][@value="skip"][@checked]' )->length );
+		$this->assertSame( 0, $xpath->query( '//input[@name="mode"][@value="always"][@checked]' )->length );
+
+		foreach ( array( 'always', 'snooze', 'ALWAYS', 'forever', '', 'skip,always' ) as $mode ) {
+			$xpath = $this->linked( $item + array( 'mute_mode' => $mode ) );
+			$this->assertSame( 1, $xpath->query( '//input[@name="mode"][@value="always"][@checked]' )->length, $mode );
+			$this->assertSame( 0, $xpath->query( '//input[@name="mode"][@value="skip"][@checked]' )->length, $mode );
+			$this->assertSame( 1, $xpath->query( '//option[@selected]' )->length, $mode );
+		}
+	}
+
+	/**
+	 * A snooze length fills in the end of the snooze in the site's time zone, in a form the submit accepts.
+	 */
+	public function test_a_link_fills_in_the_snooze() {
+		update_option( 'timezone_string', 'Europe/Berlin' );
+		$item = array(
+			'mute_type'   => 'plugin',
+			'mute_key'    => 'hello.php',
+			'mute_mode'   => 'snooze',
+			'mute_snooze' => (string) WEEK_IN_SECONDS,
+		);
+
+		$before = time();
+		$xpath  = $this->linked( $item );
+		$after  = time();
+		$value  = $xpath->query( '//input[@type="datetime-local"][@name="snooze_until"]/@value' )->item( 0 )->nodeValue;
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $value );
+		$end = ( new DateTimeImmutable( $value, new DateTimeZone( 'Europe/Berlin' ) ) )->getTimestamp();
+		$this->assertGreaterThanOrEqual( $before + WEEK_IN_SECONDS - 60, $end );
+		$this->assertLessThanOrEqual( $after + WEEK_IN_SECONDS, $end );
+		$this->assertSame( 1, $xpath->query( '//input[@name="mode"][@value="always"][@checked]' )->length );
+
+		// Submitting what the form holds snoozes until then.
+		$this->submit(
+			Muted_Tab::ADD_ACTION,
+			array(
+				'item'         => 'plugin:hello.php',
+				'mode'         => 'always',
+				'snooze_until' => $value,
+			),
+			Muted_Tab::ADD_ACTION
+		);
+		$this->assertSame( $end, sc_wpun_mutes()->get( 'plugin', 'hello.php' )->get_expires() );
+	}
+
+	/**
+	 * A snooze length is ignored with another mode, or if the list does not offer it.
+	 */
+	public function test_a_link_ignores_a_snooze_it_cannot_use() {
+		$item = array(
+			'mute_type' => 'plugin',
+			'mute_key'  => 'hello.php',
+		);
+		foreach ( array(
+			'mode always'  => array(
+				'mute_mode'   => 'always',
+				'mute_snooze' => (string) WEEK_IN_SECONDS,
+			),
+			'mode skip'    => array(
+				'mute_mode'   => 'skip',
+				'mute_snooze' => (string) WEEK_IN_SECONDS,
+			),
+			'no mode'      => array( 'mute_snooze' => (string) WEEK_IN_SECONDS ),
+			'not listed'   => array(
+				'mute_mode'   => 'snooze',
+				'mute_snooze' => '12345',
+			),
+			'leading zero' => array(
+				'mute_mode'   => 'snooze',
+				'mute_snooze' => '0' . WEEK_IN_SECONDS,
+			),
+			'not a number' => array(
+				'mute_mode'   => 'snooze',
+				'mute_snooze' => 'week',
+			),
+			'negative'     => array(
+				'mute_mode'   => 'snooze',
+				'mute_snooze' => '-' . WEEK_IN_SECONDS,
+			),
+			'decimal'      => array(
+				'mute_mode'   => 'snooze',
+				'mute_snooze' => WEEK_IN_SECONDS . '.0',
+			),
+			'huge'         => array(
+				'mute_mode'   => 'snooze',
+				'mute_snooze' => '99999999999999999999999',
+			),
+			'array'        => array(
+				'mute_mode'   => 'snooze',
+				'mute_snooze' => array( (string) WEEK_IN_SECONDS ),
+			),
+		) as $name => $args ) {
+			$xpath = $this->linked( $item + $args );
+			$this->assertSame( 1, $xpath->query( '//option[@selected]' )->length, $name );
+			$this->assertSame( 0, $xpath->query( '//input[@name="snooze_until"][@value]' )->length, $name );
+		}
+	}
+
+	/**
+	 * Lengths the filter adds are accepted.
+	 */
+	public function test_a_link_accepts_a_length_the_filter_adds() {
+		add_filter(
+			'sc_wpun_snooze_durations',
+			function ( $durations ) {
+				return array( 4 * HOUR_IN_SECONDS => '4 hours' ) + $durations;
+			}
+		);
+		$xpath = $this->linked(
+			array(
+				'mute_type'   => 'plugin',
+				'mute_key'    => 'hello.php',
+				'mute_mode'   => 'snooze',
+				'mute_snooze' => (string) ( 4 * HOUR_IN_SECONDS ),
+			)
+		);
+		$this->assertSame( 1, $xpath->query( '//input[@name="snooze_until"][@value]' )->length );
+	}
+
+	/**
+	 * What is not an installed plugin or theme, or is not complete, is ignored without a word.
+	 */
+	public function test_a_link_to_something_else_is_ignored() {
+		foreach ( array(
+			'not installed' => array(
+				'mute_type' => 'plugin',
+				'mute_key'  => 'nothing/nothing.php',
+			),
+			'unknown type'  => array(
+				'mute_type' => 'core',
+				'mute_key'  => 'hello.php',
+			),
+			'wrong type'    => array(
+				'mute_type' => 'theme',
+				'mute_key'  => 'hello.php',
+			),
+			'no key'        => array( 'mute_type' => 'plugin' ),
+			'no type'       => array( 'mute_key' => 'hello.php' ),
+			'empty'         => array(
+				'mute_type' => '',
+				'mute_key'  => '',
+			),
+			'arrays'        => array(
+				'mute_type' => array( 'plugin' ),
+				'mute_key'  => array( 'hello.php' ),
+			),
+			'only the mode' => array(
+				'mute_mode'   => 'skip',
+				'mute_snooze' => (string) WEEK_IN_SECONDS,
+			),
+		) as $name => $args ) {
+			$xpath = $this->linked( $args + array( 'mute_mode' => 'skip' ) );
+			$this->assertSame( 0, $xpath->query( '//option[@selected]' )->length, $name );
+			$this->assertSame( 0, $xpath->query( '//select[@autofocus or @aria-describedby]' )->length, $name );
+			$this->assertSame( 0, $xpath->query( '//*[@id="sc-wpun-mute-prefilled"]' )->length, $name );
+			$this->assertSame( 0, $xpath->query( '//*[contains(@class,"sc-wpun-muted-note")]' )->length, $name );
+			$this->assertSame( 0, $xpath->query( '//input[@name="snooze_until"][@value]' )->length, $name );
+		}
+
+		// Without mode and with the mode as given, an unlinked tab has the plain form.
+		$this->assert_form_not_prefilled( $this->linked( array() ) );
+	}
+
+	/**
+	 * Wrong spelling of the key is not matched, and the key is read as text, not as a key.
+	 */
+	public function test_a_link_needs_the_exact_key() {
+		$this->assert_form_not_prefilled( $this->linked( array( 'mute_type' => 'plugin', 'mute_key' => 'HELLO.PHP' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing
+		$_GET = array(
+			'mute_type' => 'plugin',
+			'mute_key'  => wp_slash( 'hello.php' ),
+		);
+		$this->assertSame( 1, $this->tab()->query( '//option[@selected]' )->length, 'The request is unslashed, as WordPress adds slashes.' );
+	}
+
+	/**
+	 * An item that is muted already, in any way, gives the plain form and a note with a link to its row.
+	 */
+	public function test_a_link_to_a_muted_item_says_so() {
+		$item  = array(
+			'mute_type' => 'plugin',
+			'mute_key'  => 'hello.php',
+			'mute_mode' => 'skip',
+		);
+		$mutes = array(
+			'always'  => function () {
+				sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+			},
+			'version' => function () {
+				sc_wpun_mutes()->mute( 'plugin', 'hello.php', '2.0.0' );
+			},
+			'snooze'  => function () {
+				sc_wpun_mutes()->mute( 'plugin', 'hello.php', null, 'api', time() + DAY_IN_SECONDS );
+			},
+			'code'    => function () {
+				add_filter(
+					'sc_wpun_mutes',
+					function ( $mutes ) {
+						$mutes[] = new \WPUN\Mute(
+							array(
+								'type' => 'plugin',
+								'key'  => 'hello.php',
+							)
+						);
+						return $mutes;
+					}
+				);
+			},
+		);
+		foreach ( $mutes as $name => $mute ) {
+			sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
+			remove_all_filters( 'sc_wpun_mutes' );
+			$mute();
+
+			$xpath = $this->linked( $item );
+			$this->assertSame( 0, $xpath->query( '//option[@selected]' )->length, $name );
+			$this->assertSame( 0, $xpath->query( '//option[@value="plugin:hello.php"]' )->length, $name );
+			$this->assertSame( 0, $xpath->query( '//*[@id="sc-wpun-mute-prefilled"]' )->length, $name );
+			$this->assertSame( 0, $xpath->query( '//select[@autofocus or @aria-describedby]' )->length, $name );
+			$this->assertSame( 1, $xpath->query( '//input[@name="mode"][@value="always"][@checked]' )->length, $name );
+			$note = $xpath->query( '//*[contains(@class,"sc-wpun-muted-note")]' )->item( 0 );
+			$this->assertNotNull( $note, $name );
+			$this->assertStringContainsString( 'Hello Dolly is already muted.', trim( preg_replace( '/\s+/', ' ', $note->textContent ) ), $name );
+			$href = $xpath->query( './/a/@href', $note )->item( 0 )->nodeValue;
+			$this->assertMatchesRegularExpression( '/^#sc-wpun-muted-plugin-[0-9a-f]{12}$/', $href, $name );
+			$this->assertStringNotContainsString( 'hello', $href, 'The key is not in the id.' );
+			$this->assertSame( 1, $xpath->query( '//tr[@id="' . substr( $href, 1 ) . '"]' )->length, $name );
+		}
+	}
+
+	/**
+	 * With every item muted the panel shows, and the note too.
+	 */
+	public function test_a_link_to_a_muted_item_says_so_when_everything_is_muted() {
+		$installed = sc_wpun()->mute_actions()->installed();
+		foreach ( $installed as $type => $items ) {
+			foreach ( array_keys( $items ) as $key ) {
+				sc_wpun_mutes()->mute( $type, (string) $key );
+			}
+		}
+
+		$xpath = $this->linked(
+			array(
+				'mute_type' => 'plugin',
+				'mute_key'  => 'hello.php',
+			)
+		);
+		$this->assertSame( 1, $xpath->query( '//*[contains(@class,"sc-wpun-all-muted")]' )->length );
+		$this->assertSame( 0, $xpath->query( '//form[contains(@class,"sc-wpun-mute-form")]' )->length );
+		$href = $xpath->query( '//*[contains(@class,"sc-wpun-muted-note")]//a/@href' )->item( 0 )->nodeValue;
+		$this->assertSame( 1, $xpath->query( '//tr[@id="' . substr( $href, 1 ) . '"]' )->length );
+	}
+
+	/**
+	 * Rows have ids that differ by item and do not hold the key.
+	 */
+	public function test_rows_have_ids() {
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+		sc_wpun_mutes()->mute( 'plugin', 'akismet/akismet.php' );
+		$ids = array();
+		foreach ( $this->tab()->query( '//tr[contains(@class,"sc-wpun-muted-item")]/@id' ) as $id ) {
+			$ids[] = $id->nodeValue;
+		}
+		$this->assertCount( 2, array_unique( $ids ) );
+		$this->assertSame( 0, count( preg_grep( '/^sc-wpun-muted-plugin-[0-9a-f]{12}$/', $ids, PREG_GREP_INVERT ) ) );
+	}
+
+	/**
+	 * Showing the tab, with or without a link, mutes and changes nothing.
+	 */
+	public function test_a_link_changes_nothing() {
+		$context = sc_wpun()->network_context();
+		sc_wpun_mutes()->mute( 'plugin', 'akismet/akismet.php' );
+		$stored = $context->get_option( 'sc_wpun_muted' );
+
+		$this->tab();
+		$this->linked(
+			array(
+				'mute_type'   => 'plugin',
+				'mute_key'    => 'hello.php',
+				'mute_mode'   => 'snooze',
+				'mute_snooze' => (string) WEEK_IN_SECONDS,
+			)
+		);
+		$this->linked(
+			array(
+				'mute_type' => 'plugin',
+				'mute_key'  => 'akismet/akismet.php',
+			)
+		);
+
+		$this->assertSame( $stored, $context->get_option( 'sc_wpun_muted' ) );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+		$this->assertNull( sc_wpun()->notices()->take() );
+	}
+
+	/**
+	 * Only a user who can mute sees the note: without the capability there is no form and no note.
+	 */
+	public function test_a_link_shows_nothing_without_the_mute_capability() {
+		add_filter( 'sc_wpun_mute_capability', static fn() => 'a_capability_nobody_has' );
+		$xpath = $this->linked(
+			array(
+				'mute_type' => 'plugin',
+				'mute_key'  => 'hello.php',
+			)
+		);
+		$this->assertSame( 0, $xpath->query( '//form[contains(@class,"sc-wpun-mute-form")]' )->length );
+		$this->assertSame( 0, $xpath->query( '//*[contains(@class,"notice")]' )->length );
+	}
 }

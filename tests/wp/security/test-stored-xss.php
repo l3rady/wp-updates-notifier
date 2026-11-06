@@ -415,6 +415,47 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 	}
 
 	/**
+	 * The arguments of a link that fills in the Muted tab's form are never output, whichever of them holds the payload.
+	 *
+	 * @dataProvider payloads_provider
+	 *
+	 * @param string $payload The payload.
+	 */
+	public function test_the_muted_tab_link_arguments_are_not_output( $payload ) {
+		$valid = array(
+			'tab'         => 'muted',
+			'mute_type'   => 'plugin',
+			'mute_key'    => 'hello.php',
+			'mute_mode'   => 'snooze',
+			'mute_snooze' => '604800',
+		);
+		foreach ( array( 'mute_type', 'mute_key', 'mute_mode', 'mute_snooze' ) as $argument ) {
+			$_GET = array_merge( $valid, array( $argument => $payload ) );
+			$html = $this->capture( array( sc_wpun()->settings_page(), 'settings_page' ) );
+			$this->assertStringContainsString( 'sc-wpun-mute-form', $html, "$argument: the form was not drawn." );
+			$this->assert_no_live_markup( $html, "Muted tab, $argument as payload" );
+			$this->assertStringNotContainsString( 'wpun_xss', $html, "$argument: the payload was output." );
+		}
+
+		// The same in every argument, and with the item muted already.
+		$_GET = array(
+			'tab'         => 'muted',
+			'mute_type'   => $payload,
+			'mute_key'    => $payload,
+			'mute_mode'   => $payload,
+			'mute_snooze' => $payload,
+		);
+		$html = $this->capture( array( sc_wpun()->settings_page(), 'settings_page' ) );
+		$this->assertStringNotContainsString( 'wpun_xss', $html );
+		sc_wpun_mutes()->mute( 'plugin', 'hello.php' );
+		$_GET = array_merge( $valid, array( 'mute_mode' => $payload ) );
+		$html = $this->capture( array( sc_wpun()->settings_page(), 'settings_page' ) );
+		$this->assertStringContainsString( 'already muted', $html );
+		$this->assertStringNotContainsString( 'wpun_xss', $html );
+		$_GET = array();
+	}
+
+	/**
 	 * The add-on requirement row under a plugin in the plugin list takes its text from the add-on's header.
 	 *
 	 * @dataProvider payloads_provider
