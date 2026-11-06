@@ -319,10 +319,7 @@ class Webhook_Channel extends Channel {
 			}
 		}
 
-		$items = array();
-		foreach ( $notification->get_items() as $item ) {
-			$items[] = self::item_data( $item );
-		}
+		$items   = array_map( array( self::class, 'item_data' ), $notification->get_items() );
 		$message = $this->build_message( 'updates.available', $notification, $instance, $items, $extra, $key );
 		if ( null === $message ) {
 			return '<p>' . esc_html__( 'The message could not be turned into JSON.', 'wp-updates-notifier' ) . '</p>';
@@ -510,10 +507,7 @@ class Webhook_Channel extends Channel {
 			$type = 'updates.available';
 		}
 
-		$items = array();
-		foreach ( $notification->get_items() as $item ) {
-			$items[] = self::item_data( $item );
-		}
+		$items = array_map( array( self::class, 'item_data' ), $notification->get_items() );
 
 		return $this->deliver( $type, $notification, $instance, $items );
 	}
