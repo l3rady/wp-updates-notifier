@@ -184,7 +184,7 @@ A field that is only used for some values of another field declares `applies_whe
 - `required` is enforced only when the field applies. A value that is there is still validated, and it is kept when the field does not apply, so switching back restores it.
 - An `applies_when` entry that names an unknown field is ignored, with a `_doing_it_wrong` notice, so the field applies.
 
-Other plugins can change the groups with the `sc_wpun_channel_field_groups` filter and move fields with `sc_wpun_channel_fields`. If you override `validate_settings()` without calling the parent, as the email channel does, honour `applies_when` yourself.
+Other plugins can change the groups with the `sc_wpun_channel_field_groups` filter and move fields with `sc_wpun_channel_fields`. If you override `validate_settings()` without calling the parent, honour `applies_when` yourself. The email channel shows the simpler way: it calls the parent, then adds its own checks.
 
 ### Panels
 

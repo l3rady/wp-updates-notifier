@@ -695,8 +695,7 @@ The fields are drawn on the add and edit forms, checked by the default Channel::
 supplied from outside the database. Same schema as Channel::get_fields().
 
 A channel that overrides validate_settings() decides for itself what it keeps, so a field added to it here is
-drawn but may not be saved. The email channel is one: it keeps only its own fields. Changing the texts of
-existing fields is always safe.
+drawn but may not be saved. Changing the texts of existing fields is always safe.
 
 Example, change the help text of the email channel's recipients:
 

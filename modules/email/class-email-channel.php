@@ -109,11 +109,12 @@ class Email_Channel extends Channel {
 				'sanitize_callback' => 'sanitize_text_field',
 			),
 			'format'         => array(
-				'group'   => 'message',
-				'type'    => 'enum',
-				'label'   => __( 'Format', 'wp-updates-notifier' ),
-				'default' => 'text',
-				'options' => array(
+				'group'             => 'message',
+				'type'              => 'enum',
+				'label'             => __( 'Format', 'wp-updates-notifier' ),
+				'default'           => 'text',
+				'sanitize_callback' => 'sanitize_text_field',
+				'options'           => array(
 					'text' => __( 'Plain text', 'wp-updates-notifier' ),
 					'html' => __( 'HTML', 'wp-updates-notifier' ),
 				),
@@ -215,48 +216,30 @@ class Email_Channel extends Channel {
 	/**
 	 * Clean and check the settings submitted for an instance.
 	 *
+	 * The fields are checked by the default, from their schema (so a field added with the `sc_wpun_channel_fields` filter is too);
+	 * the From and Reply-To addresses, which may be empty, are then checked as addresses.
+	 *
 	 * @param array<string, mixed> $settings Submitted settings.
-	 * @param array<string, mixed> $stored   The settings stored for the instance (not used).
+	 * @param array<string, mixed> $stored   The settings stored for the instance.
 	 *
 	 * @return array<string, mixed>|\WP_Error The settings to store, or an error naming the field at fault.
 	 */
-	public function validate_settings( array $settings, array $stored = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Same signature as the base class.
-		$to = array();
-		foreach ( explode( ',', $this->text( $settings, 'to' ) ) as $entry ) {
-			$entry = trim( $entry );
-			if ( '' === $entry ) {
-				continue;
-			}
-			$address = sanitize_email( $entry );
-			if ( ! is_email( $address ) ) {
-				return new \WP_Error( 'invalid_email', __( 'One or more email addresses to send to are invalid.', 'wp-updates-notifier' ), array( 'field' => 'to' ) );
-			}
-			$to[] = $address;
+	public function validate_settings( array $settings, array $stored = array() ) {
+		$clean = parent::validate_settings( $settings, $stored );
+		if ( $clean instanceof \WP_Error ) {
+			return $clean;
 		}
-		if ( array() === $to ) {
-			return new \WP_Error( 'invalid_email', __( 'Enter at least one valid email address to send to.', 'wp-updates-notifier' ), array( 'field' => 'to' ) );
-		}
-
-		$clean = array( 'to' => implode( ',', $to ) );
 
 		foreach ( array( 'from', 'reply_to' ) as $name ) {
-			$address = trim( sanitize_text_field( $this->text( $settings, $name ) ) );
-			if ( '' !== $address ) {
-				$address = sanitize_email( $address );
-				if ( ! is_email( $address ) ) {
-					return new \WP_Error( 'invalid_email', __( 'The email address is invalid.', 'wp-updates-notifier' ), array( 'field' => $name ) );
-				}
+			if ( ! isset( $clean[ $name ] ) || '' === $clean[ $name ] ) {
+				continue;
+			}
+			$address = sanitize_email( (string) $clean[ $name ] );
+			if ( ! is_email( $address ) ) {
+				return new \WP_Error( 'invalid_email', __( 'The email address is invalid.', 'wp-updates-notifier' ), array( 'field' => $name ) );
 			}
 			$clean[ $name ] = $address;
 		}
-
-		$format = $this->text( $settings, 'format', 'text' );
-		if ( ! in_array( $format, array( 'text', 'html' ), true ) ) {
-			return new \WP_Error( 'invalid_format', __( 'The format must be plain text or HTML.', 'wp-updates-notifier' ), array( 'field' => 'format' ) );
-		}
-		$clean['format'] = $format;
-
-		$clean['subject_prefix'] = sanitize_text_field( $this->text( $settings, 'subject_prefix' ) );
 
 		return $clean;
 	}
