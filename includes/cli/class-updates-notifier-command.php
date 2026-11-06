@@ -209,22 +209,7 @@ class Updates_Notifier_Command {
 		\WP_CLI\Utils\format_items( 'table', array( $data['schedule'] ), array( 'frequency', 'next_run', 'last_check' ) );
 
 		\WP_CLI::line( __( 'Channels', 'wp-updates-notifier' ) );
-		$rows = array();
-		foreach ( $data['channels'] as $channel ) {
-			$rows[] = array(
-				'id'           => $channel['id'],
-				'label'        => $channel['label'],
-				'module'       => $channel['module'],
-				'availability' => $channel['availability'],
-				'enabled'      => $channel['enabled'] ? 'yes' : 'no',
-				'code_defined' => $channel['code_defined'] ? 'yes' : 'no',
-				'last_result'  => Status_Report::describe_last( $channel['last_result'] ),
-				'last_failure' => Status_Report::describe_last( $channel['last_failure'] ),
-				'retry_at'     => (string) $channel['retry_at'],
-				'held_until'   => (string) $channel['held_until'],
-			);
-		}
-		\WP_CLI\Utils\format_items( 'table', $rows, array( 'id', 'label', 'module', 'availability', 'enabled', 'code_defined', 'last_result', 'last_failure', 'retry_at', 'held_until' ) );
+		\WP_CLI\Utils\format_items( 'table', Channels_Command::rows( $data['channels'] ), array( 'id', 'label', 'module', 'availability', 'enabled', 'code_defined', 'last_result', 'last_failure', 'retry_at', 'held_until' ) );
 
 		foreach ( $data['channels'] as $channel ) {
 			if ( array() !== $channel['fields'] ) {
