@@ -312,31 +312,55 @@ class Test_Routing extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The dispatcher routes, skips an instance left with nothing, and never skips a test notification.
+	 * Register the fixture channel as type `test`, with no instances and no state, so only what a test saves is checked.
+	 *
+	 * @return Test_Channel
 	 */
-	public function test_the_dispatcher_routes() {
-		$registry   = new Channel_Registry();
-		$channel    = new Test_Channel( 'test' );
-		$dispatcher = new Dispatcher( $registry );
-		$registry->register( $channel );
-		$instances = array(
-			new Channel_Instance( 'cores', 'test', 'C', true, array(), array( 'types' => array( 'core' ) ) ),
-			new Channel_Instance( 'plugins', 'test', 'P', true, array(), array( 'types' => array( 'plugin' ) ) ),
-		);
-		$mixed     = new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $this->item( 'core' ) ) );
+	private function register_test_channel() {
+		$channel = new Test_Channel( 'test' );
+		sc_wpun()->channels()->unregister( 'test' );
+		sc_wpun()->channels()->register( $channel );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 
-		$results = $dispatcher->dispatch( $mixed, $instances );
+		return $channel;
+	}
 
-		$this->assertSame( array( 'cores' ), array_keys( $results ) );
+	/**
+	 * Save an instance of the fixture channel with routing.
+	 *
+	 * @param string $id      Id.
+	 * @param array  $routing Routing.
+	 */
+	private function add_test_instance( $id, array $routing ) {
+		sc_wpun_channels()->save( new Channel_Instance( $id, 'test', strtoupper( $id ), true, array(), $routing ) );
+	}
+
+	/**
+	 * The update check routes, skips an instance left with nothing, and a test notification is never narrowed.
+	 */
+	public function test_the_update_check_routes() {
+		$channel = $this->register_test_channel();
+		$this->add_test_instance( 'cores', array( 'types' => array( 'core' ) ) );
+		$this->add_test_instance( 'plugins', array( 'types' => array( 'plugin' ) ) );
+		$this->set_updates( '99.0.0' );
+
+		sc_wpun()->update_checker()->do_update_check();
+
+		$this->assertSame( array( 'cores' ), array_keys( sc_wpun()->update_checker()->last_results() ) );
 		$this->assertSame( array( 'cores' ), array_keys( $channel->received ) );
 		$this->assertCount( 1, $channel->received['cores'][0]->get_items() );
 
 		$channel->received = array();
 		$test              = new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array(), array( 'is_test' => true ) );
-		$this->assertSame( array( 'cores', 'plugins' ), array_keys( $dispatcher->dispatch( $test, $instances ) ) );
+		foreach ( array( 'cores', 'plugins' ) as $id ) {
+			sc_wpun()->dispatcher()->send_one( $test, sc_wpun_channels()->get( $id ) );
+		}
+		$this->assertSame( array( 'cores', 'plugins' ), array_keys( $channel->received ), 'A test message goes to an instance routed nothing.' );
 
 		$channel->received = array();
-		$dispatcher->send_one( $mixed, $instances[1] );
+		$mixed             = new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $this->item( 'core' ) ) );
+		sc_wpun()->dispatcher()->send_one( $mixed, sc_wpun_channels()->get( 'plugins' ) );
 		$this->assertCount( 1, $channel->received['plugins'][0]->get_items(), 'send_one does not route.' );
 	}
 
@@ -374,37 +398,33 @@ class Test_Routing extends WPUN_Test_Case {
 	 * An instance routed nothing does not stop the ones after it.
 	 */
 	public function test_an_instance_routed_nothing_does_not_stop_the_next() {
-		$registry   = new Channel_Registry();
-		$channel    = new Test_Channel( 'test' );
-		$dispatcher = new Dispatcher( $registry );
-		$registry->register( $channel );
-		$instances = array(
-			new Channel_Instance( 'plugins', 'test', 'P', true, array(), array( 'types' => array( 'plugin' ) ) ),
-			new Channel_Instance( 'cores', 'test', 'C', true, array(), array( 'types' => array( 'core' ) ) ),
-		);
-		$mixed     = new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $this->item( 'core' ) ) );
+		$channel = $this->register_test_channel();
+		$this->add_test_instance( 'plugins', array( 'types' => array( 'plugin' ) ) );
+		$this->add_test_instance( 'cores', array( 'types' => array( 'core' ) ) );
+		$this->set_updates( '99.0.0' );
 
-		$results = $dispatcher->dispatch( $mixed, $instances );
+		sc_wpun()->update_checker()->do_update_check();
 
-		$this->assertSame( array( 'cores' ), array_keys( $results ) );
+		$this->assertSame( array( 'cores' ), array_keys( sc_wpun()->update_checker()->last_results() ) );
+		$this->assertSame( array( 'cores' ), array_keys( $channel->received ) );
 	}
 
 	/**
 	 * An instance receives the items routed to it as a list, and a test notification keeps all of its items.
 	 */
 	public function test_routed_items_are_a_list_and_a_test_notification_is_not_narrowed() {
-		$registry   = new Channel_Registry();
-		$channel    = new Test_Channel( 'test' );
-		$dispatcher = new Dispatcher( $registry );
-		$registry->register( $channel );
-		$cores = new Channel_Instance( 'cores', 'test', 'C', true, array(), array( 'types' => array( 'core' ) ) );
-		$items = array( $this->item( 'plugin' ), $this->item( 'core' ) );
+		$channel = $this->register_test_channel();
+		$this->add_test_instance( 'cores', array( 'types' => array( 'core' ) ) );
+		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$dispatcher->dispatch( new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', $items ), array( $cores ) );
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( array( 0 ), array_keys( $channel->received['cores'][0]->get_items() ) );
+		$this->assertSame( 'core', $channel->received['cores'][0]->get_items()[0]->get_type() );
 
 		$channel->received = array();
-		$dispatcher->dispatch( new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', $items, array( 'is_test' => true ) ), array( $cores ) );
+		$items             = array( $this->item( 'plugin' ), $this->item( 'core' ) );
+		$test              = new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', $items, array( 'is_test' => true ) );
+		sc_wpun()->dispatcher()->send_one( $test, sc_wpun_channels()->get( 'cores' ) );
 		$this->assertCount( 2, $channel->received['cores'][0]->get_items() );
 	}
 
@@ -435,9 +455,9 @@ class Test_Routing extends WPUN_Test_Case {
 		);
 		$notification = new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $this->item( 'core' ) ) );
 
-		$results = @$dispatcher->dispatch( $notification, array( new Channel_Instance( 'a', 'test', 'A', true ) ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- WP_DEBUG reports the exception as a notice.
+		$result = @$dispatcher->send_one( $notification, new Channel_Instance( 'a', 'test', 'A', true ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- WP_DEBUG reports the exception as a notice.
 
-		$this->assertSame( 'exception', $results['a']->get_code() );
+		$this->assertSame( 'exception', $result->get_code() );
 	}
 
 	/**

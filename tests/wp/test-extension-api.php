@@ -425,8 +425,8 @@ class Test_Extension_Api extends WPUN_Test_Case {
 
 		$this->assertSame( 'unavailable', sc_wpun()->update_checker()->last_results()['email']->get_code() );
 		$this->assertSame( 0, $this->sent_mail_count() );
-		$results = sc_wpun()->dispatcher()->dispatch( sc_wpun()->update_checker()->last_notification(), sc_wpun_channels()->all() );
-		$this->assertSame( 'unavailable', $results['email']->get_code() );
+		$result = sc_wpun()->dispatcher()->send_one( sc_wpun()->update_checker()->last_notification(), sc_wpun_channels()->get( 'email' ) );
+		$this->assertSame( 'unavailable', $result->get_code() );
 
 		$xpath = $this->tab();
 		$this->assertSame( 0, $xpath->query( '//tr[@data-id]' )->length );

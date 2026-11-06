@@ -7,9 +7,7 @@
 
 use WPUN\Admin\Settings_Page;
 use WPUN\Channel_Instance;
-use WPUN\Channel_Registry;
 use WPUN\Delivery_Result;
-use WPUN\Dispatcher;
 use WPUN\Item_Types;
 use WPUN\Notification;
 use WPUN\Notification_Item;
@@ -600,11 +598,10 @@ class Test_Hooks extends WPUN_Test_Case {
 	 * Sent and failed fire for success, a wp_mail failure, an unavailable channel and a disabled instance.
 	 */
 	public function test_sent_and_failed_events() {
-		$events     = array();
-		$registry   = new Channel_Registry();
-		$dispatcher = new Dispatcher( $registry );
-		$email      = sc_wpun()->channels()->get( 'email' );
-				$this->save_settings();
+		$events = array();
+		$email  = sc_wpun()->channels()->get( 'email' );
+		$this->save_settings();
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' ); // Only the instances below.
 		$good = new Channel_Instance( 'good', 'email', 'Good', true, array( 'to' => 'a@example.org' ) );
 		$bad  = new Channel_Instance( 'bad', 'email', 'Bad', true, array( 'to' => 'b@example.org' ) );
 		$none = new Channel_Instance( 'none', 'chat', 'None', true );
@@ -629,8 +626,12 @@ class Test_Hooks extends WPUN_Test_Case {
 			}
 		);
 
-		$dispatcher->dispatch( $this->notification(), array( $good, $bad, $none ) );
-		$dispatcher->send_one( $this->notification(), $off );
+		foreach ( array( $good, $bad, $none ) as $instance ) {
+			sc_wpun_channels()->save( $instance );
+		}
+		$this->set_updates( '99.0.0' );
+		$this->run_check();
+		sc_wpun()->dispatcher()->send_one( $this->notification(), $off );
 
 		$this->assertSame(
 			array(
@@ -648,20 +649,20 @@ class Test_Hooks extends WPUN_Test_Case {
 	 * A listener that throws does not stop delivery to the next instance.
 	 */
 	public function test_a_throwing_listener_does_not_stop_the_others() {
-		$registry   = new Channel_Registry();
-		$dispatcher = new Dispatcher( $registry );
-				add_action(
-					'sc_wpun_notification_sent',
-					static function () {
-						throw new RuntimeException( 'listener' );
-					}
-				);
-		$instances = array(
-			new Channel_Instance( 'a', 'email', 'A', true, array( 'to' => 'a@example.org' ) ),
-			new Channel_Instance( 'b', 'email', 'B', true, array( 'to' => 'b@example.org' ) ),
+		$this->save_settings();
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' ); // Only the instances below.
+		add_action(
+			'sc_wpun_notification_sent',
+			static function () {
+				throw new RuntimeException( 'listener' );
+			}
 		);
+		sc_wpun_channels()->save( new Channel_Instance( 'a', 'email', 'A', true, array( 'to' => 'a@example.org' ) ) );
+		sc_wpun_channels()->save( new Channel_Instance( 'b', 'email', 'B', true, array( 'to' => 'b@example.org' ) ) );
+		$this->set_updates( '99.0.0' );
 
-		$results = $this->capture_notices( fn() => $dispatcher->dispatch( $this->notification(), $instances ) );
+		$this->capture_notices( array( $this, 'run_check' ) );
+		$results = sc_wpun()->update_checker()->last_results();
 
 		$this->assertTrue( $results['a']->is_success() );
 		$this->assertTrue( $results['b']->is_success() );
@@ -670,7 +671,7 @@ class Test_Hooks extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The after-dispatch action fires from dispatch() and from an update check that sent something, but not from one that did not.
+	 * The after-dispatch action fires from an update check that sent something, but not from one that did not.
 	 */
 	public function test_after_dispatch() {
 		$calls = array();
@@ -682,12 +683,6 @@ class Test_Hooks extends WPUN_Test_Case {
 			10,
 			2
 		);
-		$registry   = new Channel_Registry();
-		$dispatcher = new Dispatcher( $registry );
-				$dispatcher->dispatch( $this->notification(), array( new Channel_Instance( 'a', 'email', 'A', true, array( 'to' => 'a@example.org' ) ) ) );
-		$this->assertSame( array( array( array( 'a' ), Notification::class ) ), $calls );
-
-		$calls = array();
 		$this->save_settings();
 		$this->set_updates();
 		$this->run_check();

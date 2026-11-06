@@ -59,12 +59,12 @@ class Test_Last_Result extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A successful dispatch is stored.
+	 * A successful delivery is stored.
 	 */
-	public function test_a_dispatch_success_is_stored() {
+	public function test_a_delivery_success_is_stored() {
 		$this->save_settings();
 
-		sc_wpun()->dispatcher()->dispatch( $this->notification_with_item(), array( sc_wpun_channels()->get( 'email' ) ) );
+		sc_wpun()->dispatcher()->send_one( $this->notification_with_item(), sc_wpun_channels()->get( 'email' ) );
 
 		$last = $this->last_result();
 		$this->assertTrue( $last['success'] );
@@ -74,13 +74,13 @@ class Test_Last_Result extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A failed dispatch is stored with its message.
+	 * A failed delivery is stored with its message.
 	 */
-	public function test_a_dispatch_failure_is_stored() {
+	public function test_a_delivery_failure_is_stored() {
 		$this->save_settings();
 		add_filter( 'pre_wp_mail', '__return_false' );
 
-		sc_wpun()->dispatcher()->dispatch( $this->notification_with_item(), array( sc_wpun_channels()->get( 'email' ) ) );
+		sc_wpun()->dispatcher()->send_one( $this->notification_with_item(), sc_wpun_channels()->get( 'email' ) );
 
 		$last = $this->last_result();
 		$this->assertFalse( $last['success'] );
