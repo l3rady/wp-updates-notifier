@@ -484,6 +484,8 @@ The settings screen is `options-general.php` on a single site and in the network
 $url = sc_wpun_settings_url( 'channels' ); // The Channels tab, in either mode.
 ```
 
+A screen, REST route or widget of your own that changes the plugin's settings checks `current_user_can( sc_wpun_capability() )`, and one that mutes or unmutes checks `sc_wpun_mute_capability()` (both API 1.1.0). They return what the plugin checks, after its filters, so never write `manage_options`.
+
 ## Checklist
 
 - The header has `Requires Plugins: wp-updates-notifier` and `Requires WPUN API` with the constraint, and `boot()` checks `sc_wpun_api_satisfies( '^1.0' )` for code outside the channel.

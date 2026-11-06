@@ -53,6 +53,7 @@ class Mute_Actions {
 		 *
 		 * The Muted tab is part of the settings page, so seeing it still needs the settings capability, and
 		 * its forms need both. WP-CLI and the PHP API are not affected: they do not check capabilities.
+		 * Code outside the plugin reads the result with `sc_wpun_mute_capability()`.
 		 *
 		 * Example, let users who can update plugins mute and unmute:
 		 *

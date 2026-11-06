@@ -188,6 +188,8 @@ class Settings_Page {
 		 * network reach, so lowering this to `manage_options` does not let the administrators of the
 		 * sites in. Lower it to a capability that users who manage the network have, or leave it.
 		 *
+		 * Code outside the plugin reads the result with `sc_wpun_capability()`.
+		 *
 		 * @since 2.0.0
 		 *
 		 * @param string $capability Capability. Default `manage_options`, or `manage_network_options` on multisite.

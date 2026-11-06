@@ -526,6 +526,47 @@ if ( ! function_exists( 'sc_wpun_mutes' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sc_wpun_capability' ) ) {
+	/**
+	 * The capability needed to use the plugin's settings screen.
+	 *
+	 * The one the plugin checks: `manage_options`, or `manage_network_options` on multisite, after the
+	 * `sc_wpun_capability` filter. Code that offers the plugin's settings or actions somewhere else
+	 * checks it to stay in step with the plugin:
+	 *
+	 *     if ( current_user_can( sc_wpun_capability() ) ) {
+	 *         // May change the settings.
+	 *     }
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return string
+	 */
+	function sc_wpun_capability(): string {
+		return \WPUN\Admin\Settings_Page::capability();
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_mute_capability' ) ) {
+	/**
+	 * The capability needed to mute and unmute plugins and themes.
+	 *
+	 * The one the plugin checks: sc_wpun_capability() after the `sc_wpun_mute_capability` filter. A
+	 * dashboard widget or a REST route that mutes or unmutes checks it:
+	 *
+	 *     if ( current_user_can( sc_wpun_mute_capability() ) ) {
+	 *         sc_wpun_mutes()->unmute( 'plugin', 'noisy/noisy.php' );
+	 *     }
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return string
+	 */
+	function sc_wpun_mute_capability(): string {
+		return \WPUN\Admin\Mute_Actions::capability();
+	}
+}
+
 if ( ! function_exists( 'sc_wpun_instance_waiting_until' ) ) {
 	/**
 	 * When a channel instance may next be delivered to.

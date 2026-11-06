@@ -150,6 +150,14 @@ add_filter(
 add_filter( 'sc_wpun_mute_capability', fn() => 'update_plugins' );
 ```
 
+Code that offers muting somewhere else, such as a dashboard widget or a REST route, checks the same capability with `sc_wpun_mute_capability()` (API 1.1.0), so it stays in step with the filter and with multisite:
+
+```php
+if ( current_user_can( sc_wpun_mute_capability() ) ) {
+	sc_wpun_mutes()->unmute( 'plugin', 'noisy/noisy.php' );
+}
+```
+
 ## React to changes
 
 `sc_wpun_item_muted` and `sc_wpun_item_unmuted` fire after a change, with the `Mute` and the source. Replacing a mute fires `sc_wpun_item_muted` again. Deleting a plugin or theme removes its mute and fires `sc_wpun_item_unmuted` with the source `deleted`, so a log can tell it from an unmute by a person.

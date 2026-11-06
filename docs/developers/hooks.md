@@ -1066,6 +1066,7 @@ non-string value is ignored and the default is used.
 
 The Muted tab is part of the settings page, so seeing it still needs the settings capability, and
 its forms need both. WP-CLI and the PHP API are not affected: they do not check capabilities.
+Code outside the plugin reads the result with `sc_wpun_mute_capability()`.
 
 Example, let users who can update plugins mute and unmute:
 
@@ -1379,6 +1380,8 @@ add_filter( 'sc_wpun_capability', fn() => 'edit_pages' );
 Network-activated, the screen is in the network admin, which only users who can manage the
 network reach, so lowering this to `manage_options` does not let the administrators of the
 sites in. Lower it to a capability that users who manage the network have, or leave it.
+
+Code outside the plugin reads the result with `sc_wpun_capability()`.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
