@@ -6,7 +6,7 @@
  * Requires at least: 6.7
  * Requires PHP:      7.4
  * Requires Plugins:  wp-updates-notifier
- * Requires WPUN API: ^1.0
+ * Requires WPUN API: ^1.1
  * License:           GPL-2.0-or-later
  * Text Domain:       wpun-example-channel
  *
@@ -34,10 +34,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The versions of the WP Updates Notifier extension API this add-on works with, as a constraint.
  *
  * It matches the API version (sc_wpun_api_version()), not the plugin version: it only changes when the API does, and a
- * new minor version only ever adds to the API. `^1.0` means any 1.x from 1.0 on. Ask for the oldest version that has
- * everything you use. Composer's syntax applies, so `>=1.0 <3.0` or `^1.0 || ^2.0` work too.
+ * new minor version only ever adds to the API. `^1.1` means any 1.x from 1.1 on. Ask for the oldest version that has
+ * everything you use. Composer's syntax applies, so `>=1.1 <3.0` or `^1.1 || ^2.0` work too.
  */
-const REQUIRED_API = '^1.0';
+const REQUIRED_API = '^1.1';
 
 /**
  * Whether the installed WP Updates Notifier offers the API this add-on was written for.

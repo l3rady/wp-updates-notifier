@@ -215,47 +215,13 @@ class Example_Channel extends Channel {
 	/**
 	 * Turn the answer of the HTTP API into a Delivery_Result.
 	 *
-	 * The messages say what happened, never which address was used.
+	 * The helper's messages say what happened, never which address was used.
 	 *
 	 * @param array<string, mixed>|\WP_Error $response What wp_safe_remote_post() returned.
 	 * @return Delivery_Result
 	 */
 	private function result( $response ): Delivery_Result {
-		// The request did not complete: no connection, a timeout, or an address that is not allowed.
-		// The error message is not used, because cURL puts the address in some of them. The code is safe.
-		if ( is_wp_error( $response ) ) {
-			return Delivery_Result::failure(
-				__( 'The request to the webhook failed.', 'wpun-example-channel' ),
-				'http_error',
-				null,
-				null,
-				array( 'error_code' => (string) $response->get_error_code() )
-			);
-		}
-
-		$status = (int) wp_remote_retrieve_response_code( $response );
-
-		if ( $status >= 200 && $status < 300 ) {
-			return Delivery_Result::success();
-		}
-
-		// 429 Too Many Requests: the service says how long to wait. Pass it on: the plugin then skips this
-		// channel until then (at most 7 days). The updates stay unsent and go out on the first check after.
-		if ( 429 === $status ) {
-			return Delivery_Result::failure(
-				// translators: %d: HTTP status code.
-				sprintf( __( 'The webhook is limiting requests (HTTP %d).', 'wpun-example-channel' ), $status ),
-				'rate_limited',
-				$status,
-				Delivery_Result::retry_after_from_response( $response )
-			);
-		}
-
-		return Delivery_Result::failure(
-			// translators: %d: HTTP status code.
-			sprintf( __( 'The webhook answered with HTTP %d.', 'wpun-example-channel' ), $status ),
-			'bad_status',
-			$status
-		);
+		// Handles a WP_Error, a 2xx status, 429 with its Retry-After and any other status. See "HTTP" in the module guide.
+		return Delivery_Result::from_response( $response );
 	}
 }

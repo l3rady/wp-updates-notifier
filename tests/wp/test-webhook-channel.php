@@ -1183,7 +1183,7 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 		$this->assertFalse( $result->is_success() );
 		$this->assertSame( 'http_error', $result->get_code() );
 		$this->assertNull( $result->get_status() );
-		$this->assertSame( 'The request to the webhook failed.', $result->get_message() );
+		$this->assertSame( 'The request failed.', $result->get_message() );
 		$this->assertSame( array( 'error_code' => 'http_request_failed' ), $result->get_context() );
 	}
 

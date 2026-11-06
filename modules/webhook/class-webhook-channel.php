@@ -844,33 +844,12 @@ class Webhook_Channel extends Channel {
 	 * @return Delivery_Result
 	 */
 	private function result( $response, array $secrets ): Delivery_Result {
-		// The request did not complete: no connection, a timeout, or an address that is not allowed.
-		// The error message is not used, because cURL puts the address in some of them. The code is safe.
-		if ( is_wp_error( $response ) ) {
-			return Delivery_Result::failure(
-				__( 'The request to the webhook failed.', 'wp-updates-notifier' ),
-				'http_error',
-				null,
-				null,
-				array( 'error_code' => (string) $response->get_error_code() )
-			);
-		}
+		$result = Delivery_Result::from_response( $response );
+		$status = $result->get_status();
 
-		$status = (int) wp_remote_retrieve_response_code( $response );
-
-		if ( $status >= 200 && $status < 300 ) {
-			return Delivery_Result::success();
-		}
-
-		// 429 Too Many Requests: pass on the wait from `Retry-After`. The plugin then skips this instance until then (at most 7 days).
-		if ( 429 === $status ) {
-			return Delivery_Result::failure(
-				// translators: %d: HTTP status code.
-				sprintf( __( 'The webhook is limiting requests (HTTP %d).', 'wp-updates-notifier' ), $status ),
-				'rate_limited',
-				$status,
-				Delivery_Result::retry_after_from_response( $response )
-			);
+		// Success, a WP_Error and 429 are the helper's answer as it is.
+		if ( null === $status || $result->is_success() || 429 === $status ) {
+			return $result;
 		}
 
 		// A redirect is a failure: the POST would not be repeated with its body, and the signature would not match.
@@ -883,9 +862,9 @@ class Webhook_Channel extends Channel {
 			);
 		}
 
+		// Same message and code as the helper's, plus what the receiver said.
 		return Delivery_Result::failure(
-			// translators: %d: HTTP status code.
-			sprintf( __( 'The webhook answered with HTTP %d.', 'wp-updates-notifier' ), $status ),
+			$result->get_message(),
 			'bad_status',
 			$status,
 			null,
