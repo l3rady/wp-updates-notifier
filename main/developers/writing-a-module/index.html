@@ -852,6 +852,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#panels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Panels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#reminders" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2735,6 +2746,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#panels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Panels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#reminders" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3110,6 +3132,11 @@
 <td>Split the fields of a long form into groups. See <a href="#groups-and-conditional-fields">Groups and conditional fields</a>.</td>
 </tr>
 <tr>
+<td><code>get_form_panels( $instance )</code></td>
+<td>no panels</td>
+<td>Show read-only information built from the instance next to the settings, such as a preview. See <a href="#panels">Panels</a>.</td>
+</tr>
+<tr>
 <td><code>get_api_constraint()</code></td>
 <td>empty: no check</td>
 <td>Declare the API versions the channel needs, for example <code>'^1.0'</code>. The registry refuses the channel on a site whose API does not satisfy it. See "Declare the API version you need" below.</td>
@@ -3203,6 +3230,34 @@
 <li>An <code>applies_when</code> entry that names an unknown field is ignored, with a <code>_doing_it_wrong</code> notice, so the field applies.</li>
 </ul>
 <p>Other plugins can change the groups with the <code>sc_wpun_channel_field_groups</code> filter and move fields with <code>sc_wpun_channel_fields</code>. If you override <code>validate_settings()</code> without calling the parent, as the email channel does, honour <code>applies_when</code> yourself.</p>
+<h3 id="panels">Panels<a class="headerlink" href="#panels" title="Permanent link">&para;</a></h3>
+<p>A channel can show read-only information on its form, built from the instance being edited: a preview of the message, set-up help with the callback URL filled in, or the status of the service (API 1.1.0). Return the panels from <code>get_form_panels()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="x">public function get_form_panels( Channel_Instance $instance ): array {</span>
+<span class="x">    if ( '' === $instance-&gt;get_id() ) {</span>
+<span class="x">        $content = '&lt;p&gt;' . esc_html__( 'Save the channel to see its callback URL.', 'my-chat-channel' ) . '&lt;/p&gt;';</span>
+<span class="x">    } else {</span>
+<span class="x">        $content = '&lt;p&gt;&lt;code&gt;' . esc_html( rest_url( 'my-chat/v1/callback/' . $instance-&gt;get_id() ) ) . '&lt;/code&gt;&lt;/p&gt;';</span>
+<span class="x">    }</span>
+
+<span class="x">    return array(</span>
+<span class="x">        'callback' =&gt; array(</span>
+<span class="x">            'label'       =&gt; __( 'Callback URL', 'my-chat-channel' ),</span>
+<span class="x">            'description' =&gt; __( 'Paste this address into the settings of the service.', 'my-chat-channel' ),</span>
+<span class="x">            'content'     =&gt; $content,</span>
+<span class="x">            'collapsed'   =&gt; false,</span>
+<span class="x">        ),</span>
+<span class="x">    );</span>
+<span class="x">}</span>
+</code></pre></div>
+<ul>
+<li>Each panel has a <code>label</code> (required), a <code>content</code> and optionally a <code>description</code> and <code>collapsed</code>. The content is escaped markup, drawn as it is, like the control of a custom field type.</li>
+<li>Panels are drawn after the field groups, in the order you return them, in the same way as a group: a fieldset whose legend holds an <code>&lt;h3&gt;</code>, folded into a <code>&lt;details&gt;</code> element when <code>collapsed</code>. A panel never opens by itself. Do not put headings of your own in the content, or if you must, start at <code>&lt;h4&gt;</code>.</li>
+<li>Nothing in a panel is submitted or saved. Panels are drawn with the generic form and with <code>render_settings()</code>.</li>
+<li>On the form of a new channel the instance is a draft with an empty id (<code>'' === $instance-&gt;get_id()</code>), built from the default settings. After a failed save the instance holds the submitted values, on the new and the edit form.</li>
+<li>The instance holds the resolved settings, secrets included. The content must never print them, and don't log or dump the settings.</li>
+<li>An entry with an empty id, no label, or a content that is not a string is dropped with a <code>_doing_it_wrong</code> notice.</li>
+</ul>
+<p>Other plugins can add or remove panels with the <code>sc_wpun_channel_form_panels</code> filter, for example a site's own runbook or a delivery log.</p>
 <h3 id="reminders">Reminders<a class="headerlink" href="#reminders" title="Permanent link">&para;</a></h3>
 <p>A site owner can ask for reminders of updates that are still waiting (the <code>remind</code> routing key). Your <code>send()</code> then receives a <code>Notification</code> whose <code>is_reminder()</code> is true. It lists every update that is still waiting for the instance, so most of its items were delivered before.</p>
 <ul>

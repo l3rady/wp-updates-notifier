@@ -1279,6 +1279,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_channel_form_panels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_form_panels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_channel_rejected" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3497,6 +3508,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_channel_form_panels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_channel_form_panels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_channel_rejected" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4418,6 +4440,7 @@ channel uses <code>array( 'to' =&gt; string[], 'subject' =&gt; string, 'message'
 <span class="x">    3</span>
 <span class="x">);</span>
 </code></pre></div>
+<p>A channel may also run it to build the preview panel of its form, with the notification source <code>preview</code>; nothing is sent then.</p>
 <p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
 <table>
 <thead>
@@ -4451,6 +4474,7 @@ channel uses <code>array( 'to' =&gt; string[], 'subject' =&gt; string, 'message'
 <p>Filters the payload of the channels of one type just before it is sent.</p>
 <p>The dynamic part, <code>$type</code>, is the channel type, for example <code>email</code>. The arguments are the
 same as for <code>sc_wpun_channel_payload</code>.</p>
+<p>A channel may also run it to build the preview panel of its form, with the notification source <code>preview</code>; nothing is sent then.</p>
 <p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
 <table>
 <thead>
@@ -4482,6 +4506,7 @@ same as for <code>sc_wpun_channel_payload</code>.</p>
 <h3 id="sc_wpun_email_content"><code>sc_wpun_email_content</code><a class="headerlink" href="#sc_wpun_email_content" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 1.4.3. Since 2.0.0 also receives the notification and the instance, and is not HTML-escaped.</p>
 <p>Filters the body of the email.</p>
+<p>It also runs for the preview panel of the add and edit form, for a sample notification whose source is <code>preview</code>; nothing is sent then, and on the form of a new channel the instance is a draft with an empty id.</p>
 <p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
 <table>
 <thead>
@@ -4513,6 +4538,7 @@ same as for <code>sc_wpun_channel_payload</code>.</p>
 <h3 id="sc_wpun_email_subject"><code>sc_wpun_email_subject</code><a class="headerlink" href="#sc_wpun_email_subject" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 1.4.3. Since 2.0.0 also receives the notification and the instance.</p>
 <p>Filters the subject of the email.</p>
+<p>It also runs for the preview panel of the add and edit form, for a sample notification whose source is <code>preview</code>; nothing is sent then, and on the form of a new channel the instance is a draft with an empty id.</p>
 <p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
 <table>
 <thead>
@@ -4894,6 +4920,56 @@ existing fields is always safe.</p>
 <td><code>$type</code></td>
 <td><code>string</code></td>
 <td>The channel type.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/abstract-class-channel.php</code>.</p>
+<h3 id="sc_wpun_channel_form_panels"><code>sc_wpun_channel_form_panels</code><a class="headerlink" href="#sc_wpun_channel_form_panels" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters the panels of the add and edit form of a channel.</p>
+<p>Same schema as Channel::get_form_panels(): an array keyed by panel id, each an array with a <code>label</code> and a <code>content</code>
+(escaped markup, output as it is), and optionally a <code>description</code> and <code>collapsed</code>. The panels are drawn after the field
+groups, in this order. On the form of a new channel the instance is a draft with an empty id.</p>
+<p>Example, show a support contact on the form of the email channel:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_channel_form_panels',</span>
+<span class="x">    function ( $panels, $instance, $channel ) {</span>
+<span class="x">        if ( 'email' === $channel-&gt;get_type() ) {</span>
+<span class="x">            $panels['runbook'] = array(</span>
+<span class="x">                'label'   =&gt; 'Runbook',</span>
+<span class="x">                'content' =&gt; '&lt;p&gt;' . esc_html( 'Problems with updates? Ask the web team.' ) . '&lt;/p&gt;',</span>
+<span class="x">            );</span>
+<span class="x">        }</span>
+<span class="x">        return $panels;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<p><code>$instance</code> holds the resolved settings, secrets included: never print them, and don't log or dump its settings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$panels</code></td>
+<td><code>array&lt;string, array&lt;string, mixed&gt;&gt;</code></td>
+<td>The panels by id.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance being edited, or the draft of a new channel.</td>
+</tr>
+<tr>
+<td><code>$channel</code></td>
+<td><code>Channel</code></td>
+<td>The channel type's module.</td>
 </tr>
 </tbody>
 </table>
@@ -5859,6 +5935,7 @@ for that. An entry whose name is not a string, or whose value is not a string wi
 return value that is not an array is ignored.</p>
 <p>For an <code>updates.resolved</code> message <code>$notification</code> is the notification of the update check, copied with the items that
 were installed or removed.</p>
+<p>It also runs for the preview panel of the channel's form, with the notification source <code>preview</code>; nothing is sent.</p>
 <p><code>$headers</code> and <code>$instance</code> hold secrets, such as the signature and the extra headers: don't log or dump them.</p>
 <p>Example, add a header:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>

@@ -2896,6 +2896,7 @@
 <p>Reminders are worked out at each check, so they can not come more often than your <a href="../settings/#frequency-to-check">frequency to check</a>. See <a href="../how-notifications-work/#reminders">How notifications work</a>.</p>
 <h2 id="the-email-options">The email options<a class="headerlink" href="#the-email-options" title="Permanent link">&para;</a></h2>
 <p>The form puts <strong>Send to</strong> under <strong>Recipients</strong> and the other options under <strong>Message</strong>.</p>
+<p>Below the options, <strong>Preview</strong> shows the recipients, the subject and the body of an example notification with the current settings, so you can see the effect of the format and the prefix. Open it to read it. It shows what was saved, or what you typed if the last save failed, and sends nothing.</p>
 <table>
 <thead>
 <tr>
@@ -2982,6 +2983,7 @@
 </table>
 <p>Renaming the headers changes only their names. The values and what is signed stay the same, so it does not make the messages fit another provider's format, such as the <code>X-Hub-Signature-256: sha256=...</code> header of GitHub. A receiver that needs that must be changed, or use a small proxy.</p>
 <p><strong>Send test</strong> sends a message of the type <code>updates.test</code>. Without a signing secret, messages still carry <code>webhook-id</code> and <code>webhook-timestamp</code>, but no <code>webhook-signature</code>.</p>
+<p>Below the options, <strong>Preview</strong> shows the headers and the body of an example message with the current settings. The body is shown indented, while the real one is on one line. Only the headers the plugin sets itself show their value: the signature and your extra headers show as hidden, and the webhook address and the signing secret are never shown. It sends nothing.</p>
 <p>Like the email options, each webhook option can be set in code. For example <code>SC_WPUN_CHANNEL_&lt;ID&gt;__SIGNING_SECRET</code> sets the signing secret of the channel with that id, and <code>SC_WPUN_CHANNEL_&lt;ID&gt;__URL</code> sets its address. See <a href="../settings-in-code/">Settings in code</a> and <a href="../../developers/configuration-sources/">Configuration sources</a>.</p>
 <h3 id="make-a-signing-secret">Make a signing secret<a class="headerlink" href="#make-a-signing-secret" title="Permanent link">&para;</a></h3>
 <p>The secret must start with <code>whsec_</code>, followed by base64 text that decodes to 24 to 64 bytes. This is the format of <a href="https://www.standardwebhooks.com/">Standard Webhooks</a>, so the receiving side can use its libraries. A plain password is refused. Make one in a terminal:</p>
