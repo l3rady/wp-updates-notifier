@@ -67,6 +67,25 @@ add_filter(
 );
 ```
 
+## Link to the Muted tab
+
+`sc_wpun_mute_url( $type, $key, $mode = 'always', $snooze = 0 )` (API 1.1.0) gives the address of the Muted tab with its form filled in, in the network admin when the plugin runs for a network. Use it for a "mute this" link in a message or on a dashboard. The link only fills in the form: nothing is muted until the user checks it and presses **Mute**, so it needs no security token and is safe to share.
+
+```php
+// Always: a plugin file, or a theme's stylesheet with 'theme'.
+$url = sc_wpun_mute_url( 'plugin', 'akismet/akismet.php' );
+
+// Skip the waiting version.
+$url = sc_wpun_mute_url( 'plugin', 'akismet/akismet.php', 'skip' );
+
+// Snooze for a week: the form's "Snooze until" holds the time a week from now.
+$url = sc_wpun_mute_url( 'plugin', 'akismet/akismet.php', 'snooze', WEEK_IN_SECONDS );
+
+printf( '<a href="%s">Mute</a>', esc_url( $url ) );
+```
+
+The length is in seconds and must be one of the [`sc_wpun_snooze_durations`](hooks.md) (a day, a week and 30 days by default), else the field stays empty. A plugin or theme that is not installed is ignored. One that is muted already gives an empty form and a note with a link to its row.
+
 ## Define mutes in code
 
 `sc_wpun_mutes` adds mutes that no screen can remove. They apply like stored ones and are listed on the Muted tab, in `wp updates-notifier status` and in Site Health, marked as set in code. This suits an mu-plugin that an agency or Composer manages.

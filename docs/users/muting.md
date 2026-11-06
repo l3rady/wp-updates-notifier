@@ -19,7 +19,7 @@ WordPress core cannot be muted. Use **Notify about WordPress updates?** on the [
 ## How to mute
 
 - **On the Plugins screen.** Each plugin has a **Mute update notifications** link under its name. When an update is waiting, the yellow update notice has **Don't notify me about version X**, which skips that version. A muted plugin says **Update notifications muted** and has an **Unmute update notifications** link instead. You can also tick plugins and use the bulk actions **Mute update notifications** and **Unmute update notifications**. The bulk actions mute for good.
-- **On the Muted tab.** Open **Settings → Updates Notifier → Muted**. The table lists everything that is muted: the name, the kind of mute, who muted it, where from and when, and whether an update is waiting. Use **Unmute** to turn notifications back on. Under the table, pick a plugin or theme, choose **Always** or **Skip the waiting version**, and click the button to mute it. To snooze, also fill in **Snooze until**.
+- **On the Muted tab.** Open **Settings → Updates Notifier → Muted**. The table lists everything that is muted: the name, the kind of mute, who muted it, where from and when, and whether an update is waiting. Use **Unmute** to turn notifications back on. Under the table, pick a plugin or theme, choose **Always** or **Skip the waiting version**, and click the button to mute it. To snooze, also fill in **Snooze until**. A link, for example from another tool, can open the tab with the form already filled in. Nothing is muted until you check it and press **Mute**.
 - **With WP-CLI.** See [`mute`, `unmute` and `muted`](wp-cli.md#mute).
 
 **Themes** can only be muted or snoozed on the Muted tab or with WP-CLI, because the Themes screen has no place for the link.

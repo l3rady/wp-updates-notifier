@@ -58,7 +58,7 @@ Global settings live in the `sc_wpun_settings` option, the instances in `sc_wpun
 On multisite the plugin runs only when it is network-activated ([ADR 0021](../decisions/0021-network-only-on-multisite.md)). One internal object, `WPUN\Network_Context`, answers every question that depends on the mode, so each screen, handler and store is registered once and asks it. Network mode is multisite plus network activation, whichever screen the request comes from.
 
 - **Storage.** Options are read and written with the site option functions in network mode, under the same names. The options filters wrap them the same way.
-- **Screens and URLs.** The settings screen is in the network admin, and its links come from `network_admin_url()`. Code outside the plugin uses `sc_wpun_settings_url()`.
+- **Screens and URLs.** The settings screen is in the network admin, and its links come from `network_admin_url()`. Code outside the plugin uses `sc_wpun_settings_url()`, and `sc_wpun_mute_url()` for a link that opens the Muted tab with its form filled in.
 - **Cron.** The check is scheduled on the main site only. `Config_Context::get_site_id()` returns the main site's id.
 - **Notifications.** The site name, home URL and updates link in a `Notification` are the network's.
 - **Not network-activated.** A copy that is active on a site but not network-activated boots dormant. It registers no commands, creates no options and sends nothing. It only clears a leftover check event and shows super admins a notice and a Site Health result.
