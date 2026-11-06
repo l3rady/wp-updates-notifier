@@ -399,7 +399,7 @@ class Muted_Tab {
 					</tbody>
 				</table>
 			</fieldset>
-			<p class="submit"><button type="submit" class="button button-primary"><?php esc_html_e( 'Mute', 'wp-updates-notifier' ); ?></button></p>
+			<p class="submit"><button type="submit" class="button button-primary"><?php echo esc_html_x( 'Mute', 'button that mutes a plugin or theme', 'wp-updates-notifier' ); ?></button></p>
 		</form>
 		<?php
 	}
