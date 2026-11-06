@@ -72,6 +72,9 @@ rector.php                rector phpcs smoke
 psalm.xml                 taint
 psalm-baseline.xml        taint
 docker/psalm/*            taint smoke
+# The local quality reports (make quality) have no CI job yet; the smoke test lints the PHP in them.
+rector-quality.php        smoke
+docker/quality/*          smoke
 .semgrep/*                sast smoke
 # The Semgrep suppression check and its test.
 bin/check-security-ignores.sh        sast
@@ -210,6 +213,8 @@ docker/docs/requirements.txt dependencies dependency-review
 docker/docs/osv-scanner.toml dependencies
 docker/psalm/composer.json   dependencies dependency-review
 docker/psalm/composer.lock   dependencies dependency-review
+docker/quality/composer.json dependencies dependency-review
+docker/quality/composer.lock dependencies dependency-review
 tests/e2e/package.json    e2e dependencies dependency-review
 tests/e2e/package-lock.json e2e dependencies dependency-review
 

@@ -56,6 +56,11 @@ the [documentation site](https://wpun.cariss.dev/main/contributing/documentation
 - `make stan` runs PHPStan at level 8 with the WordPress stubs, and `make rector`
   fails when the code is behind on PHP 7.4 syntax.
 - `make fix` repairs what `phpcbf` can.
+- `make quality` writes code-quality reports to `quality-reports/`: copy-paste
+  blocks (`make quality-dupes`), unused code (`make quality-dead`), cognitive
+  complexity (`make quality-complexity`) and Rector's clean-up suggestions
+  (`make quality-rector`). They only report and never fail on findings. Read
+  them as hints for a refactor, not as a to-do list.
 
 ## Test policy
 

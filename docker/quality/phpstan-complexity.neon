@@ -1,0 +1,24 @@
+# Cognitive complexity report: `make quality-complexity`. Report-only: only tomasvotruba/cognitive-complexity reports.
+#
+# No `level` is set, so none of PHPStan's own rules run (`make stan` does that).
+includes:
+    - /opt/quality/vendor/tomasvotruba/cognitive-complexity/config/extension.neon
+
+parameters:
+    phpVersion: 70400
+    # No level, so the rule-less warning is expected.
+    customRulesetUsed: true
+    tmpDir: /tmp/phpstan-quality-complexity
+    paths:
+        - %currentWorkingDirectory%/wp-updates-notifier.php
+        - %currentWorkingDirectory%/includes
+        - %currentWorkingDirectory%/modules
+        - %currentWorkingDirectory%/uninstall.php
+    scanFiles:
+        - /opt/quality/vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+    # The limits are low on purpose: this lists everything worth a look, it does not gate anything.
+    # The package default is 9 for a function and 40 for a class. A method above 12 has several nested branches or
+    # loops; a class above 80 does a lot of branching in total (the class figure is the sum of its methods).
+    cognitive_complexity:
+        function: 12
+        class: 80

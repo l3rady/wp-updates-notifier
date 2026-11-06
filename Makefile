@@ -52,11 +52,24 @@ SAST_PATHS := wp-updates-notifier.php uninstall.php includes modules examples
 TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
+# Code-quality reports (`make quality`): they only report, a finding never fails them. They write to quality-reports/.
+# PHPStan (dead code, complexity) and jscpd run from their own image (docker/quality), as the dead code detector needs
+# PHP 8.1+. The code is still analysed as PHP 7.4.
+QUALITY_DIR := quality-reports
+QUALITY     := $(COMPOSE) --profile quality run --build --rm -T quality
+JSCPD       := $(COMPOSE) --profile quality run --build --rm -T jscpd
+# Copy-paste detection: a block of at least 5 lines and 50 tokens. Lower than that finds idioms (a hook registration,
+# an `if ( ! current_user_can() ) { wp_die(); }`), higher misses small copies worth a helper.
+# Weak mode skips comments: otherwise matching doc blocks of properties and file headers fill the report.
+JSCPD_ARGS  := --mode weak --min-lines 5 --min-tokens 50 --reporters console,json --output /reports/jscpd --ignore "**/vendor/**,**/languages/**,**/*.min.*,**/*.map,**/*.pot,**/*.po,**/*.mo,**/*.json"
+# PHPStan exits 1 for findings and 255 when it crashes: only a crash fails the target.
+QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
+
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-16s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
 
 build: ## Build the PHP image for PHP_VERSION
 	$(COMPOSE) build php
@@ -234,7 +247,8 @@ audit: audit-composer audit-osv ## Check the locked dependencies for known vulne
 audit-composer: ## composer audit on composer.lock (fails on advisories and abandoned packages)
 	$(COMPOSE) run --rm composer audit --locked
 
-# The lockfiles are composer.lock, docker/psalm/composer.lock and docker/commitlint/package-lock.json.
+# The lockfiles are composer.lock, docker/psalm/composer.lock, docker/quality/composer.lock and the package-lock.json
+# files in docker/commitlint and docker/quality.
 audit-osv: ## OSV-Scanner over the repository's lockfiles
 	@mkdir -p security-reports
 	$(if $(AUDIT_SARIF),-$(COMPOSE) --profile security run --rm -T osv-scanner scan source -r --format sarif --output-file /reports/osv.sarif /app)
@@ -260,6 +274,27 @@ sast-ignores: ## Suppressions need a reason, every PHP file has its guard, and t
 taint: deps ## Psalm taint analysis from untrusted sources (plugin headers, options, transients) to unsafe sinks (fails on findings; TAINT_SARIF=1 also writes the SARIF report)
 	@mkdir -p security-reports
 	$(PSALM) --taint-analysis --monochrome --no-cache --no-progress --threads=1 $(if $(TAINT_SARIF),--report=/reports/psalm.sarif)
+
+quality: quality-dupes quality-dead quality-complexity quality-rector ## Local code-quality reports in quality-reports/ (report-only, never fails on findings)
+	@echo ''
+	@echo 'Reports in $(QUALITY_DIR)/:'
+	@ls -1 $(QUALITY_DIR) $(QUALITY_DIR)/jscpd | sed 's/^/  /'
+
+quality-dupes: ## Copy-paste detection with jscpd over the plugin code and CSS (report: quality-reports/jscpd/jscpd-report.json)
+	@mkdir -p $(QUALITY_DIR)
+	$(JSCPD) $(JSCPD_ARGS) includes modules wp-updates-notifier.php uninstall.php assets
+
+quality-dead: ## Unused methods, properties and constants (PHPStan + dead-code-detector; public API and hook callbacks are entry points; report: quality-reports/dead-code.txt)
+	@mkdir -p $(QUALITY_DIR)
+	@$(QUALITY) analyse -c docker/quality/phpstan-dead.neon $(QUALITY_STAN) > $(QUALITY_DIR)/dead-code.txt; s=$$?; cat $(QUALITY_DIR)/dead-code.txt; [ $$s -le 1 ]
+
+quality-complexity: ## Cognitive complexity: methods above 12 and classes above 80 (PHPStan + cognitive-complexity; report: quality-reports/complexity.txt)
+	@mkdir -p $(QUALITY_DIR)
+	@$(QUALITY) analyse -c docker/quality/phpstan-complexity.neon $(QUALITY_STAN) > $(QUALITY_DIR)/complexity.txt; s=$$?; cat $(QUALITY_DIR)/complexity.txt; [ $$s -le 1 ]
+
+quality-rector: deps ## Rector dry run with the DeadCode and CodeQuality sets, PHP 7.4 and WordPress Coding Standards safe (changes nothing; report: quality-reports/rector.txt)
+	@mkdir -p $(QUALITY_DIR)
+	@$(COMPOSE) run --build --rm php sh -c 'vendor/bin/rector process --config=rector-quality.php --dry-run --no-progress-bar --no-ansi > $(QUALITY_DIR)/rector.txt; s=$$?; cat $(QUALITY_DIR)/rector.txt; [ $$s -le 2 ]'
 
 dast: ## OWASP ZAP against a throwaway copy of the site (own compose project wpun-dast, never touches make up; fails on Medium/High alerts; slow)
 	@./tests/dast/run.sh

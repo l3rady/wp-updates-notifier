@@ -41,6 +41,8 @@
 /psalm.xml
 /phpunit.xml.dist
 /rector.php
+/rector-quality.php
+/quality-reports
 /release-please-config.json
 /tests
 /vendor

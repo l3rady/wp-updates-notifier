@@ -10,8 +10,8 @@ echo "PHP:   $(php -r 'echo PHP_VERSION;') ($(php -r 'echo PHP_SAPI;'))"
 php -r 'extension_loaded("mysqli") || exit(1);' || fail "mysqli extension not loaded"
 echo "Ext:   mysqli ok"
 
-# Every PHP file of the plugin must lint on this PHP version.
-find . -name '*.php' -not -path './vendor/*' -not -path './node_modules/*' -not -path './build/*' \
+# Every PHP file of the plugin must lint on this PHP version. docker/quality/src needs PHP 8.1 (the dead code detector).
+find . -name '*.php' -not -path './vendor/*' -not -path './node_modules/*' -not -path './build/*' -not -path './docker/quality/src/*' \
     | while read -r file; do
         php -l "$file" >/dev/null || fail "$file does not lint on this PHP version"
     done

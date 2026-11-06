@@ -1,0 +1,46 @@
+# Dead code report: `make quality-dead`. Report-only: only shipmonk/dead-code-detector reports.
+#
+# No `level` is set, so none of PHPStan's own rules run (type errors, undefined variables ...: `make stan` does that).
+# The rules of the detector are added by its own neon file.
+includes:
+    - /opt/quality/vendor/shipmonk/dead-code-detector/rules.neon
+
+parameters:
+    phpVersion: 70400
+    # No level, so the rule-less warning is expected.
+    customRulesetUsed: true
+    tmpDir: /tmp/phpstan-quality-dead
+    # Analysed, so that what they call counts as a usage. Their own findings are ignored below.
+    paths:
+        - %currentWorkingDirectory%/wp-updates-notifier.php
+        - %currentWorkingDirectory%/includes
+        - %currentWorkingDirectory%/modules
+        - %currentWorkingDirectory%/uninstall.php
+        - %currentWorkingDirectory%/examples
+        - %currentWorkingDirectory%/docker/dev-plugins
+        - %currentWorkingDirectory%/tests/fixtures/plugins
+    scanFiles:
+        - /opt/quality/vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+        - %currentWorkingDirectory%/tests/stubs/wp-cli.php
+    treatPhpDocTypesAsCertain: false
+    # Not reported: the example add-on, the dev plugins and the test fixtures only provide usages.
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        -
+            message: '#.#'
+            paths:
+                - %currentWorkingDirectory%/examples/*
+                - %currentWorkingDirectory%/docker/dev-plugins/*
+                - %currentWorkingDirectory%/tests/*
+    shipmonkDeadCode:
+        usageProviders:
+            # Entry points WordPress, WP-CLI or add-ons use. See PublicApiUsageProvider.
+            # Off: the plugin has no `@api` tags. Its API is everything in includes/ without `@internal`.
+            apiPhpDoc:
+                enabled: false
+
+services:
+    -
+        class: Wpun\Quality\PublicApiUsageProvider
+        tags:
+            - shipmonk.deadCode.memberUsageProvider

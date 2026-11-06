@@ -461,6 +461,37 @@ services:
     environment:
       HOME: /tmp
 
+  # Code-quality reports (`make quality`), profile "quality": dead code and cognitive complexity with PHPStan, in
+  # their own image, as the dead code detector needs PHP 8.1+ and the plugin supports 7.4. Report-only. No network.
+  quality:
+    profiles: [quality]
+    build:
+      context: docker/quality
+      target: phpstan
+    image: wp-updates-notifier:quality
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+      - ./quality-reports:/reports
+    environment:
+      HOME: /tmp
+
+  # Copy-paste detection (`make quality-dupes`), profile "quality". Report-only.
+  jscpd:
+    profiles: [quality]
+    build:
+      context: docker/quality
+      target: jscpd
+    image: wp-updates-notifier:jscpd
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+      - ./quality-reports:/reports
+    environment:
+      HOME: /tmp
+
   # Dockerfile misconfigurations and known vulnerabilities in the built image: `make audit-images`. Reports only.
   # Root, as the cache volume and (for the image scan, added by the make target) the Docker socket need it.
   trivy:

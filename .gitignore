@@ -14,3 +14,6 @@
 # make a11y: the npm packages (installed with npm ci in the container) and the Playwright reports
 /tests/e2e/node_modules/
 /tests/e2e/reports/
+
+# make quality: the reports
+/quality-reports/

@@ -112,6 +112,17 @@ updates:
     commit-message:
       prefix: build
 
+  # The code-quality reports of `make quality`: their own image, Composer and npm projects, as the dead code detector
+  # needs PHP 8.1+. Keep the WordPress stubs in docker/quality/composer.json at the version in the root composer.lock.
+  - package-ecosystem: docker
+    directory: /docker/quality
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+
   # The base image of `make assets`.
   - package-ecosystem: docker
     directory: /docker/assets
@@ -133,6 +144,35 @@ updates:
       include: scope
     groups:
       psalm:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: composer
+    directory: /docker/quality
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      quality:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # jscpd for `make quality-dupes`, installed with npm ci from docker/quality/package-lock.json.
+  - package-ecosystem: npm
+    directory: /docker/quality
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      jscpd:
         patterns: ["*"]
         update-types: [minor, patch]
 

@@ -1,0 +1,9 @@
+{
+  "name": "wp-updates-notifier-quality",
+  "private": true,
+  "description": "Copy-paste detection for make quality-dupes.",
+  "license": "GPL-2.0-or-later",
+  "dependencies": {
+    "jscpd": "5.4.2"
+  }
+}
