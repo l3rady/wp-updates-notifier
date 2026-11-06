@@ -1152,6 +1152,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_email_mute_links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_email_mute_links
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_email_subject" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3381,6 +3392,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_email_mute_links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_email_mute_links
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_email_subject" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4535,6 +4557,46 @@ same as for <code>sc_wpun_channel_payload</code>.</p>
 </tbody>
 </table>
 <p>Fired in <code>includes/class-notifier.php</code>, <code>modules/email/class-email-channel.php</code>.</p>
+<h3 id="sc_wpun_email_mute_links"><code>sc_wpun_email_mute_links</code><a class="headerlink" href="#sc_wpun_email_mute_links" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters whether the email links each plugin and theme to the Muted tab.</p>
+<p>The "Mute in WordPress" link opens the form of the Muted tab filled in; nothing is muted until the user presses the button, and it needs the permission of the settings screen. Return false for an instance whose recipients can't log in to the site, such as a client.</p>
+<p>It also runs for the preview panel of the add and edit form, for a sample notification whose source is <code>preview</code>; nothing is sent then, and on the form of a new channel the instance is a draft with an empty id.</p>
+<p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_email_mute_links',</span>
+<span class="x">    static fn( $show, $notification, $instance ) =&gt; 'client' === $instance-&gt;get_id() ? false : $show,</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$show</code></td>
+<td><code>bool</code></td>
+<td>Whether to add the links. Default true.</td>
+</tr>
+<tr>
+<td><code>$notification</code></td>
+<td><code>Notification</code></td>
+<td>The notification.</td>
+</tr>
+<tr>
+<td><code>$instance</code></td>
+<td><code>Channel_Instance</code></td>
+<td>The instance sending it.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>modules/email/class-email-channel.php</code>.</p>
 <h3 id="sc_wpun_email_subject"><code>sc_wpun_email_subject</code><a class="headerlink" href="#sc_wpun_email_subject" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 1.4.3. Since 2.0.0 also receives the notification and the instance.</p>
 <p>Filters the subject of the email.</p>
@@ -5646,9 +5708,10 @@ than true refuses too. Deleting the plugin or theme removes its mute without ask
 <p>Fired in <code>includes/class-mute-store.php</code>.</p>
 <h3 id="sc_wpun_snooze_durations"><code>sc_wpun_snooze_durations</code><a class="headerlink" href="#sc_wpun_snooze_durations" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 3.0.0</p>
-<p>Filters the lengths of a snooze offered on the Plugins screen, the Muted tab and in WP-CLI.</p>
+<p>Filters the lengths of a snooze offered on the Plugins screen.</p>
 <p>A list of seconds =&gt; label. Entries whose seconds are not a positive whole number or whose label is
-not a non-empty string are dropped. Only these lengths are accepted from the Plugins screen links.</p>
+not a non-empty string are dropped. Only these lengths are accepted from the Plugins screen links, and by the Muted tab links that
+<code>sc_wpun_mute_url()</code> builds. The Muted tab's own form takes any end time, and WP-CLI any duration.</p>
 <p>Example, offer 4 hours as well:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_snooze_durations',</span>

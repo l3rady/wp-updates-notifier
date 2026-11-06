@@ -2512,7 +2512,7 @@
 <p>On multisite the plugin runs only when it is network-activated (<a href="../../decisions/0021-network-only-on-multisite/">ADR 0021</a>). One internal object, <code>WPUN\Network_Context</code>, answers every question that depends on the mode, so each screen, handler and store is registered once and asks it. Network mode is multisite plus network activation, whichever screen the request comes from.</p>
 <ul>
 <li><strong>Storage.</strong> Options are read and written with the site option functions in network mode, under the same names. The options filters wrap them the same way.</li>
-<li><strong>Screens and URLs.</strong> The settings screen is in the network admin, and its links come from <code>network_admin_url()</code>. Code outside the plugin uses <code>sc_wpun_settings_url()</code>.</li>
+<li><strong>Screens and URLs.</strong> The settings screen is in the network admin, and its links come from <code>network_admin_url()</code>. Code outside the plugin uses <code>sc_wpun_settings_url()</code>, and <code>sc_wpun_mute_url()</code> for a link that opens the Muted tab with its form filled in.</li>
 <li><strong>Cron.</strong> The check is scheduled on the main site only. <code>Config_Context::get_site_id()</code> returns the main site's id.</li>
 <li><strong>Notifications.</strong> The site name, home URL and updates link in a <code>Notification</code> are the network's.</li>
 <li><strong>Not network-activated.</strong> A copy that is active on a site but not network-activated boots dormant. It registers no commands, creates no options and sends nothing. It only clears a leftover check event and shows super admins a notice and a Site Health result.</li>

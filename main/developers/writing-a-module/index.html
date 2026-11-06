@@ -3464,6 +3464,7 @@
 <div class="highlight"><pre><span></span><code><span class="x">$url = sc_wpun_settings_url( 'channels' ); // The Channels tab, in either mode.</span>
 </code></pre></div>
 <p>A screen, REST route or widget of your own that changes the plugin's settings checks <code>current_user_can( sc_wpun_capability() )</code>, and one that mutes or unmutes checks <code>sc_wpun_mute_capability()</code> (both API 1.1.0). They return what the plugin checks, after its filters, so never write <code>manage_options</code>.</p>
+<p>To link to the Muted tab with the form filled in for a plugin or theme, use <code>sc_wpun_mute_url( $type, $key, $mode, $snooze )</code> (API 1.1.0). See <a href="../muting-from-code/#link-to-the-muted-tab">Muting from code</a>.</p>
 <h2 id="checklist">Checklist<a class="headerlink" href="#checklist" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The header has <code>Requires Plugins: wp-updates-notifier</code> and <code>Requires WPUN API</code> with the constraint, and <code>boot()</code> checks <code>sc_wpun_api_satisfies( '^1.0' )</code> for code outside the channel.</li>

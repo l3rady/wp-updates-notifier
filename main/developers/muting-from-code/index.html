@@ -868,6 +868,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#link-to-the-muted-tab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Link to the Muted tab
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#define-mutes-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2423,6 +2434,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#link-to-the-muted-tab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Link to the Muted tab
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#define-mutes-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2526,6 +2548,21 @@
 <span class="x">    2</span>
 <span class="x">);</span>
 </code></pre></div>
+<h2 id="link-to-the-muted-tab">Link to the Muted tab<a class="headerlink" href="#link-to-the-muted-tab" title="Permanent link">&para;</a></h2>
+<p><code>sc_wpun_mute_url( $type, $key, $mode = 'always', $snooze = 0 )</code> (API 1.1.0) gives the address of the Muted tab with its form filled in, in the network admin when the plugin runs for a network. Use it for a "mute this" link in a message or on a dashboard. The link only fills in the form: nothing is muted until the user checks it and presses <strong>Mute</strong>, so it needs no security token and is safe to share.</p>
+<div class="highlight"><pre><span></span><code><span class="x">// Always: a plugin file, or a theme's stylesheet with 'theme'.</span>
+<span class="x">$url = sc_wpun_mute_url( 'plugin', 'akismet/akismet.php' );</span>
+
+<span class="x">// Skip the waiting version.</span>
+<span class="x">$url = sc_wpun_mute_url( 'plugin', 'akismet/akismet.php', 'skip' );</span>
+
+<span class="x">// Snooze for a week: the form's "Snooze until" holds the time a week from now.</span>
+<span class="x">$url = sc_wpun_mute_url( 'plugin', 'akismet/akismet.php', 'snooze', WEEK_IN_SECONDS );</span>
+
+<span class="x">printf( '&lt;a href="%s"&gt;Mute&lt;/a&gt;', esc_url( $url ) );</span>
+</code></pre></div>
+<p>The email channel uses it for the <strong>Mute in WordPress</strong> link under each plugin and theme. The <code>sc_wpun_email_mute_links</code> filter (see <a href="../hooks/">Hooks</a>) turns the links off, for example for an instance whose recipients can't log in to the site.</p>
+<p>The length is in seconds and must be one of the <a href="../hooks/"><code>sc_wpun_snooze_durations</code></a> (a day, a week and 30 days by default), else the field stays empty. A plugin or theme that is not installed is ignored. One that is muted already gives an empty form and a note with a link to its row.</p>
 <h2 id="define-mutes-in-code">Define mutes in code<a class="headerlink" href="#define-mutes-in-code" title="Permanent link">&para;</a></h2>
 <p><code>sc_wpun_mutes</code> adds mutes that no screen can remove. They apply like stored ones and are listed on the Muted tab, in <code>wp updates-notifier status</code> and in Site Health, marked as set in code. This suits an mu-plugin that an agency or Composer manages.</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
