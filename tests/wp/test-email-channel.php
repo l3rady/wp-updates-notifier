@@ -576,6 +576,55 @@ class Test_Email_Channel extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A field added to the email channel with the fields filter is validated and saved, as the default does.
+	 */
+	public function test_a_field_added_with_the_filter_is_validated_and_saved() {
+		add_filter(
+			'sc_wpun_channel_fields',
+			static function ( $fields, $type ) {
+				if ( 'email' === $type ) {
+					$fields['cc'] = array(
+						'type'  => 'email_list',
+						'label' => 'Copy to',
+					);
+				}
+				return $fields;
+			},
+			10,
+			2
+		);
+
+		$clean = $this->channel->validate_settings(
+			array(
+				'to' => 'a@example.org',
+				'cc' => ' b@example.org , c@example.org',
+			)
+		);
+		$this->assertSame( 'b@example.org,c@example.org', $clean['cc'] );
+
+		$result = $this->channel->validate_settings(
+			array(
+				'to' => 'a@example.org',
+				'cc' => 'nope',
+			)
+		);
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'field' => 'cc' ), $result->get_error_data() );
+	}
+
+	/**
+	 * An empty recipient list is a required error on the field, and a field left out stays out.
+	 */
+	public function test_validate_settings_requires_the_recipients_and_leaves_missing_fields_out() {
+		$result = $this->channel->validate_settings( array( 'to' => ' , ' ) );
+		$this->assertWPError( $result );
+		$this->assertSame( 'Send to is required.', $result->get_error_message() );
+		$this->assertSame( array( 'field' => 'to' ), $result->get_error_data() );
+
+		$this->assertSame( array( 'to' => 'a@example.org' ), $this->channel->validate_settings( array( 'to' => 'a@example.org' ) ) );
+	}
+
+	/**
 	 * A notification with a plugin, a theme and core.
 	 *
 	 * @param array $context Context.
