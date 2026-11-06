@@ -565,6 +565,45 @@ class Test_Form_Panels extends WPUN_Test_Case {
 		$this->assertSame( 1, $xpath->query( '//details//dd[contains(.,"No recipients set yet.")]' )->length );
 	}
 
+	// The site details of the previews (#410).
+
+	/**
+	 * Both previews show the site name, address and updates address a real notification gets, on a single site and on a network.
+	 */
+	public function test_the_previews_show_the_site_details_of_a_real_notification() {
+		foreach ( array( false, true ) as $network ) {
+			if ( $network ) {
+				if ( ! is_multisite() ) {
+					continue;
+				}
+				$this->set_network_activated( true );
+				get_network()->site_name = 'Our Network';
+				update_site_option( 'site_name', 'Our Network' );
+			}
+			update_option( 'blogname', 'One Site' );
+
+			$context = sc_wpun()->network_context();
+			$this->assertSame( $network, $context->is_network() );
+			$name = $context->site_name();
+			$this->assertSame( $network ? 'Our Network' : 'One Site', $name );
+			$url     = $context->home_url();
+			$updates = $context->update_core_url();
+			$this->assertStringEndsNotWith( '/', $url );
+
+			$mail = $this->preview()['content'];
+			$this->assertStringContainsString( esc_html( $name ), $mail );
+			$this->assertStringContainsString( esc_html( $url ), $mail );
+			$this->assertStringContainsString( esc_html( $updates ), $mail );
+
+			$content = $this->hook_preview()['content'];
+			$this->assertSame( 1, preg_match( '#<dt>Body</dt><dd><pre>(.*?)</pre>#s', $content, $match ) );
+			$site = json_decode( html_entity_decode( $match[1], ENT_QUOTES ), true )['data']['site'];
+			$this->assertSame( $name, $site['name'] );
+			$this->assertSame( $url, $site['url'] );
+			$this->assertSame( $updates, $site['updates_url'] );
+		}
+	}
+
 	// The webhook preview.
 
 	/**
