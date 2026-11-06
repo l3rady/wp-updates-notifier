@@ -32,6 +32,19 @@ class Settings {
 	);
 
 	/**
+	 * The global settings and how each is cast: `string`, `notify` (one of the notify keys) or `bool`.
+	 * Adding a setting means adding it here, to its default and to its schema.
+	 */
+	const GLOBAL_SETTINGS = array(
+		'frequency'      => 'string',
+		'notify_core'    => 'notify',
+		'notify_plugins' => 'notify',
+		'notify_themes'  => 'notify',
+		'hide_updates'   => 'bool',
+		'download_links' => 'bool',
+	);
+
+	/**
 	 * Run state storage, written when settings from before version 8 are upgraded.
 	 *
 	 * @var State
@@ -286,14 +299,7 @@ class Settings {
 			return $defaults;
 		}
 
-		return array(
-			'frequency'      => $this->string_setting( $filtered, 'frequency', $defaults['frequency'] ),
-			'notify_core'    => $this->notify_key( 'notify_core', $filtered['notify_core'] ?? null, $defaults['notify_core'], false ),
-			'notify_plugins' => $this->notify_key( 'notify_plugins', $filtered['notify_plugins'] ?? null, $defaults['notify_plugins'], false ),
-			'notify_themes'  => $this->notify_key( 'notify_themes', $filtered['notify_themes'] ?? null, $defaults['notify_themes'], false ),
-			'hide_updates'   => $this->bool_setting( $filtered, 'hide_updates', $defaults['hide_updates'] ),
-			'download_links' => $this->bool_setting( $filtered, 'download_links', $defaults['download_links'] ),
-		);
+		return $this->normalise( $filtered, $defaults, false );
 	}
 
 	/**
@@ -305,39 +311,17 @@ class Settings {
 	 * @return SettingsData
 	 */
 	public function get(): array {
-		$settings  = $this->stored();
-		$schemas   = $this->schemas();
-		$frequency = $this->config->resolve_typed( Config_Context::setting( 'frequency' ), $schemas['frequency'] );
-		if ( null !== $frequency ) {
-			$settings['frequency'] = (string) $frequency->get_value();
+		$schemas  = $this->schemas();
+		$supplied = array();
+		foreach ( array_keys( self::GLOBAL_SETTINGS ) as $key ) {
+			$field = $this->config->resolve_typed( Config_Context::setting( $key ), $schemas[ $key ] );
+			if ( null !== $field ) {
+				$supplied[ $key ] = $field->get_value();
+			}
 		}
 
-		$core = $this->config->resolve_typed( Config_Context::setting( 'notify_core' ), $schemas['notify_core'] );
-		if ( null !== $core ) {
-			$settings['notify_core'] = $this->notify_key( 'notify_core', $core->get_value(), $settings['notify_core'], false );
-		}
-
-		$plugins = $this->config->resolve_typed( Config_Context::setting( 'notify_plugins' ), $schemas['notify_plugins'] );
-		if ( null !== $plugins ) {
-			$settings['notify_plugins'] = $this->notify_key( 'notify_plugins', $plugins->get_value(), $settings['notify_plugins'], false );
-		}
-
-		$themes = $this->config->resolve_typed( Config_Context::setting( 'notify_themes' ), $schemas['notify_themes'] );
-		if ( null !== $themes ) {
-			$settings['notify_themes'] = $this->notify_key( 'notify_themes', $themes->get_value(), $settings['notify_themes'], false );
-		}
-
-		$hide = $this->config->resolve_typed( Config_Context::setting( 'hide_updates' ), $schemas['hide_updates'] );
-		if ( null !== $hide ) {
-			$settings['hide_updates'] = (bool) $hide->get_value();
-		}
-
-		$download = $this->config->resolve_typed( Config_Context::setting( 'download_links' ), $schemas['download_links'] );
-		if ( null !== $download ) {
-			$settings['download_links'] = (bool) $download->get_value();
-		}
-
-		return $settings;
+		// A setting that is not supplied, or whose supplied value is unusable, keeps its stored value.
+		return $this->normalise( $supplied, $this->stored(), false );
 	}
 
 	/**
@@ -509,14 +493,7 @@ class Settings {
 		$stored   = is_array( $stored ) ? $stored : array();
 		$defaults = $this->default_settings();
 
-		return array(
-			'frequency'      => $this->string_setting( $stored, 'frequency', $defaults['frequency'] ),
-			'notify_core'    => $this->notify_key( 'notify_core', $stored['notify_core'] ?? null, $defaults['notify_core'] ),
-			'notify_plugins' => $this->notify_key( 'notify_plugins', $stored['notify_plugins'] ?? null, $defaults['notify_plugins'] ),
-			'notify_themes'  => $this->notify_key( 'notify_themes', $stored['notify_themes'] ?? null, $defaults['notify_themes'] ),
-			'hide_updates'   => $this->bool_setting( $stored, 'hide_updates', $defaults['hide_updates'] ),
-			'download_links' => $this->bool_setting( $stored, 'download_links', $defaults['download_links'] ),
-		);
+		return $this->normalise( $stored, $defaults, true );
 	}
 
 	/**
@@ -536,6 +513,35 @@ class Settings {
 		}
 
 		return Boolean_Field::sanitize( $stored[ $key ], array( 'default' => $fallback ) )['value'];
+	}
+
+	/**
+	 * Every global setting cast to its type, taking the value from `$values` and the fallback from `$fallbacks`.
+	 *
+	 * @param array<mixed>         $values    Values to cast. Missing and unusable ones get the fallback.
+	 * @param array<string, mixed> $fallbacks Values to use for those.
+	 * @param bool                 $legacy    Whether the notify settings (but never core) accept the 0, 1 and 2 stored before settings version 10.
+	 *
+	 * @return SettingsData
+	 */
+	private function normalise( array $values, array $fallbacks, bool $legacy ): array {
+		$settings = array();
+		foreach ( self::GLOBAL_SETTINGS as $key => $kind ) {
+			if ( 'string' === $kind ) {
+				$settings[ $key ] = $this->string_setting( $values, $key, (string) $fallbacks[ $key ] );
+			} elseif ( 'notify' === $kind ) {
+				$settings[ $key ] = $this->notify_key( $key, $values[ $key ] ?? null, (string) $fallbacks[ $key ], $legacy );
+			} else {
+				$settings[ $key ] = $this->bool_setting( $values, $key, (bool) $fallbacks[ $key ] );
+			}
+		}
+
+		/**
+		 * Every global setting was cast above.
+		 *
+		 * @var SettingsData $settings
+		 */
+		return $settings;
 	}
 
 	/**
