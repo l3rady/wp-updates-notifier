@@ -199,11 +199,7 @@ final class Mute_Store {
 		/** This filter is documented in includes/class-settings.php */
 		$stored = apply_filters( 'sc_wpun_put_options_filter', $stored, self::OPT_FIELD );
 
-		if ( false === $this->context->get_option( self::OPT_FIELD ) ) {
-			$this->context->add_option( self::OPT_FIELD, $stored, false );
-		} else {
-			$this->context->update_option( self::OPT_FIELD, $stored );
-		}
+		$this->context->update_option( self::OPT_FIELD, $stored, false );
 	}
 
 	/**

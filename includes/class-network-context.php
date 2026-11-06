@@ -82,28 +82,17 @@ class Network_Context {
 	}
 
 	/**
-	 * Create an option of the plugin.
+	 * Update an option of the plugin, creating it if it does not exist.
 	 *
-	 * @param string $name     Option name.
-	 * @param mixed  $value    Value.
-	 * @param bool   $autoload Whether to load it on every request. Network options have no autoload, so it is ignored there.
-	 *
-	 * @return bool True if the option was added.
-	 */
-	public function add_option( string $name, $value, bool $autoload = false ): bool {
-		return $this->is_network() ? add_site_option( $name, $value ) : add_option( $name, $value, '', $autoload );
-	}
-
-	/**
-	 * Update an option of the plugin.
-	 *
-	 * @param string $name  Option name.
-	 * @param mixed  $value Value.
+	 * @param string    $name     Option name.
+	 * @param mixed     $value    Value.
+	 * @param bool|null $autoload Whether to load it on every request; null leaves an existing option's setting alone and
+	 *                            gives a new one WordPress's default. Network options have no autoload, so it is ignored there.
 	 *
 	 * @return bool True if the value was changed.
 	 */
-	public function update_option( string $name, $value ): bool {
-		return $this->is_network() ? update_site_option( $name, $value ) : update_option( $name, $value );
+	public function update_option( string $name, $value, ?bool $autoload = null ): bool {
+		return $this->is_network() ? update_site_option( $name, $value ) : update_option( $name, $value, $autoload );
 	}
 
 	/**

@@ -83,7 +83,7 @@ class Test_Network_Context extends WPUN_Test_Case {
 		$this->assertSame( 'fallback', $context->get_option( 'sc_wpun_test', 'fallback' ) );
 		$this->assertFalse( $context->get_option( 'sc_wpun_test' ) );
 
-		$this->assertTrue( $context->add_option( 'sc_wpun_test', 'a' ) );
+		$this->assertTrue( $context->update_option( 'sc_wpun_test', 'a', false ) );
 		$this->assertSame( 'a', get_option( 'sc_wpun_test' ) );
 		$this->assertSame( 'off', $this->autoload( 'sc_wpun_test' ) );
 
@@ -158,7 +158,7 @@ class Test_Network_Context extends WPUN_Test_Case {
 		$this->network_activate();
 
 		$this->assertSame( 'fallback', $context->get_option( 'sc_wpun_test', 'fallback' ) );
-		$this->assertTrue( $context->add_option( 'sc_wpun_test', 'a', true ) );
+		$this->assertTrue( $context->update_option( 'sc_wpun_test', 'a', true ) );
 		$this->assertSame( 'a', get_site_option( 'sc_wpun_test' ) );
 		$this->assertFalse( get_option( 'sc_wpun_test' ) );
 

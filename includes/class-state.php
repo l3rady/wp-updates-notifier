@@ -70,11 +70,7 @@ class State {
 		/** This filter is documented in includes/class-settings.php */
 		$state = apply_filters( 'sc_wpun_put_options_filter', $state, self::OPT_FIELD );
 
-		if ( false === $this->context->get_option( self::OPT_FIELD ) ) {
-			$this->context->add_option( self::OPT_FIELD, $state, false );
-		} else {
-			$this->context->update_option( self::OPT_FIELD, $state );
-		}
+		$this->context->update_option( self::OPT_FIELD, $state, false );
 	}
 
 	/**
