@@ -270,4 +270,28 @@ final class Notification_Item {
 	public function get_notified_at(): ?int {
 		return $this->notified_at;
 	}
+
+	/**
+	 * The item as the array its constructor takes.
+	 *
+	 * To copy an item with changes, put them in front: `new Notification_Item( array( 'new_version' => '2.0' ) + $item->to_array() )`.
+	 * Unlike `Channel_Instance`, which has `with_*()` methods, a value object built from an array gives that array back.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return array{type: string, key: string, name: string, current_version: string, new_version: string, links: array<string, string>, notes: string[], notified_at: int|null, flags: array<string, scalar>}
+	 */
+	public function to_array(): array {
+		return array(
+			'type'            => $this->type,
+			'key'             => $this->key,
+			'name'            => $this->name,
+			'current_version' => $this->current_version,
+			'new_version'     => $this->new_version,
+			'links'           => $this->links,
+			'notes'           => $this->notes,
+			'notified_at'     => $this->notified_at,
+			'flags'           => $this->flags,
+		);
+	}
 }

@@ -1230,17 +1230,7 @@ add_filter(
     function ( $mute ) {
         $latest = time() + 30 * DAY_IN_SECONDS;
         if ( $mute instanceof \WPUN\Mute && null !== $mute->get_expires() && $mute->get_expires() > $latest ) {
-            return new \WPUN\Mute(
-                array(
-                    'type'    => $mute->get_type(),
-                    'key'     => $mute->get_key(),
-                    'until'   => $mute->get_until(),
-                    'time'    => $mute->get_time(),
-                    'user'    => $mute->get_user_id(),
-                    'source'  => $mute->get_source(),
-                    'expires' => $latest,
-                )
-            );
+            return new \WPUN\Mute( array( 'expires' => $latest ) + $mute->to_array() );
         }
         return $mute;
     }

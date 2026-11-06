@@ -96,25 +96,14 @@ final class Mute_Store {
 				continue;
 			}
 			if ( ! in_array( $mute, $list, true ) ) { // Not one of the stored objects: defined in code.
-				$mute = new Mute(
-					array(
-						'type'      => $mute->get_type(),
-						'key'       => $mute->get_key(),
-						'until'     => $mute->get_until(),
-						'time'      => $mute->get_time(),
-						'user'      => $mute->get_user_id(),
-						'expires'   => $mute->get_expires(),
-						'source'    => $mute->get_source(),
-						'from_code' => true,
-					)
-				);
+				$mute = new Mute( array( 'from_code' => true ) + $mute->to_array() );
 			}
 			$effective[ self::id( $mute->get_type(), $mute->get_key() ) ] = $mute;
 		}
 
 		// A filter cannot hide a stored mute.
 		foreach ( $stored as $id => $mute ) {
-			if ( ! isset( $effective[ $id ] ) && 'core' !== $mute->get_type() && Item_Types::exists( $mute->get_type() ) ) {
+			if ( ! isset( $effective[ $id ] ) && Item_Types::exists( $mute->get_type() ) ) {
 				$effective[ $id ] = $mute;
 			}
 		}
@@ -369,17 +358,7 @@ final class Mute_Store {
 		 *         function ( $mute ) {
 		 *             $latest = time() + 30 * DAY_IN_SECONDS;
 		 *             if ( $mute instanceof \WPUN\Mute && null !== $mute->get_expires() && $mute->get_expires() > $latest ) {
-		 *                 return new \WPUN\Mute(
-		 *                     array(
-		 *                         'type'    => $mute->get_type(),
-		 *                         'key'     => $mute->get_key(),
-		 *                         'until'   => $mute->get_until(),
-		 *                         'time'    => $mute->get_time(),
-		 *                         'user'    => $mute->get_user_id(),
-		 *                         'source'  => $mute->get_source(),
-		 *                         'expires' => $latest,
-		 *                     )
-		 *                 );
+		 *                 return new \WPUN\Mute( array( 'expires' => $latest ) + $mute->to_array() );
 		 *             }
 		 *             return $mute;
 		 *         }
@@ -401,7 +380,7 @@ final class Mute_Store {
 		if ( ! $filtered instanceof Mute ) {
 			return new WP_Error( 'sc_wpun_mute_refused', __( 'The mute was refused.', 'wp-updates-notifier' ) );
 		}
-		if ( $filtered->get_type() !== $type || $filtered->get_key() !== $key || 'core' === $type || ! Item_Types::exists( $type ) ) {
+		if ( $filtered->get_type() !== $type || $filtered->get_key() !== $key ) {
 			return new WP_Error( 'sc_wpun_mute_changed_item', __( 'The mute was refused: it is for another item.', 'wp-updates-notifier' ) );
 		}
 
@@ -409,17 +388,7 @@ final class Mute_Store {
 			return $this->expired_error();
 		}
 
-		$mute = new Mute(
-			array(
-				'type'    => $filtered->get_type(),
-				'key'     => $filtered->get_key(),
-				'until'   => $filtered->get_until(),
-				'time'    => $filtered->get_time(),
-				'user'    => $filtered->get_user_id(),
-				'expires' => $filtered->get_expires(),
-				'source'  => $filtered->get_source(),
-			)
-		);
+		$mute = new Mute( array( 'from_code' => false ) + $filtered->to_array() );
 
 		$id            = self::id( $mute->get_type(), $mute->get_key() );
 		$stored        = $this->stored();

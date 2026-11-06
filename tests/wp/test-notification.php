@@ -420,4 +420,34 @@ class Test_Notification extends WPUN_Test_Case {
 	public function type_of( Notification_Item $item ) {
 		return $item->get_type();
 	}
+
+	/**
+	 * Notification_Item::to_array() gives back what the constructor takes, so a copy keeps every field.
+	 */
+	public function test_item_to_array_round_trips() {
+		$item = new Notification_Item(
+			array(
+				'type'            => 'plugin',
+				'key'             => 'hello.php',
+				'name'            => 'Hello',
+				'current_version' => '1.0',
+				'new_version'     => '2.0',
+				'links'           => array( 'details' => 'https://example.com/d' ),
+				'notes'           => array( 'Tested up to 6.8' ),
+				'notified_at'     => 1700000000,
+				'flags'           => array(
+					'active'       => true,
+					'requires_php' => '7.4',
+				),
+			)
+		);
+
+		$this->assertSame( array( 'type', 'key', 'name', 'current_version', 'new_version', 'links', 'notes', 'notified_at', 'flags' ), array_keys( $item->to_array() ) );
+		$this->assertEquals( $item, new Notification_Item( $item->to_array() ) );
+
+		$copy = new Notification_Item( array( 'new_version' => '3.0' ) + $item->to_array() );
+		$this->assertSame( '3.0', $copy->get_new_version() );
+		$this->assertSame( 1700000000, $copy->get_notified_at() );
+		$this->assertSame( array( 'details' => 'https://example.com/d' ), $copy->get_links() );
+	}
 }

@@ -245,6 +245,29 @@ final class Mute {
 	}
 
 	/**
+	 * The mute as the array its constructor takes.
+	 *
+	 * To copy a mute with changes, put them in front: `new Mute( array( 'expires' => $latest ) + $mute->to_array() )`.
+	 * Unlike `Channel_Instance`, which has `with_*()` methods, a value object built from an array gives that array back.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return array{type: string, key: string, until: string|null, time: int, user: int, from_code: bool, expires: int|null, source: string}
+	 */
+	public function to_array(): array {
+		return array(
+			'type'      => $this->type,
+			'key'       => $this->key,
+			'until'     => $this->until,
+			'time'      => $this->time,
+			'user'      => $this->user,
+			'from_code' => $this->from_code,
+			'expires'   => $this->expires,
+			'source'    => $this->source,
+		);
+	}
+
+	/**
 	 * Whether the mute still covers a version.
 	 *
 	 * An "always" mute covers every version. A mute until a version covers that version and any older

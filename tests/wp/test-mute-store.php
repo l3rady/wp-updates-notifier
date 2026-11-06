@@ -850,4 +850,31 @@ class Test_Mute_Store extends WPUN_Test_Case {
 		$this->assertSame( 'WP-CLI', Mute_Store::source_label( 'cli' ), 'A bad value keeps the default.' );
 		$this->assertSame( 'Code', Mute_Store::source_label( 'api' ) );
 	}
+
+	/**
+	 * Mute::to_array() gives back what the constructor takes, so a copy keeps every field.
+	 */
+	public function test_mute_to_array_round_trips() {
+		$mute = new Mute(
+			array(
+				'type'      => 'plugin',
+				'key'       => 'hello.php',
+				'until'     => '2.0',
+				'time'      => 1700000000,
+				'user'      => 7,
+				'from_code' => true,
+				'expires'   => 1900000000,
+				'source'    => 'cli',
+			)
+		);
+
+		$this->assertSame( array( 'type', 'key', 'until', 'time', 'user', 'from_code', 'expires', 'source' ), array_keys( $mute->to_array() ) );
+		$this->assertEquals( $mute, new Mute( $mute->to_array() ) );
+
+		$copy = new Mute( array( 'expires' => 1800000000 ) + $mute->to_array() );
+		$this->assertSame( 1800000000, $copy->get_expires() );
+		$this->assertSame( 'cli', $copy->get_source() );
+		$this->assertTrue( $copy->is_from_code() );
+		$this->assertSame( '2.0', $copy->get_until() );
+	}
 }
