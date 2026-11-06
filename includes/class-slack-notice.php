@@ -23,7 +23,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Slack_Notice {
 	const DISMISS_ACTION = 'sc_wpun_dismiss_slack_notice';
 	const DISMISS_META   = 'sc_wpun_dismissed_slack_notice';
-	const SETTINGS_SLUG  = 'wp-updates-notifier';
 
 	/**
 	 * Channel instance storage.

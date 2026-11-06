@@ -711,7 +711,7 @@ final class Field_Types {
 
 		foreach ( array( 'text', 'textarea', 'url', 'email_list', 'secret', 'number' ) as $type ) {
 			$types[ $type ] = array(
-				'render'   => array( Field_Renderer::class, 'secret' === $type ? 'secret' : $type ),
+				'render'   => array( Field_Renderer::class, $type ),
 				'sanitize' => static function ( $value, $field ) use ( $type ) {
 					$result = call_user_func( array( self::class, $type ), $value, $field );
 
