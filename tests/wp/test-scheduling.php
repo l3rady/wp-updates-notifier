@@ -222,18 +222,8 @@ class Test_Scheduling extends WPUN_Test_Case {
 	public function test_the_scheduler_lists_its_frequencies() {
 		$this->assertSame(
 			array( 'hourly', 'twicedaily', 'daily', 'weekly' ),
-			array_keys( sc_wpun()->scheduler()->get_frequencies() )
+			array_keys( \WPUN\Frequencies::all() )
 		);
-	}
-
-	/**
-	 * Schedules are sorted shortest first.
-	 */
-	public function test_schedules_sort_by_interval() {
-		$scheduler = sc_wpun()->scheduler();
-
-		$this->assertSame( -1, $scheduler->sort_by_interval( array( 'interval' => 1 ), array( 'interval' => 2 ) ) );
-		$this->assertSame( 1, $scheduler->sort_by_interval( array( 'interval' => 2 ), array( 'interval' => 1 ) ) );
 	}
 
 	/**

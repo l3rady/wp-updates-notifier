@@ -44,17 +44,6 @@ final class Enum_Field {
 	private static $warned = array();
 
 	/**
-	 * Whether a field schema is an enum, including the `select` alias.
-	 *
-	 * @param array<string, mixed> $field Field schema.
-	 *
-	 * @return bool
-	 */
-	public static function is_enum( array $field ): bool {
-		return isset( $field['type'] ) && in_array( $field['type'], array( 'enum', 'select' ), true );
-	}
-
-	/**
 	 * Forget which fields were complained about, for tests.
 	 *
 	 * @return void

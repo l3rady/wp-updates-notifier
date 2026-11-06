@@ -582,14 +582,4 @@ class Test_Enum_Field extends WPUN_Test_Case {
 	public function test_keys_of_a_schema_without_options() {
 		$this->assertSame( array(), Enum_Field::keys( array() ) );
 	}
-
-	/**
-	 * Both names of the type are enums, and nothing else is.
-	 */
-	public function test_is_enum() {
-		$this->assertTrue( Enum_Field::is_enum( array( 'type' => 'enum' ) ) );
-		$this->assertTrue( Enum_Field::is_enum( array( 'type' => 'select' ) ) );
-		$this->assertFalse( Enum_Field::is_enum( array( 'type' => 'text' ) ) );
-		$this->assertFalse( Enum_Field::is_enum( array() ) );
-	}
 }

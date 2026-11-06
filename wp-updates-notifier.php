@@ -351,7 +351,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function send_test_email() {
-			sc_wpun()->settings_page()->send_test_email();
+			sc_wpun()->notifier()->send_legacy_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
 		}
 
 		/**
@@ -380,7 +380,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_frequency() {
-			sc_wpun()->settings_page()->sc_wpun_settings_main_field_frequency();
+			sc_wpun()->settings_page()->render_setting( array( 'name' => 'frequency' ) );
 		}
 
 		/**
@@ -389,7 +389,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_notify_plugins() {
-			sc_wpun()->settings_page()->sc_wpun_settings_main_field_notify_plugins();
+			sc_wpun()->settings_page()->render_setting( array( 'name' => 'notify_plugins' ) );
 		}
 
 		/**
@@ -398,7 +398,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_notify_themes() {
-			sc_wpun()->settings_page()->sc_wpun_settings_main_field_notify_themes();
+			sc_wpun()->settings_page()->render_setting( array( 'name' => 'notify_themes' ) );
 		}
 
 		/**
@@ -418,7 +418,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		 * @return void
 		 */
 		public function sc_wpun_settings_main_field_hide_updates() {
-			sc_wpun()->settings_page()->sc_wpun_settings_main_field_hide_updates();
+			sc_wpun()->settings_page()->render_setting( array( 'name' => 'hide_updates' ) );
 		}
 
 		/**

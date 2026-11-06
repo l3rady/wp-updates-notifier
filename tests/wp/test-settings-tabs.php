@@ -348,7 +348,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		sc_wpun()->config()->flush();
 
 		ob_start();
-		sc_wpun()->settings_page()->sc_wpun_settings_main_field_frequency();
+		$this->plugin()->sc_wpun_settings_main_field_frequency();
 		$html = (string) ob_get_clean();
 
 		$this->assertMatchesRegularExpression( '#<span class="description sc-wpun-external" id="sc_wpun_settings_main_frequency-external">Set by [^<]+</span>#', $html );
@@ -362,7 +362,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		$this->save_settings( array( 'frequency' => 'schedule_from_a_removed_plugin' ) );
 
 		ob_start();
-		sc_wpun()->settings_page()->sc_wpun_settings_main_field_frequency();
+		$this->plugin()->sc_wpun_settings_main_field_frequency();
 		$html = (string) ob_get_clean();
 
 		$this->assertStringContainsString( 'checks run at the interval they were last scheduled with', $html );
@@ -376,7 +376,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 
 		foreach ( array( 'notify_plugins', 'notify_themes', 'hide_updates' ) as $name ) {
 			ob_start();
-			$page->{'sc_wpun_settings_main_field_' . $name}();
+			$this->plugin()->{'sc_wpun_settings_main_field_' . $name}();
 			$this->assertStringContainsString( 'name="sc_wpun_settings[' . $name . ']', (string) ob_get_clean(), $name );
 		}
 
@@ -405,7 +405,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	public function test_the_test_email() {
 		$this->save_settings();
 
-		sc_wpun()->settings_page()->send_test_email();
+		$this->plugin()->send_test_email();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertStringContainsString( 'This is a test message from WP Updates Notifier.', $this->sent_mail()->body );
@@ -435,7 +435,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		add_settings_error( 'sc_wpun_settings_main_frequency', 'second', 'The second error', 'error' );
 
 		ob_start();
-		sc_wpun()->settings_page()->sc_wpun_settings_main_field_frequency();
+		$this->plugin()->sc_wpun_settings_main_field_frequency();
 		$html               = (string) ob_get_clean();
 		$wp_settings_errors = array();
 

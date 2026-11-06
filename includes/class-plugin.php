@@ -486,7 +486,7 @@ class Plugin {
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
-		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->notifier, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab(), $this->muted_tab(), $this->network_context );
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab(), $this->muted_tab(), $this->network_context );
 
 		return $this->settings_page;
 	}

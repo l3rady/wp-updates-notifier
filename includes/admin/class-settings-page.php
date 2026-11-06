@@ -16,7 +16,6 @@ use WPUN\Config_Report;
 use WPUN\Rejected_Channels;
 use WPUN\Enum_Field;
 use WPUN\Network_Context;
-use WPUN\Notifier;
 use WPUN\Plugin;
 use WPUN\Scheduler;
 use WPUN\Settings;
@@ -47,13 +46,6 @@ class Settings_Page {
 	 * @var State
 	 */
 	private $state;
-
-	/**
-	 * Notifier.
-	 *
-	 * @var Notifier
-	 */
-	private $notifier;
 
 	/**
 	 * The notice about Slack no longer being supported.
@@ -123,7 +115,6 @@ class Settings_Page {
 	 *
 	 * @param Settings             $settings  Settings.
 	 * @param State                $state     Run state.
-	 * @param Notifier             $notifier  Notifier.
 	 * @param Slack_Notice         $slack_notice Notice about Slack no longer being supported.
 	 * @param Config_Report        $config_report Report of configuration problems.
 	 * @param Rejected_Channels    $rejected_channels Report of modules refused for needing a newer API.
@@ -134,10 +125,9 @@ class Settings_Page {
 	 * @param Muted_Tab            $muted_tab The Muted tab.
 	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Settings $settings, State $state, Notifier $notifier, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab, ?Network_Context $network_context = null ) {
+	public function __construct( Settings $settings, State $state, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab, ?Network_Context $network_context = null ) {
 		$this->settings          = $settings;
 		$this->state             = $state;
-		$this->notifier          = $notifier;
 		$this->slack_notice      = $slack_notice;
 		$this->config_report     = $config_report;
 		$this->rejected_channels = $rejected_channels;
@@ -647,15 +637,6 @@ class Settings_Page {
 	}
 
 	/**
-	 * Send a test email.
-	 *
-	 * @return void
-	 */
-	public function send_test_email() {
-		$this->notifier->send_legacy_message( __( 'This is a test message from WP Updates Notifier.', 'wp-updates-notifier' ) );
-	}
-
-	/**
 	 * Whether a setting is supplied from outside the database, so its field is read-only.
 	 *
 	 * @param string $name Setting name.
@@ -766,41 +747,5 @@ class Settings_Page {
 			<?php
 		}
 		$this->external_note( $name, $id . '-external' );
-	}
-
-	/**
-	 * Settings field for frequency.
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_main_field_frequency() {
-		$this->render_setting( array( 'name' => 'frequency' ) );
-	}
-
-	/**
-	 * Settings field for notify plugins.
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_main_field_notify_plugins() {
-		$this->render_setting( array( 'name' => 'notify_plugins' ) );
-	}
-
-	/**
-	 * Settings field for notify themes.
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_main_field_notify_themes() {
-		$this->render_setting( array( 'name' => 'notify_themes' ) );
-	}
-
-	/**
-	 * Settings field for hiding updates.
-	 *
-	 * @return void
-	 */
-	public function sc_wpun_settings_main_field_hide_updates() {
-		$this->render_setting( array( 'name' => 'hide_updates' ) );
 	}
 }

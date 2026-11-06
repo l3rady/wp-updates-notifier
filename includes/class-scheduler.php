@@ -51,7 +51,7 @@ class Scheduler {
 	 * @return bool Whether the site was switched, so that restore() must follow.
 	 */
 	private function switch_to_schedule_site(): bool {
-		if ( ! $this->network_context->is_network() || get_current_blog_id() === $this->network_context->main_site_id() ) {
+		if ( ! $this->is_off_schedule_site() ) {
 			return false;
 		}
 
@@ -125,7 +125,7 @@ class Scheduler {
 			return;
 		}
 
-		if ( ! array_key_exists( $frequency, $this->get_frequencies() ) ) {
+		if ( ! array_key_exists( $frequency, Frequencies::all() ) ) {
 			// A schedule that no longer exists (for example one a deactivated plugin
 			// registered): an event that is already running keeps its interval, which
 			// WordPress stored with it. Without one, check at the default frequency
@@ -188,27 +188,6 @@ class Scheduler {
 		if ( $switched ) {
 			restore_current_blog();
 		}
-	}
-
-	/**
-	 * The frequencies the plugin offers, shortest first.
-	 *
-	 * @return array<string, array{interval: int, display: string}> Schedules keyed by name.
-	 */
-	public function get_frequencies(): array {
-		return Frequencies::all();
-	}
-
-	/**
-	 * Sort schedules by interval, shortest first.
-	 *
-	 * @param array{interval: int} $a A schedule.
-	 * @param array{interval: int} $b A schedule.
-	 *
-	 * @return int
-	 */
-	public function sort_by_interval( $a, $b ): int {
-		return $a['interval'] <=> $b['interval'];
 	}
 
 	/**
