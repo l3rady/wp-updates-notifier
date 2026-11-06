@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Sends a notification to each enabled instance and collects the results.
+ * Sends a notification through channel instances and records the results.
  *
  * @internal
  */
@@ -49,77 +49,6 @@ class Dispatcher {
 		$this->registry        = $registry;
 		$this->store           = $store;
 		$this->network_context = $network_context ?? new Network_Context();
-	}
-
-	/**
-	 * Deliver a notification.
-	 *
-	 * A failing instance never stops the others.
-	 *
-	 * @param Notification       $notification What to deliver.
-	 * @param Channel_Instance[] $instances    The instances to deliver through.
-	 *
-	 * @return array<string, Delivery_Result> Result by instance id; disabled instances are left out.
-	 */
-	public function dispatch( Notification $notification, array $instances ): array {
-		$results = array();
-
-		foreach ( $instances as $instance ) {
-			if ( ! $instance instanceof Channel_Instance || ! $instance->is_enabled() ) {
-				continue;
-			}
-
-			try {
-				$result = $this->dispatch_one( $notification, $instance );
-			} catch ( \Throwable $e ) {
-				// Not the channel's send() (it has its own guard) but what comes before it: the settings checks, the routing, the lookup.
-				$result = $this->exception_result( $instance, $e, $notification );
-			}
-
-			if ( null !== $result ) {
-				$results[ $instance->get_id() ] = $result;
-			}
-		}
-
-		/**
-		 * Fires when a round of delivery has finished: a dispatch, or an update check that sent something.
-		 *
-		 * @since 2.0.0
-		 *
-		 * @param array<string, Delivery_Result> $results      Result by channel instance id.
-		 * @param Notification                   $notification The notification that was delivered.
-		 */
-		do_action( 'sc_wpun_after_dispatch', $results, $notification );
-
-		return $results;
-	}
-
-	/**
-	 * Deliver a notification through one enabled instance of a dispatch.
-	 *
-	 * @param Notification     $notification What to deliver.
-	 * @param Channel_Instance $instance     The instance, switched on.
-	 *
-	 * @return Delivery_Result|null Null when the instance is routed nothing.
-	 */
-	private function dispatch_one( Notification $notification, Channel_Instance $instance ): ?Delivery_Result {
-		$misconfigured = $this->misconfigured( $instance );
-		if ( null !== $misconfigured ) {
-			return $this->finish( $misconfigured, $notification, $instance );
-		}
-
-		// An instance routed nothing is skipped, but a test message has no items and always goes.
-		$routed = $this->notification_for( $notification, $instance );
-		if ( ! $routed->is_test() && ! $routed->has_items() ) {
-			return null;
-		}
-
-		$channel = $this->registry->get( $instance->get_type() );
-		if ( null === $channel ) {
-			return $this->finish( $this->unavailable( $instance ), $routed, $instance );
-		}
-
-		return $this->send( $channel, $routed, $instance );
 	}
 
 	/**
@@ -168,7 +97,7 @@ class Dispatcher {
 	/**
 	 * Deliver a notification through one instance, for example a test message.
 	 *
-	 * Unlike dispatch(), a switched-off or unavailable instance is reported as a failure.
+	 * A switched-off or unavailable instance is reported as a failure.
 	 *
 	 * @param Notification     $notification What to deliver.
 	 * @param Channel_Instance $instance     The instance to deliver through.
@@ -195,30 +124,6 @@ class Dispatcher {
 		} catch ( \Throwable $e ) {
 			return $this->exception_result( $instance, $e, $notification );
 		}
-	}
-
-	/**
-	 * The notification an instance receives: only the items its routing rules let through.
-	 * A test notification is never narrowed.
-	 *
-	 * @param Notification     $notification The notification.
-	 * @param Channel_Instance $instance     The instance.
-	 *
-	 * @return Notification
-	 */
-	protected function notification_for( Notification $notification, Channel_Instance $instance ): Notification {
-		if ( $notification->is_test() ) {
-			return $notification;
-		}
-
-		return $notification->with_items(
-			array_values(
-				array_filter(
-					$notification->get_items(),
-					static fn( Notification_Item $item ): bool => Routing::should_receive( $item, $instance )
-				)
-			)
-		);
 	}
 
 	/**

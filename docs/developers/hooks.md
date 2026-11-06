@@ -333,14 +333,16 @@ Fired in `includes/class-update-checker.php`.
 
 *Action*, since 2.0.0
 
-Fires when a round of delivery has finished: a dispatch, or an update check that sent something.
+Fires when an update check has sent something, with the result of each instance it sent through.
+
+It does not fire for a check that sent nothing; see `sc_wpun_after_update_check`.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$results` | `array<string, Delivery_Result>` | Result by channel instance id. |
 | `$notification` | `Notification` | The notification that was delivered. |
 
-Fired in `includes/class-dispatcher.php`, `includes/class-update-checker.php`.
+Fired in `includes/class-update-checker.php`.
 
 ### `sc_wpun_channel_payload`
 

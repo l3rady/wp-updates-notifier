@@ -597,7 +597,16 @@ class Update_Checker {
 		}
 
 		if ( array() !== $results ) {
-			/** This action is documented in includes/class-dispatcher.php */
+			/**
+			 * Fires when an update check has sent something, with the result of each instance it sent through.
+			 *
+			 * It does not fire for a check that sent nothing; see `sc_wpun_after_update_check`.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param array<string, Delivery_Result> $results      Result by channel instance id.
+			 * @param Notification                   $notification The notification that was delivered.
+			 */
 			do_action( 'sc_wpun_after_dispatch', $results, $notification );
 		}
 

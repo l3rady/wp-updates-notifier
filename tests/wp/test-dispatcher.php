@@ -6,7 +6,6 @@
  */
 
 use WPUN\Channel_Instance;
-use WPUN\Channel_Registry;
 use WPUN\Channel_Store;
 use WPUN\Delivery_Result;
 use WPUN\Dispatcher;
@@ -40,7 +39,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	private $dispatcher;
 
 	/**
-	 * Notices captured by dispatch_capturing_notices().
+	 * Notices captured by capturing_notices().
 	 *
 	 * @var string[]
 	 */
@@ -52,10 +51,14 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		$this->registry   = new Channel_Registry();
-		$this->channel    = new Test_Channel( 'test' );
-		$this->dispatcher = new Dispatcher( $this->registry );
+		// The real registry and update checker, with no instances or state, so a check runs the code a site runs.
+		$this->registry = sc_wpun()->channels();
+		$this->channel  = new Test_Channel( 'test' );
+		$this->registry->unregister( 'test' );
 		$this->registry->register( $this->channel );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
+		$this->dispatcher = new Dispatcher( $this->registry );
 	}
 
 	/**
@@ -91,45 +94,48 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Run dispatch() and capture the notices WP_DEBUG makes the dispatcher raise for failing channels.
+	 * Save the instances and run an update check with a core update pending.
 	 *
-	 * @param array $instances Instances.
-	 * @return array Results by instance id.
+	 * @param Channel_Instance[] $instances Instances, in the order they are checked.
+	 * @return array<string, Delivery_Result> The results of the check by instance id.
 	 */
-	private function dispatch_capturing_notices( array $instances ) {
-		$this->notices = array();
-		set_error_handler( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting,WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Capturing the notice the dispatcher raises under WP_DEBUG.
-			function ( $number, $message ) {
-				$this->notices[] = $message;
-				return true;
-			},
-			E_USER_NOTICE
-		);
-		try {
-			return $this->dispatcher->dispatch( $this->notification(), $instances );
-		} finally {
-			restore_error_handler();
+	private function check( array $instances ) {
+		foreach ( $instances as $instance ) {
+			sc_wpun_channels()->save( $instance );
 		}
+		$this->set_updates( '99.0.0' );
+		sc_wpun()->update_checker()->do_update_check();
+
+		return sc_wpun()->update_checker()->last_results();
+	}
+
+	/**
+	 * Run an update check and capture the notices WP_DEBUG makes the dispatcher raise for failing channels.
+	 *
+	 * @param Channel_Instance[] $instances Instances.
+	 * @return array<string, Delivery_Result> Results by instance id.
+	 */
+	private function check_capturing_notices( array $instances ) {
+		return $this->capturing_notices( fn() => $this->check( $instances ) );
 	}
 
 	/**
 	 * Enabled instances receive the notification.
 	 */
 	public function test_delivers_to_enabled_instances() {
-		$notification = $this->notification();
-
-		$results = $this->dispatcher->dispatch( $notification, array( $this->instance( 'a' ) ) );
+		$results = $this->check( array( $this->instance( 'a' ) ) );
 
 		$this->assertSame( array( 'a' ), array_keys( $results ) );
 		$this->assertTrue( $results['a']->is_success() );
-		$this->assertEquals( array( $notification ), $this->channel->received['a'] );
+		$this->assertCount( 1, $this->channel->received['a'] );
+		$this->assertSame( '99.0.0', $this->channel->received['a'][0]->get_items()[0]->get_new_version() );
 	}
 
 	/**
 	 * Disabled instances are left out and not called.
 	 */
 	public function test_skips_disabled_instances() {
-		$results = $this->dispatcher->dispatch( $this->notification(), array( $this->instance( 'off', 'succeed', false ), $this->instance( 'on' ) ) );
+		$results = $this->check( array( $this->instance( 'off', 'succeed', false ), $this->instance( 'on' ) ) );
 
 		$this->assertSame( array( 'on' ), array_keys( $results ) );
 		$this->assertArrayNotHasKey( 'off', $this->channel->received );
@@ -139,7 +145,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	 * An instance of a type nobody registered is unavailable, and left alone.
 	 */
 	public function test_unregistered_type_is_unavailable() {
-		$results = $this->dispatcher->dispatch( $this->notification(), array( $this->instance( 'gone', 'succeed', true, 'missing' ), $this->instance( 'ok' ) ) );
+		$results = $this->check( array( $this->instance( 'gone', 'succeed', true, 'missing' ), $this->instance( 'ok' ) ) );
 
 		$this->assertFalse( $results['gone']->is_success() );
 		$this->assertSame( 'unavailable', $results['gone']->get_code() );
@@ -150,7 +156,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	 * One channel failing, throwing or answering badly never stops the next.
 	 */
 	public function test_failures_do_not_stop_later_instances() {
-		$results = $this->dispatch_capturing_notices(
+		$results = $this->check_capturing_notices(
 			array(
 				$this->instance( 'throws', 'throw' ),
 				$this->instance( 'fails', 'fail' ),
@@ -175,7 +181,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	 * Two instances of one type each receive the notification.
 	 */
 	public function test_instances_of_the_same_type_each_receive_it() {
-		$results = $this->dispatcher->dispatch( $this->notification(), array( $this->instance( 'first' ), $this->instance( 'second' ) ) );
+		$results = $this->check( array( $this->instance( 'first' ), $this->instance( 'second' ) ) );
 
 		$this->assertCount( 2, $results );
 		$this->assertCount( 1, $this->channel->received['first'] );
@@ -188,7 +194,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	public function test_exception_is_reported_when_debugging() {
 		$this->assertTrue( WP_DEBUG, 'The WordPress test suite runs with WP_DEBUG.' );
 
-		$this->dispatch_capturing_notices( array( $this->instance( 'throws', 'throw' ) ) );
+		$this->check_capturing_notices( array( $this->instance( 'throws', 'throw' ) ) );
 
 		$this->assertCount( 1, $this->notices );
 		$this->assertStringContainsString( 'RuntimeException', $this->notices[0] );
@@ -259,7 +265,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A store that throws fails its own instance and no other.
+	 * A store that throws fails its own instance and no other (each instance is sent on its own, as the update check does).
 	 */
 	public function test_a_store_that_throws_does_not_stop_the_check() {
 		$dispatcher = $this->dispatcher_with_throwing_store();
@@ -267,7 +273,11 @@ class Test_Dispatcher extends WPUN_Test_Case {
 		$after      = $this->instance( 'after' );
 
 		$results = $this->capturing_notices(
-			fn() => $dispatcher->dispatch( $this->notification(), array( $before, $this->instance( 'broken' ), $after ) )
+			fn() => array(
+				'before' => $dispatcher->send_one( $this->notification(), $before ),
+				'broken' => $dispatcher->send_one( $this->notification(), $this->instance( 'broken' ) ),
+				'after'  => $dispatcher->send_one( $this->notification(), $after ),
+			)
 		);
 
 		$this->assertSame( array( 'before', 'broken', 'after' ), array_keys( $results ) );
@@ -294,7 +304,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 		);
 
 		$results = $this->capturing_notices(
-			fn() => $this->dispatcher->dispatch( $this->notification(), array( $this->instance( 'bad_route' ), $this->instance( 'good' ) ) )
+			fn() => $this->check( array( $this->instance( 'bad_route' ), $this->instance( 'good' ) ) )
 		);
 
 		$this->assertSame( array( 'bad_route', 'good' ), array_keys( $results ) );
@@ -309,7 +319,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	public function test_an_instance_routed_nothing_has_no_result() {
 		add_filter( 'sc_wpun_channel_should_receive_item', '__return_false' );
 
-		$results = $this->dispatcher->dispatch( $this->notification(), array( $this->instance( 'quiet' ) ) );
+		$results = $this->check( array( $this->instance( 'quiet' ) ) );
 
 		$this->assertSame( array(), $results );
 	}
@@ -329,7 +339,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 		);
 		$dispatcher = $this->dispatcher_with_throwing_store();
 
-		$this->capturing_notices( fn() => $dispatcher->dispatch( $this->notification(), array( $this->instance( 'broken' ) ) ) );
+		$this->capturing_notices( fn() => $dispatcher->send_one( $this->notification(), $this->instance( 'broken' ) ) );
 
 		$this->assertSame( array( array( 'broken', 'exception' ) ), $heard );
 	}
