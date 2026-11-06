@@ -206,6 +206,58 @@ final class Delivery_Result {
 	}
 
 	/**
+	 * Turn what wp_remote_request() and friends returned into a result.
+	 *
+	 * For a service that answers with plain HTTP status codes. A `WP_Error` is a failure with the code `http_error`
+	 * and only the error code in the context: the error message is left out, because cURL puts the address in some
+	 * of them. A 2xx status is a success. 429 is a failure with the code `rate_limited` and the wait from
+	 * `Retry-After` (see retry_after_from_response()). Any other status is a failure with the code `bad_status`.
+	 * The messages are translated and never contain the address, a secret or a header value.
+	 *
+	 *     return Delivery_Result::from_response( wp_safe_remote_post( $url, $args ) );
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param array<string, mixed>|\WP_Error|mixed $response What wp_remote_request() and friends returned.
+	 *
+	 * @return Delivery_Result
+	 */
+	public static function from_response( $response ): Delivery_Result {
+		if ( is_wp_error( $response ) || ! is_array( $response ) ) {
+			return self::failure(
+				__( 'The request failed.', 'wp-updates-notifier' ),
+				'http_error',
+				null,
+				null,
+				is_wp_error( $response ) ? array( 'error_code' => (string) $response->get_error_code() ) : array()
+			);
+		}
+
+		$status = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( $status >= 200 && $status < 300 ) {
+			return self::success();
+		}
+
+		if ( 429 === $status ) {
+			return self::failure(
+				// translators: %d: HTTP status code.
+				sprintf( __( 'The service is limiting requests (HTTP %d).', 'wp-updates-notifier' ), $status ),
+				'rate_limited',
+				$status,
+				self::retry_after_from_response( $response )
+			);
+		}
+
+		return self::failure(
+			// translators: %d: HTTP status code.
+			sprintf( __( 'The service answered with HTTP %d.', 'wp-updates-notifier' ), $status ),
+			'bad_status',
+			$status
+		);
+	}
+
+	/**
 	 * Whether delivery worked.
 	 *
 	 * @since 2.0.0

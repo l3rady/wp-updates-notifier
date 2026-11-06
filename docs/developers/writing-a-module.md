@@ -290,7 +290,7 @@ Pass what you are about to send through `$this->filter_payload( $payload, $notif
 
 - Use `wp_safe_remote_post()` for any address a site owner typed in. It refuses addresses on the server's own network, which stops your webhook field from being used to reach internal services. Use `wp_remote_post()` only for your service's fixed API address. It also refuses ports other than 80, 443 and 8080. To try your module against a receiver on a local network, allow that host on your development site with the `http_request_host_is_external` filter. Don't ship that filter.
 - Set a short `timeout` (10 seconds or less). The check delivers to every instance in turn, during a cron request.
-- Check the HTTP status. A `WP_Error` or a status outside 2xx is a failure.
+- Check the HTTP status. A `WP_Error` or a status outside 2xx is a failure. `Delivery_Result::from_response( $response )` (API 1.1.0) does it for you: a `WP_Error` becomes `http_error` with only the error code in the context (never its message, which can contain the address), 2xx is a success, 429 is `rate_limited` with the wait from `Retry-After`, and any other status is `bad_status`. It needs `^1.1`.
 
 ```php
 $response = wp_safe_remote_post(
@@ -302,21 +302,12 @@ $response = wp_safe_remote_post(
 	)
 );
 
-if ( is_wp_error( $response ) ) {
-	return Delivery_Result::failure( __( 'The request to the webhook failed.', 'my-chat-channel' ), 'http_error' );
-}
-
-$status = (int) wp_remote_retrieve_response_code( $response );
-if ( $status < 200 || $status >= 300 ) {
-	return Delivery_Result::failure( sprintf( __( 'The webhook answered with HTTP %d.', 'my-chat-channel' ), $status ), 'bad_status', $status );
-}
-
-return Delivery_Result::success();
+return Delivery_Result::from_response( $response );
 ```
 
 ### Rate limits and retries
 
-When the service answers HTTP 429, return a failure with the status and the wait from the `Retry-After` header. `Delivery_Result::retry_after_from_response( $response )` reads it, as seconds or as an HTTP date, and gives null if there is none or it is not usable:
+`from_response()` already does this. To handle 429 yourself, return a failure with the status and the wait from the `Retry-After` header. `Delivery_Result::retry_after_from_response( $response )` reads it, as seconds or as an HTTP date, and gives null if there is none or it is not usable:
 
 ```php
 if ( 429 === $status ) {
