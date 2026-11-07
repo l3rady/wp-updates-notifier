@@ -113,7 +113,7 @@ class Channel_Form {
 	 *
 	 * @return string
 	 */
-	private function tab_url( array $args = array() ): string {
+	public function tab_url( array $args = array() ): string {
 		return add_query_arg( $args, $this->network_context->settings_url( 'channels' ) );
 	}
 
@@ -154,8 +154,41 @@ class Channel_Form {
 	 *
 	 * @return array<string, Channel_Instance>
 	 */
-	private function listed(): array {
+	public function listed(): array {
 		return array_filter( $this->store->all(), array( $this->dispatcher, 'is_available' ) );
+	}
+
+	/**
+	 * The text for an id that is not listed.
+	 *
+	 * @return string
+	 */
+	public static function no_such_channel(): string {
+		return __( 'There is no such channel.', 'wp-updates-notifier' );
+	}
+
+	/**
+	 * The instance, with its module, that an edit, save, switch, duplicate or delete of an id may change.
+	 *
+	 * @param string $id Instance id.
+	 *
+	 * @return array{0: Channel_Instance, 1: Channel}|string The instance and its module; else why not, as text for a notice.
+	 */
+	public function editable( string $id ) {
+		$instance = $this->listed()[ $id ] ?? null;
+		if ( null === $instance ) {
+			return self::no_such_channel();
+		}
+		if ( $this->store->is_code_defined( $id ) ) {
+			// translators: %s: Label of the channel.
+			return sprintf( __( '%s is defined in code and cannot be changed here.', 'wp-updates-notifier' ), $instance->get_label() );
+		}
+		$channel = $this->registry->get( $instance->get_type() );
+		if ( null === $channel ) {
+			return self::no_such_channel();
+		}
+
+		return array( $instance, $channel );
 	}
 
 	/**
@@ -231,11 +264,11 @@ class Channel_Form {
 			);
 		}
 
-		$instance = $this->listed()[ $key ] ?? null;
-		$channel  = null === $instance ? null : $this->registry->get( $instance->get_type() );
-		if ( null === $instance || null === $channel || $this->store->is_code_defined( $key ) ) {
+		$editable = $this->editable( $key );
+		if ( is_string( $editable ) ) {
 			return null;
 		}
+		list( $instance, $channel ) = $editable;
 
 		return array(
 			'name'   => $this->heading( $channel, $instance ),
@@ -309,18 +342,11 @@ class Channel_Form {
 	 * @return string|null Why nothing was drawn: null if the form is drawn.
 	 */
 	public function render_edit( string $id ): ?string {
-		$instance = $this->listed()[ $id ] ?? null;
-		if ( null === $instance ) {
-			return __( 'There is no such channel.', 'wp-updates-notifier' );
+		$editable = $this->editable( $id );
+		if ( is_string( $editable ) ) {
+			return $editable;
 		}
-		if ( $this->store->is_code_defined( $id ) ) {
-			// translators: %s: Label of the channel.
-			return sprintf( __( '%s is defined in code and cannot be changed here.', 'wp-updates-notifier' ), $instance->get_label() );
-		}
-		$channel = $this->registry->get( $instance->get_type() );
-		if ( null === $channel ) {
-			return __( 'There is no such channel.', 'wp-updates-notifier' );
-		}
+		list( $instance, $channel ) = $editable;
 
 		$this->render_form( 'edit', $channel, $instance );
 
@@ -1135,20 +1161,15 @@ class Channel_Form {
 				return $this->tab_url();
 			}
 		} else {
-			$effective = $this->listed()[ $key ] ?? null;
-			if ( null === $effective ) {
-				$this->notices->add( false, __( 'There is no such channel.', 'wp-updates-notifier' ) );
+			$editable = $this->editable( $key );
+			if ( is_string( $editable ) ) {
+				$this->notices->add( false, $editable );
 				return $this->tab_url();
 			}
-			if ( $this->store->is_code_defined( $key ) ) {
-				// translators: %s: Label of the channel.
-				$this->notices->add( false, sprintf( __( '%s is defined in code and cannot be changed here.', 'wp-updates-notifier' ), $effective->get_label() ) );
-				return $this->tab_url();
-			}
-			$stored  = $this->store->stored_all()[ $key ] ?? null;
-			$channel = $this->registry->get( $effective->get_type() );
-			if ( null === $stored || null === $channel ) {
-				$this->notices->add( false, __( 'There is no such channel.', 'wp-updates-notifier' ) );
+			list( $effective, $channel ) = $editable;
+			$stored                      = $this->store->stored_all()[ $key ] ?? null;
+			if ( null === $stored ) {
+				$this->notices->add( false, self::no_such_channel() );
 				return $this->tab_url();
 			}
 		}

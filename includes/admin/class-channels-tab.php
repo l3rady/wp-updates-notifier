@@ -16,7 +16,6 @@ use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
 use WPUN\Channel_Store;
 use WPUN\Dispatcher;
-use WPUN\Network_Context;
 use WPUN\Routing;
 use WPUN\State;
 
@@ -78,51 +77,22 @@ class Channels_Tab {
 	private $form;
 
 	/**
-	 * Where the plugin runs.
-	 *
-	 * @var Network_Context
-	 */
-	private $network_context;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param Channel_Store        $store      Channel instance storage.
-	 * @param Channel_Registry     $registry   Registered channels.
-	 * @param Dispatcher           $dispatcher Dispatcher.
-	 * @param State                $state      Run state.
-	 * @param Notices              $notices    Notices shown after an action.
-	 * @param Channel_Form         $form       The add and edit forms.
-	 * @param Network_Context|null $network_context Where the plugin runs.
+	 * @param Channel_Store    $store      Channel instance storage.
+	 * @param Channel_Registry $registry   Registered channels.
+	 * @param Dispatcher       $dispatcher Dispatcher.
+	 * @param State            $state      Run state.
+	 * @param Notices          $notices    Notices shown after an action.
+	 * @param Channel_Form     $form       The add and edit forms.
 	 */
-	public function __construct( Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Notices $notices, Channel_Form $form, ?Network_Context $network_context = null ) {
-		$this->store           = $store;
-		$this->registry        = $registry;
-		$this->dispatcher      = $dispatcher;
-		$this->state           = $state;
-		$this->notices         = $notices;
-		$this->form            = $form;
-		$this->network_context = $network_context ?? new Network_Context();
-	}
-
-	/**
-	 * The address of the tab.
-	 *
-	 * @param array<string, string> $args Extra query arguments.
-	 *
-	 * @return string
-	 */
-	private function tab_url( array $args = array() ): string {
-		return add_query_arg( $args, $this->network_context->settings_url( 'channels' ) );
-	}
-
-	/**
-	 * The instances to list and act on: every stored or code-defined one whose module is registered.
-	 *
-	 * @return array<string, Channel_Instance>
-	 */
-	private function listed(): array {
-		return array_filter( $this->store->all(), array( $this->dispatcher, 'is_available' ) );
+	public function __construct( Channel_Store $store, Channel_Registry $registry, Dispatcher $dispatcher, State $state, Notices $notices, Channel_Form $form ) {
+		$this->store      = $store;
+		$this->registry   = $registry;
+		$this->dispatcher = $dispatcher;
+		$this->state      = $state;
+		$this->notices    = $notices;
+		$this->form       = $form;
 	}
 
 	/**
@@ -171,13 +141,12 @@ class Channels_Tab {
 				return;
 			}
 		} elseif ( 'delete' === $request['action'] ) {
-			$id       = $request['key'];
-			$instance = $this->listed()[ $id ] ?? null;
-			if ( null !== $instance && ! $this->store->is_code_defined( $id ) ) {
-				$this->render_confirm_delete( $instance );
+			$editable = $this->form->editable( $request['key'] );
+			if ( is_array( $editable ) ) {
+				$this->render_confirm_delete( $editable[0] );
 				return;
 			}
-			$problem = $this->no_such_channel();
+			$problem = Channel_Form::no_such_channel();
 		}
 
 		if ( null !== $problem ) {
@@ -206,10 +175,10 @@ class Channels_Tab {
 			return $this->form->view( $request['action'], $request['key'] );
 		}
 		if ( 'delete' === $request['action'] ) {
-			$instance = $this->listed()[ $request['key'] ] ?? null;
-			if ( null !== $instance && ! $this->store->is_code_defined( $request['key'] ) ) {
+			$editable = $this->form->editable( $request['key'] );
+			if ( is_array( $editable ) ) {
 				return array(
-					'name'   => $this->delete_heading( $instance ),
+					'name'   => $this->delete_heading( $editable[0] ),
 					'errors' => false,
 				);
 			}
@@ -262,7 +231,7 @@ class Channels_Tab {
 	 */
 	private function render_add_link(): void {
 		?>
-		<p><a class="button sc-wpun-add-channel" href="<?php echo esc_url( $this->tab_url( array( 'action' => 'add' ) ) ); ?>"><?php esc_html_e( 'Add channel', 'wp-updates-notifier' ); ?></a></p>
+		<p><a class="button sc-wpun-add-channel" href="<?php echo esc_url( $this->form->tab_url( array( 'action' => 'add' ) ) ); ?>"><?php esc_html_e( 'Add channel', 'wp-updates-notifier' ); ?></a></p>
 		<?php
 	}
 
@@ -272,7 +241,7 @@ class Channels_Tab {
 	 * @return void
 	 */
 	private function render_list(): void {
-		$instances = $this->listed();
+		$instances = $this->form->listed();
 		?>
 		<h2><?php esc_html_e( 'Channels', 'wp-updates-notifier' ); ?></h2>
 		<?php
@@ -412,7 +381,7 @@ class Channels_Tab {
 		if ( ! $code_defined ) {
 			// translators: %s: Label of the channel.
 			$edit_name     = sprintf( __( 'Edit %s', 'wp-updates-notifier' ), $label );
-			$items['edit'] = '<a class="sc-wpun-edit" href="' . esc_url( $this->tab_url( array( 'action' => 'edit', 'id' => $id ) ) ) . '" aria-label="' . esc_attr( $edit_name ) . '">' . esc_html__( 'Edit', 'wp-updates-notifier' ) . '</a>'; // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+			$items['edit'] = '<a class="sc-wpun-edit" href="' . esc_url( $this->form->tab_url( array( 'action' => 'edit', 'id' => $id ) ) ) . '" aria-label="' . esc_attr( $edit_name ) . '">' . esc_html__( 'Edit', 'wp-updates-notifier' ) . '</a>'; // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		}
 		if ( null !== $channel && $channel->supports( 'test_message' ) ) {
 			// translators: %s: Label of the channel.
@@ -436,7 +405,7 @@ class Channels_Tab {
 			}
 			// translators: %s: Label of the channel.
 			$delete_name    = sprintf( __( 'Delete %s', 'wp-updates-notifier' ), $label );
-			$items['trash'] = '<a class="submitdelete sc-wpun-delete" href="' . esc_url( $this->tab_url( array( 'action' => 'delete', 'id' => $id ) ) ) . '" aria-label="' . esc_attr( $delete_name ) . '">' . esc_html__( 'Delete', 'wp-updates-notifier' ) . '</a>'; // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+			$items['trash'] = '<a class="submitdelete sc-wpun-delete" href="' . esc_url( $this->form->tab_url( array( 'action' => 'delete', 'id' => $id ) ) ) . '" aria-label="' . esc_attr( $delete_name ) . '">' . esc_html__( 'Delete', 'wp-updates-notifier' ) . '</a>'; // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		}
 		if ( array() === $items ) {
 			return;
@@ -499,7 +468,7 @@ class Channels_Tab {
 				<input type="hidden" name="id" value="<?php echo esc_attr( $id ); ?>" />
 				<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( self::DELETE_ACTION . '_' . $id ) ); ?>" />
 				<button type="submit" class="button button-primary"><?php esc_html_e( 'Delete', 'wp-updates-notifier' ); ?></button>
-				<a class="button" href="<?php echo esc_url( $this->tab_url() ); ?>"><?php esc_html_e( 'Cancel', 'wp-updates-notifier' ); ?></a>
+				<a class="button" href="<?php echo esc_url( $this->form->tab_url() ); ?>"><?php esc_html_e( 'Cancel', 'wp-updates-notifier' ); ?></a>
 			</form>
 		</div>
 		<?php
@@ -599,15 +568,6 @@ class Channels_Tab {
 	}
 
 	/**
-	 * The text for an id that is not listed.
-	 *
-	 * @return string
-	 */
-	private function no_such_channel(): string {
-		return __( 'There is no such channel.', 'wp-updates-notifier' );
-	}
-
-	/**
 	 * Check the capability and the nonce of a row action.
 	 *
 	 * @param string $action The admin-post action, which is also the first part of the nonce action.
@@ -638,9 +598,9 @@ class Channels_Tab {
 			return false;
 		}
 
-		$instance = $this->listed()[ $id ] ?? null;
+		$instance = $this->form->listed()[ $id ] ?? null;
 		if ( null === $instance ) {
-			$this->notices->add( false, $this->no_such_channel() );
+			$this->notices->add( false, Channel_Form::no_such_channel() );
 			return true;
 		}
 
@@ -686,7 +646,7 @@ class Channels_Tab {
 		// From the stored instance: the effective one has outside values, secrets included, laid over it.
 		$stored = $this->store->stored_all()[ $id ] ?? null;
 		if ( null === $stored ) {
-			$this->notices->add( false, $this->no_such_channel() );
+			$this->notices->add( false, Channel_Form::no_such_channel() );
 			return true;
 		}
 
@@ -723,17 +683,12 @@ class Channels_Tab {
 		// From the stored instance: saving the effective one under a new id would write outside values, such as wp-config secrets, to the database.
 		$stored = $this->store->stored_all()[ $id ] ?? null;
 		if ( null === $stored ) {
-			$this->notices->add( false, $this->no_such_channel() );
+			$this->notices->add( false, Channel_Form::no_such_channel() );
 			return true;
 		}
 
 		$taken  = array_merge( array_keys( $this->store->stored_all() ), array_keys( $this->store->all() ) );
-		$new_id = $id . '_copy';
-		$n      = 2;
-		while ( in_array( $new_id, $taken, true ) ) {
-			$new_id = $id . '_copy_' . $n;
-			++$n;
-		}
+		$new_id = Channel_Form::generate_id( $id . '_copy', $stored->get_type(), array_map( 'strval', $taken ) );
 
 		$copy = new Channel_Instance(
 			$new_id,
@@ -771,7 +726,7 @@ class Channels_Tab {
 			// translators: %s: Label of the channel.
 			$this->notices->add( true, sprintf( __( '%s deleted.', 'wp-updates-notifier' ), $instance->get_label() ) );
 		} else {
-			$this->notices->add( false, $this->no_such_channel() );
+			$this->notices->add( false, Channel_Form::no_such_channel() );
 		}
 
 		return true;
@@ -785,18 +740,13 @@ class Channels_Tab {
 	 * @return Channel_Instance|null Null if it is not listed, or defined in code.
 	 */
 	private function changeable( string $id ): ?Channel_Instance {
-		$instance = $this->listed()[ $id ] ?? null;
-		if ( null === $instance ) {
-			$this->notices->add( false, $this->no_such_channel() );
-			return null;
-		}
-		if ( $this->store->is_code_defined( $id ) ) {
-			// translators: %s: Label of the channel.
-			$this->notices->add( false, sprintf( __( '%s is defined in code and cannot be changed here.', 'wp-updates-notifier' ), $instance->get_label() ) );
+		$editable = $this->form->editable( $id );
+		if ( is_string( $editable ) ) {
+			$this->notices->add( false, $editable );
 			return null;
 		}
 
-		return $instance;
+		return $editable[0];
 	}
 
 	/**
@@ -843,6 +793,6 @@ class Channels_Tab {
 	 * @return void
 	 */
 	private function finish( bool $allowed ): void {
-		Settings_Page::finish( $allowed ? $this->tab_url() : null );
+		Settings_Page::finish( $allowed ? $this->form->tab_url() : null );
 	}
 }
