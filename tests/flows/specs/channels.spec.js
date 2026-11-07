@@ -73,7 +73,7 @@ test( 'a channel with an invalid address is not saved and the error is on the fi
 
 	await expect( page.locator( '.sc-wpun-form-errors' ) ).toContainText( 'The channel was not saved.' );
 	await expect( page.locator( '#sc_wpun_channel_settings_to' ) ).toHaveAttribute( 'aria-invalid', 'true' );
-	await expect( page.locator( '#sc_wpun_channel_settings_to-error' ) ).toContainText( 'invalid' );
+	await expect( page.locator( '#sc_wpun_channel_settings_to-error' ) ).toContainText( 'not valid' );
 	await expect( page.locator( '#sc_wpun_channel_settings_from' ) ).not.toHaveAttribute( 'aria-invalid', 'true' );
 
 	await page.goto( CHANNELS );
