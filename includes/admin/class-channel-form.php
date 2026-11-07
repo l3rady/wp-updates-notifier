@@ -268,7 +268,7 @@ class Channel_Form {
 		if ( is_string( $editable ) ) {
 			return null;
 		}
-		list( $instance, $channel ) = $editable;
+		[$instance, $channel] = $editable;
 
 		return array(
 			'name'   => $this->heading( $channel, $instance ),
@@ -346,7 +346,7 @@ class Channel_Form {
 		if ( is_string( $editable ) ) {
 			return $editable;
 		}
-		list( $instance, $channel ) = $editable;
+		[$instance, $channel] = $editable;
 
 		$this->render_form( 'edit', $channel, $instance );
 
@@ -1166,8 +1166,8 @@ class Channel_Form {
 				$this->notices->add( false, $editable );
 				return $this->tab_url();
 			}
-			list( $effective, $channel ) = $editable;
-			$stored                      = $this->store->stored_all()[ $key ] ?? null;
+			[$effective, $channel] = $editable;
+			$stored                = $this->store->stored_all()[ $key ] ?? null;
 			if ( null === $stored ) {
 				$this->notices->add( false, self::no_such_channel() );
 				return $this->tab_url();
