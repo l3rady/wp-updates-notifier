@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * The first read fires the `sc_wpun_register_channels` action, so that add-ons
  * and the built-in channels register themselves through it. register() works at
- * any time.
+ * any time. replace() lets an add-on take over a type, whatever the load order.
  *
  * @since 2.0.0
  */
@@ -36,6 +36,20 @@ class Channel_Registry {
 	private $rejected = array();
 
 	/**
+	 * Replaced types: the original channel, or null while none has registered.
+	 *
+	 * @var array<string, Channel|null>
+	 */
+	private $replaced = array();
+
+	/**
+	 * Types whose replace() was refused because its API constraint is not met.
+	 *
+	 * @var array<string, true>
+	 */
+	private $refused_replacements = array();
+
+	/**
 	 * Whether the registration action has run.
 	 *
 	 * @var bool
@@ -45,21 +59,23 @@ class Channel_Registry {
 	/**
 	 * Register a channel.
 	 *
+	 * If another add-on has already replaced this type with replace(), the channel becomes the original that
+	 * get_replaced() returns, and this returns false without a warning: the replacement stays active.
+	 *
 	 * @since 2.0.0
 	 *
 	 * @param Channel $channel The channel.
 	 *
-	 * @return bool False if its type is invalid or already registered, or its API constraint is not met.
+	 * @return bool False if its type is invalid or already registered, or its API constraint is not met, or the type is replaced.
 	 */
 	public function register( Channel $channel ): bool {
 		$type = $channel->get_type();
 
-		if ( 1 !== preg_match( '/^[a-z0-9_]+$/D', $type ) ) {
-			_doing_it_wrong(
-				__METHOD__,
-				esc_html__( 'A channel type may only contain lower case letters, digits and underscores.', 'wp-updates-notifier' ),
-				'2.0.0'
-			);
+		if ( ! $this->has_valid_type( $channel, __METHOD__ ) ) {
+			return false;
+		}
+
+		if ( $this->keep_as_original( $channel ) ) {
 			return false;
 		}
 
@@ -75,14 +91,117 @@ class Channel_Registry {
 			return false;
 		}
 
-		$constraint = $channel->get_api_constraint();
-		if ( '' !== $constraint && ! Version_Constraint::satisfies( sc_wpun_api_version(), $constraint ) ) {
-			$this->reject( $channel, $constraint );
+		if ( ! $this->meets_constraint( $channel ) ) {
+			$this->reject( $channel, $channel->get_api_constraint() );
 			return false;
 		}
 
-		unset( $this->rejected[ $type ] );
+		// A refused replacement stays reported, whichever order the two ran in.
+		if ( ! isset( $this->refused_replacements[ $type ] ) ) {
+			unset( $this->rejected[ $type ] );
+		}
 		$this->channels[ $type ] = $channel;
+		return true;
+	}
+
+	/**
+	 * Take over a channel type.
+	 *
+	 * The replacement serves every instance of the type, whether the original registers before or after this call.
+	 * Instances are keyed by type, so they carry over untouched. The first successful replace() of a type wins; a
+	 * second one warns and returns false. A replacement whose API constraint is not met is refused like a registered
+	 * channel is (see get_rejected()). A refused replacement does not claim the type: the original stays, and a later
+	 * valid replace() may still succeed and clears the rejection. Replacing a type nothing registers works like
+	 * register(). unregister() removes the replacement and the original.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param Channel $channel The replacement.
+	 *
+	 * @return bool False if its type is invalid, the type is already replaced, or its API constraint is not met.
+	 */
+	public function replace( Channel $channel ): bool {
+		$type = $channel->get_type();
+
+		if ( ! $this->has_valid_type( $channel, __METHOD__ ) ) {
+			return false;
+		}
+
+		if ( array_key_exists( $type, $this->replaced ) ) {
+			_doing_it_wrong(
+				__METHOD__,
+				esc_html(
+					// translators: %s: Channel type.
+					sprintf( __( 'A channel of type "%s" is already replaced.', 'wp-updates-notifier' ), $type )
+				),
+				'3.0.0'
+			);
+			return false;
+		}
+
+		if ( ! $this->meets_constraint( $channel ) ) {
+			$this->reject( $channel, $channel->get_api_constraint() );
+			$this->refused_replacements[ $type ] = true;
+			return false;
+		}
+
+		$this->replaced[ $type ] = $this->channels[ $type ] ?? null;
+		$this->channels[ $type ] = $channel;
+		unset( $this->rejected[ $type ], $this->refused_replacements[ $type ] );
+		return true;
+	}
+
+	/**
+	 * Whether the type of a channel is well formed; warns if not.
+	 *
+	 * @param Channel $channel The channel.
+	 * @param string  $method  The public method that was called, for the warning.
+	 *
+	 * @return bool
+	 */
+	private function has_valid_type( Channel $channel, string $method ): bool {
+		if ( 1 === preg_match( '/^[a-z0-9_]+$/D', $channel->get_type() ) ) {
+			return true;
+		}
+
+		_doing_it_wrong(
+			$method, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A method name from this class.
+			esc_html__( 'A channel type may only contain lower case letters, digits and underscores.', 'wp-updates-notifier' ),
+			'2.0.0'
+		);
+		return false;
+	}
+
+	/**
+	 * Whether the site's API version satisfies what a channel needs.
+	 *
+	 * @param Channel $channel The channel.
+	 *
+	 * @return bool
+	 */
+	private function meets_constraint( Channel $channel ): bool {
+		$constraint = $channel->get_api_constraint();
+		return '' === $constraint || Version_Constraint::satisfies( sc_wpun_api_version(), $constraint );
+	}
+
+	/**
+	 * Keep a channel as the original of a type that was replaced before the original registered.
+	 *
+	 * @param Channel $channel The channel being registered.
+	 *
+	 * @return bool Whether the type is waiting for its original, so the channel is not registered.
+	 */
+	private function keep_as_original( Channel $channel ): bool {
+		$type = $channel->get_type();
+
+		if ( ! array_key_exists( $type, $this->replaced ) || null !== $this->replaced[ $type ] ) {
+			return false;
+		}
+
+		// An original that cannot run is dropped quietly: the type works through its replacement.
+		if ( $this->meets_constraint( $channel ) ) {
+			$this->replaced[ $type ] = $channel;
+		}
 		return true;
 	}
 
@@ -144,6 +263,8 @@ class Channel_Registry {
 	/**
 	 * Remove a channel.
 	 *
+	 * A replaced type is removed entirely, the replacement and the original.
+	 *
 	 * @since 2.0.0
 	 *
 	 * @param string $type Channel type.
@@ -153,6 +274,8 @@ class Channel_Registry {
 	public function unregister( string $type ): bool {
 		// Load first, so a channel registered through the hook can be removed before anything reads the registry.
 		$this->load();
+
+		unset( $this->replaced[ $type ], $this->refused_replacements[ $type ] );
 
 		if ( ! isset( $this->channels[ $type ] ) ) {
 			return false;
@@ -174,6 +297,22 @@ class Channel_Registry {
 	public function get( string $type ): ?Channel {
 		$this->load();
 		return $this->channels[ $type ] ?? null;
+	}
+
+	/**
+	 * The original channel of a type that replace() took over.
+	 *
+	 * Lets a replacement delegate to the channel it replaced, or a diagnostic tell that a type is replaced.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $type Channel type.
+	 *
+	 * @return Channel|null The original, or null if the type is not replaced or the original has not registered.
+	 */
+	public function get_replaced( string $type ): ?Channel {
+		$this->load();
+		return $this->replaced[ $type ] ?? null;
 	}
 
 	/**

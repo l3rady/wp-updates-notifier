@@ -367,8 +367,8 @@ class Site_Health {
 	 * Site Health shows `value` in the site's language and copies `debug`, so the copy is in English for a support forum.
 	 * The availability and the last result come from the report, already translated.
 	 *
-	 * @param array{id: string, label: string, module: string, availability: string, enabled: bool, code_defined: bool, last_result: ?array{success: bool, message: string, time: string}, last_failure: ?array{success: bool, message: string, time: string}, retry_at: ?string, held_until: ?string, fields: array<int, array{field: string, value: string, source: string}>} $row The instance from the report.
-	 * @param bool                                                                                                                                                                                                                                                                                                                                                              $translate Whether to use the site's language.
+	 * @param array{id: string, label: string, module: string, replaced_by: ?string, availability: string, enabled: bool, code_defined: bool, last_result: ?array{success: bool, message: string, time: string}, last_failure: ?array{success: bool, message: string, time: string}, retry_at: ?string, held_until: ?string, fields: array<int, array{field: string, value: string, source: string}>} $row The instance from the report.
+	 * @param bool                                                                                                                                                                                                                                                                                                                                                                                    $translate Whether to use the site's language.
 	 *
 	 * @return string
 	 */
@@ -379,6 +379,7 @@ class Site_Health {
 
 		$labels = array(
 			'module'       => $translate ? __( 'Module', 'wp-updates-notifier' ) : 'module',
+			'replaced_by'  => $translate ? __( 'Replaced by', 'wp-updates-notifier' ) : 'replaced by',
 			'availability' => $translate ? __( 'Availability', 'wp-updates-notifier' ) : 'availability',
 			'enabled'      => $translate ? __( 'Enabled', 'wp-updates-notifier' ) : 'enabled',
 			'code_defined' => $translate ? __( 'Defined in code', 'wp-updates-notifier' ) : 'code-defined',
@@ -388,6 +389,7 @@ class Site_Health {
 		);
 		$values = array(
 			'module'       => $row['module'],
+			'replaced_by'  => $row['replaced_by'] ?? '-',
 			'availability' => $row['availability'],
 			'enabled'      => $row['enabled'] ? $yes : $no,
 			'code_defined' => $row['code_defined'] ? $yes : $no,

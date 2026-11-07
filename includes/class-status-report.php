@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @phpstan-type Last_Result array{success: bool, message: string, time: string}
  * @phpstan-type Field_Row array{field: string, value: string, source: string}
  * @phpstan-type Muted_Row array{type: string, key: string, name: ?string, until: ?string, from_code: bool, time: int, user: int, offered: ?string, expires: ?int, source: string}
- * @phpstan-type Channel_Row array{id: string, label: string, module: string, availability: string, enabled: bool, code_defined: bool, last_result: ?Last_Result, last_failure: ?Last_Result, retry_at: ?string, held_until: ?string, fields: Field_Row[]}
+ * @phpstan-type Channel_Row array{id: string, label: string, module: string, replaced_by: ?string, availability: string, enabled: bool, code_defined: bool, last_result: ?Last_Result, last_failure: ?Last_Result, retry_at: ?string, held_until: ?string, fields: Field_Row[]}
  */
 class Status_Report {
 	const AVAILABLE = 'available';
@@ -242,10 +242,13 @@ class Status_Report {
 				'message' => $entry['last_result']['message'],
 				'time'    => self::format_time( $entry['last_result']['time'] ),
 			) : null;
+			$type   = $instance->get_type();
+			$active = null !== $this->registry->get_replaced( $type ) ? $this->registry->get( $type ) : null;
 			$rows[] = array(
 				'id'           => $id,
 				'label'        => $instance->get_label(),
-				'module'       => $instance->get_type(),
+				'module'       => $type,
+				'replaced_by'  => null !== $active ? get_class( $active ) : null,
 				'availability' => $this->availability( $instance ),
 				'enabled'      => $instance->is_enabled(),
 				'code_defined' => $this->store->is_code_defined( $id ),

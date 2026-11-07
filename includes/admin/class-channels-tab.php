@@ -104,7 +104,8 @@ class Channels_Tab {
 		$rejected = $this->registry->get_rejected();
 		$found    = array();
 		foreach ( $this->store->all() as $id => $instance ) {
-			if ( isset( $rejected[ $instance->get_type() ] ) ) {
+			// A type that works (a refused replacement over a working original) is not unavailable.
+			if ( isset( $rejected[ $instance->get_type() ] ) && ! $this->registry->has( $instance->get_type() ) ) {
 				$found[ $id ] = array(
 					'instance' => $instance,
 					'label'    => $rejected[ $instance->get_type() ]['label'],
