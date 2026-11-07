@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @phpstan-type Legacy_Notified array{core: string, plugin: array<string, string>, theme: array<string, string>}
  * @phpstan-type Notified_Meta array<string, array<string, array{name: string, current_version: string, links: array<string, string>, time: int, snoozed?: bool}>>
  * @phpstan-type Last_Result array{success: bool, message: string, time: int}
- * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, notified_meta?: Notified_Meta, last_result?: Last_Result, retry_at?: int, held_until?: int, last_reminder?: int}
+ * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, notified_meta?: Notified_Meta, last_result?: Last_Result, retry_at?: int, held_until?: int, last_reminder?: int, reminder_sent?: Generic_Notified}
  * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, legacy_notified?: Legacy_Notified, ended_mutes?: Generic_Notified, ended_snoozes?: Generic_Notified}
  */
 class State {
@@ -90,26 +90,12 @@ class State {
 		$channels = array();
 
 		foreach ( isset( $state['channels'] ) && is_array( $state['channels'] ) ? $state['channels'] : array() as $id => $entry ) {
-			$entry = is_array( $entry ) ? $entry : array();
-			$clean = array(
+			$entry                    = is_array( $entry ) ? $entry : array();
+			$clean                    = array(
 				'notified'     => $this->normalise_generic( $entry['notified'] ?? array() ),
 				'skip_pending' => ! empty( $entry['skip_pending'] ),
 			);
-			$meta  = $this->normalise_meta( $entry['notified_meta'] ?? null );
-			if ( array() !== $meta ) {
-				$clean['notified_meta'] = $meta;
-			}
-			$last_result = $this->normalise_last_result( $entry['last_result'] ?? null );
-			if ( null !== $last_result ) {
-				$clean['last_result'] = $last_result;
-			}
-			foreach ( array( 'retry_at', 'held_until', 'last_reminder' ) as $key ) {
-				$time = self::positive_int( $entry[ $key ] ?? null );
-				if ( $time > 0 ) {
-					$clean[ $key ] = $time;
-				}
-			}
-			$channels[ (string) $id ] = $clean;
+			$channels[ (string) $id ] = $this->normalise_optional( $entry, $clean );
 		}
 
 		$normalised = array(
@@ -191,6 +177,7 @@ class State {
 		$entry['notified']     = array();
 		$entry['skip_pending'] = true;
 		unset( $entry['notified_meta'] );
+		unset( $entry['reminder_sent'] );
 		unset( $entry['last_reminder'] ); // The skip run starts the reminder interval afresh, so skipped updates are not reminded about at once.
 		$state['channels'][ $id ] = $entry;
 		$this->save( $state );
@@ -360,6 +347,37 @@ class State {
 			'plugin' => $this->normalise_versions( $notified['plugin'] ?? array() ),
 			'theme'  => $this->normalise_versions( $notified['theme'] ?? array() ),
 		);
+	}
+
+	/**
+	 * Add the optional fields of a stored instance entry that are valid.
+	 *
+	 * @param array<mixed>  $entry The stored entry.
+	 * @param Channel_State $clean The entry with its required fields.
+	 *
+	 * @return Channel_State
+	 */
+	private function normalise_optional( array $entry, array $clean ): array { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint -- A phpstan-type alias.
+		$meta = $this->normalise_meta( $entry['notified_meta'] ?? null );
+		if ( array() !== $meta ) {
+			$clean['notified_meta'] = $meta;
+		}
+		$last_result = $this->normalise_last_result( $entry['last_result'] ?? null );
+		if ( null !== $last_result ) {
+			$clean['last_result'] = $last_result;
+		}
+		$reminder_sent = $this->normalise_generic( $entry['reminder_sent'] ?? array() );
+		if ( array() !== $reminder_sent ) {
+			$clean['reminder_sent'] = $reminder_sent;
+		}
+		foreach ( array( 'retry_at', 'held_until', 'last_reminder' ) as $key ) {
+			$time = self::positive_int( $entry[ $key ] ?? null );
+			if ( $time > 0 ) {
+				$clean[ $key ] = $time;
+			}
+		}
+
+		return $clean;
 	}
 
 	/**

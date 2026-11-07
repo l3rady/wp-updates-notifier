@@ -69,6 +69,13 @@ final class Delivery_Result {
 	private $deferred_until;
 
 	/**
+	 * The items that went out before a failure or a deferral.
+	 *
+	 * @var Notification_Item[]
+	 */
+	private $delivered = array();
+
+	/**
 	 * Use success(), failure() or deferred().
 	 *
 	 * @param bool                 $success     Whether delivery worked.
@@ -106,6 +113,8 @@ final class Delivery_Result {
 	/**
 	 * Delivery failed.
 	 *
+	 * If the notification went out in several requests and some were sent, add them with `->with_delivered()`.
+	 *
 	 * @since 2.0.0
 	 *
 	 * @param string               $message     What went wrong.
@@ -124,8 +133,8 @@ final class Delivery_Result {
 	 * Delivery is held: not now, try again at a given time. Not a failure.
 	 *
 	 * The instance is skipped by update checks until `$until`, at most 7 days from now; a time in the past holds
-	 * nothing. Nothing is recorded as notified meanwhile, and the next check after `$until` delivers everything
-	 * still pending. A hold is not an error: it fires `sc_wpun_notification_deferred`, never
+	 * nothing. Only the items given to `with_delivered()` are recorded as notified meanwhile, and the next check
+	 * after `$until` delivers the rest. A hold is not an error: it fires `sc_wpun_notification_deferred`, never
 	 * `sc_wpun_notification_failed`, and leaves the instance's last delivery result alone.
 	 *
 	 *     return Delivery_Result::deferred( strtotime( 'tomorrow 09:00' ), 'Outside office hours.' );
@@ -255,6 +264,47 @@ final class Delivery_Result {
 			'bad_status',
 			$status
 		);
+	}
+
+	/**
+	 * A copy of this result that says which items went out before it failed or was deferred.
+	 *
+	 * For a channel that sends a notification in several requests and stops part of the way. The plugin records
+	 * the delivered items as notified, so the next attempt sends only the rest; for a reminder, only the rest of
+	 * the reminder. This only has a meaning on a failure or a deferred result: the plugin ignores it on a success,
+	 * which means everything went. Items are matched to the notification by type, key and new version; items that
+	 * are not in it are ignored, and values that are not items are dropped. A `sc_wpun_pre_send` callback normally
+	 * delivers nothing.
+	 *
+	 *     return Delivery_Result::failure( 'Rate limited.', 'rate_limited', 429, $wait )->with_delivered( $sent_items );
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param array<int|string, mixed> $items The items that were sent.
+	 *
+	 * @return Delivery_Result
+	 */
+	public function with_delivered( array $items ): Delivery_Result {
+		$copy            = clone $this;
+		$copy->delivered = array_values(
+			array_filter(
+				$items,
+				static fn( $item ): bool => $item instanceof Notification_Item
+			)
+		);
+
+		return $copy;
+	}
+
+	/**
+	 * The items that went out before the delivery failed or was deferred. Empty unless the channel said so.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return Notification_Item[]
+	 */
+	public function get_delivered(): array {
+		return $this->delivered;
 	}
 
 	/**

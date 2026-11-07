@@ -151,6 +151,9 @@ class Dispatcher {
 			 * Return `Delivery_Result::deferred( $time )` to hold the instance until a Unix time without an error.
 			 * A test message ignores a deferral and is sent anyway.
 			 *
+			 * The result may name delivered items with `with_delivered()`; they are treated as a channel's would be.
+			 * A callback that replaces the delivery normally delivers nothing.
+			 *
 			 * Example, hold all deliveries during maintenance:
 			 *
 			 *     add_filter(
@@ -318,7 +321,8 @@ class Dispatcher {
 				 * Fires when delivering a notification through a channel instance was held until later.
 				 *
 				 * A deferred result is not a failure: `sc_wpun_notification_failed` does not fire. Update checks
-				 * skip the instance until the time, at most 7 days from now, then deliver everything still pending.
+				 * skip the instance until the time, at most 7 days from now, then deliver what is still pending: items
+				 * the result names with `get_delivered()` are recorded as notified and are not delivered again.
 				 *
 				 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 				 *
@@ -350,6 +354,9 @@ class Dispatcher {
 				 * when a delivery to it was asked for.
 				 *
 				 * A result with a `retry_after` defers the instance: update checks skip it until then (at most 7 days).
+				 *
+				 * A channel that sends in several requests can say which items went out with `get_delivered()`.
+				 * The plugin records them as notified, so the next attempt sends only the rest.
 				 *
 				 * `$instance` holds the resolved settings, secrets included: don't log or dump its settings.
 				 *

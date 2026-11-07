@@ -174,7 +174,8 @@ class Update_Checker {
 	 * reminder (with `every_check`, at every check after the first). The interval starts when
 	 * something first waits for the instance, and stops when nothing does. A due reminder replaces
 	 * the message of new items of that run; new items between reminders are sent at once as usual.
-	 * A failed reminder does not restart the interval.
+	 * A failed reminder does not restart the interval, and a reminder that stopped halfway (the channel
+	 * said which items went out, see Delivery_Result::with_delivered()) resumes without the delivered items.
 	 *
 	 * @param string $source  What started the check, kept in the notification context.
 	 * @param bool   $dry_run Whether to only report, see run_check().
@@ -488,19 +489,11 @@ class Update_Checker {
 			$entry['skip_pending'] = false;
 			$entry                 = $this->record( $entry, $for_instance );
 		} elseif ( $due ) {
-			// One message with everything waiting, new items included, instead of a second message.
-			$send           = new Notification(
-				$notification->get_site_name(),
-				$notification->get_site_url(),
-				$notification->get_updates_url(),
-				$pending,
-				array(
-					'is_reminder' => true,
-					'source'      => $notification->get_source(),
-				)
-			);
-			$plan['status'] = self::STATUS_REMINDER;
-			$plan['items']  = $pending;
+			$reminder       = $this->plan_reminder( $notification, $entry, $pending );
+			$entry          = $reminder['entry'];
+			$send           = $reminder['send'];
+			$plan['status'] = $reminder['status'];
+			$plan['items']  = $reminder['items'];
 		} elseif ( array() !== $for_instance ) {
 			$send           = $notification->with_items( $for_instance );
 			$plan['status'] = self::STATUS_SEND;
@@ -525,6 +518,55 @@ class Update_Checker {
 	}
 
 	/**
+	 * Plan the reminder that is due: one message with everything waiting, new items included, instead of a second message.
+	 *
+	 * A reminder that stopped halfway resumes with the items it has not delivered yet. With none left the round is
+	 * complete: the interval restarts and nothing is sent.
+	 *
+	 * @param Notification        $notification The notification of the check.
+	 * @param Channel_State       $entry        The state of the instance.
+	 * @param Notification_Item[] $pending      Everything waiting that the instance receives.
+	 *
+	 * @return array{entry: Channel_State, send: Notification|null, status: string, items: Notification_Item[]} The state, the message (null if there is nothing to send), the status of the plan and its items.
+	 */
+	private function plan_reminder( Notification $notification, array $entry, array $pending ): array { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint -- A phpstan-type alias.
+		$remaining = array();
+		foreach ( $pending as $item ) {
+			if ( ( $entry['reminder_sent'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version() ) {
+				$remaining[] = $item;
+			}
+		}
+
+		if ( array() === $remaining ) {
+			$entry['last_reminder'] = time();
+			unset( $entry['reminder_sent'] );
+
+			return array(
+				'entry'  => $entry,
+				'send'   => null,
+				'status' => self::STATUS_NOTHING,
+				'items'  => array(),
+			);
+		}
+
+		return array(
+			'entry'  => $entry,
+			'send'   => new Notification(
+				$notification->get_site_name(),
+				$notification->get_site_url(),
+				$notification->get_updates_url(),
+				$remaining,
+				array(
+					'is_reminder' => true,
+					'source'      => $notification->get_source(),
+				)
+			),
+			'status' => self::STATUS_REMINDER,
+			'items'  => $remaining,
+		);
+	}
+
+	/**
 	 * Start, keep or stop the reminder clock of an instance, and tell whether a reminder is due.
 	 *
 	 * The clock runs while the instance wants reminders and something is waiting for it.
@@ -541,9 +583,13 @@ class Update_Checker {
 		$remind   = Routing::normalise( $instance->get_routing() )['remind'];
 		$interval = $this->reminder_interval( $remind );
 		$due      = false;
+		if ( isset( $entry['reminder_sent'] ) ) {
+			$entry = $this->prune_reminder_sent( $entry, $pending ); // Progress only counts for items still waiting at the same version.
+		}
 		if ( 0 === $interval || array() === $pending ) {
-			unset( $entry['last_reminder'] );
+			unset( $entry['last_reminder'], $entry['reminder_sent'] ); // The clock stops, and a new round starts clean.
 		} elseif ( ! isset( $entry['last_reminder'] ) ) {
+			unset( $entry['reminder_sent'] );
 			$entry['last_reminder'] = time(); // Starts now: the first reminder comes one interval after items start waiting.
 		} else {
 			$due = ! $force && ! $entry['skip_pending'] && ( 'every_check' === $remind || $this->reminder_is_due( $entry['last_reminder'], $interval, $options ) );
@@ -569,7 +615,8 @@ class Update_Checker {
 		$result         = $this->dispatcher->send_one( $send, $instance );
 		$plan['result'] = $result;
 		if ( $result->is_deferred() ) {
-			// Held: nothing is recorded as notified, a skip flag and the reminder clock stay, and the hold was stored by the send.
+			// Held: only the items the channel says went out are recorded, a skip flag and the reminder clock stay, and the hold was stored by the send.
+			$entry            = $this->record_partial( $entry, $plan, $result );
 			$plan['status']   = self::STATUS_WAITING;
 			$plan['retry_at'] = max( time(), $this->state->hold_until( $result ) );
 		} elseif ( $result->is_success() ) {
@@ -577,8 +624,10 @@ class Update_Checker {
 			$entry['skip_pending'] = false; // A forced message replaces the skip.
 			if ( self::STATUS_REMINDER === $plan['status'] ) {
 				$entry['last_reminder'] = time();
+				unset( $entry['reminder_sent'] );
 			}
 		} else {
+			$entry          = $this->record_partial( $entry, $plan, $result );
 			$plan['status'] = self::STATUS_FAILED; // A failed reminder does not restart the interval either.
 		}
 
@@ -586,6 +635,84 @@ class Update_Checker {
 			'plan'  => $plan,
 			'entry' => $entry,
 		);
+	}
+
+	/**
+	 * Record the items a failed or deferred result says were delivered.
+	 *
+	 * Always the plan's items, not the module's copies. For a reminder the part is also kept as progress in
+	 * `reminder_sent`, so the retry leaves it out. A skip flag and the reminder clock stay as they are.
+	 *
+	 * @param Channel_State   $entry  The state of the instance.
+	 * @param Instance_Plan   $plan   Its plan, with the status and items of the message.
+	 * @param Delivery_Result $result What the channel returned.
+	 *
+	 * @return Channel_State
+	 */
+	private function record_partial( array $entry, array $plan, Delivery_Result $result ): array { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint -- A phpstan-type alias.
+		$part = $this->delivered_part( $result, $plan['items'] );
+		if ( array() === $part ) {
+			return $entry;
+		}
+
+		$entry = $this->record( $entry, $part );
+		if ( self::STATUS_REMINDER === $plan['status'] ) {
+			foreach ( $part as $item ) {
+				$entry['reminder_sent'][ $item->get_type() ][ $item->get_key() ] = $item->get_new_version();
+			}
+		}
+
+		return $entry;
+	}
+
+	/**
+	 * The items of a message that a result says were delivered, matched by type, key and new version.
+	 *
+	 * @param Delivery_Result     $result The result.
+	 * @param Notification_Item[] $items  The items of the message, as planned.
+	 *
+	 * @return Notification_Item[] The plan's own items.
+	 */
+	private function delivered_part( Delivery_Result $result, array $items ): array {
+		$delivered = array();
+		foreach ( $result->get_delivered() as $item ) {
+			$delivered[ $item->get_type() ][ $item->get_key() ] = $item->get_new_version();
+		}
+
+		$part = array();
+		foreach ( $items as $item ) {
+			if ( ( $delivered[ $item->get_type() ][ $item->get_key() ] ?? null ) === $item->get_new_version() ) {
+				$part[] = $item;
+			}
+		}
+
+		return $part;
+	}
+
+	/**
+	 * Keep the reminder progress of items that still wait at the same version.
+	 *
+	 * @param Channel_State       $entry   The state of the instance.
+	 * @param Notification_Item[] $pending Everything waiting that the instance receives.
+	 *
+	 * @return Channel_State
+	 */
+	private function prune_reminder_sent( array $entry, array $pending ): array { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint -- A phpstan-type alias.
+		$kept = array();
+		foreach ( $pending as $item ) {
+			$type = $item->get_type();
+			$key  = $item->get_key();
+			if ( ( $entry['reminder_sent'][ $type ][ $key ] ?? null ) === $item->get_new_version() ) {
+				$kept[ $type ][ $key ] = $item->get_new_version();
+			}
+		}
+		if ( array() === $kept ) {
+			unset( $entry['reminder_sent'] );
+		} else {
+			$entry['reminder_sent'] = $kept;
+		}
+
+		return $entry;
 	}
 
 	/**

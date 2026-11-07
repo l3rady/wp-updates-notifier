@@ -71,13 +71,6 @@ parameters:
 			reportUnmatched: true
 
 		-
-			message: '#^Cognitive complexity for "WPUN\\State\:\:normalise\(\)" is 24, keep it under 20$#'
-			identifier: complexity.functionLike
-			count: 1
-			path: ../../includes/class-state.php
-			reportUnmatched: true
-
-		-
 			message: '#^Cognitive complexity for "WPUN\\State\:\:normalise_meta\(\)" is 21, keep it under 20$#'
 			identifier: complexity.functionLike
 			count: 1
