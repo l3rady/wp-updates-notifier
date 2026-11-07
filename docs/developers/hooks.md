@@ -179,7 +179,7 @@ add_filter(
 | `$new_version` | `string` | The version WordPress offers. |
 | `$current_version` | `string` | The installed version. |
 
-Fired in `includes/class-update-checker.php`.
+Fired in `includes/class-update-collector.php`.
 
 ### `sc_wpun_item_types`
 
@@ -244,7 +244,7 @@ Filters the plugins that are waiting for an update and will be reported.
 | --- | --- | --- |
 | `$plugins_need_update` | `array<string, object>` | Update data from WordPress by plugin file (for example `hello.php`). |
 
-Fired in `includes/class-update-checker.php`.
+Fired in `includes/class-update-collector.php`.
 
 ### `sc_wpun_should_notify_item`
 
@@ -287,7 +287,7 @@ Filters the themes that are waiting for an update and will be reported.
 | --- | --- | --- |
 | `$themes_need_update` | `array<string, array<string, mixed>>` | Update data from WordPress by theme stylesheet. |
 
-Fired in `includes/class-update-checker.php`.
+Fired in `includes/class-update-collector.php`.
 
 ### `sc_wpun_update_items`
 
@@ -1513,7 +1513,7 @@ add_filter(
 | `$type` | `string` | Item type: `plugin`, `theme` or `core`. |
 | `$key` | `string` | Plugin file, theme stylesheet or `core`. |
 
-Fired in `includes/class-update-checker.php`.
+Fired in `includes/class-update-collector.php`.
 
 ### `sc_wpun_loaded`
 

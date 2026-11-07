@@ -243,12 +243,12 @@ final class Mute_Store {
 		// Read the entry as the update check does, so both agree on what is offered.
 		$response = array( $key => $transient->response[ $key ] );
 		if ( 'plugin' === $type ) {
-			$update = Update_Checker::normalise_plugin_updates( $response )[ $key ] ?? null;
+			$update = Update_Collector::normalise_plugin_updates( $response )[ $key ] ?? null;
 
 			return null === $update ? null : $update->new_version;
 		}
 
-		return Update_Checker::normalise_theme_updates( $response )[ $key ]['new_version'] ?? null;
+		return Update_Collector::normalise_theme_updates( $response )[ $key ]['new_version'] ?? null;
 	}
 
 	/**

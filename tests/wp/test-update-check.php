@@ -402,7 +402,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 * Entries that are not updates are left out without hiding the ones after them.
 	 */
 	public function test_unusable_plugin_updates_are_skipped() {
-		$updates = $this->plugin_checker()->normalise_plugin_updates(
+		$updates = WPUN\Update_Collector::normalise_plugin_updates(
 			array(
 				'junk'      => 'text',
 				'empty.php' => array( 'new_version' => '' ),
@@ -657,7 +657,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 	 * An update that is an object of another class is read like any other.
 	 */
 	public function test_an_update_object_of_another_class_is_read() {
-		$updates = $this->plugin_checker()->normalise_plugin_updates( array( 'hello.php' => new ArrayObject( array( 'new_version' => '2.0' ), ArrayObject::ARRAY_AS_PROPS ) ) );
+		$updates = WPUN\Update_Collector::normalise_plugin_updates( array( 'hello.php' => new ArrayObject( array( 'new_version' => '2.0' ), ArrayObject::ARRAY_AS_PROPS ) ) );
 
 		$this->assertSame( array(), $updates, 'An ArrayObject has no public properties of its own.' );
 
@@ -669,12 +669,12 @@ class Test_Update_Check extends WPUN_Test_Case {
 			 */
 			public $new_version = '2.0';
 		};
-		$updates = $this->plugin_checker()->normalise_plugin_updates( array( 'hello.php' => $entry ) );
+		$updates = WPUN\Update_Collector::normalise_plugin_updates( array( 'hello.php' => $entry ) );
 
 		$this->assertSame( array( 'hello.php' ), array_keys( $updates ) );
 		$this->assertSame( '2.0', $updates['hello.php']->new_version );
 
-		$updates = $this->plugin_checker()->normalise_plugin_updates(
+		$updates = WPUN\Update_Collector::normalise_plugin_updates(
 			array(
 				'hello.php' => array(
 					'new_version' => '2.0',
