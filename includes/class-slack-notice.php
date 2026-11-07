@@ -203,10 +203,7 @@ class Slack_Notice {
 	 * @return bool False if the user may not manage options or the nonce is not valid.
 	 */
 	public function dismiss_request(): bool {
-		if ( ! current_user_can( Settings_Page::capability() ) || ! isset( $_POST['_wpnonce'] ) || ! is_string( $_POST['_wpnonce'] ) ) {
-			return false;
-		}
-		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), self::DISMISS_ACTION ) ) {
+		if ( ! current_user_can( Settings_Page::capability() ) || ! Settings_Page::posted_token_valid( self::DISMISS_ACTION ) ) {
 			return false;
 		}
 
@@ -221,12 +218,7 @@ class Slack_Notice {
 	 * @return void
 	 */
 	public function handle_dismiss(): void {
-		if ( ! $this->dismiss_request() ) {
-			wp_die( esc_html__( 'You are not allowed to do that.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
-		}
-
-		wp_safe_redirect( $this->settings_url() );
-		exit;
+		Settings_Page::finish( $this->dismiss_request() ? $this->settings_url() : null );
 	}
 
 	/**

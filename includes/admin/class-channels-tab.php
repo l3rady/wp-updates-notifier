@@ -615,12 +615,12 @@ class Channels_Tab {
 	 * @return string|null The instance id the request is about; null if the user may not do this or the nonce is not valid.
 	 */
 	private function authorise( string $action ): ?string {
-		if ( ! current_user_can( Settings_Page::capability() ) || ! isset( $_POST['id'], $_POST['_wpnonce'] ) || ! is_string( $_POST['id'] ) || ! is_string( $_POST['_wpnonce'] ) ) {
+		if ( ! current_user_can( Settings_Page::capability() ) || ! isset( $_POST['id'] ) || ! is_string( $_POST['id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only used to find the nonce action.
 			return null;
 		}
 
-		$id = sanitize_key( wp_unslash( $_POST['id'] ) );
-		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), $action . '_' . $id ) ) {
+		$id = sanitize_key( wp_unslash( $_POST['id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only used to find the nonce action.
+		if ( ! Settings_Page::posted_token_valid( $action . '_' . $id ) ) {
 			return null;
 		}
 
@@ -843,11 +843,6 @@ class Channels_Tab {
 	 * @return void
 	 */
 	private function finish( bool $allowed ): void {
-		if ( ! $allowed ) {
-			wp_die( esc_html__( 'You are not allowed to do that.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
-		}
-
-		wp_safe_redirect( $this->tab_url() );
-		exit;
+		Settings_Page::finish( $allowed ? $this->tab_url() : null );
 	}
 }

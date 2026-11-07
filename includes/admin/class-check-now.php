@@ -134,11 +134,7 @@ class Check_Now {
 	 * @return bool
 	 */
 	private function authorised(): bool {
-		if ( ! current_user_can( Settings_Page::capability() ) || ! isset( $_POST['_wpnonce'] ) || ! is_string( $_POST['_wpnonce'] ) ) {
-			return false;
-		}
-
-		return false !== wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), self::ACTION );
+		return current_user_can( Settings_Page::capability() ) && Settings_Page::posted_token_valid( self::ACTION );
 	}
 
 	/**
@@ -264,11 +260,6 @@ class Check_Now {
 	 * @return void
 	 */
 	public function handle(): void {
-		if ( ! $this->process() ) {
-			wp_die( esc_html__( 'You are not allowed to do that.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
-		}
-
-		wp_safe_redirect( $this->general_url() );
-		exit;
+		Settings_Page::finish( $this->process() ? $this->general_url() : null );
 	}
 }

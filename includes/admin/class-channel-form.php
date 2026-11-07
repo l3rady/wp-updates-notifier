@@ -1122,7 +1122,7 @@ class Channel_Form {
 	 * @return string|null The address to go to; null if the user may not do this or the nonce is not valid.
 	 */
 	public function process_save(): ?string {
-		if ( ! current_user_can( Settings_Page::capability() ) || ! isset( $_POST['_wpnonce'] ) || ! is_string( $_POST['_wpnonce'] ) ) {
+		if ( ! current_user_can( Settings_Page::capability() ) ) {
 			return null;
 		}
 
@@ -1131,7 +1131,7 @@ class Channel_Form {
 			return null;
 		}
 		$key = $this->posted_key( 'new' === $mode ? 'type' : 'id' );
-		if ( false === wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), self::SAVE_ACTION . '_' . $mode . '_' . $key ) ) {
+		if ( ! Settings_Page::posted_token_valid( self::SAVE_ACTION . '_' . $mode . '_' . $key ) ) {
 			return null;
 		}
 
@@ -1333,12 +1333,6 @@ class Channel_Form {
 	 * @return void
 	 */
 	public function handle_save(): void {
-		$url = $this->process_save();
-		if ( null === $url ) {
-			wp_die( esc_html__( 'You are not allowed to do that.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
-		}
-
-		wp_safe_redirect( $url );
-		exit;
+		Settings_Page::finish( $this->process_save() );
 	}
 }
