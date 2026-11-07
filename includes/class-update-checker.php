@@ -622,9 +622,9 @@ class Update_Checker {
 		} elseif ( $result->is_success() ) {
 			$entry                 = $this->record( $entry, $plan['items'] );
 			$entry['skip_pending'] = false; // A forced message replaces the skip.
+			unset( $entry['reminder_sent'] ); // A completed reminder, or a forced message with everything pending, ends a reminder stopped halfway.
 			if ( self::STATUS_REMINDER === $plan['status'] ) {
 				$entry['last_reminder'] = time();
-				unset( $entry['reminder_sent'] );
 			}
 		} else {
 			$entry          = $this->record_partial( $entry, $plan, $result );

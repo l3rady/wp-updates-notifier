@@ -526,6 +526,27 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A forced message ends a reminder stopped halfway, so the next reminder lists everything.
+	 */
+	public function test_a_forced_send_clears_the_progress() {
+		$this->add( 'a', 'every_check' );
+		$this->run_check();
+
+		$this->then( $this->fail_after( array( 'core' ) ) );
+		$this->run_check();
+		$this->assertNotNull( $this->entry( 'reminder_sent' ) );
+
+		$this->end_wait();
+		$this->run_check( array( 'hello.php', self::OTHER ), true );
+		$this->assertFalse( $this->last()->is_reminder() );
+		$this->assertNull( $this->entry( 'reminder_sent' ), 'A forced message with everything pending ends the stopped reminder.' );
+
+		$this->run_check();
+		$this->assertTrue( $this->last()->is_reminder() );
+		$this->assertSame( array( 'core', 'hello.php', self::OTHER ), $this->keys( $this->last() ), 'The next reminder lists everything again.' );
+	}
+
+	/**
 	 * A deferred reminder also resumes, and keeps the hold.
 	 */
 	public function test_a_deferred_reminder_resumes() {
