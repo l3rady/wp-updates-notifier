@@ -1,0 +1,17 @@
+# Limits of the complexity gate (`make quality-check`), on top of the report in phpstan-complexity.neon. The gate
+# itself is phpstan-complexity-gate.neon, which adds the baseline. `make quality-baseline` generates the baseline from
+# this file, as the baseline must not be loaded while it is written.
+includes:
+    - phpstan-complexity.neon
+
+parameters:
+    # Only a method above 20 fails: that is a method to split, not to read. The report lists everything above 12.
+    cognitive_complexity:
+        function: 20
+    ignoreErrors:
+        # The class limit is not gated: a class figure is the sum of its methods and moves with nearly every edit, and
+        # the package has no switch to turn the rule off. Its findings are ignored by identifier instead (they stay in
+        # the report). The ignore may match nothing.
+        -
+            identifier: complexity.classLike
+            reportUnmatched: false

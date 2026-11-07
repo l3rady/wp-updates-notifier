@@ -1,6 +1,6 @@
 name: lint
 
-# WordPress Coding Standards, run in the same Docker setup used locally.
+# WordPress Coding Standards and the code-quality gate, run in the same Docker setup used locally.
 on:
   pull_request:
   push:
@@ -58,12 +58,27 @@ jobs:
       - name: Check add-ons and modules use only the public API
         run: make check-public-api
 
+  # The code-quality gate (make quality-check): copy-paste detection, dead code, cognitive complexity and Rector's
+  # suggestions. It fails on a finding that is not in the committed baselines (docker/quality/), and on a baseline
+  # entry that no longer matches, so the baselines only shrink. After a fix, run `make quality-baseline`.
+  quality:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.jobs), 'quality')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the code quality against the baselines
+        run: make quality-check
+
   # The only check this workflow requires: it fails unless every job above passed or was skipped. A job the changes
   # job skipped counts as passed, which a required check on the job itself would not. Add every new job to `needs`
   # (tests/bin/test-ci-changes.sh checks it).
   lint-gate:
     if: always()
-    needs: [changes, phpcs]
+    needs: [changes, phpcs, quality]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

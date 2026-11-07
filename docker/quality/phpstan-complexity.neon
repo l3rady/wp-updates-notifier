@@ -1,4 +1,6 @@
-# Cognitive complexity report: `make quality-complexity`. Report-only: only tomasvotruba/cognitive-complexity reports.
+# Cognitive complexity report: `make quality-complexity`. The full list, nothing baselined; only
+# tomasvotruba/cognitive-complexity reports. The gate (`make quality-check`) is phpstan-complexity-gate.neon, with its
+# own limits (phpstan-complexity-limits.neon).
 #
 # No `level` is set, so none of PHPStan's own rules run (`make stan` does that).
 includes:
@@ -9,6 +11,10 @@ parameters:
     # No level, so the rule-less warning is expected.
     customRulesetUsed: true
     tmpDir: /tmp/phpstan-quality-complexity
+    # The main PHPStan config (`make stan`) has inline `@phpstan-ignore argument.type` comments that match nothing here,
+    # and PHPStan reports those as errors that cannot be ignored. The baseline entries of the gate turn the check back
+    # on for themselves (reportUnmatched: true).
+    reportUnmatchedIgnoredErrors: false
     paths:
         - %currentWorkingDirectory%/wp-updates-notifier.php
         - %currentWorkingDirectory%/includes
@@ -16,7 +22,7 @@ parameters:
         - %currentWorkingDirectory%/uninstall.php
     scanFiles:
         - /opt/quality/vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
-    # The limits are low on purpose: this lists everything worth a look, it does not gate anything.
+    # The limits are low on purpose: this lists everything worth a look. The gate has its own, higher limit.
     # The package default is 9 for a function and 40 for a class. A method above 12 has several nested branches or
     # loops; a class above 80 does a lot of branching in total (the class figure is the sum of its methods).
     cognitive_complexity:

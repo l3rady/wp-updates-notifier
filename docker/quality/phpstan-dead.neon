@@ -1,4 +1,5 @@
-# Dead code report: `make quality-dead`. Report-only: only shipmonk/dead-code-detector reports.
+# Dead code report: `make quality-dead`. The full list, nothing baselined; only shipmonk/dead-code-detector reports.
+# The gate (`make quality-check`) is phpstan-dead-gate.neon: this file plus phpstan-dead-baseline.neon.
 #
 # No `level` is set, so none of PHPStan's own rules run (type errors, undefined variables ...: `make stan` does that).
 # The rules of the detector are added by its own neon file.
@@ -23,7 +24,10 @@ parameters:
         - /opt/quality/vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
         - %currentWorkingDirectory%/tests/stubs/wp-cli.php
     treatPhpDocTypesAsCertain: false
-    # Not reported: the example add-on, the dev plugins and the test fixtures only provide usages.
+    # Off, so that these do not count as findings: the ignore below, which matches nothing when the example add-on, the
+    # dev plugins and the test fixtures are clean, and the inline `@phpstan-ignore argument.type` comments of the main
+    # PHPStan config, which match nothing here (PHPStan reports those as errors that cannot be ignored). The entries
+    # of the gate's baseline turn the check back on for themselves (reportUnmatched: true).
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         -

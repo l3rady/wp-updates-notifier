@@ -462,7 +462,8 @@ services:
       HOME: /tmp
 
   # Code-quality reports (`make quality`), profile "quality": dead code and cognitive complexity with PHPStan, in
-  # their own image, as the dead code detector needs PHP 8.1+ and the plugin supports 7.4. Report-only. No network.
+  # their own image, as the dead code detector needs PHP 8.1+ and the plugin supports 7.4. `make quality` reports
+  # everything; `make quality-check` is the gate CI runs. No network.
   quality:
     profiles: [quality]
     build:
@@ -477,7 +478,7 @@ services:
     environment:
       HOME: /tmp
 
-  # Copy-paste detection (`make quality-dupes`), profile "quality". Report-only.
+  # Copy-paste detection (`make quality-dupes`, and the gate `make quality-check-dupes`), profile "quality".
   jscpd:
     profiles: [quality]
     build:

@@ -52,9 +52,11 @@ SAST_PATHS := wp-updates-notifier.php uninstall.php includes modules examples
 TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 
-# Code-quality reports (`make quality`): they only report, a finding never fails them. They write to quality-reports/.
-# PHPStan (dead code, complexity) and jscpd run from their own image (docker/quality), as the dead code detector needs
-# PHP 8.1+. The code is still analysed as PHP 7.4.
+# Code quality, two ways. `make quality` is the full report: every finding, nothing baselined, a finding never fails it.
+# It writes to quality-reports/. `make quality-check` is the gate CI runs: it fails on a new finding, and what is already
+# known sits in a committed baseline (docker/quality/) that may only shrink. `make quality-baseline` regenerates the
+# baselines, after a fix. PHPStan (dead code, complexity) and jscpd run from their own image (docker/quality), as the
+# dead code detector needs PHP 8.1+. The code is still analysed as PHP 7.4.
 QUALITY_DIR := quality-reports
 QUALITY     := $(COMPOSE) --profile quality run --build --rm -T quality
 JSCPD       := $(COMPOSE) --profile quality run --build --rm -T jscpd
@@ -62,11 +64,23 @@ JSCPD       := $(COMPOSE) --profile quality run --build --rm -T jscpd
 # an `if ( ! current_user_can() ) { wp_die(); }`), higher misses small copies worth a helper.
 # Weak mode skips comments: otherwise matching doc blocks of properties and file headers fill the report.
 JSCPD_ARGS  := --mode weak --min-lines 5 --min-tokens 50 --reporters console,json --output /reports/jscpd --ignore "**/vendor/**,**/languages/**,**/*.min.*,**/*.map,**/*.pot,**/*.po,**/*.mo,**/*.json"
-# PHPStan exits 1 for findings and 255 when it crashes: only a crash fails the target.
+# The gate fails above this share of duplicated lines (jscpd compares the line percentage, rounded to two decimals).
+# It is a percentage, so it drifts as the code grows: a new clone can hide in new code until the percentage catches up,
+# and a big deletion elsewhere can push the percentage over without a new clone. Set it just above the current figure
+# (0.67% on 2026-11-07), a new block of 5 lines or more tips it, and lower it whenever duplication drops (it only goes
+# down).
+JSCPD_THRESHOLD ?= 0.67
+# The report tolerates PHPStan's exit 1 for findings and fails on 255 (a crash). The gate fails on any non-zero exit.
 QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
+# A baseline is generated from the config without the baseline. PHPStan writes absolute paths (/app/...) and, as the
+# image has only a read-only mount, the file goes to quality-reports/ first. The sed makes the paths relative to
+# docker/quality/ and sets reportUnmatched on each entry: an entry that matches nothing fails the gate, so a baseline
+# only shrinks. (The configs switch the global check off, as PHPStan reports an unmatched inline @phpstan-ignore of the
+# main config as an error that cannot be ignored.)
+QUALITY_BASELINE_SED := -e 's\#^\t\t\tpath: /app/\(.*\)$$\#\t\t\tpath: ../../\1\n\t\t\treportUnmatched: true\#'
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
@@ -275,7 +289,7 @@ taint: deps ## Psalm taint analysis from untrusted sources (plugin headers, opti
 	@mkdir -p security-reports
 	$(PSALM) --taint-analysis --monochrome --no-cache --no-progress --threads=1 $(if $(TAINT_SARIF),--report=/reports/psalm.sarif)
 
-quality: quality-dupes quality-dead quality-complexity quality-rector ## Local code-quality reports in quality-reports/ (report-only, never fails on findings)
+quality: quality-dupes quality-dead quality-complexity quality-rector ## Local code-quality reports in quality-reports/ (the full report, nothing baselined; never fails on findings)
 	@echo ''
 	@echo 'Reports in $(QUALITY_DIR)/:'
 	@ls -1 $(QUALITY_DIR) $(QUALITY_DIR)/jscpd | sed 's/^/  /'
@@ -292,9 +306,42 @@ quality-complexity: ## Cognitive complexity: methods above 12 and classes above 
 	@mkdir -p $(QUALITY_DIR)
 	@$(QUALITY) analyse -c docker/quality/phpstan-complexity.neon $(QUALITY_STAN) > $(QUALITY_DIR)/complexity.txt; s=$$?; cat $(QUALITY_DIR)/complexity.txt; [ $$s -le 1 ]
 
-quality-rector: deps ## Rector dry run with the DeadCode and CodeQuality sets, PHP 7.4 and WordPress Coding Standards safe (changes nothing; report: quality-reports/rector.txt)
+quality-rector: deps ## Rector dry run with the DeadCode and CodeQuality sets, PHP 7.4 and WordPress Coding Standards safe (changes nothing; the full report: quality-reports/rector.txt)
 	@mkdir -p $(QUALITY_DIR)
 	@$(COMPOSE) run --build --rm php sh -c 'vendor/bin/rector process --config=rector-quality.php --dry-run --no-progress-bar --no-ansi > $(QUALITY_DIR)/rector.txt; s=$$?; cat $(QUALITY_DIR)/rector.txt; [ $$s -le 2 ]'
+
+# The gate (`make quality-check`, run by CI). Nothing is written to quality-reports/ but the jscpd report.
+quality-check: quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector ## Code-quality gate: fails on a finding that is not in the baselines (docker/quality/), as CI does
+
+quality-check-dupes: ## Gate: duplicated lines above JSCPD_THRESHOLD percent (the report is still written)
+	@mkdir -p $(QUALITY_DIR)
+	$(JSCPD) $(JSCPD_ARGS) --threshold $(JSCPD_THRESHOLD) includes modules wp-updates-notifier.php uninstall.php assets
+
+quality-check-dead: ## Gate: unused code that is not in docker/quality/phpstan-dead-baseline.neon (a baseline entry that matches nothing fails too)
+	$(QUALITY) analyse -c docker/quality/phpstan-dead-gate.neon $(QUALITY_STAN)
+
+quality-check-complexity: ## Gate: methods above 20 that are not in docker/quality/phpstan-complexity-baseline.neon (classes are not gated)
+	$(QUALITY) analyse -c docker/quality/phpstan-complexity-gate.neon $(QUALITY_STAN)
+
+quality-check-rector: deps ## Gate: Rector suggestions that are not in docker/quality/rector-baseline.php (changes nothing)
+	$(COMPOSE) run --build --rm -e WPUN_QUALITY_BASELINE=1 php vendor/bin/rector process --config=rector-quality.php --dry-run --no-progress-bar --no-ansi
+
+quality-baseline: quality-baseline-dead quality-baseline-complexity quality-baseline-rector ## Regenerate every baseline of the quality gate (docker/quality/); it must shrink, never grow
+
+quality-baseline-dead: ## Regenerate docker/quality/phpstan-dead-baseline.neon
+	@mkdir -p $(QUALITY_DIR)
+	$(QUALITY) analyse -c docker/quality/phpstan-dead.neon $(QUALITY_STAN) --generate-baseline /reports/dead-baseline.neon > /dev/null
+	sed $(QUALITY_BASELINE_SED) $(QUALITY_DIR)/dead-baseline.neon > docker/quality/phpstan-dead-baseline.neon
+
+quality-baseline-complexity: ## Regenerate docker/quality/phpstan-complexity-baseline.neon
+	@mkdir -p $(QUALITY_DIR)
+	$(QUALITY) analyse -c docker/quality/phpstan-complexity-limits.neon $(QUALITY_STAN) --generate-baseline /reports/complexity-baseline.neon > /dev/null
+	sed $(QUALITY_BASELINE_SED) $(QUALITY_DIR)/complexity-baseline.neon > docker/quality/phpstan-complexity-baseline.neon
+
+# Rector exits 2 when it would change something, which is what the baseline lists; 1 is an error.
+quality-baseline-rector: deps ## Regenerate docker/quality/rector-baseline.php
+	@mkdir -p $(QUALITY_DIR)
+	@$(COMPOSE) run --build --rm php sh -c 'vendor/bin/rector process --config=rector-quality.php --dry-run --no-progress-bar --no-ansi --output-format=json > $(QUALITY_DIR)/rector.json; s=$$?; [ $$s -eq 0 ] || [ $$s -eq 2 ] || exit $$s; php bin/quality-rector-baseline.php $(QUALITY_DIR)/rector.json docker/quality/rector-baseline.php'
 
 dast: ## OWASP ZAP against a throwaway copy of the site (own compose project wpun-dast, never touches make up; fails on Medium/High alerts; slow)
 	@./tests/dast/run.sh

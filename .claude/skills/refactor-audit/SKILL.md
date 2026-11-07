@@ -15,7 +15,8 @@ WordPress already provides, and abstractions that add nothing. The tool reports 
 
 ## 1. Gather
 
-1. Run `make quality` and read the reports in `quality-reports/`. If a tool fails, say so and carry on
+1. Run `make quality` (not `make quality-check`: the reports are unbaselined on purpose, so they still show the
+   findings the CI gate's baselines hide) and read the reports in `quality-reports/`. If a tool fails, say so and carry on
    without it. Don't fix the tooling as part of the audit. Know their blind spots:
    - `dead-code.txt` doesn't read `tests/`, so a method only tests call is listed. That is a finding only
      when the tests exercise a path production never takes. An accessor tests need is not.

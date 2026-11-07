@@ -2,8 +2,11 @@
 /**
  * Rector for `make quality-rector`: a dry run that lists dead code and code quality suggestions for a refactor audit.
  *
- * Report-only and separate from rector.php (the PHP 7.4 syntax upgrades). Stays on PHP 7.4 and the WordPress Coding
+ * A dry run, separate from rector.php (the PHP 7.4 syntax upgrades). Stays on PHP 7.4 and the WordPress Coding
  * Standards: Rector's output is a hint to read, not a patch to apply blindly.
+ *
+ * `make quality-rector` reports everything. `make quality-check` (the gate) sets WPUN_QUALITY_BASELINE and also skips
+ * what docker/quality/rector-baseline.php lists, so only new suggestions fail. `make quality-baseline` regenerates it.
  *
  * @package wp-updates-notifier
  */
@@ -16,6 +19,9 @@ use Rector\DeadCode\Rector\ClassMethod\RemoveUselessReturnTagRector;
 use Rector\DeadCode\Rector\Property\RemoveUselessVarTagRector;
 use Rector\Set\ValueObject\SetList;
 use Rector\ValueObject\PhpVersion;
+
+// The gate skips the findings that are already known. The report does not, so it stays complete.
+$baseline = false === getenv( 'WPUN_QUALITY_BASELINE' ) ? array() : require __DIR__ . '/docker/quality/rector-baseline.php';
 
 return RectorConfig::configure()
 	->withPaths(
@@ -32,13 +38,16 @@ return RectorConfig::configure()
 	->withIndent( "\t", 1 )
 	->withSets( array( SetList::DEAD_CODE, SetList::CODE_QUALITY ) )
 	->withSkip(
-		array(
-			// The standards require Yoda conditions (`null === $x`); these rules flip them back or rewrite the comparison.
-			FlipTypeControlToUseExclusiveTypeRector::class,
-			SimplifyBoolIdenticalTrueRector::class,
-			// The standards require @param and @return tags even where the native type says the same.
-			RemoveUselessParamTagRector::class,
-			RemoveUselessReturnTagRector::class,
-			RemoveUselessVarTagRector::class,
+		array_merge(
+			$baseline,
+			array(
+				// The standards require Yoda conditions (`null === $x`); these rules flip them back or rewrite the comparison.
+				FlipTypeControlToUseExclusiveTypeRector::class,
+				SimplifyBoolIdenticalTrueRector::class,
+				// The standards require @param and @return tags even where the native type says the same.
+				RemoveUselessParamTagRector::class,
+				RemoveUselessReturnTagRector::class,
+				RemoveUselessVarTagRector::class,
+			)
 		)
 	);
