@@ -190,6 +190,41 @@ class Settings_Page {
 	}
 
 	/**
+	 * Whether the security token posted with the request is valid for the action. Only the request body counts, not the query string.
+	 *
+	 * @internal
+	 *
+	 * @param string $action The token action.
+	 *
+	 * @return bool
+	 */
+	public static function posted_token_valid( string $action ): bool {
+		if ( ! isset( $_POST['_wpnonce'] ) || ! is_string( $_POST['_wpnonce'] ) ) {
+			return false;
+		}
+
+		return false !== wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), $action );
+	}
+
+	/**
+	 * End an admin-post request: answer 403 when there is no address, else redirect there and stop.
+	 *
+	 * @internal
+	 *
+	 * @param string|null $url Where to go; null if the request was refused.
+	 *
+	 * @return void
+	 */
+	public static function finish( ?string $url ): void {
+		if ( null === $url ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
+		} else {
+			wp_safe_redirect( $url );
+			exit;
+		}
+	}
+
+	/**
 	 * Adds the settings link under the plugin on the plugin screen.
 	 *
 	 * @param array<mixed> $links Links to list on the plugin screen.

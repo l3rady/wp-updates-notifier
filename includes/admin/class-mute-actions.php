@@ -184,7 +184,7 @@ class Mute_Actions {
 	 * @return void
 	 */
 	public function deny(): void {
-		wp_die( esc_html__( 'You are not allowed to do that.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
+		Settings_Page::finish( null );
 	}
 
 	/**

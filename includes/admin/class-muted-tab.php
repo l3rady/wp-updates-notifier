@@ -489,21 +489,6 @@ class Muted_Tab {
 	}
 
 	/**
-	 * Whether the security token of the request is valid for the action.
-	 *
-	 * @param string $action The token action.
-	 *
-	 * @return bool
-	 */
-	private function token_valid( string $action ): bool {
-		if ( ! isset( $_POST['_wpnonce'] ) || ! is_string( $_POST['_wpnonce'] ) ) {
-			return false;
-		}
-
-		return false !== wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), $action );
-	}
-
-	/**
 	 * A field of the form as text.
 	 *
 	 * @param string $name Field name.
@@ -520,7 +505,7 @@ class Muted_Tab {
 	 * @return bool False if the user may not do it or the security token is not valid.
 	 */
 	public function process_add(): bool {
-		if ( ! $this->may() || ! $this->token_valid( self::ADD_ACTION ) ) {
+		if ( ! $this->may() || ! Settings_Page::posted_token_valid( self::ADD_ACTION ) ) {
 			return false;
 		}
 
@@ -576,7 +561,7 @@ class Muted_Tab {
 	public function process_remove(): bool {
 		$type = $this->field( 'type' );
 		$key  = $this->field( 'key' );
-		if ( ! $this->may() || '' === $type || '' === $key || ! $this->token_valid( self::REMOVE_ACTION . '|' . $type . '|' . $key ) ) {
+		if ( ! $this->may() || '' === $type || '' === $key || ! Settings_Page::posted_token_valid( self::REMOVE_ACTION . '|' . $type . '|' . $key ) ) {
 			return false;
 		}
 
@@ -611,12 +596,6 @@ class Muted_Tab {
 	 * @return void
 	 */
 	private function finish( bool $allowed ): void {
-		if ( ! $allowed ) {
-			$this->actions->deny();
-			return;
-		}
-
-		wp_safe_redirect( $this->tab_url() );
-		exit;
+		Settings_Page::finish( $allowed ? $this->tab_url() : null );
 	}
 }
