@@ -114,7 +114,6 @@ jobs:
         responseCode: 200
       # Without a valid nonce each of these must be refused, not run.
       - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_check_now
-      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_dismiss_slack_notice
     tests:
       - name: the login worked and the settings screen rendered
         type: url
@@ -185,8 +184,6 @@ jobs:
       - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_channel_duplicate
         responseCode: 400
       - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_channel_delete
-        responseCode: 400
-      - url: http://wordpress:8080/wp-admin/admin-post.php?action=sc_wpun_dismiss_slack_notice
         responseCode: 400
       - url: http://wordpress:8080/wp-admin/admin-post.php
         method: POST

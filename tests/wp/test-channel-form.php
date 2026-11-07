@@ -68,7 +68,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	 * Remove what tests registered.
 	 */
 	public function tear_down() {
-		foreach ( array( 'fixture', 'fixture_custom', 'slack' ) as $type ) {
+		foreach ( array( 'fixture', 'fixture_custom', 'retired' ) as $type ) {
 			sc_wpun()->channels()->unregister( $type );
 		}
 		sc_wpun()->config()->flush();
@@ -468,14 +468,14 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	 */
 	public function test_forms_are_not_shown_for_what_can_not_be_edited() {
 		$this->define_in_code();
-		sc_wpun()->channels()->register( new Test_Channel( 'slack' ) );
-		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', 'Slack', true ) );
-		sc_wpun()->channels()->unregister( 'slack' );
+		sc_wpun()->channels()->register( new Test_Channel( 'retired' ) );
+		sc_wpun_channels()->save( new Channel_Instance( 'retired', 'retired', 'Retired', true ) );
+		sc_wpun()->channels()->unregister( 'retired' );
 
 		$cases = array(
 			array( array( 'action' => 'new', 'type' => 'nope' ), 'There is no such channel module.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 			array( array( 'action' => 'edit', 'id' => 'nope' ), 'There is no such channel.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
-			array( array( 'action' => 'edit', 'id' => 'slack' ), 'There is no such channel.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+			array( array( 'action' => 'edit', 'id' => 'retired' ), 'There is no such channel.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 			array( array( 'action' => 'edit', 'id' => 'ops_code' ), 'Ops is defined in code and cannot be changed here.' ), // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		);
 		foreach ( $cases as $case ) {
@@ -1153,17 +1153,17 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	 */
 	public function test_refusals_change_nothing() {
 		$this->define_in_code();
-		sc_wpun()->channels()->register( new Test_Channel( 'slack' ) );
-		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', 'Slack', true ) );
-		sc_wpun()->channels()->unregister( 'slack' );
+		sc_wpun()->channels()->register( new Test_Channel( 'retired' ) );
+		sc_wpun_channels()->save( new Channel_Instance( 'retired', 'retired', 'Retired', true ) );
+		sc_wpun()->channels()->unregister( 'retired' );
 		$before = $this->snapshot();
 		$list   = admin_url( 'options-general.php?page=wp-updates-notifier&tab=channels' );
 
 		$cases = array(
 			array( 'edit', 'ops_code', 'Ops is defined in code and cannot be changed here.' ),
-			array( 'edit', 'slack', 'There is no such channel.' ),
+			array( 'edit', 'retired', 'There is no such channel.' ),
 			array( 'edit', 'ghost', 'There is no such channel.' ),
-			array( 'new', 'slack', 'There is no such channel module.' ),
+			array( 'new', 'retired', 'There is no such channel module.' ),
 		);
 		foreach ( $cases as $case ) {
 			$this->post_email( array( 'label' => 'Hacked' ), $case[0], $case[1] );

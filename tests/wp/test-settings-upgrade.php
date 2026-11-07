@@ -60,7 +60,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 	public function test_the_upgrade_produces_the_current_shape( $name, $version, array $options ) {
 		$this->upgrade_from( $version, $options );
 
-		$this->assertSame( '13.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ), $name );
+		$this->assertSame( '14.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ), $name );
 		$this->assertEqualsCanonicalizing( array_keys( $this->global_settings() ), array_keys( $this->stored_settings() ), $name );
 	}
 
@@ -450,7 +450,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$stored = $this->stored_settings();
 		$this->assertSame( $expect_hide, $stored['hide_updates'] );
 		$this->assertSame( 'daily', $stored['frequency'] );
-		$this->assertSame( '13.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ) );
+		$this->assertSame( '14.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ) );
 	}
 
 	/**
@@ -502,7 +502,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		$this->assertArrayNotHasKey( 'notify_automatic', $this->stored_settings() );
 		$this->assertArrayNotHasKey( 'notify_automatic', sc_wpun()->network_context()->get_option( 'sc_wpun_settings' ) );
 		$this->assertSame( 'daily', sc_wpun()->network_context()->get_option( 'sc_wpun_settings' )['frequency'] );
-		$this->assertSame( '13.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ) );
+		$this->assertSame( '14.0', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' ) );
 	}
 
 	/**

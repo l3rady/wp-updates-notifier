@@ -11,7 +11,6 @@ use WPUN\Admin\Check_Now;
 use WPUN\Admin\Muted_Tab;
 use WPUN\Admin\Plugins_Screen_Mutes;
 use WPUN\Channel_Instance;
-use WPUN\Slack_Notice;
 
 require_once __DIR__ . '/class-wpun-security-test-case.php';
 
@@ -174,7 +173,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		foreach ( $this->actions() as $name => $action ) {
 			$this->assertArrayHasKey( 'admin_post_' . $action, $found, "Endpoint $name was not discovered." );
 		}
-		$this->assertCount( 13, $found, 'The plugin registers thirteen admin-post endpoints: ' . implode( ', ', array_keys( $found ) ) );
+		$this->assertCount( 12, $found, 'The plugin registers twelve admin-post endpoints: ' . implode( ', ', array_keys( $found ) ) );
 	}
 
 	/**
@@ -232,7 +231,6 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 	 */
 	private function actions(): array {
 		return array(
-			'dismiss'   => Slack_Notice::DISMISS_ACTION,
 			'test'      => Channels_Tab::TEST_ACTION,
 			'toggle'    => Channels_Tab::TOGGLE_ACTION,
 			'duplicate' => Channels_Tab::DUPLICATE_ACTION,
@@ -278,16 +276,6 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 
 		// The Plugins screen links bind the plugin file in `key`; the matrix passes it where it passes a channel id.
 		$specs = array(
-			$row(
-				$actions['dismiss'],
-				'POST',
-				$actions['dismiss'],
-				false,
-				array(),
-				function () {
-					$this->assertSame( '1', get_user_meta( self::$users['administrator'], Slack_Notice::DISMISS_META, true ), 'The notice was not dismissed.' );
-				}
-			),
 			$row(
 				$actions['test'],
 				'POST',

@@ -29,13 +29,6 @@ parameters:
 			reportUnmatched: true
 
 		-
-			message: '#^Unused WPUN\\Plugin\:\:slack_notice$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: ../../includes/class-plugin.php
-			reportUnmatched: true
-
-		-
 			message: '#^Unused WPUN\\Update_Checker\:\:last_notification$#'
 			identifier: shipmonk.deadMethod
 			count: 1

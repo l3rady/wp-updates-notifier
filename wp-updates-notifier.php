@@ -73,6 +73,7 @@ require_once __DIR__ . '/includes/class-autoloader.php';
 // Built-in notification modules.
 require_once __DIR__ . '/modules/email/email.php';
 require_once __DIR__ . '/modules/webhook/webhook.php';
+require_once __DIR__ . '/modules/slack/slack.php';
 
 // Only load class if it hasn't already been loaded.
 if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
@@ -221,7 +222,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 * Kept for backwards compatibility, and does nothing. Slack is a channel since 3.0.0; configure it on the Channels tab.
 		 *
 		 * @deprecated 2.0.0
 		 *
@@ -355,7 +356,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 * Kept for backwards compatibility, and does nothing. Slack is a channel since 3.0.0; configure it on the Channels tab.
 		 *
 		 * @deprecated 2.0.0
 		 *
@@ -422,7 +423,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 * Kept for backwards compatibility, and does nothing. Slack is a channel since 3.0.0; configure it on the Channels tab.
 		 *
 		 * @deprecated 2.0.0
 		 *
@@ -433,7 +434,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 * Kept for backwards compatibility, and does nothing. Slack is a channel since 3.0.0; configure it on the Channels tab.
 		 *
 		 * @deprecated 2.0.0
 		 *
@@ -444,7 +445,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 * Kept for backwards compatibility, and does nothing. Slack is a channel since 3.0.0; configure it on the Channels tab.
 		 *
 		 * @deprecated 2.0.0
 		 *
@@ -455,7 +456,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		}
 
 		/**
-		 * Kept for backwards compatibility: Slack notifications were removed in 2.0.0, so this does nothing.
+		 * Kept for backwards compatibility, and does nothing. Slack is a channel since 3.0.0; configure it on the Channels tab.
 		 *
 		 * @deprecated 2.0.0
 		 *

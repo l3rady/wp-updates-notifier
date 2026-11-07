@@ -22,6 +22,7 @@ Each new version is reported once, not on every check. Version 2.0.0 is a ground
 * Checks for core, plugin and theme updates hourly, twice daily, daily or weekly.
 * Tells you about each new version once, with optional reminders (daily, weekly or at every check) about updates you haven't installed yet.
 * Sends email to one or more addresses, with a test send to check it arrives.
+* Posts to Slack through an incoming webhook, with a message of blocks that lists each update with its links.
 * Sends a signed JSON webhook (the Standard Webhooks scheme) to Zapier, Make, n8n, Home Assistant or your own code, and tells the receiver when a reported update has been installed.
 * Lets you set up more than one email channel, each with its own recipients, its own choice of updates and its own reminders.
 * Can watch only the plugins and themes you have active.
@@ -102,6 +103,9 @@ Please don't post it in the support forum or in a public GitHub issue. Report it
 {{changelog}}
 
 == Upgrade Notice ==
+
+= 3.0.0 =
+Slack is back as a channel. If you had Slack switched on in 1.x, the first check after the update posts everything that is still waiting to your Slack webhook; a Slack setup that was switched off stays off. The notice about Slack no longer being supported is gone.
 
 = 2.0.0 =
 From 1.5 or 1.6: activate the plugin again after updating (main file renamed, settings kept). Slack is no longer supported; its settings are kept. WordPress's auto-update emails now go to the admin email. Emails have a new subject, the default From unless set, and no HTML entities.

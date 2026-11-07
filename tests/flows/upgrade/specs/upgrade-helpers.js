@@ -7,6 +7,11 @@ const NEW = 'wp-updates-notifier/wp-updates-notifier.php';
 // What reset.php stores, as 1.6.0 keeps it.
 const OWNER = 'owner@example.com';
 
+// What the stage mu-plugin recorded of the posts to Slack that it answered itself.
+async function slackPosts( request ) {
+	return JSON.parse( ( await h.wp( request, 'option', 'get', 'wpun_slack_posts', '--format=json' ).catch( () => '[]' ) ) || '[]' );
+}
+
 // The site as a real 1.6.0 user has it: 1.6.0 from WordPress.org, active and configured (email to OWNER, Slack on, a
 // daily check), the update check scheduled, an empty mailbox, and the 2.0.0 package offered as an update.
 async function freshSite( request ) {
@@ -63,7 +68,9 @@ async function expectUpdatedAndInactive( request ) {
 // sends to the address the user had.
 async function reactivateAndExpectSettingsKept( request, page ) {
 	// What the offer of the update left behind must not reach the 2.0.0 checks.
-	await h.wp( request, 'option', 'update', 'wpun_upgrade_stage', '{"fake":true}', '--format=json' );
+	await h.wp( request, 'option', 'update', 'wpun_upgrade_stage', '{"fake":true,"slack":true}', '--format=json' );
+	// Forget the posts 1.6.0 made on its own checks: only the runs of this version are counted below.
+	await h.wp( request, 'option', 'delete', 'wpun_slack_posts' ).catch( () => '' );
 	// 1.6.0's event is still in the cron table, as on a real site. It is kept, not removed, so what 2.0.0 does with it
 	// is what is tested.
 	const before = await checkEvents( request );
@@ -91,29 +98,35 @@ async function reactivateAndExpectSettingsKept( request, page ) {
 	expect( after.events[ 0 ].time ).toBeLessThanOrEqual( after.now + 86400 );
 	expect( after.events[ 0 ].time, 'the existing event is kept' ).toBe( before.events[ 0 ].time );
 
-	// The settings screen shows the Slack notice, and the channel list the migrated email channel.
+	// The settings screen has no notice about Slack any more, and the channel list shows the migrated channels.
 	await page.goto( h.SETTINGS );
-	await expect( page.locator( '.sc-wpun-slack-notice' ) ).toContainText( 'Slack notifications are no longer supported' );
+	await expect( page.locator( '.sc-wpun-slack-notice' ) ).toHaveCount( 0 );
 	await page.goto( h.CHANNELS );
 	await expect( h.channelRow( page, 'Email' ).locator( '.sc-wpun-state' ) ).toHaveText( 'On' );
+	await expect( h.channelRow( page, 'Slack' ).locator( '.sc-wpun-state' ) ).toHaveText( 'On' );
 
-	// A real run: the update email goes to the migrated address, and so does the Slack notice, once.
+	// A real run: the update email goes to the migrated address, and no other email is sent (the notice about Slack is
+	// gone). Slack is delivered to as well; the stage mu-plugin answers `ok` and records the post, so CI never posts to
+	// the real Slack.
 	await h.runCheck( request );
-	const mails = await h.waitForMail( request, 2 );
-	const update = mails.find( ( m ) => /updates available/.test( m.Subject ) );
-	const slack = mails.find( ( m ) => /Slack notifications are no longer supported/.test( m.Subject ) );
-	expect( update, 'the update email' ).toBeTruthy();
-	expect( slack, 'the one-time Slack email' ).toBeTruthy();
-	expect( h.recipients( update ) ).toEqual( [ OWNER ] );
-	expect( h.recipients( slack ) ).toEqual( [ OWNER ] );
-	expect( update.Text ).toContain( 'Example Contact Forms from version 3.4.1 to 3.5.0' );
+	const mails = await h.waitForMail( request, 1 );
+	expect( mails[ 0 ].Subject ).toMatch( /updates available/ );
+	expect( h.recipients( mails[ 0 ] ) ).toEqual( [ OWNER ] );
+	expect( mails[ 0 ].Text ).toContain( 'Example Contact Forms from version 3.4.1 to 3.5.0' );
+	const posts = await slackPosts( request );
+	expect( posts, 'one post to Slack' ).toHaveLength( 1 );
+	expect( posts[ 0 ].url ).toBe( 'https://hooks.slack.com/services/T000/B000/XXXX' );
+	const body = JSON.parse( posts[ 0 ].body );
+	expect( body.channel ).toBe( '#updates' );
+	expect( JSON.stringify( body.blocks ) ).toContain( 'Example Contact Forms' );
 
-	// The next run sends neither again.
+	// The next run sends nothing again, and the state has no mark of the retired notice.
 	await h.clearMail( request );
 	await h.runCheck( request );
 	await h.expectNoMail( request );
+	expect( await slackPosts( request ), 'Slack is not posted to again' ).toHaveLength( 1 );
 	const state = JSON.parse( await h.wp( request, 'option', 'get', 'sc_wpun_state', '--format=json' ) );
-	expect( state.slack_notice_sent ).toBe( true );
+	expect( state ).not.toHaveProperty( 'slack_notice_sent' );
 	await expectNoFatal( request );
 }
 

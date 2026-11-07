@@ -59,7 +59,7 @@ class Test_Site_Health extends WPUN_Test_Case {
 	private function site_health( $disabled ) {
 		$plugin = sc_wpun();
 
-		return new class( $plugin->settings(), $plugin->state(), $plugin->channel_store(), $plugin->channels(), new WPUN\Config_Report( $plugin->config(), $plugin->settings(), $plugin->channel_store() ), $plugin->status_report(), $disabled ) extends Site_Health {
+		return new class( $plugin->settings(), $plugin->state(), $plugin->channel_store(), new WPUN\Config_Report( $plugin->config(), $plugin->settings(), $plugin->channel_store() ), $plugin->status_report(), $disabled ) extends Site_Health {
 			/**
 			 * Whether DISABLE_WP_CRON is set.
 			 *
@@ -70,16 +70,15 @@ class Test_Site_Health extends WPUN_Test_Case {
 			/**
 			 * Constructor.
 			 *
-			 * @param WPUN\Settings         $settings Settings.
-			 * @param WPUN\State            $state    State.
-			 * @param WPUN\Channel_Store    $store    Instances.
-			 * @param WPUN\Channel_Registry $registry Modules.
-			 * @param WPUN\Config_Report    $config   Configuration report.
-			 * @param WPUN\Status_Report    $report   Report.
-			 * @param bool                  $disabled Whether DISABLE_WP_CRON is set.
+			 * @param WPUN\Settings      $settings Settings.
+			 * @param WPUN\State         $state    State.
+			 * @param WPUN\Channel_Store $store    Instances.
+			 * @param WPUN\Config_Report $config   Configuration report.
+			 * @param WPUN\Status_Report $report   Report.
+			 * @param bool               $disabled Whether DISABLE_WP_CRON is set.
 			 */
-			public function __construct( $settings, $state, $store, $registry, $config, $report, $disabled ) {
-				parent::__construct( $settings, $state, $store, $registry, $config, $report );
+			public function __construct( $settings, $state, $store, $config, $report, $disabled ) {
+				parent::__construct( $settings, $state, $store, $config, $report );
 				$this->disabled = $disabled;
 			}
 
@@ -352,13 +351,25 @@ class Test_Site_Health extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A Slack instance is left to the Slack test while there is no Slack module.
+	 * Slack is a channel like any other: a stored instance with a module is fine, and there is no test of its own.
 	 */
-	public function test_channel_modules_leaves_slack_to_its_own_test() {
-		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', 'Slack', true ) );
+	public function test_slack_has_no_test_of_its_own() {
+		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', 'Slack', true, array( 'webhook_url' => 'https://hooks.slack.com/services/T000/B000/XXXX' ) ) );
 
 		$this->assertSame( 'good', $this->result( 'sc_wpun_channel_modules' )['status'] );
-		$this->assertNotNull( $this->result( 'sc_wpun_slack' ), 'The Slack test reports it.' );
+		$this->assertNull( $this->result( 'sc_wpun_slack' ), 'The notice about Slack is gone.' );
+	}
+
+	/**
+	 * An enabled instance whose module is gone is listed, whatever its type.
+	 */
+	public function test_an_instance_without_its_module_is_listed() {
+		sc_wpun_channels()->save( new Channel_Instance( 'retired', 'retired', 'Retired', true ) );
+
+		$result = $this->result( 'sc_wpun_channel_modules' );
+
+		$this->assertSame( 'recommended', $result['status'] );
+		$this->assertStringContainsString( 'retired', $result['description'] );
 	}
 
 	/**

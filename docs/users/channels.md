@@ -1,6 +1,6 @@
 # Channels
 
-A channel is a place where notifications are sent. WP Updates Notifier comes with two kinds, **Email** and **Webhook**. You can have as many channels as you like, for example one that sends everything to you and another that sends only WordPress updates to a client.
+A channel is a place where notifications are sent. WP Updates Notifier comes with three kinds, **Email**, **Slack** and **Webhook**. You can have as many channels as you like, for example one that sends everything to you and another that sends only WordPress updates to a client.
 
 Open them on the **Channels** tab of **Settings → Updates Notifier**. The table shows, for each channel:
 
@@ -15,9 +15,9 @@ A test message does not count as a delivery, so it never changes **Last delivery
 ## Add a channel
 
 1. Click **Add channel**.
-2. Choose a module from the list: **Email** or **Webhook**.
+2. Choose a module from the list: **Email**, **Slack** or **Webhook**.
 3. Give it a **Label**. The channel's id is made from the label when you save it and cannot be changed afterwards.
-4. Fill in the settings (see [the email options](#the-email-options) or [the webhook options](#the-webhook-channel)) and choose its [routing](#choose-what-each-channel-receives).
+4. Fill in the settings (see [the email options](#the-email-options), [the Slack channel](#the-slack-channel) or [the webhook options](#the-webhook-channel)) and choose its [routing](#choose-what-each-channel-receives).
 5. Click **Add channel**.
 
 On the form, **Enabled** is **Send notifications through this channel**. Untick it to save the channel without using it yet.
@@ -96,6 +96,62 @@ Below the options, **Preview** shows the recipients, the subject and the body of
 The subject is "WP Updates Notifier: updates available for" followed by your site name. With the prefix `[Client]` it becomes "[Client] WP Updates Notifier: updates available for My Site".
 
 Why the From address matters is covered under [Why does the email not arrive?](troubleshooting.md#why-does-the-email-not-arrive).
+
+## The Slack channel
+
+A Slack channel posts each notification to a Slack channel through an **incoming webhook**. The message has a header, a list of the updates grouped as WordPress, Plugins and Themes (each with its versions, links and notes), and links to the Updates screen and to your site. A long list is cut off with a line such as "…and 12 more".
+
+### Create the incoming webhook in Slack
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) and create an app for your workspace, or choose one you have.
+2. Under **Features**, open **Incoming Webhooks** and turn them on.
+3. Click **Add New Webhook to Workspace**, choose the channel the messages should go to, and allow it.
+4. Copy the **Webhook URL**. It starts with `https://hooks.slack.com/services/`.
+5. In WP Updates Notifier, add a Slack channel, paste the address into **Webhook address** and use **Send test** to see a message arrive.
+
+### The Slack options
+
+| Option | What it does |
+| --- | --- |
+| **Webhook address** | Required. The address Slack gave you. It must start with `https://` and be on an allowed host (see [the allowlist](#the-allowlist-of-hosts)). It holds the token, so it is kept secret: the form never shows it again, and changing it means pasting it again. |
+
+The **Name, icon and channel** group is closed until you open it. Only legacy webhooks honour these options. The webhook of a Slack app always posts as the app, to the channel chosen when the webhook was created, and ignores them.
+
+| Option | What it does |
+| --- | --- |
+| **Channel** | Optional. A channel such as `#ops`, or `@name` for a direct message. |
+| **Name to post as** | Optional. The name the messages come from. |
+| **Icon** | Optional. An emoji written like `:robot_face:`, or the `https://` address of an image. |
+
+Each option is sent only when you set it. Like the other channels, the Slack options can be set in code, for example `SC_WPUN_CHANNEL_<ID>__WEBHOOK_URL`. See [Settings in code](settings-in-code.md).
+
+### The allowlist of hosts
+
+The webhook address must be `https` and its host must be `hooks.slack.com` or `hooks.slack-gov.com` (GovSlack). The plugin checks this when you save the channel and again before every message, so an address set in code is checked too. A site behind an egress proxy, or one that uses a service that accepts Slack's format, adds its host with the `sc_wpun_slack_allowed_hosts` filter:
+
+```php
+add_filter(
+	'sc_wpun_slack_allowed_hosts',
+	function ( $hosts ) {
+		$hosts[] = 'slack-proxy.example.org';
+		return $hosts;
+	}
+);
+```
+
+A host matches when it is the same as one in the list, ignoring case. `*.example.org` is not a pattern. See the [hook reference](../developers/hooks.md#sc_wpun_slack_allowed_hosts).
+
+### When Slack refuses a message
+
+**Last delivery** on the Channels tab, and **Tools → Site Health**, show the reason. Slack answers with a short word, and the plugin turns it into a message you can act on, for example `no_service` (the webhook was deleted or its app removed: create a new one and save its address), `channel_not_found` or `channel_is_archived` (check the **Channel** option) and `action_prohibited` (a Slack administrator blocked the webhook). The webhook address never appears in these messages.
+
+### If you used Slack with version 1.x
+
+The Slack settings of 1.x became a channel with the id `slack`, kept through version 2.0.0 without sending anything. From version 3.0.0 the Slack module delivers to it again, with no reconfiguration:
+
+- A Slack channel that was **switched on** posts at the first check after the update, with everything that is still waiting.
+- A Slack channel that was **switched off** stays off.
+- If the webhook was deleted in Slack in the meantime, the first delivery fails with the `no_service` message. The Channels tab and Site Health show it like any other failure. Create a new webhook and save its address.
 
 ## The webhook channel
 

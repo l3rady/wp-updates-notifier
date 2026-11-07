@@ -232,11 +232,11 @@ class Test_Network_Context extends WPUN_Test_Case {
 		$this->assertSame( 'weekly', get_site_option( 'sc_wpun_settings' )['frequency'] );
 		$this->assertSame( 'weekly', $plugin->settings()->read_option( Settings::OPT_FIELD )['frequency'] );
 
-		$state                      = $plugin->state()->get();
-		$state['slack_notice_sent'] = true;
+		$state                    = $plugin->state()->get();
+		$state['last_check_time'] = 1700000000;
 		$plugin->state()->save( $state );
-		$this->assertTrue( get_site_option( 'sc_wpun_state' )['slack_notice_sent'] );
-		$this->assertTrue( $plugin->state()->get()['slack_notice_sent'] );
+		$this->assertSame( 1700000000, get_site_option( 'sc_wpun_state' )['last_check_time'] );
+		$this->assertSame( 1700000000, $plugin->state()->get()['last_check_time'] );
 
 		$plugin->channel_store()->save( new Channel_Instance( 'one', 'test', 'Label', true, array( 'key' => 'value' ), array( 'types' => array( 'core' ) ) ) );
 		$this->assertArrayHasKey( 'one', get_site_option( 'sc_wpun_channels' ) );

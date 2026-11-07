@@ -526,7 +526,7 @@ add_filter(
 | `$hidden` | `int` | How many items were left out. |
 | `$notification` | `Notification` | The notification, with all its items. |
 
-Fired in `includes/class-notification-renderer.php`.
+Fired in `includes/class-notification-renderer.php`, `modules/slack/class-slack-message.php`.
 
 ### `sc_wpun_notification_deferred`
 
@@ -909,6 +909,34 @@ add_action(
 | `$registry` | `Channel_Registry` | The registry to register channels with. |
 
 Fired in `includes/class-channel-registry.php`.
+
+### `sc_wpun_slack_allowed_hosts`
+
+*Filter*, since 3.0.0
+
+Filters the host names a Slack webhook address may have.
+
+The list is checked when the settings are saved and again before every request.
+A host is allowed when it is the same as one in the list, ignoring case; `*.example.org` is not a pattern.
+The port and any user name in the address do not count. Only https addresses are accepted.
+
+Example, also allow a proxy:
+
+```php
+add_filter(
+    'sc_wpun_slack_allowed_hosts',
+    function ( $hosts ) {
+        $hosts[] = 'slack-proxy.example.org';
+        return $hosts;
+    }
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$hosts` | `string[]` | Host names, by default `hooks.slack.com` and `hooks.slack-gov.com`. |
+
+Fired in `modules/slack/class-slack-channel.php`.
 
 ## Configuration
 

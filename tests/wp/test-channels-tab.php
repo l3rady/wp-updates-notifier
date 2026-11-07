@@ -54,7 +54,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	 * Remove what tests registered.
 	 */
 	public function tear_down() {
-		foreach ( array( 'slack', 'test', 'test_secret' ) as $type ) {
+		foreach ( array( 'retired', 'test', 'test_secret' ) as $type ) {
 			sc_wpun()->channels()->unregister( $type );
 		}
 		sc_wpun()->config()->flush();
@@ -162,12 +162,12 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Store an instance of the 1.x Slack channel, whose module 2.0.0 does not ship.
+	 * Store an instance whose module is gone, as a site keeps one when it removes the add-on that provided it.
 	 */
-	private function store_slack() {
-		sc_wpun()->channels()->register( new Test_Channel( 'slack' ) );
-		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', 'Slack', true, array( 'webhook_url' => 'https://hooks.slack.com/services/T000/B000/XXXX' ) ) );
-		sc_wpun()->channels()->unregister( 'slack' );
+	private function store_retired() {
+		sc_wpun()->channels()->register( new Test_Channel( 'retired' ) );
+		sc_wpun_channels()->save( new Channel_Instance( 'retired', 'retired', 'Retired', true, array( 'webhook_url' => 'https://example.org/hook' ) ) );
+		sc_wpun()->channels()->unregister( 'retired' );
 	}
 
 	/**
@@ -364,16 +364,16 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	 * An instance whose module is not registered is not listed, and every action treats it as missing.
 	 */
 	public function test_an_unavailable_instance_is_hidden_and_untouched() {
-		$this->store_slack();
-		$this->assertTrue( sc_wpun_channels()->has( 'slack' ) );
+		$this->store_retired();
+		$this->assertTrue( sc_wpun_channels()->has( 'retired' ) );
 		$stored = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
 		$xpath  = $this->tab();
 
-		$this->assertSame( 0, $xpath->query( '//tr[@data-id="slack"]' )->length );
+		$this->assertSame( 0, $xpath->query( '//tr[@data-id="retired"]' )->length );
 		$this->assertSame( 1, $xpath->query( '//tr[@data-id]' )->length );
 
 		foreach ( $this->actions() as $action => $methods ) {
-			$this->post( $action, 'slack' );
+			$this->post( $action, 'retired' );
 			reset_phpmailer_instance();
 			$this->assertTrue( sc_wpun()->channels_tab()->{$methods[0]}(), $action );
 			$notice = $this->notice();
@@ -384,7 +384,7 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		}
 
 		$_GET['action'] = 'delete';
-		$_GET['id']     = 'slack';
+		$_GET['id']     = 'retired';
 		$xpath          = $this->tab();
 		$this->assertSame( 0, $xpath->query( '//*[contains(@class,"sc-wpun-confirm-delete")]' )->length );
 		$this->assertStringContainsString( 'There is no such channel.', $xpath->document->textContent );

@@ -27,7 +27,7 @@ The date is when the decision was made, not when the record was written.
 | [0003](0003-rename-main-file-without-a-migration-stub.md) | Rename the main file without a migration stub | Accepted | 2026-10-17 |
 | [0004](0004-public-module-api-and-dogfooding.md) | A public, versioned module API, used by the built-in modules | Accepted | 2026-10-12 |
 | [0005](0005-settings-state-and-channels-in-separate-options.md) | Keep settings, run state and channels in separate options | Accepted | 2026-10-12 |
-| [0006](0006-drop-slack-in-2-0-0-and-keep-its-settings.md) | Drop Slack in 2.0.0 and keep its settings | Accepted | 2026-10-14 |
+| [0006](0006-drop-slack-in-2-0-0-and-keep-its-settings.md) | Drop Slack in 2.0.0 and keep its settings | Superseded by 0028 | 2026-10-14 |
 | [0007](0007-settings-and-secrets-from-outside-the-database.md) | Allow settings and secrets from outside the database | Accepted | 2026-10-12 |
 | [0008](0008-single-sites-only-in-2-0-0.md) | Support single sites only in 2.0.0 | Superseded by 0021 | 2026-10-17 |
 | [0009](0009-no-lock-against-overlapping-update-checks.md) | No lock against overlapping update checks | Accepted | 2026-10-18 |
@@ -49,3 +49,4 @@ The date is when the decision was made, not when the record was written.
 | [0025](0025-deferred-delivery-result-held-until.md) | A deferred delivery result, held in its own state | Accepted | 2026-11-01 |
 | [0026](0026-field-groups-and-conditional-fields-without-javascript.md) | Field groups and conditional fields, without JavaScript | Accepted | 2026-11-01 |
 | [0027](0027-webhook-signing-follows-standard-webhooks.md) | Webhook signing follows Standard Webhooks | Accepted | 2026-11-02 |
+| [0028](0028-bring-back-slack-as-a-built-in-module.md) | Bring back Slack as a built-in module | Accepted | 2026-11-07 |

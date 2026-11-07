@@ -19,5 +19,6 @@ If you are changing the plugin itself rather than extending it, the [contributor
 
 - [`examples/wpun-example-channel/`](https://github.com/l3rady/wp-updates-notifier/tree/main/examples/wpun-example-channel/): a complete, minimal channel add-on to copy. CI runs its tests ([`tests/wp/test-example-channel.php`](https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php)) and checks it uses only the public API.
 - [`modules/email/`](https://github.com/l3rady/wp-updates-notifier/tree/main/modules/email/): the built-in email channel, written like any add-on.
+- [`modules/slack/`](https://github.com/l3rady/wp-updates-notifier/tree/main/modules/slack/): the built-in Slack channel, which posts Block Kit messages to an incoming webhook and checks the host of the address against an allowlist.
 - [`modules/webhook/`](https://github.com/l3rady/wp-updates-notifier/tree/main/modules/webhook/): the built-in webhook channel, the reference for an HTTP channel.
 - [`tests/fixtures/plugins/wpun-test-addon/`](https://github.com/l3rady/wp-updates-notifier/tree/main/tests/fixtures/plugins/wpun-test-addon/): the add-on the test suite uses to exercise every extension point.

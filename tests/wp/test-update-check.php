@@ -243,9 +243,9 @@ class Test_Update_Check extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A stored, enabled Slack instance is kept but never posted to; the email still goes out.
+	 * A stored, enabled Slack instance is posted to, next to the email.
 	 */
-	public function test_a_stored_slack_instance_gets_no_request_and_email_still_sends() {
+	public function test_a_stored_slack_instance_is_posted_to_and_email_still_sends() {
 		$this->save_settings(
 			array(
 				'slack_notifications'    => 1,
@@ -253,12 +253,17 @@ class Test_Update_Check extends WPUN_Test_Case {
 				'slack_channel_override' => '#ops',
 			)
 		);
+		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) );
 		$this->set_updates( '99.0.0' );
 
 		$this->plugin()->do_update_check();
 
-		$this->assertCount( 0, $this->requests_to( 'hooks.slack.com' ) );
+		$requests = $this->requests_to( 'hooks.slack.com' );
+		$this->assertCount( 1, $requests );
+		$this->assertSame( self::SLACK_URL, $requests[0]['url'] );
+		$this->assertSame( '#ops', json_decode( $requests[0]['args']['body'], true )['channel'] );
 		$this->assertSame( 1, $this->sent_mail_count() );
+		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core', 'slack' ) );
 		$this->assertSame( self::SLACK_URL, sc_wpun_channels()->get( 'slack' )->get_setting( 'webhook_url' ) );
 	}
 
@@ -284,15 +289,11 @@ class Test_Update_Check extends WPUN_Test_Case {
 	}
 
 	/**
-	 * An unavailable Slack instance is not a delivery: with the email failing too, nothing is recorded and the next run retries.
+	 * An instance whose module is missing is not a delivery: with the email failing too, nothing is recorded and the next run retries.
 	 */
 	public function test_an_unavailable_instance_does_not_count_as_delivered() {
-		$this->save_settings(
-			array(
-				'slack_notifications' => 1,
-				'slack_webhook_url'   => self::SLACK_URL,
-			)
-		);
+		$this->save_settings();
+		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'retired', 'retired', 'Retired', true ) );
 		$this->set_updates( '99.0.0' );
 		add_filter( 'pre_wp_mail', '__return_false' );
 

@@ -11,7 +11,7 @@
 class Test_Uninstall extends WPUN_Test_Case {
 
 	/**
-	 * A user who dismissed the Slack notice.
+	 * A user who dismissed the notice that 2.x showed about Slack.
 	 *
 	 * @var int
 	 */

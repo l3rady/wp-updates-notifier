@@ -4,9 +4,9 @@
  * `wp --skip-plugins eval-file reset.php`, so no plugin code is loaded while its files are replaced.
  *
  * Restores the pristine copy of 1.6.0 that setup.sh installed from WordPress.org, forgets everything an earlier test
- * left (options, cron, update leftovers, the Slack notice), sets the 1.x settings a real site has (an address to notify, a
+ * left (options, cron, update leftovers, the Slack posts the stage mu-plugin recorded), sets the 1.x settings a real site has (an address to notify, a
  * From address, Slack on with a webhook, a daily check) and tells the stage mu-plugin to offer
- * the 2.0.0 package as an update and to use the fake pending updates. The test then activates 1.6.0 with `wp plugin activate`, which schedules its cron event as on a
+ * the 2.0.0 package as an update, to use the fake pending updates and to answer the posts to Slack itself. The test then activates 1.6.0 with `wp plugin activate`, which schedules its cron event as on a
  * real site (with --skip-plugins here, its hooks are not loaded).
  *
  * @package wp-updates-notifier
@@ -34,7 +34,7 @@ if ( file_exists( WP_CONTENT_DIR . '/debug.log' ) ) {
 
 // Everything the plugin (either version) and the updater store.
 update_option( 'active_plugins', array( 'example-contact-forms/example-contact-forms.php', 'example-gallery/example-gallery.php' ) );
-foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_channels', 'sc_wpun_state', 'auto_update_plugins', 'recently_activated', 'wpun_upgrade_stage', 'cron' ) as $wpun_option ) {
+foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_channels', 'sc_wpun_state', 'auto_update_plugins', 'recently_activated', 'wpun_upgrade_stage', 'wpun_slack_posts', 'cron' ) as $wpun_option ) {
 	delete_option( $wpun_option );
 }
 delete_site_transient( 'update_plugins' );
@@ -63,6 +63,7 @@ update_option(
 	'wpun_upgrade_stage',
 	array(
 		'fake'    => true,
+		'slack'   => true,
 		'package' => home_url( '/wp-content/uploads/wpun-upgrade/wp-updates-notifier.zip' ),
 	)
 );

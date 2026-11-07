@@ -15,6 +15,7 @@ The plugin's website, with the documentation, is at **<https://wpun.cariss.dev>*
 - Checks on a schedule (hourly, twice daily, daily or weekly) and tells you about each new version once.
 - Core, plugin and theme updates, optionally only for active plugins and themes.
 - Email to one or more addresses.
+- Slack, through an incoming webhook.
 - A signed JSON webhook for Zapier, Make, n8n, Home Assistant or your own code, which also says when a reported update has been installed.
 - Hooks for developers to change what is checked and what is sent.
 

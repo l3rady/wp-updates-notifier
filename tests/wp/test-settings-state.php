@@ -124,22 +124,25 @@ class Test_Settings_State extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Slack sends nothing any more, so an enabled Slack instance alone delivers nothing and nothing is recorded.
+	 * An enabled Slack instance alone delivers, and what it delivered is recorded for it.
 	 */
-	public function test_a_slack_instance_alone_delivers_nothing() {
+	public function test_a_slack_instance_alone_delivers() {
 		$this->save_settings(
 			array(
 				'email_notifications' => 0,
 				'slack_notifications' => 1,
-				'slack_webhook_url'   => 'https://hooks.slack.com/services/T/B/X',
+				'slack_webhook_url'   => 'https://hooks.slack.com/services/T000/B000/XXXX',
 			)
 		);
+		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) );
 		$this->set_updates( '99.0.0' );
 
 		$this->plugin()->do_update_check();
 
-		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
-		$this->assertCount( 0, $this->requests_to( 'hooks.slack.com' ) );
+		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core', 'slack' ) );
+		$this->assertSame( '', $this->notified_version( 'core', 'core' ), 'Email is off and records nothing.' );
+		$this->assertCount( 1, $this->requests_to( 'hooks.slack.com' ) );
+		$this->assertSame( 0, $this->sent_mail_count() );
 	}
 
 	/**

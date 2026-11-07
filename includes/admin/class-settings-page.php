@@ -19,7 +19,6 @@ use WPUN\Network_Context;
 use WPUN\Plugin;
 use WPUN\Scheduler;
 use WPUN\Settings;
-use WPUN\Slack_Notice;
 use WPUN\State;
 
 /**
@@ -46,13 +45,6 @@ class Settings_Page {
 	 * @var State
 	 */
 	private $state;
-
-	/**
-	 * The notice about Slack no longer being supported.
-	 *
-	 * @var Slack_Notice
-	 */
-	private $slack_notice;
 
 	/**
 	 * Report of configuration problems.
@@ -115,7 +107,6 @@ class Settings_Page {
 	 *
 	 * @param Settings             $settings  Settings.
 	 * @param State                $state     Run state.
-	 * @param Slack_Notice         $slack_notice Notice about Slack no longer being supported.
 	 * @param Config_Report        $config_report Report of configuration problems.
 	 * @param Rejected_Channels    $rejected_channels Report of modules refused for needing a newer API.
 	 * @param Channels_Tab         $channels_tab The Channels tab.
@@ -125,10 +116,9 @@ class Settings_Page {
 	 * @param Muted_Tab            $muted_tab The Muted tab.
 	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Settings $settings, State $state, Slack_Notice $slack_notice, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab, ?Network_Context $network_context = null ) {
+	public function __construct( Settings $settings, State $state, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab, ?Network_Context $network_context = null ) {
 		$this->settings          = $settings;
 		$this->state             = $state;
-		$this->slack_notice      = $slack_notice;
 		$this->config_report     = $config_report;
 		$this->rejected_channels = $rejected_channels;
 		$this->channels_tab      = $channels_tab;
@@ -493,7 +483,6 @@ class Settings_Page {
 				settings_errors();
 			}
 			?>
-			<?php $this->slack_notice->render(); ?>
 			<?php $this->config_report->render(); ?>
 			<?php $this->rejected_channels->render(); ?>
 			<?php $this->notices->render(); ?>

@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Settings {
 	const OPT_FIELD         = 'sc_wpun_settings';
 	const OPT_VERSION_FIELD = 'sc_wpun_settings_ver';
-	const OPT_VERSION       = '13.0';
+	const OPT_VERSION       = '14.0';
 
 	/**
 	 * What the notify settings were stored as before settings version 10: 0 none, 1 all, 2 active only.
@@ -139,6 +139,9 @@ class Settings {
 				$this->migrate_channels( $options, intval( $current_ver ) );
 			}
 
+			// Settings version 14 retired the notice about Slack not being supported, now that Slack is a channel again.
+			$this->remove_slack_notice_leftovers();
+
 			// Intersect current options with defaults. Basically removing settings that are obsolete.
 			$options = array_intersect_key( $options, $defaults );
 			// Merge current settings with defaults. Basically adding any new settings with defaults that we dont have.
@@ -146,6 +149,22 @@ class Settings {
 			$this->write_option( self::OPT_FIELD, $options ); // update settings.
 			$this->write_option( self::OPT_VERSION_FIELD, self::OPT_VERSION ); // update settings version.
 		}
+	}
+
+	/**
+	 * Remove what the retired notice about Slack left: its mark in the run state and the dismissals stored for each user.
+	 *
+	 * The state is only saved again when it has the mark, and normalise() leaves the mark out.
+	 *
+	 * @return void
+	 */
+	private function remove_slack_notice_leftovers(): void {
+		$stored_state = $this->context->get_option( State::OPT_FIELD );
+		if ( is_array( $stored_state ) && array_key_exists( 'slack_notice_sent', $stored_state ) ) {
+			$this->state->save( $this->state->normalise( $stored_state ) );
+		}
+
+		delete_metadata( 'user', 0, 'sc_wpun_dismissed_slack_notice', '', true );
 	}
 
 	/**

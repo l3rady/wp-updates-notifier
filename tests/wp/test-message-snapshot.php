@@ -23,7 +23,7 @@ class Test_Message_Snapshot extends WPUN_Test_Case {
 	protected $network_activated = false;
 
 	/**
-	 * A site with the email channel on and Slack settings kept from before.
+	 * A site with the email channel on.
 	 */
 	public function set_up() {
 		parent::set_up();

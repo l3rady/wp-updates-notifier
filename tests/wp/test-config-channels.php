@@ -307,7 +307,27 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	 * An instance whose channel is not registered resolves only the enabled switch.
 	 */
 	public function test_an_unregistered_type_resolves_only_enabled() {
-		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', 'Slack', false, array( 'webhook_url' => 'https://stored.example.org' ) ) );
+		sc_wpun_channels()->save( new Channel_Instance( 'retired', 'retired', 'Retired', false, array( 'webhook_url' => 'https://stored.example.org' ) ) );
+		$this->add_source(
+			array(
+				'SC_WPUN_CHANNEL_RETIRED__ENABLED'     => '1',
+				'SC_WPUN_CHANNEL_RETIRED__WEBHOOK_URL' => 'https://hooks.example.org/secret',
+			)
+		);
+
+		$retired = sc_wpun_channels()->get( 'retired' );
+
+		$this->assertTrue( $retired->is_enabled() );
+		$this->assertSame( 'https://stored.example.org', $retired->get_setting( 'webhook_url' ) );
+	}
+
+	/**
+	 * A Slack address supplied from outside is checked against the allowlist like a saved one: a host that is not on it is
+	 * rejected, the stored value is kept, the problem names the key and not the value, and nothing is posted.
+	 */
+	public function test_a_slack_address_from_outside_must_be_on_the_allowlist() {
+		$stored = 'https://hooks.slack.com/services/T000/B000/XXXX';
+		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', 'Slack', false, array( 'webhook_url' => $stored ) ) );
 		$this->add_source(
 			array(
 				'SC_WPUN_CHANNEL_SLACK__ENABLED'     => '1',
@@ -317,8 +337,45 @@ class Test_Config_Channels extends WPUN_Test_Case {
 
 		$slack = sc_wpun_channels()->get( 'slack' );
 
-		$this->assertTrue( $slack->is_enabled() );
-		$this->assertSame( 'https://stored.example.org', $slack->get_setting( 'webhook_url' ) );
+		$this->assertTrue( $slack->is_enabled(), 'The switch is not a rejected value.' );
+		$this->assertSame( $stored, $slack->get_setting( 'webhook_url' ), 'The rejected value is put back.' );
+		$this->assertSame( array( 'SC_WPUN_CHANNEL_SLACK__WEBHOOK_URL' ), sc_wpun_channels()->problems( 'slack' ) );
+		$this->assertStringNotContainsString( 'hooks.example.org', wp_json_encode( sc_wpun()->config()->problems() ) );
+
+		$results = $this->run_check();
+
+		$this->assertSame( 'misconfigured', $results['slack']->get_code() );
+		$this->assertStringContainsString( 'SC_WPUN_CHANNEL_SLACK__WEBHOOK_URL', $results['slack']->get_message() );
+		$this->assertStringNotContainsString( 'hooks.example.org', $results['slack']->get_message() );
+		$this->assertCount( 0, $this->requests_to( 'hooks.' ) );
+	}
+
+	/**
+	 * A Slack address supplied from outside on an allowed host is used.
+	 */
+	public function test_a_slack_address_from_outside_on_an_allowed_host_is_used() {
+		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', 'Slack', true, array( 'webhook_url' => 'https://hooks.slack.com/services/T000/B000/XXXX' ) ) );
+		$this->add_source( array( 'SC_WPUN_CHANNEL_SLACK__WEBHOOK_URL' => 'https://hooks.slack-gov.com/services/T000/B000/XXXX' ) );
+
+		$this->assertSame( 'https://hooks.slack-gov.com/services/T000/B000/XXXX', sc_wpun_channels()->get( 'slack' )->get_setting( 'webhook_url' ) );
+		$this->assertSame( array(), sc_wpun_channels()->problems( 'slack' ) );
+	}
+
+	/**
+	 * The allowlist filter widens what an address from outside may be.
+	 */
+	public function test_the_allowlist_filter_applies_to_an_address_from_outside() {
+		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', 'Slack', true, array( 'webhook_url' => 'https://hooks.slack.com/services/T000/B000/XXXX' ) ) );
+		add_filter(
+			'sc_wpun_slack_allowed_hosts',
+			static function ( $hosts ) {
+				$hosts[] = 'hooks.example.org';
+				return $hosts;
+			}
+		);
+		$this->add_source( array( 'SC_WPUN_CHANNEL_SLACK__WEBHOOK_URL' => 'https://hooks.example.org/secret' ) );
+
+		$this->assertSame( 'https://hooks.example.org/secret', sc_wpun_channels()->get( 'slack' )->get_setting( 'webhook_url' ) );
 	}
 
 	/**

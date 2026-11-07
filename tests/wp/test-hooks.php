@@ -214,15 +214,10 @@ class Test_Hooks extends WPUN_Test_Case {
 		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_email' );
 		$_POST['id']       = 'email';
 		$this->assertTrue( sc_wpun()->channels_tab()->process_test_send() );
-		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
-		$this->assertTrue( sc_wpun()->slack_notice()->dismiss_request() );
 
 		wp_set_current_user( $author );
 		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_email' );
-		$_GET['_wpnonce']  = wp_create_nonce( 'sc_wpun_dismiss_slack_notice' );
 		$this->assertFalse( sc_wpun()->channels_tab()->process_test_send() );
-		$this->assertFalse( sc_wpun()->slack_notice()->dismiss_request() );
-		unset( $_GET['_wpnonce'] );
 
 		remove_all_filters( 'sc_wpun_capability' );
 		add_filter( 'sc_wpun_capability', '__return_empty_string' );
@@ -768,7 +763,7 @@ class Test_Hooks extends WPUN_Test_Case {
 	 * Booting registers each hook of the plugin at its priority, so the cron, the delivery state and the checks are wired.
 	 */
 	public function test_boot_registers_the_hooks() {
-		$this->clear_hooks( array( 'switch_blog', 'site_status_tests', 'debug_information', 'sc_wpun_channel_deleted', 'sc_wpun_notification_sent', 'sc_wpun_notification_failed', 'sc_wpun_enable_cron', 'sc_wpun_disable_cron', 'sc_wpun_run_check', 'sc_wpun_update_check', 'admin_post_sc_wpun_dismiss_slack_notice', 'init', 'update_option_sc_wpun_settings', 'lang_dir_for_domain', 'load_textdomain' ) );
+		$this->clear_hooks( array( 'switch_blog', 'site_status_tests', 'debug_information', 'sc_wpun_channel_deleted', 'sc_wpun_notification_sent', 'sc_wpun_notification_failed', 'sc_wpun_enable_cron', 'sc_wpun_disable_cron', 'sc_wpun_run_check', 'sc_wpun_update_check', 'init', 'update_option_sc_wpun_settings', 'lang_dir_for_domain', 'load_textdomain' ) );
 		\SC_WP_Updates_Notifier::$did_init = false;
 		$plugin                            = new WPUN\Plugin();
 		$this->set_network_activated( true ); // A multisite's copy only boots like this when network-activated; a single site's does too.
@@ -780,7 +775,6 @@ class Test_Hooks extends WPUN_Test_Case {
 			array( 'switch_blog', 'WPUN\Config', 'flush', 10, 1 ),
 			array( 'site_status_tests', 'WPUN\Config_Report', 'add_site_health_test', 10, 1 ),
 			array( 'site_status_tests', 'WPUN\Rejected_Channels', 'add_site_health_test', 10, 1 ),
-			array( 'site_status_tests', 'WPUN\Slack_Notice', 'add_site_health_test', 10, 1 ),
 			array( 'site_status_tests', 'WPUN\Site_Health', 'add_tests', 10, 1 ),
 			array( 'debug_information', 'WPUN\Site_Health', 'add_debug_info', 10, 1 ),
 			array( 'sc_wpun_channel_deleted', 'WPUN\State', 'forget_channel', 10, 1 ),
@@ -790,8 +784,6 @@ class Test_Hooks extends WPUN_Test_Case {
 			array( 'sc_wpun_disable_cron', 'WPUN\Scheduler', 'disable_cron', 10, 1 ),
 			array( 'sc_wpun_run_check', 'WPUN\Update_Checker', 'run_manual_check', 10, 1 ),
 			array( 'sc_wpun_update_check', 'WPUN\Update_Checker', 'do_update_check', 10, 1 ),
-			array( 'sc_wpun_update_check', 'WPUN\Slack_Notice', 'maybe_send_email', 5, 1 ),
-			array( 'admin_post_sc_wpun_dismiss_slack_notice', 'WPUN\Slack_Notice', 'handle_dismiss', 10, 1 ),
 			array( 'init', 'WPUN\Scheduler', 'maybe_schedule', 10, 1 ),
 			array( 'lang_dir_for_domain', 'WPUN\Translations', 'lang_dir', 10, 3 ),
 			array( 'load_textdomain', 'WPUN\Translations', 'load_pack_first', 10, 2 ),

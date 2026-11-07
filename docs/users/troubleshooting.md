@@ -133,7 +133,9 @@ A constant, environment variable or other source gave the plugin a value it can 
 
 ## Why did Slack notifications stop?
 
-WP Updates Notifier 2.0.0 does not send Slack notifications, and your Slack settings are kept. If a Slack channel was switched on, the plugin tells you once by email, shows a notice on its settings page that you can dismiss, and adds an item to **Tools → Site Health**. The notice and the item stay while a Slack channel is switched on.
+Version 2.0.0 did not send Slack notifications. Version 3.0.0 has a Slack channel again, and it uses the settings you had in 1.x. The first check after the update posts to your Slack channel everything that is still waiting. A Slack setup that was switched off stays off.
+
+If Slack does not get the messages, open the **Channels** tab. **Last delivery** says why, and so does **Tools → Site Health**. The most common reason is that the webhook was deleted in Slack (`no_service`): create a new incoming webhook, edit the Slack channel and save its address. See [the Slack channel](channels.md#the-slack-channel).
 
 ## A channel shows as unavailable: "needs WP Updates Notifier API …"
 

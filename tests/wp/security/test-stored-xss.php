@@ -518,15 +518,15 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 		sc_wpun_channels()->all(); // Problems are found while the values are resolved.
 		$this->assertNotEmpty( sc_wpun()->config()->problems(), 'The source did not cause a problem.' );
 
-		// Slack settings with no Slack module.
-		sc_wpun_channels()->save( new Channel_Instance( 'slack', 'slack', $payload, true, array() ) );
+		// A stored instance whose module is gone.
+		sc_wpun_channels()->save( new Channel_Instance( 'retired', 'retired', $payload, true, array() ) );
 
 		$tests = apply_filters( 'site_status_tests', array( 'direct' => array() ) );
 		$this->assertArrayHasKey( 'sc_wpun_rejected_channels', $tests['direct'] );
 		$this->assertArrayHasKey( 'sc_wpun_config', $tests['direct'] );
-		$this->assertArrayHasKey( 'sc_wpun_slack', $tests['direct'] );
+		$this->assertArrayHasKey( 'sc_wpun_channel_modules', $tests['direct'] );
 
-		foreach ( array( 'sc_wpun_rejected_channels', 'sc_wpun_config', 'sc_wpun_slack' ) as $name ) {
+		foreach ( array( 'sc_wpun_rejected_channels', 'sc_wpun_config', 'sc_wpun_channel_modules' ) as $name ) {
 			$result = call_user_func( $tests['direct'][ $name ]['test'] );
 			foreach ( array( 'label', 'description', 'actions' ) as $part ) {
 				$this->assert_no_live_markup( (string) $result[ $part ], "Site Health $name $part" );

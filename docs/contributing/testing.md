@@ -186,10 +186,10 @@ The Playwright image has no WP-CLI, so the specs call a small server in the WP-C
 - `package.php` copies the zip of `make dist` with its Version header set to 2.0.0 (only the copy is changed) to where the web server serves it.
 - A must-use plugin offers that copy as the update of `wp-updates-notifier/class-sc-wp-updates-notifier.php`, as WordPress.org would, and WordPress's own updater does the rest.
 
-Each test starts from a fresh, configured 1.6.0 (`reset.php`: the 1.x options `notify_to`, `notify_from`, Slack on, a daily check) and updates it one way: `wp plugin update` (WP-CLI, `Plugin_Upgrader`), "update now" on the Plugins screen (admin-ajax) and the background auto-updater (`wp_maybe_auto_update()`, which can roll an update back in WordPress 6.6 and later). It checks that the plugin ends at 2.0.0 and deactivated (the Plugins screen says so), with no PHP fatal error and no rollback. It then activates the plugin again with `wp plugin activate` and checks that:
+Each test starts from a fresh, configured 1.6.0 (`reset.php`: the 1.x options `notify_to`, `notify_from`, Slack on, a daily check). The stage must-use plugin answers every post to `hooks.slack.com` itself and records it, so the flow never posts to the real Slack and updates it one way: `wp plugin update` (WP-CLI, `Plugin_Upgrader`), "update now" on the Plugins screen (admin-ajax) and the background auto-updater (`wp_maybe_auto_update()`, which can roll an update back in WordPress 6.6 and later). It checks that the plugin ends at 2.0.0 and deactivated (the Plugins screen says so), with no PHP fatal error and no rollback. It then activates the plugin again with `wp plugin activate` and checks that:
 
 - the email settings became the `email` channel with the same address;
-- the Slack settings are kept, the Slack notice shows, and its email is sent once;
+- the Slack settings are kept as the `slack` channel, no notice about Slack shows and no email about it is sent, and the first run posts to Slack (the recorded post is checked);
 - the leftover 1.x update check event is kept as the one daily event (not doubled, not stuck in the past);
 - a real run mails the migrated address.
 

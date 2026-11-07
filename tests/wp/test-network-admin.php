@@ -271,7 +271,6 @@ class Test_Network_Admin extends WPUN_Test_Case {
 		$this->assertSame( $this->network_url( 'general' ), $this->call( sc_wpun()->check_now(), 'general_url' ) );
 		$this->assertSame( $this->network_url( 'muted' ), $this->call( sc_wpun()->muted_tab(), 'tab_url' ) );
 		$this->assertSame( $this->network_url( 'channels' ) . '&x=1', $this->call( sc_wpun()->channel_form(), 'tab_url', array( array( 'x' => '1' ) ) ) );
-		$this->assertSame( $this->network_url(), sc_wpun()->slack_notice()->settings_url() );
 
 		ob_start();
 		sc_wpun()->check_now()->render();
@@ -316,7 +315,6 @@ class Test_Network_Admin extends WPUN_Test_Case {
 		$this->assertTrue( $this->hooked( 'site_status_tests', WPUN\Site_Health::class, 'add_tests' ) );
 		$this->assertTrue( $this->hooked( 'site_status_tests', WPUN\Config_Report::class, 'add_site_health_test' ) );
 		$this->assertTrue( $this->hooked( 'site_status_tests', WPUN\Rejected_Channels::class, 'add_site_health_test' ) );
-		$this->assertTrue( $this->hooked( 'site_status_tests', WPUN\Slack_Notice::class, 'add_site_health_test' ) );
 		$this->assertTrue( $this->hooked( 'debug_information', WPUN\Site_Health::class, 'add_debug_info' ) );
 
 		remove_all_filters( 'site_status_tests' );
@@ -327,7 +325,6 @@ class Test_Network_Admin extends WPUN_Test_Case {
 		$this->assertFalse( $this->hooked( 'site_status_tests', WPUN\Site_Health::class, 'add_tests' ) );
 		$this->assertFalse( $this->hooked( 'site_status_tests', WPUN\Config_Report::class, 'add_site_health_test' ) );
 		$this->assertFalse( $this->hooked( 'site_status_tests', WPUN\Rejected_Channels::class, 'add_site_health_test' ) );
-		$this->assertFalse( $this->hooked( 'site_status_tests', WPUN\Slack_Notice::class, 'add_site_health_test' ) );
 		$this->assertFalse( $this->hooked( 'debug_information', WPUN\Site_Health::class, 'add_debug_info' ) );
 	}
 

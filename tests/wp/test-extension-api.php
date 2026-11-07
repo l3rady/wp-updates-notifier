@@ -69,6 +69,9 @@ class Test_Extension_Api extends WPUN_Test_Case {
 		if ( ! sc_wpun()->channels()->has( 'email' ) ) {
 			sc_wpun()->channels()->register( new WPUN\Modules\Email\Email_Channel() );
 		}
+		if ( ! sc_wpun()->channels()->has( 'slack' ) ) {
+			sc_wpun()->channels()->register( new WPUN\Modules\Slack\Slack_Channel() );
+		}
 		Addon::reset();
 		sc_wpun()->config()->flush();
 		$_POST = array();

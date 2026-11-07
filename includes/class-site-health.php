@@ -60,13 +60,6 @@ class Site_Health {
 	private $store;
 
 	/**
-	 * Registered modules.
-	 *
-	 * @var Channel_Registry
-	 */
-	private $registry;
-
-	/**
 	 * Config report, for the problems found while resolving.
 	 *
 	 * @var Config_Report
@@ -93,16 +86,14 @@ class Site_Health {
 	 * @param Settings             $settings Settings.
 	 * @param State                $state    Run state.
 	 * @param Channel_Store        $store    Channel instances.
-	 * @param Channel_Registry     $registry Registered modules.
 	 * @param Config_Report        $config_report Configuration report.
 	 * @param Status_Report        $report   Report of settings, schedule and channels.
 	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Settings $settings, State $state, Channel_Store $store, Channel_Registry $registry, Config_Report $config_report, Status_Report $report, ?Network_Context $network_context = null ) {
+	public function __construct( Settings $settings, State $state, Channel_Store $store, Config_Report $config_report, Status_Report $report, ?Network_Context $network_context = null ) {
 		$this->settings      = $settings;
 		$this->state         = $state;
 		$this->store         = $store;
-		$this->registry      = $registry;
 		$this->config_report = $config_report;
 		$this->report        = $report;
 
@@ -221,14 +212,12 @@ class Site_Health {
 	/**
 	 * Every enabled channel has its module.
 	 *
-	 * Slack instances are left to the Slack test, which says what to do about them.
-	 *
 	 * @return array<string, mixed>
 	 */
 	public function channel_modules_result(): array {
 		$items = '';
 		foreach ( $this->store->all() as $instance ) {
-			if ( ! $instance->is_enabled() || ( 'slack' === $instance->get_type() && ! $this->registry->has( 'slack' ) ) ) {
+			if ( ! $instance->is_enabled() ) {
 				continue;
 			}
 			$availability = $this->report->availability( $instance );

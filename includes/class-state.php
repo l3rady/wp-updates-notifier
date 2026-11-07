@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @phpstan-type Notified_Meta array<string, array<string, array{name: string, current_version: string, links: array<string, string>, time: int, snoozed?: bool}>>
  * @phpstan-type Last_Result array{success: bool, message: string, time: int}
  * @phpstan-type Channel_State array{notified: Generic_Notified, skip_pending: bool, notified_meta?: Notified_Meta, last_result?: Last_Result, retry_at?: int, held_until?: int, last_reminder?: int}
- * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, slack_notice_sent: bool, legacy_notified?: Legacy_Notified, ended_mutes?: Generic_Notified, ended_snoozes?: Generic_Notified}
+ * @phpstan-type StateData array{channels: array<string, Channel_State>, last_check_time: int|false, legacy_notified?: Legacy_Notified, ended_mutes?: Generic_Notified, ended_snoozes?: Generic_Notified}
  */
 class State {
 	const OPT_FIELD = 'sc_wpun_state';
@@ -113,9 +113,8 @@ class State {
 		}
 
 		$normalised = array(
-			'channels'          => $channels,
-			'last_check_time'   => ! empty( $state['last_check_time'] ) && is_numeric( $state['last_check_time'] ) ? (int) $state['last_check_time'] : false,
-			'slack_notice_sent' => ! empty( $state['slack_notice_sent'] ),
+			'channels'        => $channels,
+			'last_check_time' => ! empty( $state['last_check_time'] ) && is_numeric( $state['last_check_time'] ) ? (int) $state['last_check_time'] : false,
 		);
 
 		if ( isset( $state['legacy_notified'] ) && is_array( $state['legacy_notified'] ) ) {

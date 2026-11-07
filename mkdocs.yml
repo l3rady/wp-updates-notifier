@@ -79,6 +79,7 @@ nav:
       - 0025 Deferred delivery result: decisions/0025-deferred-delivery-result-held-until.md
       - 0026 Field groups and conditional fields: decisions/0026-field-groups-and-conditional-fields-without-javascript.md
       - 0027 Webhook signing: decisions/0027-webhook-signing-follows-standard-webhooks.md
+      - 0028 Slack as a built-in module: decisions/0028-bring-back-slack-as-a-built-in-module.md
   - Roadmap: roadmap.md
   - Security:
       - Threat model: security/threat-model.md

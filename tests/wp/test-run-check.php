@@ -94,7 +94,7 @@ class Test_Run_Check extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Only the update checker listens, so the Slack notice is not sent on a manual run.
+	 * Only the update checker listens, so nothing else runs with a manual check.
 	 */
 	public function test_only_the_update_checker_listens() {
 		$this->assertCount( 1, $GLOBALS['wp_filter']['sc_wpun_run_check']->callbacks[10] );

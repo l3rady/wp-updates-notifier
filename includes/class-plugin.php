@@ -302,13 +302,6 @@ class Plugin {
 	}
 
 	/**
-	 * Notice about Slack no longer being supported.
-	 *
-	 * @var Slack_Notice
-	 */
-	private $slack_notice;
-
-	/**
 	 * Resolver of configuration supplied from outside the database.
 	 *
 	 * @var Config
@@ -375,8 +368,7 @@ class Plugin {
 		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store, $this->network_context );
 		$this->mute_store        = new Mute_Store( $this->network_context );
 		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store, new Auto_Update_Policy(), $this->network_context );
-		$this->slack_notice      = new Slack_Notice( $this->channel_store, $this->channels, $this->state, $this->network_context );
-		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->channels, $this->config_report, $this->status_report(), $this->network_context );
+		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->config_report, $this->status_report(), $this->network_context );
 	}
 
 	/**
@@ -486,7 +478,7 @@ class Plugin {
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
-		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->slack_notice, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab(), $this->muted_tab(), $this->network_context );
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab(), $this->muted_tab(), $this->network_context );
 
 		return $this->settings_page;
 	}
@@ -498,15 +490,6 @@ class Plugin {
 	 */
 	public function rejected_channels(): Rejected_Channels {
 		return $this->rejected_channels;
-	}
-
-	/**
-	 * Notice about Slack no longer being supported.
-	 *
-	 * @return Slack_Notice
-	 */
-	public function slack_notice(): Slack_Notice {
-		return $this->slack_notice;
 	}
 
 	/**
@@ -643,14 +626,11 @@ class Plugin {
 			add_action( Scheduler::CRON_NAME, array( $this->scheduler, 'clear_leftover_event' ) );
 		} else {
 			add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.
-			add_action( Scheduler::CRON_NAME, array( $this->slack_notice, 'maybe_send_email' ), 5 ); // Tell the admin once that Slack is no longer supported, before the check.
 		}
-		add_action( 'admin_post_' . Slack_Notice::DISMISS_ACTION, array( $this->slack_notice, 'handle_dismiss' ) ); // Dismiss the notice on the settings page.
 		if ( ! $this->network_context->is_network() || get_current_blog_id() === $this->network_context->main_site_id() ) {
 			// Network-activated, the network has one check, so only the main site reports on it.
 			add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
 			add_filter( 'site_status_tests', array( $this->rejected_channels, 'add_site_health_test' ) ); // Site Health test while a module is refused for needing a newer API.
-			add_filter( 'site_status_tests', array( $this->slack_notice, 'add_site_health_test' ) ); // Site Health test while Slack settings are stored but unused.
 			add_filter( 'site_status_tests', array( $this->site_health, 'add_tests' ) ); // Site Health tests of the update check and the channels.
 			add_filter( 'debug_information', array( $this->site_health, 'add_debug_info' ) ); // Settings, schedule and channels in the site info, without secrets or addresses.
 		}

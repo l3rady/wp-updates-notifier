@@ -7,6 +7,10 @@
  * - `fake`: load the fake pending updates of .wordpress-org/blueprint/fake-updates.php, which also stops every request
  *   to WordPress.org. They are off while 1.6.0 is installed from WordPress.org (seed.sh) and on afterwards, so the
  *   update check finds updates to send without the network.
+ * - `slack`: answer the posts to hooks.slack.com with `ok` instead of sending them, and record each one in the option
+ *   `wpun_slack_posts` (the address and the JSON body). The site is seeded with an enabled 1.x Slack setup, which the
+ *   Slack channel of this version delivers to at the first check: this keeps the flow, which runs in CI, from posting
+ *   to the real Slack, and lets a test see what would have been posted. It is on from the start, as 1.6.0 posts too.
  * - `package`: the address of the 2.0.0 zip. WordPress is told the 1.x plugin has an update, at that address, as if
  *   WordPress.org offered it. Everything after that is WordPress's own updater.
  *
@@ -20,6 +24,37 @@ $wpun_stage = is_array( $wpun_stage ) ? $wpun_stage : array();
 
 if ( ! empty( $wpun_stage['fake'] ) ) {
 	require_once WP_CONTENT_DIR . '/wpun-fake-updates.php';
+}
+
+if ( ! empty( $wpun_stage['slack'] ) ) {
+	add_filter(
+		'pre_http_request',
+		static function ( $pre, $args, $url ) {
+			if ( 'hooks.slack.com' !== wp_parse_url( $url, PHP_URL_HOST ) ) {
+				return $pre;
+			}
+			$posts   = get_option( 'wpun_slack_posts', array() );
+			$posts   = is_array( $posts ) ? $posts : array();
+			$posts[] = array(
+				'url'  => $url,
+				'body' => isset( $args['body'] ) ? (string) $args['body'] : '',
+			);
+			update_option( 'wpun_slack_posts', $posts, false );
+
+			return array(
+				'headers'  => array(),
+				'body'     => 'ok',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		},
+		10,
+		3
+	);
 }
 
 if ( ! empty( $wpun_stage['package'] ) ) {

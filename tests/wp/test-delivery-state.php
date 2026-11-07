@@ -146,12 +146,16 @@ class Test_Delivery_State extends WPUN_Test_Case {
 				self::OWN_PLUGIN => array( 'new_version' => '4.5.6' ),
 			)
 		);
+		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) ); // The 1.6 fixture has Slack on.
 		$this->run_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$body = $this->sent_mail()->body;
 		$this->assertStringContainsString( 'WP Updates Notifier from version ', $body );
 		$this->assertStringNotContainsString( 'Hello Dolly', $body );
+		$slack = $this->requests_to( 'hooks.slack.com' );
+		$this->assertCount( 1, $slack, 'The migrated Slack instance is posted to as well.' );
+		$this->assertStringNotContainsString( 'Hello Dolly', $slack[0]['args']['body'], 'It was announced too.' );
 		$this->assertStringNotContainsString( '6.4', $body );
 		$this->assertArrayNotHasKey( 'legacy_notified', $this->stored_state() );
 		$this->assertSame( '6.4', $this->notified_version( 'core', 'core' ) );
@@ -420,7 +424,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 	 */
 	public function test_skip_pending_waits_for_the_channel() {
 		$this->save_settings();
-		sc_wpun_channels()->save( new Channel_Instance( 'chat', 'slack', 'Chat', true ) );
+		sc_wpun_channels()->save( new Channel_Instance( 'chat', 'retired', 'Chat', true ) );
 		$this->set_updates( '99.0.0' );
 		sc_wpun()->state()->skip_pending( 'chat' );
 

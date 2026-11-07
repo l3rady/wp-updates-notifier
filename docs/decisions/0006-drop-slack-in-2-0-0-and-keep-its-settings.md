@@ -1,6 +1,6 @@
 # 0006. Drop Slack in 2.0.0 and keep its settings
 
-Status: Accepted. Date: 2026-10-14.
+Status: Superseded by [0028](0028-bring-back-slack-as-a-built-in-module.md). Date: 2026-10-14.
 
 ## Context
 
