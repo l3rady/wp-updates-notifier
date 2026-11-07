@@ -22,7 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   and when the plugin is uninstalled.
  * - Kept when the instance is switched off or its module is missing.
  * - Works for instances defined in code, but their data stays until uninstall if they are removed from code.
- * - Last write wins. There is no locking.
+ * - Last write wins. There is no locking. Two requests that add different new keys at the same time can leave
+ *   one out of the index; its value then stays until uninstall.
  *
  * Not for secrets or settings: the data is not shown in Site Health, the config report or the export.
  * Prefix the keys with the name of your add-on, for example `myaddon_cursor`. For a value that expires,
@@ -130,7 +131,7 @@ final class Instance_Data {
 	 * @param string $key   Key.
 	 * @param mixed  $value Value; anything WordPress can store as an option.
 	 *
-	 * @return bool True once the value is stored. False if the id or key is invalid or the instance is not known.
+	 * @return bool True unless the id or key is invalid or the instance is not known.
 	 */
 	public function set( string $key, $value ): bool {
 		if ( ! $this->is_valid( $key ) || ! $this->channels->has( $this->instance_id ) ) {

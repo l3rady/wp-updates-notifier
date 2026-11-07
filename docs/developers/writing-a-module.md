@@ -401,7 +401,7 @@ public function send( Notification $notification, Channel_Instance $instance ): 
 
 - The methods are `get( $key, $fallback )`, `set( $key, $value )`, `delete( $key )`, `keys()` and `clear()`.
 - A key is 1 to 64 characters: lower case letters, digits and underscores. Prefix it with the name of your add-on, as in `myaddon_last_message`, so add-ons do not clash. A bad key or id is refused without a notice: `get()` returns the default and `set()` returns false.
-- `set()` returns true once the value is stored. It returns false for an instance the plugin does not know. The last write wins: nothing is locked.
+- `set()` returns true unless the key or id is invalid or the plugin does not know the instance. The last write wins: nothing is locked. Two requests that add different new keys at the same moment can leave one out of the index, and its value then stays until uninstall.
 - The data is deleted when the instance is deleted, after `sc_wpun_channel_deleted` fires, so a listener can still read it. It is also deleted when the plugin is uninstalled.
 - The data is kept when the instance is switched off or its module is missing. For an instance defined in code it stays until uninstall if you remove the instance from your code.
 - It is stored in options that are not autoloaded, and in network options when the plugin runs for a network.
