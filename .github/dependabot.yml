@@ -2,9 +2,9 @@
 # usually found and pulled within days. Security updates for Dependabot alerts are not delayed.
 version: 2
 
-# The Playwright image (tests/e2e/compose.yml) ships the browsers of exactly one Playwright version, so it must move
-# with @playwright/test in tests/e2e/package.json. Separate PRs for the two could never pass the a11y job (#265), so
-# the tests/e2e image and npm updates come together in one PR.
+# The Playwright image ships the browsers of exactly one Playwright version, so it must move with @playwright/test in
+# tests/e2e/package.json. Separate PRs for the two could never pass the a11y job (#265), so the images and the npm
+# updates come together in one PR. Every compose file that runs tests/e2e's packages is in it (#435).
 multi-ecosystem-groups:
   e2e:
     schedule:
@@ -77,10 +77,16 @@ updates:
     commit-message:
       prefix: ci
 
-  # The Playwright image (and the database) of the `make a11y` site, tests/e2e/compose.yml. In the e2e group, with
-  # the npm packages below.
+  # The Playwright image (and the database and mail images) of every compose file that runs tests/e2e's npm packages:
+  # `make a11y`, the flows, the upgrade flow, the screenshots and the blueprint smoke test. In the e2e group, with the
+  # npm packages below, so every Playwright pin moves with @playwright/test in one PR.
   - package-ecosystem: docker-compose
-    directory: /tests/e2e
+    directories:
+      - /tests/e2e
+      - /tests/flows
+      - /tests/flows/upgrade
+      - /tests/screenshots
+      - /tests/blueprint-smoke
     multi-ecosystem-group: e2e
     patterns: ["*"]
     cooldown:
