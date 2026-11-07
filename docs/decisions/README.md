@@ -51,3 +51,4 @@ The date is when the decision was made, not when the record was written.
 | [0027](0027-webhook-signing-follows-standard-webhooks.md) | Webhook signing follows Standard Webhooks | Accepted | 2026-11-02 |
 | [0028](0028-bring-back-slack-as-a-built-in-module.md) | Bring back Slack as a built-in module | Accepted | 2026-11-07 |
 | [0029](0029-partial-delivery-recorded-from-the-result.md) | Partial delivery, recorded from the result | Accepted | 2026-11-07 |
+| [0030](0030-replace-a-channel-type-explicitly.md) | Replace a channel type explicitly | Accepted | 2026-11-07 |

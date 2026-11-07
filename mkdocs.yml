@@ -81,6 +81,7 @@ nav:
       - 0027 Webhook signing: decisions/0027-webhook-signing-follows-standard-webhooks.md
       - 0028 Slack as a built-in module: decisions/0028-bring-back-slack-as-a-built-in-module.md
       - 0029 Partial delivery recorded from the result: decisions/0029-partial-delivery-recorded-from-the-result.md
+      - 0030 Replace a channel type explicitly: decisions/0030-replace-a-channel-type-explicitly.md
   - Roadmap: roadmap.md
   - Security:
       - Threat model: security/threat-model.md

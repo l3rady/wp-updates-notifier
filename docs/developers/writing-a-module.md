@@ -410,6 +410,35 @@ public function send( Notification $notification, Channel_Instance $instance ): 
 - It is not for secrets or settings: it is not shown in Site Health, the config report or the export. Use schema fields for those.
 - For a value that expires, use a transient, or store a timestamp with the value.
 
+## Replacing a built-in channel
+
+An add-on can take over a channel type, such as `email`, `webhook` or `slack`, with `Channel_Registry::replace()`. Use the same `sc_wpun_register_channels` action:
+
+```php
+add_action(
+	'sc_wpun_register_channels',
+	function ( \WPUN\Channel_Registry $registry ) {
+		$registry->replace( new My_Email_Channel() ); // get_type() returns 'email'.
+	}
+);
+```
+
+- **The order does not matter.** The replacement is active whether it runs before or after the built-in channel registers. The built-in `register()` call then returns false without a warning.
+- **Instances carry over.** They are keyed by type, so the existing `email` instances are delivered by the replacement with their settings untouched.
+- **The first replacement wins.** A second `replace()` of the same type warns and returns false.
+- **A refused replacement keeps the original.** If the replacement's API constraint is not met, it is refused like any channel (see above) and the built-in channel stays active. The refusal does not claim the type, so a later valid `replace()` can still succeed.
+- **`unregister()` removes both.** It drops the type entirely, the replacement and the original.
+- **`get_replaced( $type )`** returns the original channel, or null if the type is not replaced or the original has not registered. Use it to delegate to the original or for diagnostics.
+
+Deactivating the replacement hands the instances back to the built-in channel.
+
+The contract for a replacement:
+
+- Accept every setting key of the channel it replaces, with the same meaning.
+- Support at least the features the original supports (`supports()`).
+- Do not rely on your own extra keys being present. An instance may have been created while your add-on was inactive.
+- Extra keys are kept while the original is active, and are there again when the replacement returns.
+
 ## 5. Testing
 
 The plugin's own tests show how to test a module with WordPress's PHPUnit test suite and mocked HTTP. [`tests/wp/test-example-channel.php`](https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php) tests the example add-on:
