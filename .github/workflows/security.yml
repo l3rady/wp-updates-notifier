@@ -74,7 +74,7 @@ jobs:
         run: make zizmor ZIZMOR_FORMAT=sarif ZIZMOR_OUT=zizmor.sarif || true
       - name: Upload the findings to code scanning
         if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('zizmor.sarif') != ''
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: zizmor.sarif
           category: zizmor
@@ -108,19 +108,19 @@ jobs:
       # One upload per report, each with its own category.
       - name: Upload the history findings to code scanning
         if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/history.sarif') != ''
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: security-reports/history.sarif
           category: gitleaks-history
       - name: Upload the working tree findings to code scanning
         if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/tree.sarif') != ''
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: security-reports/tree.sarif
           category: gitleaks-tree
       - name: Upload the zip findings to code scanning
         if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/zip.sarif') != ''
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: security-reports/zip.sarif
           category: gitleaks-zip
@@ -143,7 +143,7 @@ jobs:
         run: make -k audit AUDIT_SARIF=1
       - name: Upload the findings to code scanning
         if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/osv.sarif') != ''
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: security-reports/osv.sarif
           category: osv-scanner
@@ -208,7 +208,7 @@ jobs:
         run: make -k sast SAST_SARIF=1
       - name: Upload the findings to code scanning
         if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/semgrep.sarif') != ''
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: security-reports/semgrep.sarif
           category: semgrep
@@ -232,7 +232,7 @@ jobs:
         run: make taint TAINT_SARIF=1
       - name: Upload the findings to code scanning
         if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('security-reports/psalm.sarif') != ''
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: security-reports/psalm.sarif
           category: psalm
