@@ -291,7 +291,7 @@ services:
   # Catches all outgoing mail: http://localhost:8025
   mailpit:
     profiles: [site]
-    image: axllent/mailpit:v1.31.6@sha256:23fe39e81bde596a918000b3135c0f85dc8bb4c9ea6be274b051143f3e300387
+    image: axllent/mailpit:v1.32.0@sha256:0790692be935ea4420d085694f7985b1f692ca6a8771ab0e0bd8ba75ac180498
     ports:
       # Loopback only: Mailpit shows every captured email, password-reset links included.
       - "127.0.0.1:8025:8025"
@@ -436,7 +436,7 @@ services:
   # Static analysis with the plugin's own rules in .semgrep/: `make sast`. No network needed.
   semgrep:
     profiles: [security]
-    image: semgrep/semgrep:1.182.0@sha256:4a34048c04fef049f71665047f074cffb00cc3d89482f965a5cd151d589237af
+    image: semgrep/semgrep:1.182.1@sha256:451b3d875c00dac7ed5db5293e584a07de11449a409c10b3c2d2652f429630b6
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /src
     volumes:
@@ -496,7 +496,7 @@ services:
   # Root, as the cache volume and (for the image scan, added by the make target) the Docker socket need it.
   trivy:
     profiles: [security]
-    image: aquasec/trivy:0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222
+    image: aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
     working_dir: /app
     volumes:
       - .:/app:ro
