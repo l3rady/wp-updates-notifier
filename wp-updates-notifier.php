@@ -527,6 +527,23 @@ if ( ! function_exists( 'sc_wpun_mutes' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sc_wpun_instance_data' ) ) {
+	/**
+	 * The data a module keeps for one channel instance.
+	 *
+	 * Always returns an object. For an invalid id it refuses everything.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $instance_id Instance id.
+	 *
+	 * @return \WPUN\Instance_Data
+	 */
+	function sc_wpun_instance_data( string $instance_id ): \WPUN\Instance_Data {
+		return new \WPUN\Instance_Data( $instance_id, sc_wpun()->network_context(), sc_wpun()->channel_store() );
+	}
+}
+
 if ( ! function_exists( 'sc_wpun_capability' ) ) {
 	/**
 	 * The capability needed to use the plugin's settings screen.

@@ -43,6 +43,15 @@ $sc_wpun_uninstall_site = static function () use ( $sc_wpun_options ) {
 	foreach ( $sc_wpun_options as $sc_wpun_option ) {
 		delete_option( $sc_wpun_option );
 	}
+
+	// Instance data of modules. This also catches data left by instances defined in code and removed from code.
+	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The names are not known, and this runs once on uninstall.
+	$sc_wpun_names = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like( 'sc_wpun_data_' ) . '%' ) );
+	foreach ( $sc_wpun_names as $sc_wpun_name ) {
+		delete_option( $sc_wpun_name );
+	}
+
 	delete_transient( 'sc_wpun_send_test_email' );
 	delete_transient( 'sc_wpun_send_test_slack' );
 
@@ -56,6 +65,8 @@ delete_metadata( 'user', 0, 'sc_wpun_dismissed_slack_notice', '', true );
 delete_metadata( 'user', 0, 'sc_wpun_notice', '', true );
 delete_metadata( 'user', 0, 'sc_wpun_channel_form', '', true );
 
+global $wpdb;
+
 if ( is_multisite() ) {
 	// Network-activated, the options are the network's: delete them for every network, then the sites' own below.
 	$sc_wpun_network_ids = (array) get_networks(
@@ -67,6 +78,13 @@ if ( is_multisite() ) {
 	foreach ( $sc_wpun_network_ids as $sc_wpun_network_id ) {
 		foreach ( $sc_wpun_options as $sc_wpun_option ) {
 			delete_network_option( $sc_wpun_network_id, $sc_wpun_option );
+		}
+
+		// Instance data of modules, including data left by instances removed from code.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The names are not known, and this runs once on uninstall.
+		$sc_wpun_names = $wpdb->get_col( $wpdb->prepare( "SELECT meta_key FROM {$wpdb->sitemeta} WHERE site_id = %d AND meta_key LIKE %s", $sc_wpun_network_id, $wpdb->esc_like( 'sc_wpun_data_' ) . '%' ) );
+		foreach ( $sc_wpun_names as $sc_wpun_name ) {
+			delete_network_option( $sc_wpun_network_id, $sc_wpun_name );
 		}
 	}
 

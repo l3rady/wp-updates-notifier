@@ -307,6 +307,8 @@ class Channel_Store {
 	/**
 	 * Remove an instance. An instance defined in code cannot be deleted.
 	 *
+	 * The instance's data (see Instance_Data) is removed after the `sc_wpun_channel_deleted` event.
+	 *
 	 * @since 2.0.0
 	 *
 	 * @param string $id Identifier.
@@ -342,6 +344,9 @@ class Channel_Store {
 			 */
 			do_action( 'sc_wpun_channel_deleted', $id, $instance );
 		}
+
+		// Also when the stored entry was damaged and the event did not fire.
+		( new Instance_Data( $id, $this->context, $this ) )->clear();
 
 		return true;
 	}

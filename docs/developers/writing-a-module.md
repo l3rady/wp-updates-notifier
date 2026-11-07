@@ -383,6 +383,31 @@ Bear in mind that a successful send counts every item as delivered, including th
 
 The plugin does not lock update checks against each other. If a check started with `sc_wpun_run_check` or `wp updates-notifier check` overlaps a scheduled one, both can send the same update before either records it, so a notification can occasionally arrive twice. For update notices that is a fair trade for a simpler plugin. If your service must never receive the same message twice, keep your own record in `send()`, for example the notification's item keys and versions per instance, and skip what you already sent.
 
+### Storing data per instance
+
+A module sometimes needs to remember something between sends, for example the id of the last message it posted. Keep it with `sc_wpun_instance_data()`, which gives you the storage of one instance:
+
+```php
+public function send( Notification $notification, Channel_Instance $instance ): Delivery_Result {
+	$data = sc_wpun_instance_data( $instance->get_id() );
+
+	$previous = $data->get( 'myaddon_last_message' ); // null when there is none.
+	// ...post the message, replying to $previous if the service supports it...
+	$data->set( 'myaddon_last_message', $message_id );
+
+	return Delivery_Result::success();
+}
+```
+
+- The methods are `get( $key, $fallback )`, `set( $key, $value )`, `delete( $key )`, `keys()` and `clear()`.
+- A key is 1 to 64 characters: lower case letters, digits and underscores. Prefix it with the name of your add-on, as in `myaddon_last_message`, so add-ons do not clash. A bad key or id is refused without a notice: `get()` returns the default and `set()` returns false.
+- `set()` returns true once the value is stored. It returns false for an instance the plugin does not know. The last write wins: nothing is locked.
+- The data is deleted when the instance is deleted, after `sc_wpun_channel_deleted` fires, so a listener can still read it. It is also deleted when the plugin is uninstalled.
+- The data is kept when the instance is switched off or its module is missing. For an instance defined in code it stays until uninstall if you remove the instance from your code.
+- It is stored in options that are not autoloaded, and in network options when the plugin runs for a network.
+- It is not for secrets or settings: it is not shown in Site Health, the config report or the export. Use schema fields for those.
+- For a value that expires, use a transient, or store a timestamp with the value.
+
 ## 5. Testing
 
 The plugin's own tests show how to test a module with WordPress's PHPUnit test suite and mocked HTTP. [`tests/wp/test-example-channel.php`](https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php) tests the example add-on:
@@ -490,6 +515,7 @@ To link to the Muted tab with the form filled in for a plugin or theme, use `sc_
 - HTTP uses `wp_safe_remote_post()` for user-supplied addresses, a short timeout and a status check.
 - 429 returns a failure with `Retry-After`.
 - Fields are schema fields where possible; custom markup has labels, described help text and its own error display (see [Accessibility](#accessibility)).
+- Data kept per instance uses `sc_wpun_instance_data()` with prefixed keys, never secrets.
 - Long messages are summarised with "…and N more".
 - The payload goes through `filter_payload()`.
 - Only the public API is used: nothing tagged `@internal`, not `sc_wpun()`, and not the plugin's options directly.

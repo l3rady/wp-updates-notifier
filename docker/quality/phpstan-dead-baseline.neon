@@ -8,13 +8,6 @@ parameters:
 			reportUnmatched: true
 
 		-
-			message: '#^Unused WPUN\\Network_Context\:\:delete_option$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: ../../includes/class-network-context.php
-			reportUnmatched: true
-
-		-
 			message: '#^Unused WPUN\\Plugin\:\:config$#'
 			identifier: shipmonk.deadMethod
 			count: 1

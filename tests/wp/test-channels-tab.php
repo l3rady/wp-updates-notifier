@@ -618,10 +618,14 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		$this->assertSame( 1, $xpath->query( '//a[text()="Cancel"]' )->length );
 		$this->assertTrue( sc_wpun_channels()->has( 'second' ), 'Viewing deletes nothing.' );
 
+		sc_wpun_instance_data( 'second' )->set( 'cursor', 'abc' );
+
 		$this->post( Channels_Tab::DELETE_ACTION, 'second' );
 		$this->assertTrue( sc_wpun()->channels_tab()->process_delete() );
 
 		$this->assertFalse( sc_wpun_channels()->has( 'second' ) );
+		$this->assertSame( array(), sc_wpun_instance_data( 'second' )->keys(), 'The instance data goes with it.' );
+		$this->assertSame( 'd', sc_wpun_instance_data( 'second' )->get( 'cursor', 'd' ) );
 		$this->assertArrayNotHasKey( 'second', $this->stored_state()['channels'] );
 		$this->assertTrue( sc_wpun_channels()->has( 'email' ) );
 		$notice = $this->notice();

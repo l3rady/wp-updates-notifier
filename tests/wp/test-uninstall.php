@@ -36,6 +36,9 @@ class Test_Uninstall extends WPUN_Test_Case {
 		update_option( 'sc_wpun_channels', array( 'email' => array( 'type' => 'email' ) ) );
 		update_option( 'sc_wpun_state', array( 'channels' => array() ), false );
 		update_option( 'sc_wpun_muted', array( 'plugin' => array( 'hello.php' => array( 'until' => null ) ) ), false );
+		update_option( 'sc_wpun_data_email', array( 'cursor' ), false );
+		update_option( 'sc_wpun_data_email__cursor', 'abc', false );
+		update_option( 'sc_wpun_data_gone__cursor', 'abc', false ); // An instance removed from code.
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 		wp_schedule_event( time(), 'daily', 'sc_wpun_update_check' );
 		set_transient( 'sc_wpun_send_test_email', 1 );
@@ -52,6 +55,12 @@ class Test_Uninstall extends WPUN_Test_Case {
 	 */
 	private function assert_no_traces( $where ) {
 		foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state', 'sc_wpun_channels', 'sc_wpun_muted' ) as $option ) {
+			$this->assertFalse( get_option( $option ), "$where: $option" );
+			if ( is_multisite() ) {
+				$this->assertFalse( get_site_option( $option ), "$where: network $option" );
+			}
+		}
+		foreach ( array( 'sc_wpun_data_email', 'sc_wpun_data_email__cursor', 'sc_wpun_data_gone__cursor' ) as $option ) {
 			$this->assertFalse( get_option( $option ), "$where: $option" );
 			if ( is_multisite() ) {
 				$this->assertFalse( get_site_option( $option ), "$where: network $option" );
@@ -133,6 +142,9 @@ class Test_Uninstall extends WPUN_Test_Case {
 		foreach ( array( 'sc_wpun_settings', 'sc_wpun_settings_ver', 'sc_wpun_state', 'sc_wpun_channels', 'sc_wpun_muted' ) as $option ) {
 			update_site_option( $option, array( 'network' => true ) );
 		}
+		update_site_option( 'sc_wpun_data_email', array( 'cursor' ) );
+		update_site_option( 'sc_wpun_data_email__cursor', 'abc' );
+		update_site_option( 'sc_wpun_data_gone__cursor', 'abc' );
 
 		$this->uninstall();
 
