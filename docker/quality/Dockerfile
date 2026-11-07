@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 #
-# Code-quality reports: `make quality`. Report-only, nothing here gates a build.
+# Code quality: `make quality` reports every finding and never fails on one; `make quality-check` is the gate CI runs,
+# which fails on a finding that is not in the committed baselines in this directory.
 #  - phpstan: dead code (shipmonk/dead-code-detector) and cognitive complexity (tomasvotruba/cognitive-complexity).
 #    The dead code detector needs PHP 8.1+, so it cannot live in the root composer.json (PHP 7.4). The tools and
 #    the WordPress stubs come from composer.lock in this directory; the code is still analysed as PHP 7.4.

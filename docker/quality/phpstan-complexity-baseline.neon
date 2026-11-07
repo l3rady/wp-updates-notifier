@@ -1,0 +1,127 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Cognitive complexity for "WPUN\\Admin\\Channel_Form\:\:process_save\(\)" is 46, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/admin/class-channel-form.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Admin\\Channel_Form\:\:render_form\(\)" is 23, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/admin/class-channel-form.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Admin\\Channel_Form\:\:render_settings_section\(\)" is 27, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/admin/class-channel-form.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Admin\\Field_Renderer\:\:enum\(\)" is 30, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/admin/class-field-renderer.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Admin\\Muted_Tab\:\:render_form\(\)" is 24, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/admin/class-muted-tab.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Admin\\Plugins_Screen_Mutes\:\:handle_bulk_actions\(\)" is 24, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/admin/class-plugins-screen-mutes.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Channel_Store\:\:code_defined\(\)" is 29, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-channel-store.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Channel_Store\:\:overlay\(\)" is 51, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-channel-store.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Field_Types\:\:validate\(\)" is 64, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-field-types.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Notification_Item\:\:__construct\(\)" is 23, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-notification-item.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\State\:\:normalise\(\)" is 24, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-state.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\State\:\:normalise_meta\(\)" is 21, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-state.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Update_Checker\:\:check\(\)" is 32, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-update-checker.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Update_Checker\:\:find_ended_mutes\(\)" is 33, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-update-checker.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Update_Checker\:\:find_resolved\(\)" is 22, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-update-checker.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Update_Checker\:\:plan_instance\(\)" is 21, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../includes/class-update-checker.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Modules\\Email\\Email_Channel\:\:checked_payload\(\)" is 23, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../modules/email/class-email-channel.php
+			reportUnmatched: true
+
+		-
+			message: '#^Cognitive complexity for "WPUN\\Modules\\Webhook\\Webhook_Channel\:\:excerpt\(\)" is 23, keep it under 20$#'
+			identifier: complexity.functionLike
+			count: 1
+			path: ../../modules/webhook/class-webhook-channel.php
+			reportUnmatched: true

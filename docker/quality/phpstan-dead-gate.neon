@@ -1,0 +1,6 @@
+# The dead code gate: `make quality-check`. A finding that is not in the baseline fails, and so does a baseline entry
+# that no longer matches (the code is used or gone). The baseline may only shrink: it holds what is kept on purpose,
+# such as test accessors. After a change that fixes one, run `make quality-baseline`. See phpstan-dead.neon.
+includes:
+    - phpstan-dead.neon
+    - phpstan-dead-baseline.neon

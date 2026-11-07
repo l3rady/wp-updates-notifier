@@ -1,0 +1,50 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Unused WPUN\\Field_Types\:\:forget_warnings$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: ../../includes/class-field-types.php
+			reportUnmatched: true
+
+		-
+			message: '#^Unused WPUN\\Network_Context\:\:delete_option$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: ../../includes/class-network-context.php
+			reportUnmatched: true
+
+		-
+			message: '#^Unused WPUN\\Plugin\:\:config$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: ../../includes/class-plugin.php
+			reportUnmatched: true
+
+		-
+			message: '#^Unused WPUN\\Plugin\:\:rejected_channels$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: ../../includes/class-plugin.php
+			reportUnmatched: true
+
+		-
+			message: '#^Unused WPUN\\Plugin\:\:slack_notice$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: ../../includes/class-plugin.php
+			reportUnmatched: true
+
+		-
+			message: '#^Unused WPUN\\Update_Checker\:\:last_notification$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: ../../includes/class-update-checker.php
+			reportUnmatched: true
+
+		-
+			message: '#^Unused WPUN\\Update_Checker\:\:last_results$#'
+			identifier: shipmonk.deadMethod
+			count: 1
+			path: ../../includes/class-update-checker.php
+			reportUnmatched: true

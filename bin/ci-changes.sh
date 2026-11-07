@@ -22,7 +22,7 @@
 set -eu
 
 # Every job the map controls: the job ids of the workflows, which are unique across them.
-ALL_JOBS='phpstan rector release-scripts dist dist-repro plugin-check smoke wordpress coverage a11y e2e phpcs docs links sast taint dependencies dependency-review'
+ALL_JOBS='phpstan rector release-scripts dist dist-repro plugin-check smoke wordpress coverage a11y e2e phpcs quality docs links sast taint dependencies dependency-review'
 
 # One rule per line: a shell case glob (a * also matches /), then the job ids it triggers. ALL runs every job and -
 # runs none (the path is known and affects no pull request job). Blank lines and lines starting with # are ignored.
@@ -46,18 +46,20 @@ tests/bin/ci-changes/*    ALL
 
 # The plugin's PHP: analysed, linted, tested, zipped and run in the browser. The hooks and translations checks (in
 # the phpcs job) read it too. wp-updates-notifier.php and uninstall.php are also what the release scripts rehearse on.
-wp-updates-notifier.php   phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs sast taint release-scripts
-uninstall.php             phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs sast taint release-scripts
-includes/*                phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs sast taint
-modules/*                 phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs sast taint
+wp-updates-notifier.php   phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs quality sast taint release-scripts
+uninstall.php             phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs quality sast taint release-scripts
+includes/*                phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs quality sast taint
+modules/*                 phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs quality sast taint
 # Translations: tested (test-translations), zipped, linted as PHP and checked complete by check-translations.
 languages/*               smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs
-# The settings screen's stylesheet: in the zip and in the browser checks.
-assets/*                  wordpress coverage dist dist-repro plugin-check a11y e2e
+# The settings screen's stylesheet: in the zip and in the browser checks. The quality gate's copy-paste check reads it.
+assets/*                  wordpress coverage dist dist-repro plugin-check a11y e2e quality
 # The example add-on: PHPStan, phpcs, Semgrep, Psalm, public API check and the WordPress tests read it. Not in the zip.
-examples/*                phpstan smoke wordpress coverage phpcs sast taint
-# The dev plugins are mounted into the browser checks; PHPStan, phpcs, the public API check and a test read them.
-docker/dev-plugins/*      phpstan smoke wordpress coverage a11y e2e phpcs
+# The dead code check counts what it uses.
+examples/*                phpstan smoke wordpress coverage phpcs quality sast taint
+# The dev plugins are mounted into the browser checks; PHPStan, phpcs, the public API check, the dead code check and a
+# test read them.
+docker/dev-plugins/*      phpstan smoke wordpress coverage a11y e2e phpcs quality
 # Only the smoke test lints these.
 docker/mu-plugins/*       smoke e2e
 # The browser checks mount these into their throwaway site.
@@ -72,9 +74,11 @@ rector.php                rector phpcs smoke
 psalm.xml                 taint
 psalm-baseline.xml        taint
 docker/psalm/*            taint smoke
-# The local quality reports (make quality) have no CI job yet; the smoke test lints the PHP in them.
-rector-quality.php        smoke
-docker/quality/*          smoke
+# The quality gate (make quality-check, the quality job): the tools, their configs and their baselines. The smoke test
+# lints the PHP in them. bin/quality-rector-baseline.php writes the Rector baseline.
+rector-quality.php        quality smoke
+docker/quality/*          quality smoke
+bin/quality-rector-baseline.php quality smoke
 .semgrep/*                sast smoke
 # The Semgrep suppression check and its test.
 bin/check-security-ignores.sh        sast
@@ -166,7 +170,7 @@ release-please-config.json release-scripts
 # fixtures plugins are also analysed by PHPStan and checked by the public API check.
 tests/wp/*                wordpress coverage phpcs smoke
 tests/bootstrap.php       wordpress coverage phpcs smoke
-tests/fixtures/*          wordpress coverage phpcs smoke phpstan e2e
+tests/fixtures/*          wordpress coverage phpcs smoke phpstan quality e2e
 phpunit.xml.dist          wordpress coverage
 # The test about tab reads the docs home page.
 docs/index.md             wordpress coverage docs links

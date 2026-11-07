@@ -56,11 +56,24 @@ the [documentation site](https://wpun.cariss.dev/main/contributing/documentation
 - `make stan` runs PHPStan at level 8 with the WordPress stubs, and `make rector`
   fails when the code is behind on PHP 7.4 syntax.
 - `make fix` repairs what `phpcbf` can.
-- `make quality` writes code-quality reports to `quality-reports/`: copy-paste
-  blocks (`make quality-dupes`), unused code (`make quality-dead`), cognitive
-  complexity (`make quality-complexity`) and Rector's clean-up suggestions
-  (`make quality-rector`). They only report and never fail on findings. Read
-  them as hints for a refactor, not as a to-do list.
+- `make quality` writes the full code-quality reports to `quality-reports/`:
+  copy-paste blocks (`make quality-dupes`), unused code (`make quality-dead`),
+  cognitive complexity (`make quality-complexity`) and Rector's clean-up
+  suggestions (`make quality-rector`). They list every finding, baselined or
+  not, and never fail. Read them as hints for a refactor, not as a to-do list.
+- `make quality-check` is the gate CI runs. It fails on a new finding: a
+  duplicated block that pushes the share of duplicated lines over
+  `JSCPD_THRESHOLD`, unused code, a method above a cognitive complexity of 20
+  (classes are not gated), or a Rector suggestion. Existing findings sit in the
+  baselines in `docker/quality/`, which may only shrink. A baseline entry that no
+  longer matches fails the gate too, so after you fix one, run
+  `make quality-baseline` and commit the smaller baseline. When the score of a
+  baselined method goes up, split the method rather than regenerate. Never add a
+  finding to a baseline to get past the gate: fix it, or say in the pull
+  request why it stays. A baseline may grow only when a tool upgrade finds
+  more, and the pull request says so. Lower `JSCPD_THRESHOLD` in the Makefile
+  when duplication drops; raise it only when a large deletion, not a new clone,
+  tips it over, and say so in the pull request.
 
 ## Test policy
 

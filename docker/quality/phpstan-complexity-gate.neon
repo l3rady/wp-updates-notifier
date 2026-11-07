@@ -1,0 +1,7 @@
+# The complexity gate: `make quality-check`. A method above 20 that is not in the baseline fails, and so does a
+# baseline entry that no longer matches (fixed, or its score changed: the message holds the score). The baseline may
+# only shrink. After fixing a method, or when a baselined score moves, run `make quality-baseline`.
+# See phpstan-complexity-limits.neon.
+includes:
+    - phpstan-complexity-limits.neon
+    - phpstan-complexity-baseline.neon
