@@ -3229,7 +3229,7 @@
 <li><code>required</code> is enforced only when the field applies. A value that is there is still validated, and it is kept when the field does not apply, so switching back restores it.</li>
 <li>An <code>applies_when</code> entry that names an unknown field is ignored, with a <code>_doing_it_wrong</code> notice, so the field applies.</li>
 </ul>
-<p>Other plugins can change the groups with the <code>sc_wpun_channel_field_groups</code> filter and move fields with <code>sc_wpun_channel_fields</code>. If you override <code>validate_settings()</code> without calling the parent, as the email channel does, honour <code>applies_when</code> yourself.</p>
+<p>Other plugins can change the groups with the <code>sc_wpun_channel_field_groups</code> filter and move fields with <code>sc_wpun_channel_fields</code>. If you override <code>validate_settings()</code> without calling the parent, honour <code>applies_when</code> yourself. The email channel shows the simpler way: it calls the parent, then adds its own checks.</p>
 <h3 id="panels">Panels<a class="headerlink" href="#panels" title="Permanent link">&para;</a></h3>
 <p>A channel can show read-only information on its form, built from the instance being edited: a preview of the message, set-up help with the callback URL filled in, or the status of the service (API 1.1.0). Return the panels from <code>get_form_panels()</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="x">public function get_form_panels( Channel_Instance $instance ): array {</span>
@@ -3252,6 +3252,7 @@
 <ul>
 <li>Each panel has a <code>label</code> (required), a <code>content</code> and optionally a <code>description</code> and <code>collapsed</code>. The content is escaped markup, drawn as it is, like the control of a custom field type.</li>
 <li>Panels are drawn after the field groups, in the order you return them, in the same way as a group: a fieldset whose legend holds an <code>&lt;h3&gt;</code>, folded into a <code>&lt;details&gt;</code> element when <code>collapsed</code>. A panel never opens by itself. Do not put headings of your own in the content, or if you must, start at <code>&lt;h4&gt;</code>.</li>
+<li>To preview a message, build it from <code>Notification::sample()</code> (API 1.1.0). It has the site name, address and updates address a real notification gets, in network mode too, and an example plugin update, with the source <code>preview</code> unless you pass another context.</li>
 <li>Nothing in a panel is submitted or saved. Panels are drawn with the generic form and with <code>render_settings()</code>.</li>
 <li>On the form of a new channel the instance is a draft with an empty id (<code>'' === $instance-&gt;get_id()</code>), built from the default settings. After a failed save the instance holds the submitted values, on the new and the edit form.</li>
 <li>The instance holds the resolved settings, secrets included. The content must never print them, and don't log or dump the settings.</li>
@@ -3308,7 +3309,7 @@
 <ul>
 <li>Use <code>wp_safe_remote_post()</code> for any address a site owner typed in. It refuses addresses on the server's own network, which stops your webhook field from being used to reach internal services. Use <code>wp_remote_post()</code> only for your service's fixed API address. It also refuses ports other than 80, 443 and 8080. To try your module against a receiver on a local network, allow that host on your development site with the <code>http_request_host_is_external</code> filter. Don't ship that filter.</li>
 <li>Set a short <code>timeout</code> (10 seconds or less). The check delivers to every instance in turn, during a cron request.</li>
-<li>Check the HTTP status. A <code>WP_Error</code> or a status outside 2xx is a failure.</li>
+<li>Check the HTTP status. A <code>WP_Error</code> or a status outside 2xx is a failure. <code>Delivery_Result::from_response( $response )</code> (API 1.1.0) does it for you: a <code>WP_Error</code> becomes <code>http_error</code> with only the error code in the context (never its message, which can contain the address), 2xx is a success, 429 is <code>rate_limited</code> with the wait from <code>Retry-After</code>, and any other status is <code>bad_status</code>. It needs <code>^1.1</code>.</li>
 </ul>
 <div class="highlight"><pre><span></span><code><span class="x">$response = wp_safe_remote_post(</span>
 <span class="x">    $url,</span>
@@ -3319,19 +3320,10 @@
 <span class="x">    )</span>
 <span class="x">);</span>
 
-<span class="x">if ( is_wp_error( $response ) ) {</span>
-<span class="x">    return Delivery_Result::failure( __( 'The request to the webhook failed.', 'my-chat-channel' ), 'http_error' );</span>
-<span class="x">}</span>
-
-<span class="x">$status = (int) wp_remote_retrieve_response_code( $response );</span>
-<span class="x">if ( $status &lt; 200 || $status &gt;= 300 ) {</span>
-<span class="x">    return Delivery_Result::failure( sprintf( __( 'The webhook answered with HTTP %d.', 'my-chat-channel' ), $status ), 'bad_status', $status );</span>
-<span class="x">}</span>
-
-<span class="x">return Delivery_Result::success();</span>
+<span class="x">return Delivery_Result::from_response( $response );</span>
 </code></pre></div>
 <h3 id="rate-limits-and-retries">Rate limits and retries<a class="headerlink" href="#rate-limits-and-retries" title="Permanent link">&para;</a></h3>
-<p>When the service answers HTTP 429, return a failure with the status and the wait from the <code>Retry-After</code> header. <code>Delivery_Result::retry_after_from_response( $response )</code> reads it, as seconds or as an HTTP date, and gives null if there is none or it is not usable:</p>
+<p><code>from_response()</code> already does this. To handle 429 yourself, return a failure with the status and the wait from the <code>Retry-After</code> header. <code>Delivery_Result::retry_after_from_response( $response )</code> reads it, as seconds or as an HTTP date, and gives null if there is none or it is not usable:</p>
 <div class="highlight"><pre><span></span><code><span class="x">if ( 429 === $status ) {</span>
 <span class="x">    return Delivery_Result::failure(</span>
 <span class="x">        __( 'The webhook is limiting requests.', 'my-chat-channel' ),</span>

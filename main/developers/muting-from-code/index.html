@@ -2587,17 +2587,7 @@
 <span class="x">    function ( $mute ) {</span>
 <span class="x">        $latest = time() + 30 * DAY_IN_SECONDS;</span>
 <span class="x">        if ( $mute instanceof \WPUN\Mute &amp;&amp; null !== $mute-&gt;get_expires() &amp;&amp; $mute-&gt;get_expires() &gt; $latest ) {</span>
-<span class="x">            return new \WPUN\Mute(</span>
-<span class="x">                array(</span>
-<span class="x">                    'type'    =&gt; $mute-&gt;get_type(),</span>
-<span class="x">                    'key'     =&gt; $mute-&gt;get_key(),</span>
-<span class="x">                    'until'   =&gt; $mute-&gt;get_until(),</span>
-<span class="x">                    'time'    =&gt; $mute-&gt;get_time(),</span>
-<span class="x">                    'user'    =&gt; $mute-&gt;get_user_id(),</span>
-<span class="x">                    'source'  =&gt; $mute-&gt;get_source(),</span>
-<span class="x">                    'expires' =&gt; $latest,</span>
-<span class="x">                )</span>
-<span class="x">            );</span>
+<span class="x">            return new \WPUN\Mute( array( 'expires' =&gt; $latest ) + $mute-&gt;to_array() );</span>
 <span class="x">        }</span>
 <span class="x">        return $mute;</span>
 <span class="x">    }</span>

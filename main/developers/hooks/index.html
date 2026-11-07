@@ -4421,7 +4421,8 @@ what was notified about it is forgotten.</p>
 <h2 id="delivery">Delivery<a class="headerlink" href="#delivery" title="Permanent link">&para;</a></h2>
 <h3 id="sc_wpun_after_dispatch"><code>sc_wpun_after_dispatch</code><a class="headerlink" href="#sc_wpun_after_dispatch" title="Permanent link">&para;</a></h3>
 <p><em>Action</em>, since 2.0.0</p>
-<p>Fires when a round of delivery has finished: a dispatch, or an update check that sent something.</p>
+<p>Fires when an update check has sent something, with the result of each instance it sent through.</p>
+<p>It does not fire for a check that sent nothing; see <code>sc_wpun_after_update_check</code>.</p>
 <table>
 <thead>
 <tr>
@@ -4443,7 +4444,7 @@ what was notified about it is forgotten.</p>
 </tr>
 </tbody>
 </table>
-<p>Fired in <code>includes/class-dispatcher.php</code>, <code>includes/class-update-checker.php</code>.</p>
+<p>Fired in <code>includes/class-update-checker.php</code>.</p>
 <h3 id="sc_wpun_channel_payload"><code>sc_wpun_channel_payload</code><a class="headerlink" href="#sc_wpun_channel_payload" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 2.0.0</p>
 <p>Filters the payload of any channel just before it is sent.</p>
@@ -4949,8 +4950,7 @@ and <code>collapsed</code>. A group nothing joins is not drawn, and the <code>gr
 <p>The fields are drawn on the add and edit forms, checked by the default Channel::validate_settings() and can be
 supplied from outside the database. Same schema as Channel::get_fields().</p>
 <p>A channel that overrides validate_settings() decides for itself what it keeps, so a field added to it here is
-drawn but may not be saved. The email channel is one: it keeps only its own fields. Changing the texts of
-existing fields is always safe.</p>
+drawn but may not be saved. Changing the texts of existing fields is always safe.</p>
 <p>Example, change the help text of the email channel's recipients:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_channel_fields',</span>
@@ -5626,17 +5626,7 @@ a mute lasts. A mute whose <code>expires</code> has passed is refused, also when
 <span class="x">    function ( $mute ) {</span>
 <span class="x">        $latest = time() + 30 * DAY_IN_SECONDS;</span>
 <span class="x">        if ( $mute instanceof \WPUN\Mute &amp;&amp; null !== $mute-&gt;get_expires() &amp;&amp; $mute-&gt;get_expires() &gt; $latest ) {</span>
-<span class="x">            return new \WPUN\Mute(</span>
-<span class="x">                array(</span>
-<span class="x">                    'type'    =&gt; $mute-&gt;get_type(),</span>
-<span class="x">                    'key'     =&gt; $mute-&gt;get_key(),</span>
-<span class="x">                    'until'   =&gt; $mute-&gt;get_until(),</span>
-<span class="x">                    'time'    =&gt; $mute-&gt;get_time(),</span>
-<span class="x">                    'user'    =&gt; $mute-&gt;get_user_id(),</span>
-<span class="x">                    'source'  =&gt; $mute-&gt;get_source(),</span>
-<span class="x">                    'expires' =&gt; $latest,</span>
-<span class="x">                )</span>
-<span class="x">            );</span>
+<span class="x">            return new \WPUN\Mute( array( 'expires' =&gt; $latest ) + $mute-&gt;to_array() );</span>
 <span class="x">        }</span>
 <span class="x">        return $mute;</span>
 <span class="x">    }</span>
