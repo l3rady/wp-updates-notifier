@@ -1275,6 +1275,8 @@
       
         
       
+        
+      
     
     
     
@@ -2085,6 +2087,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0028-bring-back-slack-as-a-built-in-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0028 Slack as a built-in module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2794,8 +2824,7 @@ request (<code>.github/workflows/</code>). The security tests are in <code>tests
 </table>
 <h2 id="entry-points">Entry points<a class="headerlink" href="#entry-points" title="Permanent link">&para;</a></h2>
 <h3 id="1-admin-post-handlers">1. admin-post handlers<a class="headerlink" href="#1-admin-post-handlers" title="Permanent link">&para;</a></h3>
-<p>All are registered in <code>Plugin::register_admin_hooks()</code> (<code>includes/class-plugin.php</code>), except the Slack notice dismiss,
-which <code>Plugin</code> registers next to the notice. There are no <code>admin_post_nopriv_*</code>, <code>wp_ajax_*</code> or REST routes.</p>
+<p>All are registered in <code>Plugin::register_admin_hooks()</code> (<code>includes/class-plugin.php</code>). There are no <code>admin_post_nopriv_*</code>, <code>wp_ajax_*</code> or REST routes.</p>
 <table>
 <thead>
 <tr>
@@ -2840,12 +2869,6 @@ which <code>Plugin</code> registers next to the notice. There are no <code>admin
 <td><code>sc_wpun_save_channel</code></td>
 <td><code>Channel_Form::handle_save</code></td>
 <td><code>sc_wpun_save_channel_&lt;new\|edit&gt;_&lt;type\|id&gt;</code></td>
-<td>POST</td>
-</tr>
-<tr>
-<td><code>sc_wpun_dismiss_slack_notice</code></td>
-<td><code>Slack_Notice::handle_dismiss</code></td>
-<td><code>sc_wpun_dismiss_slack_notice</code></td>
 <td>POST</td>
 </tr>
 <tr>
@@ -2902,7 +2925,7 @@ and the plugin registers none. The Semgrep rule <code>wpun-no-nopriv-hooks</code
 <td>E</td>
 <td>A user without the capability changes channels, sends messages or runs the check.</td>
 <td>Each handler checks <code>current_user_can( Settings_Page::capability() )</code> first, and refuses with a 403 and no change.</td>
-<td><code>test-channels-tab.php</code> (<code>test_nonce_and_capability_are_enforced_for_every_action</code>), <code>test-channel-form.php</code> (<code>test_nonce_and_capability_are_required</code>, <code>test_refusals_change_nothing</code>, <code>test_the_handler_answers_403_when_refused</code>), <code>test-check-now.php</code> (<code>test_a_refused_request_runs_nothing</code>), <code>test-test-send.php</code>, <code>test-slack-notice.php</code>, <code>test-mute-plugins-screen.php</code>, <code>test-muted-tab.php</code>. <code>security/test-capability-matrix.php</code> (#220): discovers every <code>admin_post_*</code>/<code>wp_ajax_*</code> hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests (eleven on multisite): logged out, subscriber, editor, administrator without <code>manage_options</code>, on multisite a site administrator who is not a super admin, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (<code>make dast</code>, #222).</td>
+<td><code>test-channels-tab.php</code> (<code>test_nonce_and_capability_are_enforced_for_every_action</code>), <code>test-channel-form.php</code> (<code>test_nonce_and_capability_are_required</code>, <code>test_refusals_change_nothing</code>, <code>test_the_handler_answers_403_when_refused</code>), <code>test-check-now.php</code> (<code>test_a_refused_request_runs_nothing</code>), <code>test-test-send.php</code>, <code>test-mute-plugins-screen.php</code>, <code>test-muted-tab.php</code>. <code>security/test-capability-matrix.php</code> (#220): discovers every <code>admin_post_*</code>/<code>wp_ajax_*</code> hook the plugin registers, fails on one without a request builder, and sends each one ten refused requests (eleven on multisite): logged out, subscriber, editor, administrator without <code>manage_options</code>, on multisite a site administrator who is not a super admin, and administrator with no, empty, other-action, other-channel or other-user token, or the fields in the wrong method. Each must die with 403 and change nothing (options, user meta, mail, HTTP), with a positive control. The unauthenticated ZAP pass (<code>make dast</code>, #222).</td>
 </tr>
 <tr>
 <td>S/T</td>
@@ -2948,8 +2971,6 @@ actions run through core's own bulk form, which checks its security token, and t
 capability. The Muted tab forms are POST and need both the settings capability and the mute capability. A mutation
 is repeatable and reversible (unmute), and a mute only holds back this plugin's notifications. Redirects go back to
 the referrer only if <code>wp_get_referer()</code> accepts it (same site), else to the Plugins screen.</p>
-<p>The Slack notice dismiss is a POST form like the other actions. It changes only the current user's own meta
-(<code>sc_wpun_dismissed_slack_notice</code>), and it needs the security token and the capability. A GET request is refused with a 403.</p>
 <h3 id="2-the-settings-screen">2. The settings screen<a class="headerlink" href="#2-the-settings-screen" title="Permanent link">&para;</a></h3>
 <p>The General tab saves through core's <code>options.php</code> (<code>register_setting</code> with <code>sc_wpun_settings_validate</code>, and
 <code>option_page_capability_sc_wpun_settings</code> returns the same capability). The Channels tab and the channel form use the
@@ -3085,7 +3106,7 @@ malformed or leak.</p>
 </tbody>
 </table>
 <h3 id="5-outbound-requests">5. Outbound requests<a class="headerlink" href="#5-outbound-requests" title="Permanent link">&para;</a></h3>
-<p>Email sends with <code>wp_mail()</code>. The built-in webhook channel (<code>modules/webhook/</code>, #99) and HTTP channels from add-ons send
+<p>Email sends with <code>wp_mail()</code>. The built-in webhook channel (<code>modules/webhook/</code>, #99), the built-in Slack channel (<code>modules/slack/</code>, #442) and HTTP channels from add-ons send
 with <code>wp_safe_remote_post()</code>. The example add-on (<code>examples/wpun-example-channel/</code>) shows the expected pattern: <code>wp_safe_remote_post()</code>, a timeout, and
 <code>Delivery_Result</code> failures that leave out the address. <code>Retry-After</code> from a response is parsed by
 <code>Delivery_Result::retry_after_from_response()</code>. It is capped at 7 days (<code>State::MAX_RETRY_AFTER</code>), and it defers only
@@ -3168,6 +3189,45 @@ signature follows Standard Webhooks (<a href="../../decisions/0027-webhook-signi
 <td>A slow receiver holds up the check, or <code>updates.resolved</code> fails and is lost.</td>
 <td>The timeout is 1 to 10 seconds. 429 and <code>Retry-After</code> defer the instance. <code>updates.resolved</code> is best effort and is not retried (the check has forgotten the items); <code>sc_wpun_webhook_resolved_sent</code> lets site code log a failure.</td>
 <td><code>test-webhook-channel.php</code>, <code>test-retry-after.php</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The Slack channel (<a href="../../decisions/0028-bring-back-slack-as-a-built-in-module/">ADR 0028</a>) posts to one outbound address, the
+<strong>incoming webhook address</strong>, which carries the token and is a <code>secret</code> field: never shown again once saved. It is the same
+address the 1.x migration stored, so it can also reach the channel without the form.</p>
+<table>
+<thead>
+<tr>
+<th>STRIDE</th>
+<th>Threat</th>
+<th>Control</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I/E</td>
+<td>The webhook address is used to reach an internal service (SSRF), or to send a token in clear text.</td>
+<td>The address must be <code>https</code> and its host must be on an allowlist: <code>hooks.slack.com</code> and <code>hooks.slack-gov.com</code>, changed only by site code through <code>sc_wpun_slack_allowed_hosts</code>. The list is checked when the settings are saved and again before every request, because the address can arrive from the 1.x migration, a constant, an environment variable or <code>sc_wpun_channels</code>. The request is made with <code>wp_safe_remote_post()</code>, a 10 second timeout, no redirects (<code>redirection =&gt; 0</code>) and a response limit of 64 KB.</td>
+<td><code>test-slack-channel.php</code> (<code>test_another_host_is_refused</code>, <code>test_an_address_that_is_not_allowed_is_not_requested</code>, <code>test_the_request</code>, the allowlist filter tests), <code>test-config-channels.php</code> (<code>test_a_slack_address_from_outside_must_be_on_the_allowlist</code>), <code>test-slack-upgrade.php</code>.</td>
+</tr>
+<tr>
+<td>I</td>
+<td>The webhook address appears in a result, notice, log or Site Health entry.</td>
+<td>A <code>WP_Error</code> becomes a fixed message with only its code, kept when it looks like a code; the text of the HTTP API can hold the address. The body of an answer is never repeated: only one of the known error words is used, to choose a message. Validation errors name the field, never the value.</td>
+<td><code>test-slack-channel.php</code> (<code>test_a_wp_error_does_not_leak_the_address</code>, <code>test_no_result_has_the_address</code>, <code>test_the_address_reaches_no_surface</code>: the stored state, results, Channels tab, Site Health tests and site information).</td>
+</tr>
+<tr>
+<td>T</td>
+<td>Text typed into a plugin or site name pings people or breaks the message (<code>&lt;!channel&gt;</code>, <code>&lt;@U123&gt;</code>, links).</td>
+<td>Only <code>&amp;</code>, <code>&lt;</code> and <code>&gt;</code> are escaped, as Slack asks, so a name chosen by someone else cannot start a mention. Links are written only for http and https addresses, and an address that holds <code>|</code>, <code>&lt;</code>, <code>&gt;</code> or a space is encoded. Texts and the number of blocks stay inside Slack's limits.</td>
+<td><code>test-slack-message.php</code>.</td>
+</tr>
+<tr>
+<td>D</td>
+<td>A slow or limiting Slack holds up the check.</td>
+<td>The timeout is 10 seconds and nothing is retried in the run. 429 and <code>Retry-After</code> defer the instance.</td>
+<td><code>test-slack-channel.php</code> (<code>test_rate_limited_with_retry_after</code>), <code>test-retry-after.php</code>.</td>
 </tr>
 </tbody>
 </table>

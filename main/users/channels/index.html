@@ -609,6 +609,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-slack-channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Slack channel
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Slack channel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-the-incoming-webhook-in-slack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create the incoming webhook in Slack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-slack-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Slack options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-allowlist-of-hosts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The allowlist of hosts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-slack-refuses-a-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When Slack refuses a message
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-you-used-slack-with-version-1x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you used Slack with version 1.x
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-webhook-channel" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1562,6 +1634,8 @@
       
         
       
+        
+      
     
     
     
@@ -2372,6 +2446,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0028-bring-back-slack-as-a-built-in-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0028 Slack as a built-in module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2717,6 +2819,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-slack-channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Slack channel
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Slack channel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-the-incoming-webhook-in-slack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create the incoming webhook in Slack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-slack-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Slack options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-allowlist-of-hosts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The allowlist of hosts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-slack-refuses-a-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When Slack refuses a message
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-you-used-slack-with-version-1x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you used Slack with version 1.x
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-webhook-channel" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2839,7 +3013,7 @@
 
 
 <h1 id="channels">Channels<a class="headerlink" href="#channels" title="Permanent link">&para;</a></h1>
-<p>A channel is a place where notifications are sent. WP Updates Notifier comes with two kinds, <strong>Email</strong> and <strong>Webhook</strong>. You can have as many channels as you like, for example one that sends everything to you and another that sends only WordPress updates to a client.</p>
+<p>A channel is a place where notifications are sent. WP Updates Notifier comes with three kinds, <strong>Email</strong>, <strong>Slack</strong> and <strong>Webhook</strong>. You can have as many channels as you like, for example one that sends everything to you and another that sends only WordPress updates to a client.</p>
 <p>Open them on the <strong>Channels</strong> tab of <strong>Settings → Updates Notifier</strong>. The table shows, for each channel:</p>
 <ul>
 <li><strong>Label</strong>: the name you gave it, with the actions underneath. A channel set up in code also says <strong>Defined in code</strong>.</li>
@@ -2852,9 +3026,9 @@
 <h2 id="add-a-channel">Add a channel<a class="headerlink" href="#add-a-channel" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Click <strong>Add channel</strong>.</li>
-<li>Choose a module from the list: <strong>Email</strong> or <strong>Webhook</strong>.</li>
+<li>Choose a module from the list: <strong>Email</strong>, <strong>Slack</strong> or <strong>Webhook</strong>.</li>
 <li>Give it a <strong>Label</strong>. The channel's id is made from the label when you save it and cannot be changed afterwards.</li>
-<li>Fill in the settings (see <a href="#the-email-options">the email options</a> or <a href="#the-webhook-channel">the webhook options</a>) and choose its <a href="#choose-what-each-channel-receives">routing</a>.</li>
+<li>Fill in the settings (see <a href="#the-email-options">the email options</a>, <a href="#the-slack-channel">the Slack channel</a> or <a href="#the-webhook-channel">the webhook options</a>) and choose its <a href="#choose-what-each-channel-receives">routing</a>.</li>
 <li>Click <strong>Add channel</strong>.</li>
 </ol>
 <p>On the form, <strong>Enabled</strong> is <strong>Send notifications through this channel</strong>. Untick it to save the channel without using it yet.</p>
@@ -2929,6 +3103,75 @@
 </table>
 <p>The subject is "WP Updates Notifier: updates available for" followed by your site name. With the prefix <code>[Client]</code> it becomes "[Client] WP Updates Notifier: updates available for My Site".</p>
 <p>Why the From address matters is covered under <a href="../troubleshooting/#why-does-the-email-not-arrive">Why does the email not arrive?</a>.</p>
+<h2 id="the-slack-channel">The Slack channel<a class="headerlink" href="#the-slack-channel" title="Permanent link">&para;</a></h2>
+<p>A Slack channel posts each notification to a Slack channel through an <strong>incoming webhook</strong>. The message has a header, a list of the updates grouped as WordPress, Plugins and Themes (each with its versions, links and notes), and links to the Updates screen and to your site. A long list is cut off with a line such as "…and 12 more".</p>
+<h3 id="create-the-incoming-webhook-in-slack">Create the incoming webhook in Slack<a class="headerlink" href="#create-the-incoming-webhook-in-slack" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Go to <a href="https://api.slack.com/apps">api.slack.com/apps</a> and create an app for your workspace, or choose one you have.</li>
+<li>Under <strong>Features</strong>, open <strong>Incoming Webhooks</strong> and turn them on.</li>
+<li>Click <strong>Add New Webhook to Workspace</strong>, choose the channel the messages should go to, and allow it.</li>
+<li>Copy the <strong>Webhook URL</strong>. It starts with <code>https://hooks.slack.com/services/</code>.</li>
+<li>In WP Updates Notifier, add a Slack channel, paste the address into <strong>Webhook address</strong> and use <strong>Send test</strong> to see a message arrive.</li>
+</ol>
+<h3 id="the-slack-options">The Slack options<a class="headerlink" href="#the-slack-options" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Webhook address</strong></td>
+<td>Required. The address Slack gave you. It must start with <code>https://</code> and be on an allowed host (see <a href="#the-allowlist-of-hosts">the allowlist</a>). It holds the token, so it is kept secret: the form never shows it again, and changing it means pasting it again.</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>Name, icon and channel</strong> group is closed until you open it. Only legacy webhooks honour these options. The webhook of a Slack app always posts as the app, to the channel chosen when the webhook was created, and ignores them.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Channel</strong></td>
+<td>Optional. A channel such as <code>#ops</code>, or <code>@name</code> for a direct message.</td>
+</tr>
+<tr>
+<td><strong>Name to post as</strong></td>
+<td>Optional. The name the messages come from.</td>
+</tr>
+<tr>
+<td><strong>Icon</strong></td>
+<td>Optional. An emoji written like <code>:robot_face:</code>, or the <code>https://</code> address of an image.</td>
+</tr>
+</tbody>
+</table>
+<p>Each option is sent only when you set it. Like the other channels, the Slack options can be set in code, for example <code>SC_WPUN_CHANNEL_&lt;ID&gt;__WEBHOOK_URL</code>. See <a href="../settings-in-code/">Settings in code</a>.</p>
+<h3 id="the-allowlist-of-hosts">The allowlist of hosts<a class="headerlink" href="#the-allowlist-of-hosts" title="Permanent link">&para;</a></h3>
+<p>The webhook address must be <code>https</code> and its host must be <code>hooks.slack.com</code> or <code>hooks.slack-gov.com</code> (GovSlack). The plugin checks this when you save the channel and again before every message, so an address set in code is checked too. A site behind an egress proxy, or one that uses a service that accepts Slack's format, adds its host with the <code>sc_wpun_slack_allowed_hosts</code> filter:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_slack_allowed_hosts',</span>
+<span class="x">    function ( $hosts ) {</span>
+<span class="x">        $hosts[] = 'slack-proxy.example.org';</span>
+<span class="x">        return $hosts;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<p>A host matches when it is the same as one in the list, ignoring case. <code>*.example.org</code> is not a pattern. See the <a href="../../developers/hooks/#sc_wpun_slack_allowed_hosts">hook reference</a>.</p>
+<h3 id="when-slack-refuses-a-message">When Slack refuses a message<a class="headerlink" href="#when-slack-refuses-a-message" title="Permanent link">&para;</a></h3>
+<p><strong>Last delivery</strong> on the Channels tab, and <strong>Tools → Site Health</strong>, show the reason. Slack answers with a short word, and the plugin turns it into a message you can act on, for example <code>no_service</code> (the webhook was deleted or its app removed: create a new one and save its address), <code>channel_not_found</code> or <code>channel_is_archived</code> (check the <strong>Channel</strong> option) and <code>action_prohibited</code> (a Slack administrator blocked the webhook). The webhook address never appears in these messages.</p>
+<h3 id="if-you-used-slack-with-version-1x">If you used Slack with version 1.x<a class="headerlink" href="#if-you-used-slack-with-version-1x" title="Permanent link">&para;</a></h3>
+<p>The Slack settings of 1.x became a channel with the id <code>slack</code>, kept through version 2.0.0 without sending anything. From version 3.0.0 the Slack module delivers to it again, with no reconfiguration:</p>
+<ul>
+<li>A Slack channel that was <strong>switched on</strong> posts at the first check after the update, with everything that is still waiting.</li>
+<li>A Slack channel that was <strong>switched off</strong> stays off.</li>
+<li>If the webhook was deleted in Slack in the meantime, the first delivery fails with the <code>no_service</code> message. The Channels tab and Site Health show it like any other failure. Create a new webhook and save its address.</li>
+</ul>
 <h2 id="the-webhook-channel">The webhook channel<a class="headerlink" href="#the-webhook-channel" title="Permanent link">&para;</a></h2>
 <p>A webhook channel sends each notification as a JSON document to an address you choose, so another service can act on it: Zapier, Make, n8n, Home Assistant, or your own code. The message is signed, so the receiver can check that it came from your site. The fields of the document are described in the <a href="../../developers/webhook-payload/">webhook payload reference</a>.</p>
 <h3 id="the-webhook-options">The webhook options<a class="headerlink" href="#the-webhook-options" title="Permanent link">&para;</a></h3>

@@ -1355,6 +1355,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#sc_wpun_slack_allowed_hosts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_slack_allowed_hosts
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2092,6 +2103,8 @@
       
         
           
+        
+      
         
       
         
@@ -2958,6 +2971,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0028-bring-back-slack-as-a-built-in-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0028 Slack as a built-in module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3589,6 +3630,17 @@
     <span class="md-ellipsis">
       
         sc_wpun_register_channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_slack_allowed_hosts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_slack_allowed_hosts
       
     </span>
   </a>
@@ -4714,7 +4766,7 @@ when at least one item was left out.</p>
 </tr>
 </tbody>
 </table>
-<p>Fired in <code>includes/class-notification-renderer.php</code>.</p>
+<p>Fired in <code>includes/class-notification-renderer.php</code>, <code>modules/slack/class-slack-message.php</code>.</p>
 <h3 id="sc_wpun_notification_deferred"><code>sc_wpun_notification_deferred</code><a class="headerlink" href="#sc_wpun_notification_deferred" title="Permanent link">&para;</a></h3>
 <p><em>Action</em>, since 3.0.0</p>
 <p>Fires when delivering a notification through a channel instance was held until later.</p>
@@ -5215,6 +5267,38 @@ is the field schema, with its <code>name</code> added. The error is reported aga
 </tbody>
 </table>
 <p>Fired in <code>includes/class-channel-registry.php</code>.</p>
+<h3 id="sc_wpun_slack_allowed_hosts"><code>sc_wpun_slack_allowed_hosts</code><a class="headerlink" href="#sc_wpun_slack_allowed_hosts" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters the host names a Slack webhook address may have.</p>
+<p>The list is checked when the settings are saved and again before every request.
+A host is allowed when it is the same as one in the list, ignoring case; <code>*.example.org</code> is not a pattern.
+The port and any user name in the address do not count. Only https addresses are accepted.</p>
+<p>Example, also allow a proxy:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_slack_allowed_hosts',</span>
+<span class="x">    function ( $hosts ) {</span>
+<span class="x">        $hosts[] = 'slack-proxy.example.org';</span>
+<span class="x">        return $hosts;</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$hosts</code></td>
+<td><code>string[]</code></td>
+<td>Host names, by default <code>hooks.slack.com</code> and <code>hooks.slack-gov.com</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>modules/slack/class-slack-channel.php</code>.</p>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
 <h3 id="sc_wpun_config_sources"><code>sc_wpun_config_sources</code><a class="headerlink" href="#sc_wpun_config_sources" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 2.0.0</p>

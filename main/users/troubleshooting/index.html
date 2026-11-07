@@ -1506,6 +1506,8 @@
       
         
       
+        
+      
     
     
     
@@ -2316,6 +2318,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0028-bring-back-slack-as-a-built-in-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0028 Slack as a built-in module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2836,7 +2866,8 @@
 <p>An error notice at the top of <strong>Settings → Updates Notifier</strong> says "Some configuration values supplied from outside the database are not valid." The same problem appears in <strong>Tools → Site Health</strong> as "WP Updates Notifier cannot use some configuration values".</p>
 <p>A constant, environment variable or other source gave the plugin a value it can not use. The notice names the constant or variable and where it was read from, never the value. An invalid setting falls back to the value you saved, and a channel with an invalid value does not send until you fix it. Correct the value, or remove it. See <a href="../settings-in-code/">Settings in code</a>.</p>
 <h2 id="why-did-slack-notifications-stop">Why did Slack notifications stop?<a class="headerlink" href="#why-did-slack-notifications-stop" title="Permanent link">&para;</a></h2>
-<p>WP Updates Notifier 2.0.0 does not send Slack notifications, and your Slack settings are kept. If a Slack channel was switched on, the plugin tells you once by email, shows a notice on its settings page that you can dismiss, and adds an item to <strong>Tools → Site Health</strong>. The notice and the item stay while a Slack channel is switched on.</p>
+<p>Version 2.0.0 did not send Slack notifications. Version 3.0.0 has a Slack channel again, and it uses the settings you had in 1.x. The first check after the update posts to your Slack channel everything that is still waiting. A Slack setup that was switched off stays off.</p>
+<p>If Slack does not get the messages, open the <strong>Channels</strong> tab. <strong>Last delivery</strong> says why, and so does <strong>Tools → Site Health</strong>. The most common reason is that the webhook was deleted in Slack (<code>no_service</code>): create a new incoming webhook, edit the Slack channel and save its address. See <a href="../channels/#the-slack-channel">the Slack channel</a>.</p>
 <h2 id="a-channel-shows-as-unavailable-needs-wp-updates-notifier-api">A channel shows as unavailable: "needs WP Updates Notifier API …"<a class="headerlink" href="#a-channel-shows-as-unavailable-needs-wp-updates-notifier-api" title="Permanent link">&para;</a></h2>
 <p>The add-on that provides that channel needs a newer version of WP Updates Notifier than this site has, so the plugin refused to load it. Nothing is sent through the channel, but its settings are kept.</p>
 <p>Update WP Updates Notifier (or install an older version of the add-on) and the channel works again with no reconfiguration. These places show which module is affected and the version it needs:</p>

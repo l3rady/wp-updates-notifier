@@ -1379,6 +1379,8 @@
       
         
       
+        
+      
     
     
     
@@ -2189,6 +2191,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0028-bring-back-slack-as-a-built-in-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0028 Slack as a built-in module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2481,7 +2511,7 @@
 <li><strong>Rehearse the release</strong> (below). It builds and signs a throwaway tag and dry-runs the WordPress.org deploy, so problems show before they cost a release. Read the <code>svn status</code> list at the end of the log.</li>
 <li><strong><code>make dast</code></strong> (about 11 minutes, Docker only). OWASP ZAP over a throwaway copy of the site. CI does not run it because the active scan alone takes about 10 minutes. It must finish with no Medium or High alerts. The report is in <code>security-reports/zap-report.html</code>. See <a href="../security-checks/#dynamic-security-scan">Security checks</a>.</li>
 <li><strong><code>make mutation</code></strong> (about 35 minutes, Docker only). It shows whether the tests would notice a wrong change, and CI does not run it because it takes over 45 minutes on a GitHub runner. It must pass the floors in <code>infection.json5</code>. Read the surviving mutants in <code>build/infection/infection.log</code> and add tests for the ones that matter. See <a href="../testing/#mutation-testing">Mutation testing</a>.</li>
-<li><strong><code>make e2e-upgrade</code></strong> (about 1 minute, Docker and the network). It installs the real 1.6.0 from WordPress.org, so CI does not run it. It updates 1.6.0 to the zip of <code>make dist</code> (a copy with the Version header set to 2.0.0; the repository's header is not touched) with WP-CLI, from the Plugins screen and as a background auto-update. Each time the plugin must be left deactivated at 2.0.0 with no PHP fatal error, and activating it again must keep the settings (the email channel, Slack kept, the Slack notice once, the check scheduled, mail sent to the migrated address). Run it when <code>main</code> changes the plugin's main file, the migration or the activation. See <a href="../testing/#upgrade-from-160">Upgrade from 1.6.0</a>.</li>
+<li><strong><code>make e2e-upgrade</code></strong> (about 1 minute, Docker and the network). It installs the real 1.6.0 from WordPress.org, so CI does not run it. It updates 1.6.0 to the zip of <code>make dist</code> (a copy with the Version header set to 2.0.0; the repository's header is not touched) with WP-CLI, from the Plugins screen and as a background auto-update. Each time the plugin must be left deactivated at 2.0.0 with no PHP fatal error, and activating it again must keep the settings (the email channel, the Slack channel delivering, the check scheduled, mail sent to the migrated address). Run it when <code>main</code> changes the plugin's main file, the migration or the activation. See <a href="../testing/#upgrade-from-160">Upgrade from 1.6.0</a>.</li>
 <li><strong><code>make screenshots</code></strong> (about 30 seconds, Docker only). Regenerate the WordPress.org screenshots, look at the six files <code>.wordpress-org/screenshot-1.png</code> to <code>screenshot-6.png</code>, and commit them if the settings screens or the email changed. Check that the captions in <code>.wordpress-org/readme/template.txt</code> still match. They are uploaded with the other assets, not with the zip, and CI does not run it. See <a href="../testing/#screenshots">Screenshots</a>.</li>
 <li><strong><code>make blueprint-smoke</code></strong> (about 2 minutes, Docker and the network). It runs the generated Live Preview blueprint in WordPress Playground with the zip of <code>make dist</code> and checks the demo in a browser. It fails if Playground or the plugin changed in a way that breaks the demo. CI does not run it because it needs the network. See <a href="../packaging/#the-live-preview-blueprint">Packaging</a>.</li>
 </ol>

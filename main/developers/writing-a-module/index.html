@@ -1662,6 +1662,8 @@
       
         
       
+        
+      
     
     
     
@@ -2459,6 +2461,34 @@
     
   
     0027 Webhook signing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0028-bring-back-slack-as-a-built-in-module/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0028 Slack as a built-in module
   
 
     
@@ -3303,7 +3333,7 @@
 <p>On success, the plugin records the items as delivered to this instance. On failure it records nothing, so the same items go out again on the next scheduled check. Other instances are not affected. The message of the latest result, success or failure, is shown on the Channels tab, so write it for the site owner: say what happened, in a sentence.</p>
 <p>If <code>send()</code> throws, the dispatcher catches the exception, records a failure with the code <code>exception</code> and goes on with the other instances. Don't rely on it: catch what you expect and return a failure with a message the site owner can act on.</p>
 <h3 id="the-message">The message<a class="headerlink" href="#the-message" title="Permanent link">&para;</a></h3>
-<p><code>$notification</code> gives you the site name and URL, the link to the Updates screen, the items (<code>get_items()</code>, each a <code>WPUN\Notification_Item</code> with name, versions, links and notes), and <code>is_test()</code> for a test message. <code>WPUN\Notification_Renderer</code> turns a notification into <code>plain_text()</code>, <code>markdown()</code> or <code>html()</code>, with the values escaped for that format. Use it unless your service needs something special. <code>markdown()</code> targets CommonMark (backslash escapes). A service with its own dialect, for example Slack mrkdwn, which ignores backslashes and needs <code>&amp;</code>, <code>&lt;</code> and <code>&gt;</code> turned into entities, must escape for that dialect itself; a Slack renderer comes with the Slack module, not in 2.0.0. Links whose URL is not http or https are rendered as plain text. Site code can change the plain text with <code>sc_wpun_message_text</code>.</p>
+<p><code>$notification</code> gives you the site name and URL, the link to the Updates screen, the items (<code>get_items()</code>, each a <code>WPUN\Notification_Item</code> with name, versions, links and notes), and <code>is_test()</code> for a test message. <code>WPUN\Notification_Renderer</code> turns a notification into <code>plain_text()</code>, <code>markdown()</code> or <code>html()</code>, with the values escaped for that format. Use it unless your service needs something special. <code>markdown()</code> targets CommonMark (backslash escapes). A service with its own dialect, for example Slack mrkdwn, which ignores backslashes and needs <code>&amp;</code>, <code>&lt;</code> and <code>&gt;</code> turned into entities, must escape for that dialect itself; the built-in Slack module (<code>modules/slack/class-slack-message.php</code>) is an example: it builds Block Kit blocks and escapes only <code>&amp;</code>, <code>&lt;</code> and <code>&gt;</code>. Links whose URL is not http or https are rendered as plain text. Site code can change the plain text with <code>sc_wpun_message_text</code>.</p>
 <p>Pass what you are about to send through <code>$this-&gt;filter_payload( $payload, $notification, $instance )</code>. It applies the <code>sc_wpun_channel_payload</code> and <code>sc_wpun_channel_payload_{type}</code> filters, so site code can adjust your payload without forking your module. A filter can return anything, so check the result still has the shape you need. Document the shape of your payload for your users.</p>
 <h3 id="http">HTTP<a class="headerlink" href="#http" title="Permanent link">&para;</a></h3>
 <ul>
