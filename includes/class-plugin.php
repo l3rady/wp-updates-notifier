@@ -243,7 +243,7 @@ class Plugin {
 	 * @return Channels_Tab
 	 */
 	public function channels_tab(): Channels_Tab {
-		$this->channels_tab ??= new Channels_Tab( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->channel_form(), $this->network_context );
+		$this->channels_tab ??= new Channels_Tab( $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->notices(), $this->channel_form() );
 
 		return $this->channels_tab;
 	}
