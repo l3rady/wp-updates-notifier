@@ -989,6 +989,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#storing-data-per-instance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storing data per instance
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2913,6 +2924,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#storing-data-per-instance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storing data per instance
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3411,6 +3433,28 @@
 <p>Bear in mind that a successful send counts every item as delivered, including the ones summarised as "…and N more". They are not sent again.</p>
 <h3 id="duplicate-deliveries">Duplicate deliveries<a class="headerlink" href="#duplicate-deliveries" title="Permanent link">&para;</a></h3>
 <p>The plugin does not lock update checks against each other. If a check started with <code>sc_wpun_run_check</code> or <code>wp updates-notifier check</code> overlaps a scheduled one, both can send the same update before either records it, so a notification can occasionally arrive twice. For update notices that is a fair trade for a simpler plugin. If your service must never receive the same message twice, keep your own record in <code>send()</code>, for example the notification's item keys and versions per instance, and skip what you already sent.</p>
+<h3 id="storing-data-per-instance">Storing data per instance<a class="headerlink" href="#storing-data-per-instance" title="Permanent link">&para;</a></h3>
+<p>A module sometimes needs to remember something between sends, for example the id of the last message it posted. Keep it with <code>sc_wpun_instance_data()</code>, which gives you the storage of one instance:</p>
+<div class="highlight"><pre><span></span><code><span class="x">public function send( Notification $notification, Channel_Instance $instance ): Delivery_Result {</span>
+<span class="x">    $data = sc_wpun_instance_data( $instance-&gt;get_id() );</span>
+
+<span class="x">    $previous = $data-&gt;get( 'myaddon_last_message' ); // null when there is none.</span>
+<span class="x">    // ...post the message, replying to $previous if the service supports it...</span>
+<span class="x">    $data-&gt;set( 'myaddon_last_message', $message_id );</span>
+
+<span class="x">    return Delivery_Result::success();</span>
+<span class="x">}</span>
+</code></pre></div>
+<ul>
+<li>The methods are <code>get( $key, $fallback )</code>, <code>set( $key, $value )</code>, <code>delete( $key )</code>, <code>keys()</code> and <code>clear()</code>.</li>
+<li>A key is 1 to 64 characters: lower case letters, digits and underscores. Prefix it with the name of your add-on, as in <code>myaddon_last_message</code>, so add-ons do not clash. A bad key or id is refused without a notice: <code>get()</code> returns the default and <code>set()</code> returns false.</li>
+<li><code>set()</code> returns true unless the key or id is invalid or the plugin does not know the instance. The last write wins: nothing is locked. Two requests that add different new keys at the same moment can leave one out of the index, and its value then stays until uninstall.</li>
+<li>The data is deleted when the instance is deleted, after <code>sc_wpun_channel_deleted</code> fires, so a listener can still read it. It is also deleted when the plugin is uninstalled.</li>
+<li>The data is kept when the instance is switched off or its module is missing. For an instance defined in code it stays until uninstall if you remove the instance from your code.</li>
+<li>It is stored in options that are not autoloaded, and in network options when the plugin runs for a network.</li>
+<li>It is not for secrets or settings: it is not shown in Site Health, the config report or the export. Use schema fields for those.</li>
+<li>For a value that expires, use a transient, or store a timestamp with the value.</li>
+</ul>
 <h2 id="5-testing">5. Testing<a class="headerlink" href="#5-testing" title="Permanent link">&para;</a></h2>
 <p>The plugin's own tests show how to test a module with WordPress's PHPUnit test suite and mocked HTTP. <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php"><code>tests/wp/test-example-channel.php</code></a> tests the example add-on:</p>
 <ul>
@@ -3497,6 +3541,7 @@
 <li>HTTP uses <code>wp_safe_remote_post()</code> for user-supplied addresses, a short timeout and a status check.</li>
 <li>429 returns a failure with <code>Retry-After</code>.</li>
 <li>Fields are schema fields where possible; custom markup has labels, described help text and its own error display (see <a href="#accessibility">Accessibility</a>).</li>
+<li>Data kept per instance uses <code>sc_wpun_instance_data()</code> with prefixed keys, never secrets.</li>
 <li>Long messages are summarised with "…and N more".</li>
 <li>The payload goes through <code>filter_payload()</code>.</li>
 <li>Only the public API is used: nothing tagged <code>@internal</code>, not <code>sc_wpun()</code>, and not the plugin's options directly.</li>
