@@ -12,7 +12,7 @@ services:
   # blueprint and the zip, mounted into Playground's file system at the same path (the blueprint installs the plugin
   # from /smoke/wp-updates-notifier.zip). Ready when the blueprint has run: the CLI only listens after that.
   playground:
-    image: node:24-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205
+    image: node:25-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /tmp
     init: true
@@ -35,7 +35,7 @@ services:
 
   # Playwright from the image and npm packages of `make a11y` (tests/e2e/package.json, mounted at /e2e).
   playwright:
-    image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+    image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /smoke
     init: true
