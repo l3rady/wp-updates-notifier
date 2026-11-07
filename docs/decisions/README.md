@@ -50,3 +50,4 @@ The date is when the decision was made, not when the record was written.
 | [0026](0026-field-groups-and-conditional-fields-without-javascript.md) | Field groups and conditional fields, without JavaScript | Accepted | 2026-11-01 |
 | [0027](0027-webhook-signing-follows-standard-webhooks.md) | Webhook signing follows Standard Webhooks | Accepted | 2026-11-02 |
 | [0028](0028-bring-back-slack-as-a-built-in-module.md) | Bring back Slack as a built-in module | Accepted | 2026-11-07 |
+| [0029](0029-partial-delivery-recorded-from-the-result.md) | Partial delivery, recorded from the result | Accepted | 2026-11-07 |

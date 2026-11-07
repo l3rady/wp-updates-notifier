@@ -15,7 +15,7 @@ Since 2.0.0 there are several channel instances, each with its own routing. A re
 - **One message, every waiting item.** A reminder lists everything waiting for the instance and is marked with `Notification::is_reminder()`. The built-in renderers and the email subject say so.
 - **Fold rule.** A new update found in the same check as a due reminder goes in the reminder. There is one message, not two. A new update between reminders is sent at once, as before, and does not touch the clock.
 - **Tolerance.** A reminder is due when the time since the last one is at least the interval minus half the check frequency's interval, with that tolerance capped at half the reminder interval. WP-Cron runs late on quiet sites and the next run is scheduled from the planned time, so a strict comparison would make a daily reminder on a daily check skip a cycle.
-- **A failed reminder** does not move the clock and is tried again at the next check.
+- **A failed reminder** does not move the clock and is tried again at the next check. A reminder stopped halfway resumes without the delivered items, see [ADR 0029](0029-partial-delivery-recorded-from-the-result.md).
 
 ## Consequences
 

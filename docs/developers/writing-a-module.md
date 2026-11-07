@@ -321,11 +321,13 @@ if ( 429 === $status ) {
 }
 ```
 
+If you send in several requests and stop early, return the failure or deferral `->with_delivered( $sent_items )`, for example `Delivery_Result::failure( 'Rate limited.', 'rate_limited', 429, $wait )->with_delivered( $sent_items )`. The plugin records those items as notified, so the next attempt sends only the rest. For a reminder, the next reminder is the rest of that reminder. Items are matched to the notification by type, key and new version; others are ignored, and a success ignores the list. It needs `^1.1`, like `from_response()`.
+
 A failure with a `retry_after` defers the instance: update checks skip it until that long after the failure, and its items stay unsent and go out on the first check after. Other instances are not affected, and nothing extra is scheduled. The plugin caps the wait at 7 days. A test send ignores the deferral and does not set it, and a later success, or a failure without `retry_after`, clears it. Without a `retry_after`, the items are retried on the next scheduled check, which is at least an hour away. Don't retry inside `send()`, and don't sleep.
 
 ### Holding a delivery until later
 
-To hold a delivery without an error, return `Delivery_Result::deferred( $until )`, with `$until` a Unix time (not seconds, unlike `retry_after`). A channel can return it, and so can a `sc_wpun_pre_send` callback, which is the easy way to add your own quiet hours. The instance is held until then, at most 7 days from now, and a time in the past holds nothing. Unlike a failure, a hold fires `sc_wpun_notification_deferred` and not `sc_wpun_notification_failed`, raises no Site Health warning, and leaves the last delivery result alone. Nothing is recorded as notified, so the first check after `$until` delivers everything still pending. A test send ignores the hold and says so in its result.
+To hold a delivery without an error, return `Delivery_Result::deferred( $until )`, with `$until` a Unix time (not seconds, unlike `retry_after`). A channel can return it, and so can a `sc_wpun_pre_send` callback, which is the easy way to add your own quiet hours. The instance is held until then, at most 7 days from now, and a time in the past holds nothing. Unlike a failure, a hold fires `sc_wpun_notification_deferred` and not `sc_wpun_notification_failed`, raises no Site Health warning, and leaves the last delivery result alone. Only the items you give to `with_delivered()` are recorded as notified, so the first check after `$until` delivers the rest. A test send ignores the hold and says so in its result.
 
 This holds the email channel outside weekdays 09:00 to 18:00, site time:
 
