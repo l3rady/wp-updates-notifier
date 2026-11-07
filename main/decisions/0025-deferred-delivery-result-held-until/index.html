@@ -1279,6 +1279,8 @@
       
         
       
+        
+      
     
     
     
@@ -2219,6 +2221,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0029-partial-delivery-recorded-from-the-result/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0029 Partial delivery recorded from the result
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2511,7 +2541,7 @@
 <li><strong>A third kind of result.</strong> <code>Delivery_Result::deferred( int $until, string $message = '' )</code> takes a Unix time, not seconds. <code>is_success()</code> is false and <code>is_deferred()</code> is true. Code that reads a result must check <code>is_deferred()</code> before treating a result as a failure.</li>
 <li><strong>Its own state, <code>held_until</code>.</strong> A hold is a per-instance time in the run state, next to <code>retry_at</code>, not a marker on <code>last_result</code>. A hold therefore never replaces the last real delivery result, and Site Health and <code>last_failure</code> need no special case. <code>State::record_delivery()</code> listens to <code>sc_wpun_notification_deferred</code> and sets it, capped at 7 days like <code>retry_after</code>; a time in the past means no hold. Any later sent or failed result clears it, and a deferred result leaves <code>last_result</code> and <code>retry_at</code> as they were.</li>
 <li><strong>One waiting rule.</strong> The update check skips an instance while the later of <code>retry_at</code> and <code>held_until</code> is in the future, in <code>State::waiting_until()</code>. The plan keeps <code>STATUS_WAITING</code> and reports that time in its <code>retry_at</code>, so the CLI keeps printing "waiting until" and nothing new is needed. <code>sc_wpun_instance_waiting_until()</code> reads the same method so the two cannot drift. Check now, reminders and <code>check --force</code> are covered because the skip comes before any send or reminder logic.</li>
-<li><strong>Nothing is marked notified.</strong> A deferred result in a real run records no items, keeps a skip flag and does not restart the reminder interval. The first check after the hold delivers everything still pending.</li>
+<li><strong>Nothing is marked notified, unless the result says so.</strong> A deferred result in a real run records no items, except those it names with <code>with_delivered()</code> (see <a href="../0029-partial-delivery-recorded-from-the-result/">ADR 0029</a>). It keeps a skip flag and does not restart the reminder interval. The first check after the hold delivers what is still pending.</li>
 <li><strong>The stale copy.</strong> The check saves state from a copy read at its start, and re-copies <code>last_result</code> and <code>retry_at</code> from fresh state first. <code>held_until</code> goes through the same step, with a test.</li>
 <li><strong>Test sends ignore a <code>pre_send</code> deferral.</strong> The channel is called and the result message says it was not held because it is a test. A deferred result from the channel itself is returned unchanged and is not stored, as for any test.</li>
 <li><strong>Resolutions still fire for a held instance</strong> (ADR 0024), as for a disabled or rate-limited one. <code>Notification_Item::get_notified_at()</code> is the time of delivery, so a time to update measured from it starts at delivery. <code>sc_wpun_instance_waiting_until()</code> lets an add-on decide what to do.</li>

@@ -2161,6 +2161,8 @@
       
         
       
+        
+      
     
     
     
@@ -2986,6 +2988,34 @@
     
   
     0028 Slack as a built-in module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0029-partial-delivery-recorded-from-the-result/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0029 Partial delivery recorded from the result
   
 
     
@@ -4771,7 +4801,8 @@ when at least one item was left out.</p>
 <p><em>Action</em>, since 3.0.0</p>
 <p>Fires when delivering a notification through a channel instance was held until later.</p>
 <p>A deferred result is not a failure: <code>sc_wpun_notification_failed</code> does not fire. Update checks
-skip the instance until the time, at most 7 days from now, then deliver everything still pending.</p>
+skip the instance until the time, at most 7 days from now, then deliver what is still pending: items
+the result names with <code>get_delivered()</code> are recorded as notified and are not delivered again.</p>
 <p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
 <table>
 <thead>
@@ -4806,6 +4837,8 @@ skip the instance until the time, at most 7 days from now, then deliver everythi
 <p>Also fires for an instance that is switched off or whose channel is not available,
 when a delivery to it was asked for.</p>
 <p>A result with a <code>retry_after</code> defers the instance: update checks skip it until then (at most 7 days).</p>
+<p>A channel that sends in several requests can say which items went out with <code>get_delivered()</code>.
+The plugin records them as notified, so the next attempt sends only the rest.</p>
 <p><code>$instance</code> holds the resolved settings, secrets included: don't log or dump its settings.</p>
 <table>
 <thead>
@@ -4873,6 +4906,8 @@ value sends as normal. Runs for every instance that is switched on and whose
 channel is available.</p>
 <p>Return <code>Delivery_Result::deferred( $time )</code> to hold the instance until a Unix time without an error.
 A test message ignores a deferral and is sent anyway.</p>
+<p>The result may name delivered items with <code>with_delivered()</code>; they are treated as a channel's would be.
+A callback that replaces the delivery normally delivers nothing.</p>
 <p>Example, hold all deliveries during maintenance:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_pre_send',</span>

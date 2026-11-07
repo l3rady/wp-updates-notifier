@@ -1675,6 +1675,8 @@
       
         
       
+        
+      
     
     
     
@@ -2500,6 +2502,34 @@
     
   
     0028 Slack as a built-in module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0029-partial-delivery-recorded-from-the-result/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0029 Partial delivery recorded from the result
   
 
     
@@ -3385,9 +3415,10 @@
 <span class="x">    );</span>
 <span class="x">}</span>
 </code></pre></div>
+<p>If you send in several requests and stop early, return the failure or deferral <code>-&gt;with_delivered( $sent_items )</code>, for example <code>Delivery_Result::failure( 'Rate limited.', 'rate_limited', 429, $wait )-&gt;with_delivered( $sent_items )</code>. The plugin records those items as notified, so the next attempt sends only the rest. For a reminder, the next reminder is the rest of that reminder. Items are matched to the notification by type, key and new version; others are ignored, and a success ignores the list. It needs <code>^1.1</code>, like <code>from_response()</code>.</p>
 <p>A failure with a <code>retry_after</code> defers the instance: update checks skip it until that long after the failure, and its items stay unsent and go out on the first check after. Other instances are not affected, and nothing extra is scheduled. The plugin caps the wait at 7 days. A test send ignores the deferral and does not set it, and a later success, or a failure without <code>retry_after</code>, clears it. Without a <code>retry_after</code>, the items are retried on the next scheduled check, which is at least an hour away. Don't retry inside <code>send()</code>, and don't sleep.</p>
 <h3 id="holding-a-delivery-until-later">Holding a delivery until later<a class="headerlink" href="#holding-a-delivery-until-later" title="Permanent link">&para;</a></h3>
-<p>To hold a delivery without an error, return <code>Delivery_Result::deferred( $until )</code>, with <code>$until</code> a Unix time (not seconds, unlike <code>retry_after</code>). A channel can return it, and so can a <code>sc_wpun_pre_send</code> callback, which is the easy way to add your own quiet hours. The instance is held until then, at most 7 days from now, and a time in the past holds nothing. Unlike a failure, a hold fires <code>sc_wpun_notification_deferred</code> and not <code>sc_wpun_notification_failed</code>, raises no Site Health warning, and leaves the last delivery result alone. Nothing is recorded as notified, so the first check after <code>$until</code> delivers everything still pending. A test send ignores the hold and says so in its result.</p>
+<p>To hold a delivery without an error, return <code>Delivery_Result::deferred( $until )</code>, with <code>$until</code> a Unix time (not seconds, unlike <code>retry_after</code>). A channel can return it, and so can a <code>sc_wpun_pre_send</code> callback, which is the easy way to add your own quiet hours. The instance is held until then, at most 7 days from now, and a time in the past holds nothing. Unlike a failure, a hold fires <code>sc_wpun_notification_deferred</code> and not <code>sc_wpun_notification_failed</code>, raises no Site Health warning, and leaves the last delivery result alone. Only the items you give to <code>with_delivered()</code> are recorded as notified, so the first check after <code>$until</code> delivers the rest. A test send ignores the hold and says so in its result.</p>
 <p>This holds the email channel outside weekdays 09:00 to 18:00, site time:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_pre_send',</span>

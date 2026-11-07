@@ -1279,6 +1279,8 @@
       
         
       
+        
+      
     
     
     
@@ -2219,6 +2221,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0029-partial-delivery-recorded-from-the-result/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0029 Partial delivery recorded from the result
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2514,7 +2544,7 @@
 <li><strong>One message, every waiting item.</strong> A reminder lists everything waiting for the instance and is marked with <code>Notification::is_reminder()</code>. The built-in renderers and the email subject say so.</li>
 <li><strong>Fold rule.</strong> A new update found in the same check as a due reminder goes in the reminder. There is one message, not two. A new update between reminders is sent at once, as before, and does not touch the clock.</li>
 <li><strong>Tolerance.</strong> A reminder is due when the time since the last one is at least the interval minus half the check frequency's interval, with that tolerance capped at half the reminder interval. WP-Cron runs late on quiet sites and the next run is scheduled from the planned time, so a strict comparison would make a daily reminder on a daily check skip a cycle.</li>
-<li><strong>A failed reminder</strong> does not move the clock and is tried again at the next check.</li>
+<li><strong>A failed reminder</strong> does not move the clock and is tried again at the next check. A reminder stopped halfway resumes without the delivered items, see <a href="../0029-partial-delivery-recorded-from-the-result/">ADR 0029</a>.</li>
 </ul>
 <h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
 <ul>
