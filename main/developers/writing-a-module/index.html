@@ -1006,6 +1006,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#replacing-a-built-in-channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replacing a built-in channel
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#5-testing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1617,6 +1628,8 @@
       
         
           
+        
+      
         
       
         
@@ -2543,6 +2556,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0030-replace-a-channel-type-explicitly/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0030 Replace a channel type explicitly
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2967,6 +3008,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#replacing-a-built-in-channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replacing a built-in channel
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3485,6 +3537,31 @@
 <li>It is stored in options that are not autoloaded, and in network options when the plugin runs for a network.</li>
 <li>It is not for secrets or settings: it is not shown in Site Health, the config report or the export. Use schema fields for those.</li>
 <li>For a value that expires, use a transient, or store a timestamp with the value.</li>
+</ul>
+<h2 id="replacing-a-built-in-channel">Replacing a built-in channel<a class="headerlink" href="#replacing-a-built-in-channel" title="Permanent link">&para;</a></h2>
+<p>An add-on can take over a channel type, such as <code>email</code>, <code>webhook</code> or <code>slack</code>, with <code>Channel_Registry::replace()</code>. Use the same <code>sc_wpun_register_channels</code> action:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_register_channels',</span>
+<span class="x">    function ( \WPUN\Channel_Registry $registry ) {</span>
+<span class="x">        $registry-&gt;replace( new My_Email_Channel() ); // get_type() returns 'email'.</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<ul>
+<li><strong>The order does not matter.</strong> The replacement is active whether it runs before or after the built-in channel registers. The built-in <code>register()</code> call then returns false without a warning.</li>
+<li><strong>Instances carry over.</strong> They are keyed by type, so the existing <code>email</code> instances are delivered by the replacement with their settings untouched.</li>
+<li><strong>The first replacement wins.</strong> A second <code>replace()</code> of the same type warns and returns false.</li>
+<li><strong>A refused replacement keeps the original.</strong> If the replacement's API constraint is not met, it is refused like any channel (see above) and the built-in channel stays active. The refusal does not claim the type, so a later valid <code>replace()</code> can still succeed.</li>
+<li><strong><code>unregister()</code> removes both.</strong> It drops the type entirely, the replacement and the original.</li>
+<li><strong><code>get_replaced( $type )</code></strong> returns the original channel, or null if the type is not replaced or the original has not registered. Use it to delegate to the original or for diagnostics.</li>
+</ul>
+<p>Deactivating the replacement hands the instances back to the built-in channel.</p>
+<p>The contract for a replacement:</p>
+<ul>
+<li>Accept every setting key of the channel it replaces, with the same meaning.</li>
+<li>Support at least the features the original supports (<code>supports()</code>).</li>
+<li>Do not rely on your own extra keys being present. An instance may have been created while your add-on was inactive.</li>
+<li>Extra keys are kept while the original is active, and are there again when the replacement returns.</li>
 </ul>
 <h2 id="5-testing">5. Testing<a class="headerlink" href="#5-testing" title="Permanent link">&para;</a></h2>
 <p>The plugin's own tests show how to test a module with WordPress's PHPUnit test suite and mocked HTTP. <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php"><code>tests/wp/test-example-channel.php</code></a> tests the example add-on:</p>
