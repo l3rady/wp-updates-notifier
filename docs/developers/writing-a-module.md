@@ -429,6 +429,7 @@ add_action(
 - **A refused replacement keeps the original.** If the replacement's API constraint is not met, it is refused like any channel (see above) and the built-in channel stays active. The refusal does not claim the type, so a later valid `replace()` can still succeed.
 - **`unregister()` removes both.** It drops the type entirely, the replacement and the original.
 - **`get_replaced( $type )`** returns the original channel, or null if the type is not replaced or the original has not registered. Use it to delegate to the original or for diagnostics.
+- **`sc_wpun_channel( $type )`** returns the replacement, the channel that delivers the instances (see [Looking up a channel](#looking-up-a-channel)).
 
 Deactivating the replacement hands the instances back to the built-in channel.
 
@@ -438,6 +439,28 @@ The contract for a replacement:
 - Support at least the features the original supports (`supports()`).
 - Do not rely on your own extra keys being present. An instance may have been created while your add-on was inactive.
 - Extra keys are kept while the original is active, and are there again when the replacement returns.
+
+## Looking up a channel
+
+Code that has an instance, or a type, gets its channel with `sc_wpun_channel( $type )` (API 1.1.0). Use it to show the channel's label, to check `supports()` before acting on an instance, or to reach a public method of your own channel from a REST route or a scheduled job without keeping your own copy of it:
+
+```php
+add_action(
+	'sc_wpun_item_resolved',
+	function ( $item, $how, $instance ) {
+		$channel = sc_wpun_channel( $instance->get_type() );
+		$label   = $channel ? $channel->get_label() : $instance->get_type();
+		error_log( sprintf( '%s: %s was %s.', $label, $item->get_name(), $how ) );
+	},
+	10,
+	3
+);
+```
+
+- It returns the channel that delivers the type's instances: the replacement for a replaced type.
+- It returns null for a type that is not registered, and for one whose channel was refused because its API constraint is not met. An instance of such a type exists but nothing delivers it.
+- The first call fires `sc_wpun_register_channels` if nothing has read the registry yet, so call it after `plugins_loaded`, once the add-ons have hooked their registrations.
+- Every caller gets the same object. Keep no state in it: store data per instance with `sc_wpun_instance_data()`.
 
 ## 5. Testing
 
