@@ -1025,6 +1025,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_item_severity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_item_severity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_item_types" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3366,6 +3377,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sc_wpun_item_severity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_item_severity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sc_wpun_item_types" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4349,6 +4371,42 @@ What was already notified about core is kept while the update is waiting.</p>
 </tbody>
 </table>
 <p>Fired in <code>includes/class-update-collector.php</code>.</p>
+<h3 id="sc_wpun_item_severity"><code>sc_wpun_item_severity</code><a class="headerlink" href="#sc_wpun_item_severity" title="Permanent link">&para;</a></h3>
+<p><em>Filter</em>, since 3.0.0</p>
+<p>Filters the severity of an update.</p>
+<p>Only <code>high</code>, <code>medium</code> and <code>low</code> are accepted; anything else is ignored and the computed severity is used.</p>
+<p>Example, treat every update of a business-critical plugin as high:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
+<span class="x">    'sc_wpun_item_severity',</span>
+<span class="x">    function ( $severity, $item ) {</span>
+<span class="x">        return 'woocommerce/woocommerce.php' === $item-&gt;get_key() ? 'high' : $severity;</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    2</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$severity</code></td>
+<td><code>string</code></td>
+<td>The computed severity: <code>high</code>, <code>medium</code> or <code>low</code>.</td>
+</tr>
+<tr>
+<td><code>$item</code></td>
+<td><code>Notification_Item</code></td>
+<td>The item.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/class-notification-item.php</code>.</p>
 <h3 id="sc_wpun_item_types"><code>sc_wpun_item_types</code><a class="headerlink" href="#sc_wpun_item_types" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 2.0.0</p>
 <p>Filters the item types, to register types of your own.</p>

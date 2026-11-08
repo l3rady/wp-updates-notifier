@@ -2791,14 +2791,21 @@
 <span class="w">          </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://wordpress.org/plugins/akismet/"</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">"changelog"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://wordpress.org/plugins/akismet/#developers"</span>
 <span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="nt">"notes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"Compatible with WordPress 6.9."</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">"notes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="s2">"Compatibility with WordPress 6.9: tested by its author"</span><span class="p">,</span>
+<span class="w">          </span><span class="s2">"Warning: this version needs PHP 8.2; the site runs PHP 7.4.33."</span>
+<span class="w">        </span><span class="p">],</span>
 <span class="w">        </span><span class="nt">"flags"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">          </span><span class="nt">"active"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">"auto_update"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">"tested"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6.9"</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">"requires_php"</span><span class="p">:</span><span class="w"> </span><span class="s2">"7.4"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"requires_php"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8.2"</span><span class="p">,</span>
 <span class="w">          </span><span class="nt">"requires_wp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6.2"</span>
-<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">"severity"</span><span class="p">:</span><span class="w"> </span><span class="s2">"medium"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"compatibility"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"flag"</span><span class="p">:</span><span class="w"> </span><span class="s2">"requires_php"</span><span class="p">,</span><span class="w"> </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8.2"</span><span class="p">,</span><span class="w"> </span><span class="nt">"running"</span><span class="p">:</span><span class="w"> </span><span class="s2">"7.4.33"</span><span class="p">,</span><span class="w"> </span><span class="nt">"severity"</span><span class="p">:</span><span class="w"> </span><span class="s2">"high"</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
 <span class="w">      </span><span class="p">}</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="w">  </span><span class="p">}</span>
@@ -2946,6 +2953,14 @@
 <td><code>flags</code></td>
 <td>An object of facts. Plugin and theme items have a boolean <code>active</code>. Core, plugin and theme items have a boolean <code>auto_update</code>. Plugins also have <code>tested</code>, <code>requires_php</code> and <code>requires_wp</code>. An add-on's items carry their own flags.</td>
 </tr>
+<tr>
+<td><code>severity</code></td>
+<td>How important the update is: <code>high</code>, <code>medium</code> or <code>low</code>. WordPress itself and a change of the first part of the version (4.2 to 5.0) are <code>high</code>, a change of the second part (4.2 to 4.3) is <code>medium</code>, and anything else (4.2.1 to 4.2.2) is <code>low</code>. A version that does not start with a number gives <code>medium</code>. Site code can change it with the <code>sc_wpun_item_severity</code> filter.</td>
+</tr>
+<tr>
+<td><code>compatibility</code></td>
+<td>An array of what does not suit the site about the update, empty when nothing does. Each entry has <code>flag</code> (<code>tested</code>, <code>requires_php</code> or <code>requires_wp</code>), <code>required</code> (the version the flag holds), <code>running</code> (the version the site runs: PHP for <code>requires_php</code>, WordPress for the others) and <code>severity</code>. A plugin that needs a newer PHP or WordPress than the site has is <code>high</code>; one only tested with an older WordPress is <code>medium</code>. <code>tested</code> is compared without the patch part. The entries come in the order <code>tested</code>, <code>requires_php</code>, <code>requires_wp</code>.</td>
+</tr>
 </tbody>
 </table>
 <h3 id="compatibility">Compatibility<a class="headerlink" href="#compatibility" title="Permanent link">&para;</a></h3>
@@ -2979,6 +2994,8 @@
 <span class="w">        </span><span class="nt">"links"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://wordpress.org/plugins/akismet/"</span><span class="w"> </span><span class="p">},</span>
 <span class="w">        </span><span class="nt">"notes"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
 <span class="w">        </span><span class="nt">"flags"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"active"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"auto_update"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">"severity"</span><span class="p">:</span><span class="w"> </span><span class="s2">"medium"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"compatibility"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
 <span class="w">        </span><span class="nt">"resolution"</span><span class="p">:</span><span class="w"> </span><span class="s2">"updated"</span><span class="p">,</span>
 <span class="w">        </span><span class="nt">"notified_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-11-01T09:00:00+00:00"</span>
 <span class="w">      </span><span class="p">}</span>
