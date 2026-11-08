@@ -24,6 +24,7 @@ runs="$(mktemp -d)"
 # single sites only in the first. The coverage counted is that of both runs together.
 WP_MULTISITE=0 php ./vendor/bin/phpunit -c "$plugin/phpunit.xml.dist" --coverage-php "$runs/single.cov" "$@"
 WP_MULTISITE=1 php ./vendor/bin/phpunit -c "$plugin/phpunit.xml.dist" --coverage-php "$runs/multisite.cov" "$@"
-php "$plugin/bin/coverage-merge.php" ./vendor/autoload.php /coverage "$runs/single.cov" "$runs/multisite.cov"
+# Writing the HTML report of the merged runs needs more than the 512 MB of docker/php.ini.
+php -d memory_limit=2G "$plugin/bin/coverage-merge.php" ./vendor/autoload.php /coverage "$runs/single.cov" "$runs/multisite.cov"
 
 php "$plugin/bin/coverage-check.php" /coverage/clover.xml "$min"
