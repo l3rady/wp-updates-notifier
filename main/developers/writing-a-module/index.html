@@ -1017,6 +1017,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#looking-up-a-channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Looking up a channel
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#5-testing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3023,6 +3034,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#looking-up-a-channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Looking up a channel
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#5-testing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3554,6 +3576,7 @@
 <li><strong>A refused replacement keeps the original.</strong> If the replacement's API constraint is not met, it is refused like any channel (see above) and the built-in channel stays active. The refusal does not claim the type, so a later valid <code>replace()</code> can still succeed.</li>
 <li><strong><code>unregister()</code> removes both.</strong> It drops the type entirely, the replacement and the original.</li>
 <li><strong><code>get_replaced( $type )</code></strong> returns the original channel, or null if the type is not replaced or the original has not registered. Use it to delegate to the original or for diagnostics.</li>
+<li><strong><code>sc_wpun_channel( $type )</code></strong> returns the replacement, the channel that delivers the instances (see <a href="#looking-up-a-channel">Looking up a channel</a>).</li>
 </ul>
 <p>Deactivating the replacement hands the instances back to the built-in channel.</p>
 <p>The contract for a replacement:</p>
@@ -3562,6 +3585,25 @@
 <li>Support at least the features the original supports (<code>supports()</code>).</li>
 <li>Do not rely on your own extra keys being present. An instance may have been created while your add-on was inactive.</li>
 <li>Extra keys are kept while the original is active, and are there again when the replacement returns.</li>
+</ul>
+<h2 id="looking-up-a-channel">Looking up a channel<a class="headerlink" href="#looking-up-a-channel" title="Permanent link">&para;</a></h2>
+<p>Code that has an instance, or a type, gets its channel with <code>sc_wpun_channel( $type )</code> (API 1.1.0). Use it to show the channel's label, to check <code>supports()</code> before acting on an instance, or to reach a public method of your own channel from a REST route or a scheduled job without keeping your own copy of it:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_item_resolved',</span>
+<span class="x">    function ( $item, $how, $instance ) {</span>
+<span class="x">        $channel = sc_wpun_channel( $instance-&gt;get_type() );</span>
+<span class="x">        $label   = $channel ? $channel-&gt;get_label() : $instance-&gt;get_type();</span>
+<span class="x">        error_log( sprintf( '%s: %s was %s.', $label, $item-&gt;get_name(), $how ) );</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<ul>
+<li>It returns the channel that delivers the type's instances: the replacement for a replaced type.</li>
+<li>It returns null for a type that is not registered, and for one whose channel was refused because its API constraint is not met. An instance of such a type exists but nothing delivers it.</li>
+<li>The first call fires <code>sc_wpun_register_channels</code> if nothing has read the registry yet, so call it after <code>plugins_loaded</code>, once the add-ons have hooked their registrations.</li>
+<li>Every caller gets the same object. Keep no state in it: store data per instance with <code>sc_wpun_instance_data()</code>.</li>
 </ul>
 <h2 id="5-testing">5. Testing<a class="headerlink" href="#5-testing" title="Permanent link">&para;</a></h2>
 <p>The plugin's own tests show how to test a module with WordPress's PHPUnit test suite and mocked HTTP. <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/tests/wp/test-example-channel.php"><code>tests/wp/test-example-channel.php</code></a> tests the example add-on:</p>
