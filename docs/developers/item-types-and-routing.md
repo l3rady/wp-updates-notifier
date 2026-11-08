@@ -108,6 +108,26 @@ add_filter(
 
 To stop an item from going anywhere, use `sc_wpun_should_notify_item` instead. A vetoed item still counts as waiting, so it is not sent again as new when you stop vetoing it. Since 3.0.0 the default is false for a muted item, so a callback that returns `true` whatever it is given unmutes everything: pass `$notify` on instead. To mute an item, see [Muting from code](muting-from-code.md).
 
+## Severity and compatibility
+
+Every item can say how important its update is and, for a plugin, what does not suit the site.
+
+- `$item->get_severity()` is `high`, `medium` or `low` (the constants of `WPUN\Severity`). WordPress itself and a change of the first part of the version (4.2 to 5.0) are `high`, a change of the second part (4.2 to 4.3) is `medium`, and anything else (4.2.1 to 4.2.2) is `low`. A version that does not start with a number gives `medium`. `WPUN\Notification_Renderer`, which the email channel and the WP-CLI commands use, adds "(important update)" to a `high` item, and the webhook payload has a `severity` field.
+- `$item->get_compatibility()` lists the problems found in the `tested`, `requires_php` and `requires_wp` flags, each as `flag`, `required`, `running` and `severity`. Needing a newer PHP or WordPress than the site has is `high`, being tested only with an older WordPress is `medium`. It is the same comparison as the compatibility notes, and it does not change the severity.
+
+The `sc_wpun_item_severity` filter changes the severity. A value that is not `high`, `medium` or `low` is ignored. Treat every update of a business-critical plugin as `high`:
+
+```php
+add_filter(
+	'sc_wpun_item_severity',
+	function ( $severity, $item ) {
+		return 'woocommerce/woocommerce.php' === $item->get_key() ? 'high' : $severity;
+	},
+	10,
+	2
+);
+```
+
 ## In a channel
 
 A channel receives only the items routed to its instance, in `$notification->get_items()`. `get_items_of_type( 'php' )` picks one type. A channel that formats messages itself should cope with item types it does not know, since any add-on can add one. `WPUN\Notification_Renderer` lists every item the same way, whatever its type: name, versions, links and notes. Links whose address is not http or https are shown without a link in Markdown and HTML, and left out of plain text.

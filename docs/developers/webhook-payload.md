@@ -53,14 +53,21 @@ The spec's test vector, which the unit tests check: secret `whsec_MfKQ9r8GKYqrTw
           "details": "https://wordpress.org/plugins/akismet/",
           "changelog": "https://wordpress.org/plugins/akismet/#developers"
         },
-        "notes": ["Compatible with WordPress 6.9."],
+        "notes": [
+          "Compatibility with WordPress 6.9: tested by its author",
+          "Warning: this version needs PHP 8.2; the site runs PHP 7.4.33."
+        ],
         "flags": {
           "active": true,
           "auto_update": false,
           "tested": "6.9",
-          "requires_php": "7.4",
+          "requires_php": "8.2",
           "requires_wp": "6.2"
-        }
+        },
+        "severity": "medium",
+        "compatibility": [
+          { "flag": "requires_php", "required": "8.2", "running": "7.4.33", "severity": "high" }
+        ]
       }
     ]
   }
@@ -115,6 +122,8 @@ Each item has every field of `WPUN\Notification_Item`, except `notified_at` (see
 | `links` | An object of label to address. It holds `details` and `changelog` where known, and `download` only when the site has turned download links on. |
 | `notes` | An array of short texts. |
 | `flags` | An object of facts. Plugin and theme items have a boolean `active`. Core, plugin and theme items have a boolean `auto_update`. Plugins also have `tested`, `requires_php` and `requires_wp`. An add-on's items carry their own flags. |
+| `severity` | How important the update is: `high`, `medium` or `low`. WordPress itself and a change of the first part of the version (4.2 to 5.0) are `high`, a change of the second part (4.2 to 4.3) is `medium`, and anything else (4.2.1 to 4.2.2) is `low`. A version that does not start with a number gives `medium`. Site code can change it with the `sc_wpun_item_severity` filter. |
+| `compatibility` | An array of what does not suit the site about the update, empty when nothing does. Each entry has `flag` (`tested`, `requires_php` or `requires_wp`), `required` (the version the flag holds), `running` (the version the site runs: PHP for `requires_php`, WordPress for the others) and `severity`. A plugin that needs a newer PHP or WordPress than the site has is `high`; one only tested with an older WordPress is `medium`. `tested` is compared without the patch part. The entries come in the order `tested`, `requires_php`, `requires_wp`. |
 
 ### Compatibility
 
@@ -153,6 +162,8 @@ When an update the channel reported is installed, or its plugin or theme removed
         "links": { "details": "https://wordpress.org/plugins/akismet/" },
         "notes": [],
         "flags": { "active": true, "auto_update": false },
+        "severity": "medium",
+        "compatibility": [],
         "resolution": "updated",
         "notified_at": "2026-11-01T09:00:00+00:00"
       }
