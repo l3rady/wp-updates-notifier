@@ -353,13 +353,16 @@ final class Notification_Renderer {
 	 * The marker after the title line of an item of high severity, or an empty string for any other.
 	 *
 	 * Neutral wording on purpose: WordPress itself is always high, and the `sc_wpun_item_severity` filter can make any
-	 * update high, so "major update" would be wrong for some of them.
+	 * update high, so "major update" would be wrong for some of them. A channel that builds its own messages can add it
+	 * after its own title line, so it says the same as the email.
+	 *
+	 * @since 3.0.0
 	 *
 	 * @param Notification_Item $item The item.
 	 *
-	 * @return string For example " (important update)".
+	 * @return string For example " (important update)", with a leading space. Plain text, not escaped.
 	 */
-	private static function severity_marker( Notification_Item $item ): string {
+	public static function severity_marker( Notification_Item $item ): string {
 		return Severity::HIGH === $item->get_severity() ? ' (' . self::severity_text() . ')' : '';
 	}
 

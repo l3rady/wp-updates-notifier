@@ -315,6 +315,9 @@ class Test_Item_Severity extends WPUN_Test_Case {
 	public function test_the_marker_on_a_high_item() {
 		$notification = $this->notification( $this->item( '1.0', '2.0' ) );
 
+		$this->assertSame( ' (important update)', Notification_Renderer::severity_marker( $this->item( '1.0', '2.0' ) ) );
+		$this->assertSame( '', Notification_Renderer::severity_marker( $this->item( '1.0', '1.1' ) ) );
+
 		$this->assertStringContainsString( "Hello from version 1.0 to 2.0 (important update)\n", Notification_Renderer::plain_text( $notification ) );
 		$this->assertStringContainsString( '**Hello** from version 1\.0 to 2\.0 \(important update\)', Notification_Renderer::markdown( $notification ) );
 		$this->assertStringContainsString( '<strong>Hello</strong> from version 1.0 to 2.0 (<strong>important update</strong>)', Notification_Renderer::html( $notification ) );

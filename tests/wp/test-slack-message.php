@@ -106,7 +106,7 @@ class Test_Slack_Message extends WPUN_Slack_Test_Case {
 		$this->assertSame( 'There are updates available for My Site', $blocks[0]['text']['text'] );
 
 		// In the order of the types, whatever the order of the items.
-		$this->assertSame( "*WordPress*\n\n*WordPress* from version 6.7 to 6.8", $blocks[1]['text']['text'] );
+		$this->assertSame( "*WordPress*\n\n*WordPress* from version 6.7 to 6.8 (important update)", $blocks[1]['text']['text'] );
 		$this->assertSame( "*Plugins*\n\n*Akismet* from version 5.6 to 5.7.2", $blocks[2]['text']['text'] );
 		$this->assertSame( "*Themes*\n\n*Twenty Twenty* from version 5.6 to 5.7.2", $blocks[3]['text']['text'] );
 
@@ -402,5 +402,27 @@ class Test_Slack_Message extends WPUN_Slack_Test_Case {
 			$this->assertSame( 1, preg_match( '/^(&amp;)*…$/', $fit ), $fit );
 		}
 		$this->assertSame( '…', Slack_Message::escape_to_fit( '&&&&', 3 ) );
+	}
+
+	/**
+	 * A high item gets the marker the email shows, after its versions; a lower one gets none, and the filter decides.
+	 */
+	public function test_the_severity_marker() {
+		$major = $this->item(
+			array(
+				'current_version' => '5.6',
+				'new_version'     => '6.0',
+			)
+		);
+		$this->assertSame( "*Plugins*\n\n*Akismet* from version 5.6 to 6.0 (important update)", $this->section_texts( Slack_Message::build( $this->notification_of( array( $major ) ) ) )[0] );
+		$this->assertStringNotContainsString( 'important update', $this->section_texts( Slack_Message::build( $this->notification_of( array( $this->item() ) ) ) )[0] );
+
+		add_filter(
+			'sc_wpun_item_severity',
+			static function () {
+				return 'high';
+			}
+		);
+		$this->assertStringContainsString( '5.7.2 (important update)', $this->section_texts( Slack_Message::build( $this->notification_of( array( $this->item() ) ) ) )[0] );
 	}
 }

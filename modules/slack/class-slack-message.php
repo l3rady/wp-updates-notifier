@@ -10,6 +10,7 @@ namespace WPUN\Modules\Slack;
 use WPUN\Item_Types;
 use WPUN\Notification;
 use WPUN\Notification_Item;
+use WPUN\Notification_Renderer;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Not loaded by WordPress.
@@ -35,7 +36,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * 1. `header`: the title (up to 150 characters).
  * 2. One or more `section` blocks per item type (WordPress, Plugins, Themes and any type an add-on registered) in the
  *    order of the types. Each starts with the type in bold, and has one entry per item: "Akismet from version 5.6 to
- *    5.7.2", with the item's links and notes on the lines below. No section text is longer than 3000 characters; a type
+ *    5.7.2", followed by "(important update)" when the item's severity is high, with the item's links and notes on the
+ *    lines below. No section text is longer than 3000 characters; a type
  *    with many items continues in the next section. A test message has one section with a sentence instead.
  * 3. When items were left out, a `section` with the line "…and N more" and a link to the updates screen.
  * 4. A `context` block with a link to the updates screen and one to the site.
@@ -407,7 +409,7 @@ final class Slack_Message {
 			'*' . self::escape( $name ) . '*',
 			self::escape( self::cut( $item->get_current_version(), self::MAX_VERSION ) ),
 			self::escape( self::cut( $item->get_new_version(), self::MAX_VERSION ) )
-		);
+		) . self::escape( Notification_Renderer::severity_marker( $item ) );
 
 		$links = array();
 		$size  = mb_strlen( $line );
