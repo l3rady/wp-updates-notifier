@@ -501,6 +501,28 @@ if ( ! function_exists( 'sc_wpun_register_channel' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sc_wpun_channel' ) ) {
+	/**
+	 * The registered channel of a type: the one that delivers its instances.
+	 *
+	 * For a replaced type it is the replacement, and a channel refused for its API constraint is never
+	 * returned. The first call fires `sc_wpun_register_channels` if nothing has yet. Every caller gets the
+	 * same object, so keep no state in it:
+	 *
+	 *     $channel = sc_wpun_channel( $instance->get_type() );
+	 *     $label   = $channel ? $channel->get_label() : $instance->get_type();
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $type Channel type.
+	 *
+	 * @return \WPUN\Channel|null Null if no channel of the type is registered.
+	 */
+	function sc_wpun_channel( string $type ): ?\WPUN\Channel {
+		return sc_wpun()->channels()->get( $type );
+	}
+}
+
 if ( ! function_exists( 'sc_wpun_channels' ) ) {
 	/**
 	 * The store of the configured channel instances.
