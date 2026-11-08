@@ -272,6 +272,115 @@ final class Notification_Item {
 	}
 
 	/**
+	 * How important the update is: `high`, `medium` or `low` (the constants of `Severity`).
+	 *
+	 * From the versions: WordPress itself and a change of the first part of the version (4.2 to 5.0) are high, a
+	 * change of the second part (4.2 to 4.3) is medium and anything else (4.2.1 to 4.2.2) is low. A version that does
+	 * not start with a number gives medium. The `sc_wpun_item_severity` filter can change it. The compatibility of the
+	 * update (see `get_compatibility()`) does not change the severity.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return string
+	 */
+	public function get_severity(): string {
+		$severity = Severity::of_versions( $this );
+
+		/**
+		 * Filters the severity of an update.
+		 *
+		 * Only `high`, `medium` and `low` are accepted; anything else is ignored and the computed severity is used.
+		 *
+		 * Example, treat every update of a business-critical plugin as high:
+		 *
+		 *     add_filter(
+		 *         'sc_wpun_item_severity',
+		 *         function ( $severity, $item ) {
+		 *             return 'woocommerce/woocommerce.php' === $item->get_key() ? 'high' : $severity;
+		 *         },
+		 *         10,
+		 *         2
+		 *     );
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param string            $severity The computed severity: `high`, `medium` or `low`.
+		 * @param Notification_Item $item     The item.
+		 */
+		$filtered = apply_filters( 'sc_wpun_item_severity', $severity, $this );
+
+		return is_string( $filtered ) && Severity::is_valid( $filtered ) ? $filtered : $severity;
+	}
+
+	/**
+	 * What does not suit the site about the update, read from the `tested`, `requires_php` and `requires_wp` flags.
+	 *
+	 * Each problem is an array: `flag` (`tested`, `requires_php` or `requires_wp`), `required` (the version the flag
+	 * holds), `running` (the version the site runs: PHP for `requires_php`, WordPress for the others) and `severity`.
+	 * A plugin that needs a newer PHP or WordPress than the site has is `high`, as the update may not work at all. A
+	 * plugin only tested with an older WordPress is `medium`. The problems come in the order tested, requires_php,
+	 * requires_wp, and the list is empty when there are none. A flag that is missing, empty or a boolean is no problem.
+	 *
+	 * `tested` is compared without the patch part of the versions (tested up to 6.7 is fine on 6.7.2), the two
+	 * `requires_` flags with the whole running version, as the compatibility notes of the update check do.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return array<int, array{flag: string, required: string, running: string, severity: string}>
+	 */
+	public function get_compatibility(): array {
+		$wp      = wp_get_wp_version();
+		$problem = array();
+
+		$tested = $this->version_flag( 'tested' );
+		if ( '' !== $tested && version_compare( Routing::major_minor( $tested ), Routing::major_minor( $wp ), '<' ) ) {
+			$problem[] = array(
+				'flag'     => 'tested',
+				'required' => $tested,
+				'running'  => $wp,
+				'severity' => Severity::MEDIUM,
+			);
+		}
+
+		$php = $this->version_flag( 'requires_php' );
+		if ( '' !== $php && version_compare( PHP_VERSION, $php, '<' ) ) {
+			$problem[] = array(
+				'flag'     => 'requires_php',
+				'required' => $php,
+				'running'  => PHP_VERSION,
+				'severity' => Severity::HIGH,
+			);
+		}
+
+		$requires = $this->version_flag( 'requires_wp' );
+		if ( '' !== $requires && version_compare( $wp, $requires, '<' ) ) {
+			$problem[] = array(
+				'flag'     => 'requires_wp',
+				'required' => $requires,
+				'running'  => $wp,
+				'severity' => Severity::HIGH,
+			);
+		}
+
+		return $problem;
+	}
+
+	/**
+	 * A version flag as a string, or an empty string when it is not set to something version-like.
+	 *
+	 * @param string $name Flag.
+	 *
+	 * @return string
+	 */
+	private function version_flag( string $name ): string {
+		if ( ! isset( $this->flags[ $name ] ) || is_bool( $this->flags[ $name ] ) ) {
+			return '';
+		}
+
+		return trim( (string) $this->flags[ $name ] );
+	}
+
+	/**
 	 * The item as the array its constructor takes.
 	 *
 	 * To copy an item with changes, put them in front: `new Notification_Item( array( 'new_version' => '2.0' ) + $item->to_array() )`.

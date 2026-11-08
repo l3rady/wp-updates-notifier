@@ -1132,6 +1132,8 @@ class Webhook_Channel extends Channel {
 			'links'           => $item->get_links(),
 			'notes'           => $item->get_notes(),
 			'flags'           => $item->get_flags(),
+			'severity'        => $item->get_severity(),
+			'compatibility'   => $item->get_compatibility(),
 		);
 	}
 

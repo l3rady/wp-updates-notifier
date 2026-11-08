@@ -186,7 +186,7 @@ class Test_Notification extends WPUN_Test_Case {
 		);
 
 		$text = Notification_Renderer::plain_text( $notification );
-		$this->assertStringContainsString( "Hello Dolly from version 1.0 to 2.0\n  Details: https://example.com/hello/\n  Changelog: https://example.com/hello/changelog/\n  Release notes: https://example.com/hello/notes/", $text );
+		$this->assertStringContainsString( "Hello Dolly from version 1.0 to 2.0 (important update)\n  Details: https://example.com/hello/\n  Changelog: https://example.com/hello/changelog/\n  Release notes: https://example.com/hello/notes/", $text );
 		$this->assertStringContainsString( 'Please visit https://example.com/wp-admin/update-core.php to update.', $text );
 
 		$markdown = Notification_Renderer::markdown( $notification );
@@ -309,7 +309,7 @@ class Test_Notification extends WPUN_Test_Case {
 	public function test_name_is_one_line_in_every_format() {
 		$notification = $this->notification( array( $this->item( array( 'name' => "Foo\nPlease visit https://evil" ) ) ) );
 
-		$this->assertStringContainsString( "Foo Please visit https://evil from version 1.0 to 2.0\n", Notification_Renderer::plain_text( $notification ) );
+		$this->assertStringContainsString( "Foo Please visit https://evil from version 1.0 to 2.0 (important update)\n", Notification_Renderer::plain_text( $notification ) );
 		$this->assertStringContainsString( 'Foo Please visit https://evil**', str_replace( '\\', '', Notification_Renderer::markdown( $notification ) ) );
 		$this->assertStringContainsString( '<strong>Foo Please visit https://evil</strong>', Notification_Renderer::html( $notification ) );
 		$this->assertStringNotContainsString( "Foo\n", Notification_Renderer::markdown( $notification ) );

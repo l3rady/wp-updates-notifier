@@ -927,12 +927,98 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 					'tested'       => '6.9',
 					'requires_php' => '7.4',
 				),
+				'severity'        => 'high',
+				'compatibility'   => $this->expected_compatibility_of_plugin_1(),
 			),
 			$payload['data']['items'][0]
 		);
-		$this->assertStringContainsString( '"links":{},"notes":[],"flags":{}', $request['args']['body'], 'Empty maps are objects.' );
+		$this->assertSame( array(), $payload['data']['items'][1]['compatibility'] );
+		$this->assertSame( 'high', $payload['data']['items'][1]['severity'] );
+		$this->assertStringContainsString( '"links":{},"notes":[],"flags":{},"severity":"high","compatibility":[]', $request['args']['body'], 'Empty maps are objects and the empty list is an array.' );
 		$this->assertStringContainsString( 'https://example.org/plugin-1/', $request['args']['body'], 'Slashes are not escaped.' );
 		$this->assertArrayNotHasKey( 'notified_at', $payload['data']['items'][0] );
+	}
+
+	/**
+	 * What the compatibility of plugin 1 of notification() is on the running WordPress: tested up to 6.9 is a problem from 7.0 on.
+	 *
+	 * @return array
+	 */
+	private function expected_compatibility_of_plugin_1() {
+		if ( version_compare( implode( '.', array_slice( explode( '.', wp_get_wp_version() ), 0, 2 ) ), '6.9', '<=' ) ) {
+			return array();
+		}
+
+		return array(
+			array(
+				'flag'     => 'tested',
+				'required' => '6.9',
+				'running'  => wp_get_wp_version(),
+				'severity' => 'medium',
+			),
+		);
+	}
+
+	/**
+	 * The payload has the severity and the problems of each item, and an item without versions is medium.
+	 */
+	public function test_the_payload_has_severity_and_compatibility() {
+		$this->receiver_answers( 200 );
+		$items = array(
+			new Notification_Item(
+				array(
+					'type'            => 'plugin',
+					'key'             => 'needs/needs.php',
+					'name'            => 'Needs',
+					'current_version' => '1.0.0',
+					'new_version'     => '1.0.1',
+					'flags'           => array(
+						'tested'       => '1.0',
+						'requires_php' => '99.0',
+						'requires_wp'  => '99.0',
+					),
+				)
+			),
+			new Notification_Item(
+				array(
+					'type' => 'plugin',
+					'key'  => 'bare/bare.php',
+					'name' => 'Bare',
+				)
+			),
+		);
+
+		$this->send( new Notification( 'Site', 'https://example.org', 'https://example.org/wp-admin/update-core.php', $items ), $this->instance() );
+
+		$this->assert_matches_schema( $this->request()['args']['body'] );
+		$payload = $this->payload();
+		$this->assertSame( 'low', $payload['data']['items'][0]['severity'] );
+		$this->assertSame(
+			array(
+				array(
+					'flag'     => 'tested',
+					'required' => '1.0',
+					'running'  => wp_get_wp_version(),
+					'severity' => 'medium',
+				),
+				array(
+					'flag'     => 'requires_php',
+					'required' => '99.0',
+					'running'  => PHP_VERSION,
+					'severity' => 'high',
+				),
+				array(
+					'flag'     => 'requires_wp',
+					'required' => '99.0',
+					'running'  => wp_get_wp_version(),
+					'severity' => 'high',
+				),
+			),
+			$payload['data']['items'][0]['compatibility']
+		);
+		$this->assertSame( 'medium', $payload['data']['items'][1]['severity'] );
+		$this->assertSame( array(), $payload['data']['items'][1]['compatibility'] );
+		$this->assertStringContainsString( '"compatibility":[]', $this->request()['args']['body'] );
 	}
 
 	/**

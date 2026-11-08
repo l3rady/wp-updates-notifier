@@ -200,6 +200,11 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 		$mail = $this->sent_mail();
 		$this->assertNotFalse( $mail, 'No mail was sent.' );
 
+		// A long line makes the mailer encode the body as quoted-printable, which breaks lines inside tags; check what the reader sees.
+		if ( 'quoted-printable' === tests_retrieve_phpmailer_instance()->Encoding ) {
+			$mail->body = quoted_printable_decode( $mail->body );
+		}
+
 		return $mail;
 	}
 

@@ -213,7 +213,7 @@ final class Notification_Renderer {
 
 		foreach ( $notification->get_items() as $item ) {
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
-			$lines[] = sprintf( __( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), $item->get_name(), $item->get_current_version(), $item->get_new_version() );
+			$lines[] = sprintf( __( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), $item->get_name(), $item->get_current_version(), $item->get_new_version() ) . self::severity_marker( $item );
 			foreach ( $item->get_links() as $label => $url ) {
 				$url = self::web_url( $url );
 				if ( '' !== $url ) {
@@ -277,7 +277,7 @@ final class Notification_Renderer {
 
 		foreach ( $notification->get_items() as $item ) {
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
-			$lines[] = '- ' . sprintf( __( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), '**' . self::escape_markdown( $item->get_name() ) . '**', self::escape_markdown( $item->get_current_version() ), self::escape_markdown( $item->get_new_version() ) );
+			$lines[] = '- ' . sprintf( __( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), '**' . self::escape_markdown( $item->get_name() ) . '**', self::escape_markdown( $item->get_current_version() ), self::escape_markdown( $item->get_new_version() ) ) . self::escape_markdown( self::severity_marker( $item ) );
 			foreach ( $item->get_links() as $label => $url ) {
 				$link_url = self::markdown_url( $url );
 				$text     = self::escape_markdown( self::item_link_label( (string) $label, $item->get_name() ) );
@@ -319,6 +319,9 @@ final class Notification_Renderer {
 			$html .= '<li>';
 			// translators: 1: Name of the plugin, theme or WordPress. 2: Installed version. 3: New version.
 			$html .= sprintf( esc_html__( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), '<strong>' . esc_html( $item->get_name() ) . '</strong>', esc_html( $item->get_current_version() ), esc_html( $item->get_new_version() ) );
+			if ( Severity::HIGH === $item->get_severity() ) {
+				$html .= ' (<strong>' . esc_html( self::severity_text() ) . '</strong>)';
+			}
 
 			$details = '';
 			foreach ( $item->get_links() as $label => $url ) {
@@ -344,6 +347,30 @@ final class Notification_Renderer {
 		$html .= '<p><a href="' . esc_url( $notification->get_updates_url() ) . '">' . esc_html__( 'Go to the Updates screen to update.', 'wp-updates-notifier' ) . '</a></p>';
 
 		return $html;
+	}
+
+	/**
+	 * The marker after the title line of an item of high severity, or an empty string for any other.
+	 *
+	 * Neutral wording on purpose: WordPress itself is always high, and the `sc_wpun_item_severity` filter can make any
+	 * update high, so "major update" would be wrong for some of them.
+	 *
+	 * @param Notification_Item $item The item.
+	 *
+	 * @return string For example " (important update)".
+	 */
+	private static function severity_marker( Notification_Item $item ): string {
+		return Severity::HIGH === $item->get_severity() ? ' (' . self::severity_text() . ')' : '';
+	}
+
+	/**
+	 * The words of the marker of an item of high severity.
+	 *
+	 * @return string
+	 */
+	private static function severity_text(): string {
+		// translators: Shown in brackets after the name and versions of an update that deserves attention, for example "Plugin from version 1.0 to 2.0 (important update)".
+		return __( 'important update', 'wp-updates-notifier' );
 	}
 
 	/**

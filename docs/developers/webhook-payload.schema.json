@@ -96,7 +96,7 @@
 		"item": {
 			"description": "An update. Receivers that must not act twice deduplicate on type, key and new_version.",
 			"type": "object",
-			"required": ["type", "key", "name", "current_version", "new_version", "links", "notes", "flags"],
+			"required": ["type", "key", "name", "current_version", "new_version", "links", "notes", "flags", "severity", "compatibility"],
 			"properties": {
 				"type": {
 					"description": "core, plugin, theme or a type an add-on provides.",
@@ -137,6 +137,36 @@
 					"type": "object",
 					"additionalProperties": {
 						"type": ["boolean", "string", "number"]
+					}
+				},
+				"severity": {
+					"description": "How important the update is. core and a change of the first part of the version are high, a change of the second part is medium, anything else is low.",
+					"enum": ["high", "medium", "low"]
+				},
+				"compatibility": {
+					"description": "What does not suit the site about the update, in the order tested, requires_php, requires_wp. Empty when nothing does.",
+					"type": "array",
+					"items": {
+						"type": "object",
+						"required": ["flag", "required", "running", "severity"],
+						"properties": {
+							"flag": {
+								"description": "The flag that does not suit the site.",
+								"enum": ["tested", "requires_php", "requires_wp"]
+							},
+							"required": {
+								"description": "The version the flag holds.",
+								"type": "string"
+							},
+							"running": {
+								"description": "The version the site runs: PHP for requires_php, WordPress for the others.",
+								"type": "string"
+							},
+							"severity": {
+								"description": "high when the update may not work at all, medium when it is only not known to work.",
+								"enum": ["high", "medium"]
+							}
+						}
 					}
 				}
 			}

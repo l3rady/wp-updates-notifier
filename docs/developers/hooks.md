@@ -181,6 +181,34 @@ add_filter(
 
 Fired in `includes/class-update-collector.php`.
 
+### `sc_wpun_item_severity`
+
+*Filter*, since 3.0.0
+
+Filters the severity of an update.
+
+Only `high`, `medium` and `low` are accepted; anything else is ignored and the computed severity is used.
+
+Example, treat every update of a business-critical plugin as high:
+
+```php
+add_filter(
+    'sc_wpun_item_severity',
+    function ( $severity, $item ) {
+        return 'woocommerce/woocommerce.php' === $item->get_key() ? 'high' : $severity;
+    },
+    10,
+    2
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$severity` | `string` | The computed severity: `high`, `medium` or `low`. |
+| `$item` | `Notification_Item` | The item. |
+
+Fired in `includes/class-notification-item.php`.
+
 ### `sc_wpun_item_types`
 
 *Filter*, since 2.0.0
