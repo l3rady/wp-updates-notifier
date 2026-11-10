@@ -38,6 +38,7 @@ nav:
       - Item types and routing: developers/item-types-and-routing.md
       - Muting from code: developers/muting-from-code.md
       - Configuration sources: developers/configuration-sources.md
+      - Settings groups: developers/settings-groups.md
       - Webhook payload: developers/webhook-payload.md
       - Hook reference: developers/hooks.md
       - Stability and deprecation: developers/stability.md
@@ -82,6 +83,7 @@ nav:
       - 0028 Slack as a built-in module: decisions/0028-bring-back-slack-as-a-built-in-module.md
       - 0029 Partial delivery recorded from the result: decisions/0029-partial-delivery-recorded-from-the-result.md
       - 0030 Replace a channel type explicitly: decisions/0030-replace-a-channel-type-explicitly.md
+      - 0031 Add-on settings share the configuration path: decisions/0031-add-on-settings-share-the-configuration-path.md
   - Roadmap: roadmap.md
   - Security:
       - Threat model: security/threat-model.md

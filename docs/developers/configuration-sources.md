@@ -53,7 +53,7 @@ Or from a plugin, with the `sc_wpun_config_value` filter:
 add_filter(
 	'sc_wpun_config_value',
 	function ( $value, $context ) {
-		return 'show_about' === $context->get_setting() ? false : $value;
+		return 'show_about' === $context->get_setting() && '' === $context->get_group() ? false : $value;
 	},
 	10,
 	2
@@ -95,7 +95,8 @@ add_filter(
 `get()` receives the constant-style name as `$key` and a `WPUN\Config_Context` that tells you what is being asked for:
 
 - `get_scope()`: `Config_Context::SCOPE_SETTING` or `Config_Context::SCOPE_CHANNEL`.
-- `get_setting()`: for a setting, its name, such as `frequency`.
+- `get_setting()`: for a setting, its name, such as `frequency`, or the field name in a settings group. For a field of a group, also check `get_group()`: a group can have a field with the same name as one of the plugin's settings.
+- `get_group()`: the id of the [settings group](settings-groups.md) an add-on registered, and an empty string for the plugin's own settings and for a channel field. Its key is `SC_WPUN_SETTING_<GROUP>__<FIELD>`. Since 3.0.0.
 - `get_instance_id()` and `get_field()`: for a channel field.
 - `get_site_id()`: the site being configured.
 - `get_key()`: the same name as `$key`.

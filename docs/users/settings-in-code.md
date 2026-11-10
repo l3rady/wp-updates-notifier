@@ -64,13 +64,34 @@ define( 'SC_WPUN_CHANNEL_EMAIL__TO', 'ops@example.org,me@example.org' );
 define( 'SC_WPUN_CHANNEL_EMAIL__FORMAT', 'html' );
 ```
 
-Add-ons that bring their own channels get constants named the same way. Their documentation says which options are worth setting.
+Add-ons that bring their own channels get constants named the same way. Their documentation says which options are worth setting. Add-ons can also add [settings of their own](#settings-of-add-ons).
 
 ## Environment variables
 
 Environment variables use the same names as the constants. They are ignored unless the environment variable `SC_WPUN_LOAD_FROM_ENV` is set to `1`, `true`, `yes` or `on`. This stops variables that your host happens to set from changing the plugin.
 
 `SC_WPUN_LOAD_FROM_ENV` has to be an environment variable. Defining it as a constant in `wp-config.php` does nothing. If a constant and an environment variable both supply a value, the constant wins.
+
+## Settings of add-ons
+
+An add-on can add settings of its own to the plugin: a panel on the General tab, or a tab of its own. They are set from outside the database like the plugin's own, with one more part in the name, the **group** the add-on chose (its documentation says which):
+
+`SC_WPUN_SETTING_<GROUP>__<FIELD>`
+
+The group and the field are in capitals and are joined by two underscores. For an add-on that registers the group `acme` with the field `enabled`:
+
+```php
+define( 'SC_WPUN_SETTING_ACME__ENABLED', false );
+```
+
+Everything above works the same for them: the order of constants, environment variables and the database; the opt-in for environment variables; a field set this way is read-only on the settings screen and says "Set by constant SC_WPUN_SETTING_ACME__ENABLED"; and saving the form never changes it. A field that only code can set has no field on the screen until something sets it, and then it is shown read-only so you can see why the add-on behaves as it does.
+
+Two things can differ for an add-on's field, and the add-on's documentation says when:
+
+- **A value that is not valid.** The plugin lists it in Site Health and on its settings page, with the name and where it came from and never the value. The add-on can choose what is used instead: usually the saved value or the default, but a switch can be set to fall back to "off", so a mistyped value stops the feature instead of leaving it on.
+- **A constant that cannot be overridden.** For a switch you want to be sure of, the add-on can have the constant read first, before any other source. Then a source added by a plugin, or a filter, cannot change or remove it. Only the constant counts.
+
+The values the form saves are kept in one option per group, `sc_wpun_settings_<group>`. The plugin does not delete it when the add-on is removed; the add-on's documentation says how to clean it up.
 
 ## Whole channels in code
 
