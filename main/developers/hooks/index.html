@@ -5520,10 +5520,11 @@ and not before something needs a group, such as the settings screen or <code>sc_
 <p>Fired in <code>includes/class-settings-groups.php</code>.</p>
 <h3 id="sc_wpun_settings_group_saved"><code>sc_wpun_settings_group_saved</code><a class="headerlink" href="#sc_wpun_settings_group_saved" title="Permanent link">&para;</a></h3>
 <p><em>Action</em>, since 3.0.0</p>
-<p>Fires after the form of a settings group was saved with values that passed the checks.</p>
+<p>Fires after a settings group was saved with the settings form, with values that passed the checks.</p>
 <p>Both lists hold the stored values only (never a value supplied from a constant, an environment variable or a source),
-as they are in the option <code>sc_wpun_settings_&lt;group&gt;</code>. It also fires when nothing changed. Secrets are in the lists:
-don't log them.</p>
+as they are in the option <code>sc_wpun_settings_&lt;group&gt;</code>. It fires once for each group the user could save on the tab,
+and also when nothing changed. Nothing is saved, and it does not fire, when any value on the tab is not valid.
+Secrets are in the lists: don't log them.</p>
 <p>Example, forget a cache of your own when the group is saved:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
 <span class="x">    'sc_wpun_settings_group_saved',</span>

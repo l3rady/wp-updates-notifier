@@ -3092,8 +3092,13 @@ capability. The Muted tab forms are POST and need both the settings capability a
 is repeatable and reversible (unmute), and a mute only holds back this plugin's notifications. Redirects go back to
 the referrer only if <code>wp_get_referer()</code> accepts it (same site), else to the Plugins screen.</p>
 <h3 id="2-the-settings-screen">2. The settings screen<a class="headerlink" href="#2-the-settings-screen" title="Permanent link">&para;</a></h3>
-<p>The General tab saves through core's <code>options.php</code> (<code>register_setting</code> with <code>sc_wpun_settings_validate</code>, and
-<code>option_page_capability_sc_wpun_settings</code> returns the same capability). The Channels tab and the channel form use the
+<p>Every tab with settings, General and the tabs of add-on settings groups, has one form that posts to <code>admin-post.php</code>
+(<code>sc_wpun_save_settings</code>, <code>Settings_Page::process_save()</code>), in a site and in the network admin. It checks the capability,
+a security token made for the tab, and network-activated, that the request is on the main site. Each settings group is
+saved only by a user who also has the group's own capability; what others post for it is ignored. Everything on the tab
+is validated before anything is written, and nothing is written when anything fails. <code>register_setting</code> with
+<code>sc_wpun_settings_validate</code> still guards every write of the option, and <code>option_page_capability_sc_wpun_settings</code>
+keeps <code>options.php</code> on the same capability. The Channels tab and the channel form use the
 handlers above. Field types are in <code>includes/class-field-types.php</code>, <code>class-boolean-field.php</code> and
 <code>class-enum-field.php</code>. They render through <code>includes/admin/class-field-renderer.php</code>.</p>
 <p><strong>Trust boundary:</strong> administrator input in, and stored, external and add-on data rendered back out.</p>
@@ -3110,7 +3115,7 @@ handlers above. Field types are in <code>includes/class-field-types.php</code>, 
 <tr>
 <td>E</td>
 <td>Someone without the capability opens the page.</td>
-<td><code>Settings_Page::settings_page()</code> refuses with a 403. Core's options.php checks the filtered capability.</td>
+<td><code>Settings_Page::settings_page()</code> refuses with a 403. The save handler checks the filtered capability and the main site, and a group's own capability.</td>
 <td><code>test-settings-screen.php</code> (<code>test_the_page_refuses_users_without_the_capability</code>).</td>
 </tr>
 <tr>

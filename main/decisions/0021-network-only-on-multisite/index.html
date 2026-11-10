@@ -2666,7 +2666,7 @@
 <tr>
 <td>Settings form saves through</td>
 <td><code>options.php</code></td>
-<td><code>network/edit.php</code>, through a <code>network_admin_edit_{action}</code> handler with the same security token. <code>update_site_option()</code> runs <code>sanitize_option()</code>, so the existing <code>register_setting()</code> validator still runs once</td>
+<td><code>network/edit.php</code>, through a <code>network_admin_edit_{action}</code> handler with the same security token. <code>update_site_option()</code> runs <code>sanitize_option()</code>, so the existing <code>register_setting()</code> validator still runs once. Since #459 both modes post to one <code>admin-post.php</code> handler, on the main site only when network-activated</td>
 </tr>
 <tr>
 <td>Plugin row links and notices</td>
