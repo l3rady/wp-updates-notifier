@@ -126,10 +126,10 @@ class Settings_Group_Form {
 		Form_Parts::error_summary(
 			$errors,
 			function ( string $key ) use ( $groups ): string {
-				list( $id, $name ) = explode( '/', $key, 2 ) + array( '', '' );
-				$schema            = $groups[ $id ]['fields'][ $name ] ?? null;
+				$parts  = explode( '/', $key, 2 ) + array( '', '' );
+				$schema = $groups[ $parts[0] ]['fields'][ $parts[1] ] ?? null;
 
-				return is_array( $schema ) ? Form_Parts::first_control_id( $schema, $this->dom_id( $id, $name ) ) : '';
+				return is_array( $schema ) ? Form_Parts::first_control_id( $schema, $this->dom_id( $parts[0], $parts[1] ) ) : '';
 			},
 			__( 'The settings were not saved. Please correct the following.', 'wp-updates-notifier' )
 		);
