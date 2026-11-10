@@ -35,6 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   administrators and written to the stored state.
  * - Declare the API version you need in get_api_constraint(), so the plugin refuses the channel on a site that is too old.
  * - Let site code change the payload with filter_payload(), and check it is still what you can send.
+ * - Keep settings that belong to the whole add-on in a settings group, and read them with sc_wpun_setting().
  *
  * @since 1.0.0
  */
@@ -44,6 +45,11 @@ class Example_Channel extends Channel {
 	 * The channel type: lower case letters, digits and underscores, unique among all channels.
 	 */
 	const TYPE = 'example';
+
+	/**
+	 * The id of the add-on's settings group (see register_settings() in the main file).
+	 */
+	const SETTINGS_GROUP = 'example_chat';
 
 	/**
 	 * The longest message to send, in characters. Chat services refuse a message above their limit.
@@ -168,7 +174,18 @@ class Example_Channel extends Channel {
 			return Delivery_Result::failure( __( 'No webhook address is set.', 'wpun-example-channel' ), 'not_configured' );
 		}
 
-		$payload = array( 'text' => $this->message( $notification ) );
+		// The kill switch is set in code (SC_WPUN_SETTING_EXAMPLE_CHAT__ENABLED); sc_wpun_setting() gives the value in effect.
+		if ( true !== \sc_wpun_setting( self::SETTINGS_GROUP, 'enabled' ) ) {
+			return Delivery_Result::failure( __( 'Sending is switched off in the site\'s configuration.', 'wpun-example-channel' ), 'switched_off' );
+		}
+
+		$text   = $this->message( $notification );
+		$prefix = \sc_wpun_setting( self::SETTINGS_GROUP, 'prefix' );
+		if ( is_string( $prefix ) && '' !== $prefix ) {
+			$text = $prefix . ' ' . $text;
+		}
+
+		$payload = array( 'text' => $text );
 		$name    = $instance->get_setting( 'username', '' );
 		if ( is_string( $name ) && '' !== $name ) {
 			$payload['username'] = $name;

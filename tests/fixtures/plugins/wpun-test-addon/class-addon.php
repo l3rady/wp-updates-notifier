@@ -33,6 +33,7 @@ class Addon {
 	const ID_PREFIX  = 'addon_';
 	const CODE_ID    = 'addon_code';
 	const CODE_REGEX = '/^[A-Z]{3}-[0-9]{3}$/';
+	const GROUP      = 'wpun_test';
 
 	/**
 	 * What the add-on's channel instances were given to deliver: instance id => list of item key lists.
@@ -77,6 +78,7 @@ class Addon {
 	 */
 	public static function hook(): void {
 		add_action( 'sc_wpun_register_channels', array( self::class, 'register_channels' ) );
+		add_action( 'sc_wpun_register_settings', array( self::class, 'register_settings' ) );
 		add_filter( 'sc_wpun_field_types', array( self::class, 'field_types' ) );
 		add_filter( 'sc_wpun_item_types', array( self::class, 'item_types' ) );
 		add_filter( 'sc_wpun_update_items', array( self::class, 'update_items' ) );
@@ -97,6 +99,42 @@ class Addon {
 	 */
 	public static function register_channels( Channel_Registry $registry ): void {
 		$registry->register( new Addon_Channel() );
+	}
+
+	/**
+	 * Register the add-on's settings group: a code-only kill switch and one stored field.
+	 *
+	 * Settings groups are in API 1.1.0, so an older plugin is left alone.
+	 *
+	 * @return void
+	 */
+	public static function register_settings(): void {
+		if ( ! function_exists( 'sc_wpun_api_supports' ) || ! \sc_wpun_api_supports( '1.1.0' ) ) {
+			return;
+		}
+
+		\sc_wpun_register_settings_group(
+			self::GROUP,
+			array(
+				'label'       => 'Test add-on',
+				'description' => 'Settings of the test add-on.',
+			),
+			array(
+				'enabled'  => array(
+					'type'           => 'boolean',
+					'label'          => 'Enabled',
+					'default'        => true,
+					'storage'        => false,
+					'on_invalid'     => false,
+					'constant_first' => true,
+				),
+				'greeting' => array(
+					'type'    => 'text',
+					'label'   => 'Greeting',
+					'default' => 'Hello',
+				),
+			)
+		);
 	}
 
 	/**

@@ -11,7 +11,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Not loaded by WordPress.
 }
 
-use WPUN\Boolean_Field;
 use WPUN\Channel;
 use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
@@ -302,7 +301,7 @@ class Channel_Form {
 	 * @return bool
 	 */
 	private function has_errors( string $form ): bool {
-		$round = $this->round_trip( $form, false );
+		$round = Form_Parts::round_trip( self::META_KEY, $form, false );
 
 		return null !== $round && array() !== $round['errors'];
 	}
@@ -368,7 +367,7 @@ class Channel_Form {
 		$type     = $instance->get_type();
 		$form_key = $is_new ? 'new:' . $type : 'edit:' . $id;
 		$fields   = $channel->get_form_fields();
-		$round    = $this->round_trip( $form_key, true );
+		$round    = Form_Parts::round_trip( self::META_KEY, $form_key, true );
 		$errors   = null === $round ? array() : $round['errors'];
 
 		$was_enabled = $instance->is_enabled();
@@ -401,7 +400,13 @@ class Channel_Form {
 		?>
 		<div class="sc-wpun-channel-form-wrap">
 			<h2><?php echo esc_html( $heading ); ?></h2>
-			<?php $this->render_error_summary( $errors, $linkable ); ?>
+			<?php
+			Form_Parts::error_summary(
+				$errors,
+				fn( string $key ): string => $this->field_id( $key, $linkable ),
+				__( 'The channel was not saved. Please correct the following.', 'wp-updates-notifier' )
+			);
+			?>
 			<form class="sc-wpun-channel-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="<?php echo esc_attr( self::SAVE_ACTION ); ?>" />
 				<input type="hidden" name="mode" value="<?php echo esc_attr( $mode ); ?>" />
@@ -476,38 +481,6 @@ class Channel_Form {
 	}
 
 	/**
-	 * Output the summary of the errors of the last save.
-	 *
-	 * @param array<string, string>               $errors Messages by field key.
-	 * @param array<string, array<string, mixed>> $fields The fields of the module that are drawn by the form, so an error can link to them.
-	 *
-	 * @return void
-	 */
-	private function render_error_summary( array $errors, array $fields ): void {
-		if ( array() === $errors ) {
-			return;
-		}
-		?>
-		<div class="notice notice-error inline sc-wpun-form-errors" role="alert" tabindex="-1">
-			<h2><?php esc_html_e( 'There is a problem', 'wp-updates-notifier' ); ?></h2>
-			<p><?php esc_html_e( 'The channel was not saved. Please correct the following.', 'wp-updates-notifier' ); ?></p>
-			<ul>
-				<?php foreach ( $errors as $key => $message ) : ?>
-					<li>
-						<?php $anchor = $this->field_id( (string) $key, $fields ); ?>
-						<?php if ( '' === $anchor ) : ?>
-							<?php echo esc_html( $message ); ?>
-						<?php else : ?>
-							<a href="#<?php echo esc_attr( $anchor ); ?>"><?php echo esc_html( $message ); ?></a>
-						<?php endif; ?>
-					</li>
-				<?php endforeach; ?>
-			</ul>
-		</div>
-		<?php
-	}
-
-	/**
 	 * The id of the control an error key links to: the control itself, or the first input of a group of radio buttons or checkboxes.
 	 *
 	 * @param string                              $key    `label`, `enabled`, `routing.<name>` or `settings.<name>`.
@@ -520,117 +493,20 @@ class Channel_Form {
 			return 'sc_wpun_channel_label';
 		}
 		if ( 'enabled' === $key ) {
-			return $this->first_control_id( Channel::enabled_field(), 'sc_wpun_channel_enabled' );
+			return Form_Parts::first_control_id( Channel::enabled_field(), 'sc_wpun_channel_enabled' );
 		}
 		if ( 0 === strpos( $key, 'routing.' ) ) {
 			$name = substr( $key, 8 );
 
-			return $this->first_control_id( Routing::fields()[ $name ] ?? array(), 'sc_wpun_channel_routing_' . $name );
+			return Form_Parts::first_control_id( Routing::fields()[ $name ] ?? array(), 'sc_wpun_channel_routing_' . $name );
 		}
 		if ( 0 === strpos( $key, 'settings.' ) && isset( $fields[ substr( $key, 9 ) ] ) ) {
 			$name = substr( $key, 9 );
 
-			return $this->first_control_id( $fields[ $name ], 'sc_wpun_channel_settings_' . $name );
+			return Form_Parts::first_control_id( $fields[ $name ], 'sc_wpun_channel_settings_' . $name );
 		}
 
 		return '';
-	}
-
-	/**
-	 * Where focus goes for a field: its id, or for a group of radio buttons or checkboxes the first input, as the fieldset takes no focus.
-	 *
-	 * A boolean shown as a checkbox is one control with the id itself; the other groups number their inputs `{id}_0`, `{id}_1` and so on.
-	 *
-	 * @param array<string, mixed> $schema Field schema.
-	 * @param string               $id     Id of the field.
-	 *
-	 * @return string
-	 */
-	private function first_control_id( array $schema, string $id ): string {
-		$single_checkbox = 'boolean' === Field_Types::canonical( $schema['type'] ?? null ) && 'checkbox' === Boolean_Field::normalise( $schema )['display'];
-
-		return $single_checkbox || Field_Renderer::labels_one_control( $schema ) ? $id : $id . '_0';
-	}
-
-	/**
-	 * A row of a form table.
-	 *
-	 * @param string $title    Text of the row header, already escaped.
-	 * @param string $target      Id of the single control the header labels; empty if the control names itself.
-	 * @param string $controls Markup of the cell, already escaped.
-	 * @param bool   $required Whether to mark the field as required.
-	 *
-	 * @return string Escaped markup.
-	 */
-	private function row( string $title, string $target, string $controls, bool $required = false ): string {
-		return '<tr><th scope="row">' . $this->title_html( $title, $target, $required ) . '</th><td>' . $controls . '</td></tr>';
-	}
-
-	/**
-	 * A row for a field of the routing or settings section.
-	 *
-	 * The header is the field's label, or its name without one, and a label for the control when there is only one.
-	 *
-	 * @param string               $name     Field name.
-	 * @param array<string, mixed> $schema   Field schema.
-	 * @param string               $id       Id of the control.
-	 * @param string               $controls Markup of the cell, already escaped.
-	 *
-	 * @return string Escaped markup.
-	 */
-	private function field_row( string $name, array $schema, string $id, string $controls ): string {
-		return $this->row( esc_html( Field_Types::label( $name, $schema ) ), Field_Renderer::labels_one_control( $schema ) ? $id : '', $controls, Field_Renderer::is_required( $schema ) );
-	}
-
-	/**
-	 * The content of the header cell of a row: the title, as a label of the control if there is a single one.
-	 *
-	 * @param string $title    Text of the row header, already escaped.
-	 * @param string $target   Id of the single control the header labels; empty if the control names itself.
-	 * @param bool   $required Whether to mark the field as required.
-	 *
-	 * @return string Escaped markup.
-	 */
-	private function title_html( string $title, string $target, bool $required ): string {
-		$title .= $required ? Field_Renderer::required_marker() : '';
-
-		return '' === $target ? $title : '<label for="' . esc_attr( $target ) . '">' . $title . '</label>';
-	}
-
-	/**
-	 * Output a field with its error and its note on where its value comes from.
-	 *
-	 * @param array<string, mixed> $schema   Field schema.
-	 * @param string               $name     Input name.
-	 * @param string               $id       Control id.
-	 * @param mixed                $value    Current value.
-	 * @param string               $error    Error message, if any.
-	 * @param string|null          $external Where the value comes from, if outside the database.
-	 * @param string               $applies  The note on when the field applies, if it is conditional.
-	 *
-	 * @return string The markup of the cell.
-	 */
-	private function control( array $schema, string $name, string $id, $value, string $error, ?string $external = null, string $applies = '' ): string {
-		$description = isset( $schema['description'] ) && is_string( $schema['description'] ) && '' !== $schema['description'] ? $schema['description'] : '';
-		if ( null !== $external && Field_Types::hides_external( $schema ) ) {
-			// A value from outside the database may be a secret the schema forgot to flag: don't print it.
-			$value = '';
-		}
-		// The field adds the id of its error after these.
-		$described_by = trim( ( '' !== $description ? $id . '-description' : '' ) . ( null !== $external ? ' ' . $id . '-external' : '' ) . ( '' !== $applies ? ' ' . $id . '-applies-when' : '' ) );
-		$html         = Field_Renderer::field( $schema, $name, $id, $value, null !== $external, $described_by, array(), $error );
-		if ( null !== $external ) {
-			// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
-			$html .= ' <span class="description sc-wpun-external" id="' . esc_attr( $id . '-external' ) . '">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';
-		}
-		if ( '' !== $description ) {
-			$html .= '<p class="description" id="' . esc_attr( $id . '-description' ) . '">' . esc_html( $description ) . '</p>';
-		}
-		if ( '' !== $applies ) {
-			$html .= '<p class="description sc-wpun-applies-when" id="' . esc_attr( $id . '-applies-when' ) . '">' . esc_html( $applies ) . '</p>';
-		}
-
-		return $html;
 	}
 
 	/**
@@ -656,10 +532,10 @@ class Channel_Form {
 			<tbody>
 				<?php
 				if ( $is_new ) {
-					$this->put( $this->row( esc_html__( 'ID', 'wp-updates-notifier' ), '', '<p class="description">' . esc_html__( 'The id is made from the label when the channel is saved and cannot be changed afterwards.', 'wp-updates-notifier' ) . '</p>' ) );
+					$this->put( Form_Parts::row( esc_html__( 'ID', 'wp-updates-notifier' ), '', '<p class="description">' . esc_html__( 'The id is made from the label when the channel is saved and cannot be changed afterwards.', 'wp-updates-notifier' ) . '</p>' ) );
 				} else {
 					$this->put(
-						$this->row(
+						Form_Parts::row(
 							esc_html__( 'ID', 'wp-updates-notifier' ),
 							'',
 							'<code class="sc-wpun-channel-id">' . esc_html( $id ) . '</code><p class="description">'
@@ -670,14 +546,14 @@ class Channel_Form {
 				}
 
 				$label_schema = $this->label_schema();
-				$this->put( $this->row( esc_html( (string) $label_schema['label'] ), 'sc_wpun_channel_label', $this->control( $label_schema, 'label', 'sc_wpun_channel_label', $label, $errors['label'] ?? '' ), Field_Renderer::is_required( $label_schema ) ) );
+				$this->put( Form_Parts::row( esc_html( (string) $label_schema['label'] ), 'sc_wpun_channel_label', Form_Parts::control( $label_schema, 'label', 'sc_wpun_channel_label', $label, $errors['label'] ?? '' ), Field_Renderer::is_required( $label_schema ) ) );
 
 				$enabled_schema = Channel::enabled_field();
-				$this->put( $this->row( esc_html( (string) $enabled_schema['label'] ), '', $this->control( $enabled_schema, 'enabled', 'sc_wpun_channel_enabled', $enabled, $errors['enabled'] ?? '', $external ) ) );
+				$this->put( Form_Parts::row( esc_html( (string) $enabled_schema['label'] ), '', Form_Parts::control( $enabled_schema, 'enabled', 'sc_wpun_channel_enabled', $enabled, $errors['enabled'] ?? '', $external ) ) );
 
 				if ( null === $external && ( $is_new || ! $was_enabled ) ) {
 					$this->put(
-						$this->row(
+						Form_Parts::row(
 							esc_html__( 'Updates already waiting', 'wp-updates-notifier' ),
 							'',
 							'<label for="sc_wpun_channel_skip_pending"><input type="checkbox" id="sc_wpun_channel_skip_pending" name="skip_pending" value="1" aria-describedby="sc_wpun_channel_skip_pending-description"' . checked( $skip, true, false ) . ' /> '
@@ -714,7 +590,7 @@ class Channel_Form {
 					if ( isset( $notes[ $name ] ) ) {
 						$schema['description'] = trim( ( isset( $schema['description'] ) && is_string( $schema['description'] ) ? $schema['description'] : '' ) . ' ' . $notes[ $name ] );
 					}
-					$this->put( $this->field_row( $name, $schema, $id, $this->control( $schema, 'routing[' . $name . ']', $id, $routing[ $name ] ?? '', $errors[ 'routing.' . $name ] ?? '' ) ) );
+					$this->put( Form_Parts::field_row( $name, $schema, $id, Form_Parts::control( $schema, 'routing[' . $name . ']', $id, $routing[ $name ] ?? '', $errors[ 'routing.' . $name ] ?? '' ) ) );
 				}
 				?>
 			</tbody>
@@ -806,9 +682,9 @@ class Channel_Form {
 			$id       = 'sc_wpun_channel_settings_' . $name;
 			$external = $is_new ? null : $this->store->external_source( $form_inst->get_id(), $name );
 			$value    = array_key_exists( $name, $settings ) ? $settings[ $name ] : ( $schema['default'] ?? '' );
-			$applies  = $this->applies_note( $name, $schema, $fields );
+			$applies  = Form_Parts::applies_note( $name, $schema, $fields );
 
-			$buckets[ $group ][ $name ] = $this->field_row( $name, $schema, $id, $this->control( $schema, 'settings[' . $name . ']', $id, $value, $errors[ 'settings.' . $name ] ?? '', $external, $applies ) );
+			$buckets[ $group ][ $name ] = Form_Parts::field_row( $name, $schema, $id, Form_Parts::control( $schema, 'settings[' . $name . ']', $id, $value, $errors[ 'settings.' . $name ] ?? '', $external, $applies ) );
 		}
 
 		// Fields without a group first, under "Settings"; then each group that has fields, in the order declared, as a section of its own.
@@ -833,9 +709,9 @@ class Channel_Form {
 			}
 			$collapsed = true === ( $group['collapsed'] ?? false );
 
-			$this->put( $this->frame_open( $dom_id, $label, $text, $collapsed, $open, false ) );
+			$this->put( Form_Parts::frame_open( $dom_id, $label, $text, $collapsed, $open, false ) );
 			$this->settings_table( $rows );
-			$this->put( $this->frame_close( $collapsed ) );
+			$this->put( Form_Parts::frame_close( $collapsed ) );
 		}
 	}
 
@@ -852,47 +728,10 @@ class Channel_Form {
 			$dom_id    = 'sc_wpun_channel_panel_' . preg_replace( '/[^A-Za-z0-9_-]/', '_', (string) $panel_id );
 			$collapsed = $panel['collapsed'];
 
-			$this->put( $this->frame_open( $dom_id, $panel['label'], $panel['description'], $collapsed, false, true ) );
+			$this->put( Form_Parts::frame_open( $dom_id, $panel['label'], $panel['description'], $collapsed, false, true ) );
 			echo '<div class="sc-wpun-form-panel-content">' . $panel['content'] . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup of the channel module, escaped by it like a custom field.
-			$this->put( $this->frame_close( $collapsed ) );
+			$this->put( Form_Parts::frame_close( $collapsed ) );
 		}
-	}
-
-	/**
-	 * The opening markup of a field group or a panel: a fieldset with a legend, in a details element when collapsed.
-	 *
-	 * @param string $dom_id    Base of the DOM ids.
-	 * @param string $label     Title.
-	 * @param string $text      Help text, or an empty string.
-	 * @param bool   $collapsed Whether it is folded into a details element.
-	 * @param bool   $open      Whether the details element starts open.
-	 * @param bool   $is_panel  Whether it is a panel of the module, not a group of fields: it also gets the panel classes.
-	 *
-	 * @return string Escaped markup.
-	 */
-	private function frame_open( string $dom_id, string $label, string $text, bool $collapsed, bool $open, bool $is_panel ): string {
-		$html = '';
-		if ( $collapsed ) {
-			$html .= '<details class="sc-wpun-field-group-details' . ( $is_panel ? ' sc-wpun-form-panel-details' : '' ) . '"' . ( $open ? ' open' : '' ) . '><summary>' . esc_html( $label ) . '</summary>';
-		}
-		$html .= '<fieldset class="sc-wpun-field-group' . ( $is_panel ? ' sc-wpun-form-panel' : '' ) . '"' . ( '' !== $text ? ' aria-describedby="' . esc_attr( $dom_id . '-description' ) . '"' : '' ) . '>';
-		$html .= $collapsed ? '<legend class="screen-reader-text">' . esc_html( $label ) . '</legend>' : '<legend><h3>' . esc_html( $label ) . '</h3></legend>';
-		if ( '' !== $text ) {
-			$html .= '<p class="description" id="' . esc_attr( $dom_id . '-description' ) . '">' . esc_html( $text ) . '</p>';
-		}
-
-		return $html;
-	}
-
-	/**
-	 * The closing markup that goes with frame_open().
-	 *
-	 * @param bool $collapsed Whether it was folded into a details element.
-	 *
-	 * @return string
-	 */
-	private function frame_close( bool $collapsed ): string {
-		return '</fieldset>' . ( $collapsed ? '</details>' : '' );
 	}
 
 	/**
@@ -911,99 +750,6 @@ class Channel_Form {
 	}
 
 	/**
-	 * The note on when a conditional field is used.
-	 *
-	 * @param string                              $name   Name of the field.
-	 * @param array<string, mixed>                $schema Field schema.
-	 * @param array<string, array<string, mixed>> $fields The fields of the module.
-	 *
-	 * @return string Plain text, or an empty string for a field without a (usable) condition.
-	 */
-	private function applies_note( string $name, array $schema, array $fields ): string {
-		$clauses = array();
-		foreach ( Field_Types::conditions( $name, $schema, $fields ) as $other => $wanted ) {
-			$other_schema = (array) $fields[ $other ];
-			$other_label  = Field_Types::label( (string) $other, $other_schema );
-			$texts        = array();
-			foreach ( $wanted as $value ) {
-				$texts[] = $this->value_text( $value, $other_schema );
-			}
-			$clauses[] = sprintf(
-				// translators: 1: Label of another field, for example "Mode". 2: The value or values it must have, for example "App" or "App or Bot".
-				__( '%1$s is %2$s', 'wp-updates-notifier' ),
-				$other_label,
-				$this->join_texts( $texts, 'or' )
-			);
-		}
-		if ( array() === $clauses ) {
-			return '';
-		}
-
-		return sprintf(
-			// translators: %s: The condition, for example "Mode is App" or "Mode is App and Format is HTML".
-			__( 'Used only when %s.', 'wp-updates-notifier' ),
-			$this->join_texts( $clauses, 'and' )
-		);
-	}
-
-	/**
-	 * The words for a value a field is compared with: the label of an option, the on or off text of a boolean, or the value itself.
-	 *
-	 * @param mixed                $value  The value in the condition.
-	 * @param array<string, mixed> $schema Schema of the field it is compared with.
-	 *
-	 * @return string
-	 */
-	private function value_text( $value, array $schema ): string {
-		$type = Field_Types::canonical( $schema['type'] ?? null );
-
-		if ( 'boolean' === $type && in_array( $value, array( true, 1, '1', false, 0, '0' ), true ) ) {
-			$on     = in_array( $value, array( true, 1, '1' ), true );
-			$labels = isset( $schema['labels'] ) && is_array( $schema['labels'] ) ? $schema['labels'] : array();
-			$label  = $labels[ $on ? 'on' : 'off' ] ?? null;
-			if ( is_string( $label ) && '' !== $label ) {
-				return $label;
-			}
-
-			return $on ? __( 'Yes', 'wp-updates-notifier' ) : __( 'No', 'wp-updates-notifier' );
-		}
-
-		$raw = is_scalar( $value ) ? (string) $value : '';
-		if ( 'enum' === $type && isset( $schema['options'] ) && is_array( $schema['options'] ) && isset( $schema['options'][ $raw ] ) && is_string( $schema['options'][ $raw ] ) ) {
-			return $schema['options'][ $raw ];
-		}
-
-		return $raw;
-	}
-
-	/**
-	 * Join texts as a sentence list: "A", "A or B", "A, B or C".
-	 *
-	 * @param string[] $texts The texts.
-	 * @param string   $word  `or` or `and`.
-	 *
-	 * @return string
-	 */
-	private function join_texts( array $texts, string $word ): string {
-		$last = (string) array_pop( $texts );
-		if ( array() === $texts ) {
-			return $last;
-		}
-
-		$head = array_shift( $texts );
-		foreach ( $texts as $text ) {
-			// translators: 1: The items so far. 2: The next item. Used to join a list such as "A, B or C".
-			$head = sprintf( _x( '%1$s, %2$s', 'list of values or conditions', 'wp-updates-notifier' ), $head, $text );
-		}
-
-		return 'or' === $word
-			// translators: 1: The items so far, for example "A, B". 2: The last item. A list of values of which any is enough.
-			? sprintf( __( '%1$s or %2$s', 'wp-updates-notifier' ), $head, $last )
-			// translators: 1: The items so far, for example "A, B". 2: The last item. A list of conditions that must all hold.
-			: sprintf( __( '%1$s and %2$s', 'wp-updates-notifier' ), $head, $last );
-	}
-
-	/**
 	 * The schema of the label of an instance.
 	 *
 	 * @return array<string, mixed>
@@ -1013,40 +759,6 @@ class Channel_Form {
 			'type'     => 'text',
 			'label'    => __( 'Label', 'wp-updates-notifier' ),
 			'required' => true,
-		);
-	}
-
-	/**
-	 * Read what the last failed save left for the current user, if it is for this form, and delete it when asked to.
-	 *
-	 * @param string $form   `edit:<id>` or `new:<type>`.
-	 * @param bool   $delete Whether to delete it: the form that shows it does, the page title only looks.
-	 *
-	 * @return array{values: array<string, mixed>, errors: array<string, string>}|null Null if there is none, it is for another site or form, or it is stale.
-	 */
-	private function round_trip( string $form, bool $delete ): ?array {
-		$user_id = get_current_user_id();
-		$stored  = get_user_meta( $user_id, self::META_KEY, true );
-		if ( ! is_array( $stored ) || ( $stored['site'] ?? 0 ) !== get_current_blog_id() ) {
-			return null; // None, or it belongs to another site of the network.
-		}
-		if ( $delete ) {
-			delete_user_meta( $user_id, self::META_KEY );
-		}
-		if ( ! isset( $stored['time'] ) || ! is_int( $stored['time'] ) || $stored['time'] < time() - 5 * MINUTE_IN_SECONDS || ( $stored['form'] ?? '' ) !== $form ) {
-			return null;
-		}
-
-		$errors = array();
-		foreach ( isset( $stored['errors'] ) && is_array( $stored['errors'] ) ? $stored['errors'] : array() as $key => $message ) {
-			if ( is_string( $message ) ) {
-				$errors[ (string) $key ] = $message;
-			}
-		}
-
-		return array(
-			'values' => isset( $stored['values'] ) && is_array( $stored['values'] ) ? $stored['values'] : array(),
-			'errors' => $errors,
 		);
 	}
 
@@ -1104,36 +816,6 @@ class Channel_Form {
 	}
 
 	/**
-	 * A key of the request as a string, from the posted data, cleaned as a key.
-	 *
-	 * @param string $key Name in `$_POST`.
-	 *
-	 * @return string Empty if missing or not a string.
-	 */
-	private function posted_key( string $key ): string {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only used to find the nonce action.
-		return isset( $_POST[ $key ] ) && is_string( $_POST[ $key ] ) ? sanitize_key( wp_unslash( $_POST[ $key ] ) ) : '';
-	}
-
-	/**
-	 * A list in the posted data, unslashed.
-	 *
-	 * @param string $key Name in `$_POST`.
-	 *
-	 * @return array<string, mixed> Empty if missing or not a list.
-	 */
-	private function posted_list( string $key ): array {
-		// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Called after the nonce is checked; the field types clean the values.
-		if ( ! isset( $_POST[ $key ] ) || ! is_array( $_POST[ $key ] ) ) {
-			return array();
-		}
-		$list = wp_unslash( $_POST[ $key ] );
-		// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
-		return is_array( $list ) ? $list : array();
-	}
-
-	/**
 	 * Check a submitted form and save the channel, or remember what was wrong.
 	 *
 	 * @return string|null The address to go to; null if the user may not do this or the nonce is not valid.
@@ -1143,11 +825,11 @@ class Channel_Form {
 			return null;
 		}
 
-		$mode = $this->posted_key( 'mode' );
+		$mode = Form_Parts::posted_key( 'mode' );
 		if ( 'new' !== $mode && 'edit' !== $mode ) {
 			return null;
 		}
-		$key = $this->posted_key( 'new' === $mode ? 'type' : 'id' );
+		$key = Form_Parts::posted_key( 'new' === $mode ? 'type' : 'id' );
 		if ( ! Settings_Page::posted_token_valid( self::SAVE_ACTION . '_' . $mode . '_' . $key ) ) {
 			return null;
 		}
@@ -1176,7 +858,7 @@ class Channel_Form {
 
 		$fields          = $channel->get_form_fields();
 		$errors          = array();
-		$posted_settings = $this->posted_list( 'settings' );
+		$posted_settings = Form_Parts::posted_list( 'settings' );
 
 		// Label.
 		$label_schema = $this->label_schema();
@@ -1184,7 +866,7 @@ class Channel_Form {
 		$posted_label = isset( $_POST['label'] ) ? wp_unslash( $_POST['label'] ) : '';
 		$checked      = Field_Types::validate( array( 'label' => $label_schema ), array( 'label' => $posted_label ), array() );
 		$label        = is_array( $checked ) && isset( $checked['label'] ) && is_string( $checked['label'] ) ? $checked['label'] : '';
-		$this->collect_errors( $errors, $checked, 'label', array() );
+		Form_Parts::collect_errors( $errors, $checked, 'label', array() );
 
 		// Enabled: a missing value is off; one supplied from outside the database wins.
 		$enabled = false;
@@ -1195,14 +877,14 @@ class Channel_Form {
 			$posted_enabled = isset( $_POST['enabled'] ) ? wp_unslash( $_POST['enabled'] ) : '0';
 			$checked        = Field_Types::validate( array( 'enabled' => Channel::enabled_field() ), array( 'enabled' => $posted_enabled ), array() );
 			$enabled        = is_array( $checked ) && true === ( $checked['enabled'] ?? false );
-			$this->collect_errors( $errors, $checked, 'enabled', array() );
+			Form_Parts::collect_errors( $errors, $checked, 'enabled', array() );
 		}
 
 		// Routing: unknown keys of the stored routing are kept.
-		$posted_routing = $this->posted_list( 'routing' );
+		$posted_routing = Form_Parts::posted_list( 'routing' );
 		$checked        = Field_Types::validate( Routing::fields(), $posted_routing, array() );
 		$routing        = array_merge( null === $stored ? array() : $stored->get_routing(), is_array( $checked ) ? $checked : array() );
-		$this->collect_errors( $errors, $checked, 'routing', Routing::fields() );
+		Form_Parts::collect_errors( $errors, $checked, 'routing', Routing::fields() );
 
 		// Settings: a value from outside the database is not submitted, so the channel is given the one in effect.
 		$stored_settings = null === $stored ? array() : $stored->get_settings();
@@ -1217,7 +899,7 @@ class Channel_Form {
 		}
 		$clean = $channel->validate_settings( $for_validation, $stored_settings );
 		if ( $clean instanceof \WP_Error ) {
-			$this->collect_errors( $errors, $clean, 'settings', $fields );
+			Form_Parts::collect_errors( $errors, $clean, 'settings', $fields );
 			$clean = array();
 		} elseif ( ! is_array( $clean ) ) {
 			$errors[''] ??= __( 'The settings are not valid.', 'wp-updates-notifier' );
@@ -1225,14 +907,15 @@ class Channel_Form {
 		}
 
 		if ( array() !== $errors ) {
-			$this->remember(
+			Form_Parts::remember(
+				self::META_KEY,
 				'new' === $mode ? 'new:' . $key : 'edit:' . $key,
 				array(
 					'label'        => is_string( $posted_label ) ? $posted_label : '',
 					'enabled'      => $enabled,
 					'skip_pending' => ! empty( $_POST['skip_pending'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce checked above.
 					'routing'      => $posted_routing,
-					'settings'     => $this->without_secrets( $posted_settings, $fields ),
+					'settings'     => Form_Parts::without_secrets( $posted_settings, $fields ),
 				),
 				$errors
 			);
@@ -1268,75 +951,6 @@ class Channel_Form {
 		);
 
 		return $this->tab_url();
-	}
-
-	/**
-	 * Add the messages of the errors of a validation to a list keyed by field.
-	 *
-	 * @param array<string, string>               $errors Messages by field key, added to.
-	 * @param mixed                               $result The result of the validation.
-	 * @param string                              $area   `label`, `enabled`, `routing` or `settings`.
-	 * @param array<string, array<string, mixed>> $known  The fields of the area that can have an error; an error that names another has no field.
-	 *
-	 * @return void
-	 */
-	private function collect_errors( array &$errors, $result, string $area, array $known ): void {
-		if ( ! $result instanceof \WP_Error ) {
-			return;
-		}
-
-		foreach ( $result->get_error_codes() as $code ) {
-			$data  = $result->get_error_data( $code );
-			$field = is_array( $data ) && isset( $data['field'] ) && is_string( $data['field'] ) ? $data['field'] : '';
-			if ( 'label' === $area || 'enabled' === $area ) {
-				$key = $area;
-			} else {
-				$key = '' !== $field && isset( $known[ $field ] ) ? $area . '.' . $field : '';
-			}
-			$errors[ $key ] ??= $result->get_error_message( $code );
-		}
-	}
-
-	/**
-	 * The posted settings without the values of secrets and without the "clear" boxes.
-	 *
-	 * @param array<string, mixed>                $settings Posted settings.
-	 * @param array<string, array<string, mixed>> $fields   The fields of the module.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function without_secrets( array $settings, array $fields ): array {
-		foreach ( array_keys( $settings ) as $name ) {
-			$name = (string) $name;
-			if ( '__clear' === substr( $name, -7 ) || ( isset( $fields[ $name ] ) && is_array( $fields[ $name ] ) && Field_Types::is_secret( $fields[ $name ] ) ) ) {
-				unset( $settings[ $name ] );
-			}
-		}
-
-		return $settings;
-	}
-
-	/**
-	 * Keep what was submitted and what was wrong for the form to show on the next page load.
-	 *
-	 * @param string               $form   `edit:<id>` or `new:<type>`.
-	 * @param array<string, mixed> $values The submitted values.
-	 * @param array<string,string> $errors Messages by field key.
-	 *
-	 * @return void
-	 */
-	private function remember( string $form, array $values, array $errors ): void {
-		update_user_meta(
-			get_current_user_id(),
-			self::META_KEY,
-			array(
-				'site'   => get_current_blog_id(),
-				'time'   => time(),
-				'form'   => $form,
-				'values' => $values,
-				'errors' => $errors,
-			)
-		);
 	}
 
 	/**

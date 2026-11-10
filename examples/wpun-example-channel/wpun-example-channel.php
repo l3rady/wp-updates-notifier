@@ -80,6 +80,47 @@ function boot(): void {
 			$registry->register( new Example_Channel() );
 		}
 	);
+
+	add_action( 'sc_wpun_register_settings', __NAMESPACE__ . '\\register_settings' );
+}
+
+/**
+ * Register the add-on's settings group: a kill switch only the site's code can set, and one field on the settings screen.
+ *
+ * A group is stored, drawn on the General tab, checked and saved by WP Updates Notifier, and its values can come from
+ * constants and environment variables like the plugin's own. `SC_WPUN_SETTING_EXAMPLE_CHAT__ENABLED` is the key of the
+ * switch. The switch is `constant_first`, so nothing but a constant can override it, and `on_invalid` makes a mistyped
+ * value switch the channel off.
+ *
+ * @return void
+ */
+function register_settings(): void {
+	\sc_wpun_register_settings_group(
+		Example_Channel::SETTINGS_GROUP,
+		array(
+			'label'       => __( 'Example chat add-on', 'wpun-example-channel' ),
+			'description' => __( 'Settings of the example chat channel, for all its channels.', 'wpun-example-channel' ),
+		),
+		array(
+			// 'storage' => false: no field on the screen and nothing stored; only code can set it, and the screen shows it
+			// read-only when something does.
+			'enabled' => array(
+				'type'           => 'boolean',
+				'label'          => __( 'Sending switched on', 'wpun-example-channel' ),
+				'default'        => true,
+				'storage'        => false,
+				'on_invalid'     => false,
+				'constant_first' => true,
+			),
+			// An ordinary field: the plugin draws it in the panel, checks it and stores it.
+			'prefix'  => array(
+				'type'              => 'text',
+				'label'             => __( 'Message prefix', 'wpun-example-channel' ),
+				'description'       => __( 'Optional. Text to put in front of every message.', 'wpun-example-channel' ),
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		)
+	);
 }
 
 /**

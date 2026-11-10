@@ -103,20 +103,28 @@ class Settings_Page {
 	private $network_context;
 
 	/**
+	 * The panels of the settings groups; the plugin's own when null.
+	 *
+	 * @var Settings_Group_Form|null
+	 */
+	private $group_form;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Settings             $settings  Settings.
-	 * @param State                $state     Run state.
-	 * @param Config_Report        $config_report Report of configuration problems.
-	 * @param Rejected_Channels    $rejected_channels Report of modules refused for needing a newer API.
-	 * @param Channels_Tab         $channels_tab The Channels tab.
-	 * @param Notices              $notices Notices about what an admin action did.
-	 * @param Check_Now            $check_now The Check now button.
-	 * @param About_Tab            $about_tab The About tab.
-	 * @param Muted_Tab            $muted_tab The Muted tab.
-	 * @param Network_Context|null $network_context Where the plugin runs.
+	 * @param Settings                 $settings  Settings.
+	 * @param State                    $state     Run state.
+	 * @param Config_Report            $config_report Report of configuration problems.
+	 * @param Rejected_Channels        $rejected_channels Report of modules refused for needing a newer API.
+	 * @param Channels_Tab             $channels_tab The Channels tab.
+	 * @param Notices                  $notices Notices about what an admin action did.
+	 * @param Check_Now                $check_now The Check now button.
+	 * @param About_Tab                $about_tab The About tab.
+	 * @param Muted_Tab                $muted_tab The Muted tab.
+	 * @param Network_Context|null     $network_context Where the plugin runs.
+	 * @param Settings_Group_Form|null $group_form The panels of the settings groups; the plugin's own when null.
 	 */
-	public function __construct( Settings $settings, State $state, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab, ?Network_Context $network_context = null ) {
+	public function __construct( Settings $settings, State $state, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab, ?Network_Context $network_context = null, ?Settings_Group_Form $group_form = null ) {
 		$this->settings          = $settings;
 		$this->state             = $state;
 		$this->config_report     = $config_report;
@@ -127,6 +135,16 @@ class Settings_Page {
 		$this->about_tab         = $about_tab;
 		$this->muted_tab         = $muted_tab;
 		$this->network_context   = $network_context ?? new Network_Context();
+		$this->group_form        = $group_form;
+	}
+
+	/**
+	 * The panels of the settings groups.
+	 *
+	 * @return Settings_Group_Form
+	 */
+	private function group_form(): Settings_Group_Form {
+		return $this->group_form ?? sc_wpun()->settings_group_form();
 	}
 
 	/**
@@ -358,6 +376,9 @@ class Settings_Page {
 		if ( $this->settings->show_about() ) {
 			add_action( 'sc_wpun_settings_tab_about', array( $this->about_tab, 'render' ) );
 		}
+		foreach ( array_keys( $this->group_form()->tab_labels() ) as $slug ) {
+			add_action( "sc_wpun_settings_tab_{$slug}", array( $this->group_form(), 'render_current_tab' ) );
+		}
 	}
 
 	/**
@@ -384,6 +405,9 @@ class Settings_Page {
 			'muted'    => __( 'Muted', 'wp-updates-notifier' ),
 			'about'    => __( 'About', 'wp-updates-notifier' ),
 		);
+
+		// Tabs of the settings groups of add-ons, before the filter so it can still change them.
+		$defaults = array_slice( $defaults, 0, 3, true ) + $this->group_form()->tab_labels() + array_slice( $defaults, 3, null, true );
 
 		/**
 		 * Filters the tabs of the settings screen.
@@ -563,6 +587,7 @@ class Settings_Page {
 			<?php submit_button( __( 'Save settings', 'wp-updates-notifier' ) ); ?>
 		</form>
 		<?php
+		$this->group_form()->render_tab( 'general' );
 	}
 
 	/**

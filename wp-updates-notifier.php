@@ -566,6 +566,166 @@ if ( ! function_exists( 'sc_wpun_instance_data' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sc_wpun_register_settings_group' ) ) {
+	/**
+	 * Register a group of settings the plugin stores, draws and resolves like its own. Call it from the `sc_wpun_register_settings` action.
+	 *
+	 * Values come from a constant or environment variable named `SC_WPUN_SETTING_<GROUP>__<FIELD>` (upper case), or any other
+	 * configuration source, before the stored value and the default. The values are stored in the option `sc_wpun_settings_<group>`.
+	 *
+	 * The id matches `/^[a-z][a-z0-9_]{1,30}$/`, has no `__`, and is not one of the plugin's setting names or `general`, `channels`,
+	 * `muted` and `about`. Use your own prefix, for example `acme`. The `$args` are:
+	 *
+	 * - `label` (string, required) and `description` (string).
+	 * - `tab` (string): the settings tab to show the group on. Default `general`, where it is a panel below the plugin's settings.
+	 *   Any other slug other than `channels`, `muted` and `about` is a tab of its own, labelled `tab_label`.
+	 * - `capability` (string): the capability needed to save the group. Default sc_wpun_capability(). It can only be stricter.
+	 * - `validate_callback` (callable): `( array $clean, array $stored ): array|WP_Error`, a check across fields after the checks of the fields.
+	 * - `field_groups` (array): sub-groups inside the panel, as `Channel::get_field_groups()` has them.
+	 * - `autoload` (bool): whether the option is loaded on every request. Default false.
+	 *
+	 * Each of the `$fields` is a field schema as `Channel::get_fields()` has them, plus `on_invalid` (the value to use when a source
+	 * supplies a value that cannot be used for the field, instead of the stored value) and `constant_first` (read the constant
+	 * before the configuration sources, and let nothing override it). `'storage' => false` makes a field code-only.
+	 *
+	 *     add_action(
+	 *         'sc_wpun_register_settings',
+	 *         function () {
+	 *             sc_wpun_register_settings_group(
+	 *                 'acme',
+	 *                 array( 'label' => 'Acme' ),
+	 *                 array(
+	 *                     'enabled' => array(
+	 *                         'type'           => 'boolean',
+	 *                         'default'        => true,
+	 *                         'storage'        => false,
+	 *                         'on_invalid'     => false,
+	 *                         'constant_first' => true,
+	 *                     ),
+	 *                 )
+	 *             );
+	 *         }
+	 *     );
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string                              $group  The group id.
+	 * @param array<string, mixed>                $args   The group's arguments.
+	 * @param array<string, array<string, mixed>> $fields The field schemas by name.
+	 *
+	 * @return bool False, with a notice to the developer, when the id, the arguments or a schema is not valid, the id is taken,
+	 *              or the call is outside the action.
+	 */
+	function sc_wpun_register_settings_group( string $group, array $args, array $fields ): bool {
+		return sc_wpun()->settings_groups()->register( $group, $args, $fields );
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_setting' ) ) {
+	/**
+	 * The effective value of a setting: the configuration first, then the stored value, then the default.
+	 *
+	 * The value is typed as the field is, and when a source supplied a value that cannot be used, the field's `on_invalid` applies.
+	 * Use `''` as the group for the plugin's own settings (`frequency`, `notify_core`, `show_about` and so on). Cached for the request
+	 * and dropped when the configuration is resolved again or the group is saved:
+	 *
+	 *     if ( true !== sc_wpun_setting( 'acme', 'enabled' ) ) {
+	 *         return;
+	 *     }
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $group The group id, or `''` for the plugin's own settings.
+	 * @param string $name  The setting or field name.
+	 *
+	 * @return mixed Null, with a notice to the developer, for a setting that does not exist.
+	 */
+	function sc_wpun_setting( string $group, string $name ) {
+		$entry = sc_wpun()->settings_groups()->entry( $group, $name, __FUNCTION__ );
+
+		return $entry['value'] ?? null;
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_setting_source' ) ) {
+	/**
+	 * Where the value of a setting comes from, when it is supplied from outside the database.
+	 *
+	 * For example "constant SC_WPUN_SETTING_ACME__ENABLED". It never contains the value. Use `''` as the group for the plugin's own
+	 * settings. Code that must trust only a value set in code checks it:
+	 *
+	 *     $source = sc_wpun_setting_source( 'acme', 'enabled' );
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $group The group id, or `''` for the plugin's own settings.
+	 * @param string $name  The setting or field name.
+	 *
+	 * @return string|null Null when the stored value or the default is used, and for a setting that does not exist (with a notice
+	 *                     to the developer).
+	 */
+	function sc_wpun_setting_source( string $group, string $name ): ?string {
+		$entry = sc_wpun()->settings_groups()->entry( $group, $name, __FUNCTION__ );
+
+		return $entry['source'] ?? null;
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_channel_field_source' ) ) {
+	/**
+	 * Where the value of a channel instance field comes from, when it is supplied from outside the database.
+	 *
+	 * For example "constant SC_WPUN_CHANNEL_EMAIL__TO". It never contains the value, and lets code treat a value set in code
+	 * as trusted. The field `enabled` is the instance's on and off switch.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $instance_id The id of the channel instance.
+	 * @param string $field       The field name, or `enabled`.
+	 *
+	 * @return string|null Null when the stored value is used.
+	 */
+	function sc_wpun_channel_field_source( string $instance_id, string $field ): ?string {
+		return sc_wpun()->channel_store()->external_source( $instance_id, $field );
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_settings_groups' ) ) {
+	/**
+	 * The registered settings groups, for an add-on's own reports.
+	 *
+	 * Fires `sc_wpun_register_settings` if nothing has yet. Each group is an array of its arguments, with their defaults
+	 * (`label`, `description`, `tab`, `tab_label`, `capability`, `validate_callback`, `field_groups`, `autoload`), and `fields`,
+	 * the field schemas as registered. An empty `capability` means sc_wpun_capability(), and an empty `tab_label` means the
+	 * tab is labelled by the group's label.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return array<string, array<string, mixed>> By group id.
+	 */
+	function sc_wpun_settings_groups(): array {
+		return sc_wpun()->settings_groups()->all();
+	}
+}
+
+if ( ! function_exists( 'sc_wpun_delete_settings_group' ) ) {
+	/**
+	 * Remove the stored values of a settings group, for an add-on's uninstall.
+	 *
+	 * The plugin cannot know when an add-on is gone, so it never deletes these options itself. Works for a group that is not
+	 * registered, but not for an id that is not a valid group id.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $group The group id.
+	 *
+	 * @return void
+	 */
+	function sc_wpun_delete_settings_group( string $group ): void {
+		sc_wpun()->settings_groups()->delete( $group );
+	}
+}
+
 if ( ! function_exists( 'sc_wpun_capability' ) ) {
 	/**
 	 * The capability needed to use the plugin's settings screen.

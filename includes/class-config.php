@@ -97,7 +97,7 @@ final class Config {
 		 *     add_filter(
 		 *         'sc_wpun_config_value',
 		 *         function ( $value, $context, $source ) {
-		 *             if ( 'frequency' === $context->get_setting() ) {
+		 *             if ( 'frequency' === $context->get_setting() && '' === $context->get_group() ) {
 		 *                 return get_site_option( 'my_frequency', $value );
 		 *             }
 		 *             return $value;

@@ -374,7 +374,7 @@ class Status_Report {
 	 *
 	 * @return string
 	 */
-	private function display( $value ): string {
+	public function display( $value ): string {
 		if ( null === $value ) {
 			return '';
 		}

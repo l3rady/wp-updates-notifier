@@ -568,8 +568,13 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 			}
 		}
 		$this->assertSame( array( 'WPUN\\Site_Health::add_debug_info' ), array_values( array_filter( $ours ) ), 'Something else adds to the debug data. Add its secrets and payloads to the tests.' );
+		// One more section for each settings group an add-on registered: its fields and where they come from, secrets masked.
+		$own = array( WPUN\Site_Health::SECTION );
+		foreach ( array_keys( sc_wpun_settings_groups() ) as $group ) {
+			$own[] = WPUN\Site_Health::SECTION . '-' . $group;
+		}
 		foreach ( array_keys( WP_Debug_Data::debug_data() ) as $section ) {
-			if ( WPUN\Site_Health::SECTION !== $section ) {
+			if ( ! in_array( $section, $own, true ) ) {
 				$this->assertDoesNotMatchRegularExpression( '/wpun|updates-notifier/i', (string) $section );
 			}
 		}

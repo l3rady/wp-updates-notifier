@@ -10,6 +10,7 @@ use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Check_Now;
 use WPUN\Admin\Muted_Tab;
 use WPUN\Admin\Plugins_Screen_Mutes;
+use WPUN\Admin\Settings_Group_Form;
 use WPUN\Channel_Instance;
 
 require_once __DIR__ . '/class-wpun-security-test-case.php';
@@ -106,7 +107,24 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		$_GET     = array();
 		$_POST    = array();
 		$_REQUEST = array();
+		$this->forget_groups();
 		parent::tear_down();
+	}
+
+	/**
+	 * Make the plugin's settings groups register again on the next use, so what a test registered is gone.
+	 */
+	private function forget_groups() {
+		$groups = sc_wpun()->settings_groups();
+		foreach ( array(
+			'loaded' => false,
+			'groups' => array(),
+			'cache'  => array(),
+		) as $name => $value ) {
+			$property = new ReflectionProperty( $groups, $name );
+			$property->setAccessible( true );
+			$property->setValue( $groups, $value );
+		}
 	}
 
 	// Discovery.
@@ -173,7 +191,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		foreach ( $this->actions() as $name => $action ) {
 			$this->assertArrayHasKey( 'admin_post_' . $action, $found, "Endpoint $name was not discovered." );
 		}
-		$this->assertCount( 12, $found, 'The plugin registers twelve admin-post endpoints: ' . implode( ', ', array_keys( $found ) ) );
+		$this->assertCount( 13, $found, 'The plugin registers thirteen admin-post endpoints: ' . implode( ', ', array_keys( $found ) ) );
 	}
 
 	/**
@@ -237,6 +255,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 			'delete'    => Channels_Tab::DELETE_ACTION,
 			'check_now' => Check_Now::ACTION,
 			'save'      => Channel_Form::SAVE_ACTION,
+			'group'     => Settings_Group_Form::SAVE_ACTION,
 			'mute'      => Plugins_Screen_Mutes::MUTE_ACTION,
 			'unmute'    => Plugins_Screen_Mutes::UNMUTE_ACTION,
 			'skip'      => Plugins_Screen_Mutes::SKIP_ACTION,
@@ -352,6 +371,28 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 				),
 				function () {
 					$this->assertSame( 'Renamed', sc_wpun_channels()->get( 'victim' )->get_label(), 'The channel was not saved.' );
+				}
+			),
+			$row(
+				$actions['group'],
+				'POST',
+				$actions['group'] . '_%s',
+				true,
+				array(
+					'group'                       => 'victim',
+					Settings_Group_Form::POST_KEY => array( 'name' => 'Renamed' ),
+				),
+				function () {
+					$this->assertSame( 'Renamed', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_victim' )['name'] ?? '', 'The settings group was not saved.' );
+				},
+				function () {
+					$this->forget_groups();
+					add_action(
+						'sc_wpun_register_settings',
+						static function () {
+							sc_wpun_register_settings_group( 'victim', array( 'label' => 'Victim' ), array( 'name' => array( 'type' => 'text' ) ) );
+						}
+					);
 				}
 			),
 			$row(
@@ -471,6 +512,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		$this->save_settings();
 		sc_wpun_channels()->save( new Channel_Instance( 'victim', 'email', 'Victim', true, array( 'to' => 'ops@example.org' ) ) );
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings_victim' );
 		$this->reset_http();
 		$this->fake_http( 'api.wordpress.org/plugins/info', $this->fake_response( 200, wp_json_encode( array( 'name' => 'X', 'slug' => 'x', 'version' => '9', 'tested' => '99' ) ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
@@ -508,7 +550,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 		global $wpdb;
 
 		$options = array();
-		foreach ( array( 'sc_wpun_settings', 'sc_wpun_channels', 'sc_wpun_state', 'sc_wpun_muted' ) as $name ) {
+		foreach ( array( 'sc_wpun_settings', 'sc_wpun_channels', 'sc_wpun_state', 'sc_wpun_muted', 'sc_wpun_settings_victim' ) as $name ) {
 			$options[ $name ] = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		}
 

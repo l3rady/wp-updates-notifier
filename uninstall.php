@@ -64,6 +64,7 @@ $sc_wpun_uninstall_site = static function () use ( $sc_wpun_options ) {
 delete_metadata( 'user', 0, 'sc_wpun_dismissed_slack_notice', '', true );
 delete_metadata( 'user', 0, 'sc_wpun_notice', '', true );
 delete_metadata( 'user', 0, 'sc_wpun_channel_form', '', true );
+delete_metadata( 'user', 0, 'sc_wpun_settings_group_form', '', true );
 
 global $wpdb;
 

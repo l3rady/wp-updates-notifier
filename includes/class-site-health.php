@@ -81,6 +81,13 @@ class Site_Health {
 	private $network_context;
 
 	/**
+	 * Settings groups of add-ons; the plugin's own when null.
+	 *
+	 * @var Settings_Groups|null
+	 */
+	private $groups;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings             $settings Settings.
@@ -89,13 +96,15 @@ class Site_Health {
 	 * @param Config_Report        $config_report Configuration report.
 	 * @param Status_Report        $report   Report of settings, schedule and channels.
 	 * @param Network_Context|null $network_context Where the plugin runs.
+	 * @param Settings_Groups|null $groups  Settings groups of add-ons.
 	 */
-	public function __construct( Settings $settings, State $state, Channel_Store $store, Config_Report $config_report, Status_Report $report, ?Network_Context $network_context = null ) {
+	public function __construct( Settings $settings, State $state, Channel_Store $store, Config_Report $config_report, Status_Report $report, ?Network_Context $network_context = null, ?Settings_Groups $groups = null ) {
 		$this->settings      = $settings;
 		$this->state         = $state;
 		$this->store         = $store;
 		$this->config_report = $config_report;
 		$this->report        = $report;
+		$this->groups        = $groups;
 
 		$this->network_context = $network_context ?? new Network_Context();
 	}
@@ -339,6 +348,45 @@ class Site_Health {
 				'fields' => $fields,
 			)
 		);
+
+		return $this->add_group_sections( $info );
+	}
+
+	/**
+	 * Add a section for each settings group an add-on registered: the effective value of each field and where it comes from.
+	 *
+	 * A secret shows `set` or `not set`, as it does for channels.
+	 *
+	 * @param array<mixed> $info Debug information sections.
+	 *
+	 * @return array<mixed>
+	 */
+	private function add_group_sections( array $info ): array {
+		$groups = $this->groups ?? sc_wpun()->settings_groups();
+		foreach ( $groups->all() as $id => $group ) {
+			$fields = array();
+			foreach ( $group['fields'] as $name => $schema ) {
+				$entry = $groups->entry( $id, (string) $name, __METHOD__ );
+				if ( null === $entry ) {
+					continue;
+				}
+				$value = $this->report->display( $entry['value'] );
+				if ( Field_Types::is_secret( $schema ) ) {
+					$value = '' === $value ? __( 'not set', 'wp-updates-notifier' ) : __( 'set', 'wp-updates-notifier' );
+				}
+				$fields[ (string) $name ] = array(
+					'label' => (string) $name,
+					'value' => sprintf( '%s (%s)', $value, $entry['origin'] ),
+					'debug' => sprintf( '%s (%s)', $value, $entry['origin'] ),
+				);
+			}
+			$info[ self::SECTION . '-' . $id ] = $this->mask_emails(
+				array(
+					'label'  => $group['label'],
+					'fields' => $fields,
+				)
+			);
+		}
 
 		return $info;
 	}

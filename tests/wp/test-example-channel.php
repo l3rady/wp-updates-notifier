@@ -32,6 +32,7 @@ class Test_Example_Channel extends WPUN_Test_Case {
 		parent::set_up();
 
 		WPUN_Example_Channel\boot();
+		$this->forget_settings_groups();
 		// The first read of the registry fires the registration action, which the add-on now answers too.
 		if ( ! sc_wpun()->channels()->has( Example_Channel::TYPE ) ) {
 			sc_wpun()->channels()->register( new Example_Channel() );
@@ -50,8 +51,26 @@ class Test_Example_Channel extends WPUN_Test_Case {
 		if ( ! sc_wpun()->channels()->has( 'email' ) ) {
 			sc_wpun()->channels()->register( new WPUN\Modules\Email\Email_Channel() );
 		}
+		$this->forget_settings_groups();
+		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings_' . Example_Channel::SETTINGS_GROUP );
 		sc_wpun()->config()->flush();
 		parent::tear_down();
+	}
+
+	/**
+	 * Make the plugin's settings groups register again on the next use, so the add-on's group is registered by this test's hook.
+	 */
+	private function forget_settings_groups() {
+		$groups = sc_wpun()->settings_groups();
+		foreach ( array(
+			'loaded' => false,
+			'groups' => array(),
+			'cache'  => array(),
+		) as $name => $value ) {
+			$property = new ReflectionProperty( $groups, $name );
+			$property->setAccessible( true );
+			$property->setValue( $groups, $value );
+		}
 	}
 
 	/**
@@ -279,6 +298,69 @@ class Test_Example_Channel extends WPUN_Test_Case {
 		$this->assertSame( 'Updates', $payload['username'] );
 		$this->assertStringContainsString( 'Plugin 1 from version 1.0 to 2.0', $payload['text'] );
 		$this->assertStringContainsString( 'Plugin 2 from version 1.0 to 2.0', $payload['text'] );
+	}
+
+	/**
+	 * The add-on registers its settings group through the public function.
+	 */
+	public function test_it_registers_a_settings_group() {
+		$group = sc_wpun_settings_groups()[ Example_Channel::SETTINGS_GROUP ];
+
+		$this->assertSame( array( 'enabled', 'prefix' ), array_keys( $group['fields'] ) );
+		$this->assertFalse( $group['fields']['enabled']['storage'] );
+		$this->assertTrue( $group['fields']['enabled']['constant_first'] );
+		$this->assertTrue( sc_wpun_setting( Example_Channel::SETTINGS_GROUP, 'enabled' ), 'On by default.' );
+	}
+
+	/**
+	 * The prefix field of the panel starts the message.
+	 */
+	public function test_the_prefix_starts_the_message() {
+		$this->webhook_answers( 200 );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_' . Example_Channel::SETTINGS_GROUP, array( 'prefix' => '[Prod]' ) );
+		sc_wpun()->config()->flush();
+
+		sc_wpun()->dispatcher()->send_one( $this->notification(), $this->instance() );
+
+		$this->assertStringStartsWith( '[Prod] ', $this->sent_payload()['text'] );
+	}
+
+	/**
+	 * With the switch off in the site's configuration (or a bad value for it) nothing is sent.
+	 *
+	 * @dataProvider data_switched_off
+	 *
+	 * @param mixed $value What the configuration supplies.
+	 */
+	public function test_it_does_not_send_when_the_switch_is_off( $value ) {
+		$this->webhook_answers( 200 );
+		add_filter(
+			'sc_wpun_config_sources',
+			static function ( $sources ) use ( $value ) {
+				$sources[] = new Test_Config_Source( array( 'SC_WPUN_SETTING_EXAMPLE_CHAT__ENABLED' => $value ) );
+				return $sources;
+			}
+		);
+		sc_wpun()->config()->flush();
+
+		$result = sc_wpun()->dispatcher()->send_one( $this->notification(), $this->instance() );
+
+		$this->assertFalse( $result->is_success() );
+		$this->assertSame( 'switched_off', $result->get_code() );
+		$this->assertSame( array(), $this->requests_to( 'chat.example.org' ) );
+		$this->assertSame( 'Test vault', sc_wpun_setting_source( Example_Channel::SETTINGS_GROUP, 'enabled' ) );
+	}
+
+	/**
+	 * Values that switch it off: false, and one that cannot be used.
+	 *
+	 * @return array
+	 */
+	public function data_switched_off() {
+		return array(
+			'false'  => array( 'no' ),
+			'a typo' => array( 'maybe' ),
+		);
 	}
 
 	/**

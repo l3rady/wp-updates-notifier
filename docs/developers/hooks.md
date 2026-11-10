@@ -945,6 +945,71 @@ add_action(
 
 Fired in `includes/class-channel-registry.php`.
 
+### `sc_wpun_register_settings`
+
+*Action*, since 3.0.0
+
+Fires when settings groups are first needed, for add-ons to register theirs.
+
+Call `sc_wpun_register_settings_group()` from here. It fires after `sc_wpun_register_channels`, once per request,
+and not before something needs a group, such as the settings screen or `sc_wpun_setting()`.
+
+Example, a group with a switch that can also be set in `wp-config.php`:
+
+```php
+add_action(
+    'sc_wpun_register_settings',
+    function () {
+        sc_wpun_register_settings_group(
+            'acme',
+            array( 'label' => 'Acme' ),
+            array(
+                'enabled' => array(
+                    'type'    => 'boolean',
+                    'label'   => 'Enabled',
+                    'default' => true,
+                ),
+            )
+        );
+    }
+);
+```
+
+Fired in `includes/class-settings-groups.php`.
+
+### `sc_wpun_settings_group_saved`
+
+*Action*, since 3.0.0
+
+Fires after the form of a settings group was saved with values that passed the checks.
+
+Both lists hold the stored values only (never a value supplied from a constant, an environment variable or a source),
+as they are in the option `sc_wpun_settings_<group>`. It also fires when nothing changed. Secrets are in the lists:
+don't log them.
+
+Example, forget a cache of your own when the group is saved:
+
+```php
+add_action(
+    'sc_wpun_settings_group_saved',
+    function ( $group, $new, $old ) {
+        if ( 'acme' === $group && $new !== $old ) {
+            delete_transient( 'acme_cache' );
+        }
+    },
+    10,
+    3
+);
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `$group` | `string` | The id of the settings group. |
+| `$new` | `array<string, mixed>` | The stored values after the save. |
+| `$old` | `array<string, mixed>` | The stored values before the save. |
+
+Fired in `includes/admin/class-settings-group-form.php`.
+
 ### `sc_wpun_slack_allowed_hosts`
 
 *Filter*, since 3.0.0
@@ -1019,7 +1084,7 @@ Example, take the check frequency from a site option of your own:
 add_filter(
     'sc_wpun_config_value',
     function ( $value, $context, $source ) {
-        if ( 'frequency' === $context->get_setting() ) {
+        if ( 'frequency' === $context->get_setting() && '' === $context->get_group() ) {
             return get_site_option( 'my_frequency', $value );
         }
         return $value;
@@ -1079,7 +1144,7 @@ options, under the same names.
 | `$value` | `mixed` | The stored value. |
 | `$field` | `string` | The name of the option. |
 
-Fired in `includes/class-channel-store.php`, `includes/class-mute-store.php`, `includes/class-settings.php`, `includes/class-state.php`.
+Fired in `includes/class-channel-store.php`, `includes/class-mute-store.php`, `includes/class-settings-groups.php`, `includes/class-settings.php`, `includes/class-state.php`.
 
 ### `sc_wpun_load_from_env`
 
@@ -1110,7 +1175,7 @@ options, under the same names.
 | `$value` | `mixed` | The value about to be stored. |
 | `$field` | `string` | The name of the option. |
 
-Fired in `includes/class-channel-store.php`, `includes/class-mute-store.php`, `includes/class-settings.php`, `includes/class-state.php`.
+Fired in `includes/class-channel-store.php`, `includes/class-mute-store.php`, `includes/class-settings-groups.php`, `includes/class-settings.php`, `includes/class-state.php`.
 
 ## Muting
 

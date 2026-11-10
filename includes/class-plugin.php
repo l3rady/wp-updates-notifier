@@ -9,6 +9,7 @@ namespace WPUN;
 
 use WPUN\Admin\About_Tab;
 use WPUN\Admin\Channel_Form;
+use WPUN\Admin\Settings_Group_Form;
 use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Check_Now;
 use WPUN\Admin\Mute_Actions;
@@ -143,6 +144,13 @@ class Plugin {
 	 * @var Channel_Form|null
 	 */
 	private $channel_form = null;
+
+	/**
+	 * Panels and forms of the settings groups, built on first use.
+	 *
+	 * @var Settings_Group_Form|null
+	 */
+	private $settings_group_form = null;
 
 	/**
 	 * Notices about what an admin action did.
@@ -282,6 +290,19 @@ class Plugin {
 	}
 
 	/**
+	 * Panels and forms of the settings groups.
+	 *
+	 * @internal
+	 *
+	 * @return Settings_Group_Form
+	 */
+	public function settings_group_form(): Settings_Group_Form {
+		$this->settings_group_form ??= new Settings_Group_Form( $this->settings_groups, $this->notices(), $this->network_context );
+
+		return $this->settings_group_form;
+	}
+
+	/**
 	 * Notices about what an admin action did, built on first use.
 	 *
 	 * @return Notices
@@ -351,6 +372,13 @@ class Plugin {
 	private $network_context;
 
 	/**
+	 * Settings groups registered by add-ons.
+	 *
+	 * @var Settings_Groups
+	 */
+	private $settings_groups;
+
+	/**
 	 * Build the components. Nothing is hooked until register() runs.
 	 */
 	public function __construct() {
@@ -361,14 +389,15 @@ class Plugin {
 		$this->channels          = new Channel_Registry();
 		$this->channel_store     = new Channel_Store( $this->config, $this->channels, $this->network_context );
 		$this->settings          = new Settings( $this->state, $this->channel_store, $this->config, $this->network_context );
-		$this->config_report     = new Config_Report( $this->config, $this->settings, $this->channel_store, $this->network_context );
+		$this->settings_groups   = new Settings_Groups( $this->config, $this->channels, $this->settings, $this->network_context );
+		$this->config_report     = new Config_Report( $this->config, $this->settings, $this->channel_store, $this->network_context, $this->settings_groups );
 		$this->rejected_channels = new Rejected_Channels( $this->channels, $this->network_context );
 		$this->scheduler         = new Scheduler( $this->settings, $this->network_context );
 		$this->notifier          = new Notifier( $this->channel_store, $this->network_context );
 		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store, $this->network_context );
 		$this->mute_store        = new Mute_Store( $this->network_context );
 		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store, new Auto_Update_Policy(), $this->network_context );
-		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->config_report, $this->status_report(), $this->network_context );
+		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->config_report, $this->status_report(), $this->network_context, $this->settings_groups );
 	}
 
 	/**
@@ -407,6 +436,17 @@ class Plugin {
 	 */
 	public function mute_store(): Mute_Store {
 		return $this->mute_store;
+	}
+
+	/**
+	 * Settings groups registered by add-ons.
+	 *
+	 * @internal
+	 *
+	 * @return Settings_Groups
+	 */
+	public function settings_groups(): Settings_Groups {
+		return $this->settings_groups;
 	}
 
 	/**
@@ -478,7 +518,7 @@ class Plugin {
 	 * @return Settings_Page
 	 */
 	public function settings_page(): Settings_Page {
-		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab(), $this->muted_tab(), $this->network_context );
+		$this->settings_page ??= new Settings_Page( $this->settings, $this->state, $this->config_report, $this->rejected_channels, $this->channels_tab(), $this->notices(), $this->check_now(), $this->about_tab(), $this->muted_tab(), $this->network_context, $this->settings_group_form() );
 
 		return $this->settings_page;
 	}
@@ -719,6 +759,7 @@ class Plugin {
 		add_action( 'admin_post_' . Channels_Tab::DELETE_ACTION, array( $this->channels_tab(), 'handle_delete' ) ); // Delete a channel.
 		add_action( 'admin_post_' . Check_Now::ACTION, array( $this->check_now(), 'handle' ) ); // Run the update check on demand.
 		add_action( 'admin_post_' . Channel_Form::SAVE_ACTION, array( $this->channel_form(), 'handle_save' ) ); // Add or edit a channel.
+		add_action( 'admin_post_' . Settings_Group_Form::SAVE_ACTION, array( $this->settings_group_form(), 'handle_save' ) ); // Save a settings group of an add-on.
 		add_action( 'load-plugins.php', array( $this->plugins_screen_mutes(), 'load' ) ); // Mute links and bulk actions, on the Plugins screen only.
 		add_action( 'admin_post_' . Plugins_Screen_Mutes::MUTE_ACTION, array( $this->plugins_screen_mutes(), 'handle_mute' ) ); // Mute a plugin for good.
 		add_action( 'admin_post_' . Plugins_Screen_Mutes::UNMUTE_ACTION, array( $this->plugins_screen_mutes(), 'handle_unmute' ) ); // Unmute a plugin.

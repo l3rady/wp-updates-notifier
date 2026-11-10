@@ -47,17 +47,26 @@ final class Config_Report {
 	private $network_context;
 
 	/**
+	 * Settings groups of add-ons; the plugin's own when null.
+	 *
+	 * @var Settings_Groups|null
+	 */
+	private $groups;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Config               $config   Resolver.
 	 * @param Settings             $settings Settings.
 	 * @param Channel_Store        $store    Channel instances.
 	 * @param Network_Context|null $network_context Where the plugin runs.
+	 * @param Settings_Groups|null $groups   Settings groups of add-ons.
 	 */
-	public function __construct( Config $config, Settings $settings, Channel_Store $store, ?Network_Context $network_context = null ) {
+	public function __construct( Config $config, Settings $settings, Channel_Store $store, ?Network_Context $network_context = null, ?Settings_Groups $groups = null ) {
 		$this->config   = $config;
 		$this->settings = $settings;
 		$this->store    = $store;
+		$this->groups   = $groups;
 
 		$this->network_context = $network_context ?? new Network_Context();
 	}
@@ -72,6 +81,7 @@ final class Config_Report {
 		$this->settings->get();
 		$this->settings->show_about();
 		$this->store->all();
+		( $this->groups ?? sc_wpun()->settings_groups() )->resolve_all();
 
 		return $this->config->problems();
 	}
@@ -88,7 +98,7 @@ final class Config_Report {
 		}
 		?>
 		<div class="notice notice-error sc-wpun-config-problems">
-			<p><strong><?php esc_html_e( 'Some configuration values supplied from outside the database are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ); ?></strong></p>
+			<p><strong><?php esc_html_e( 'Some configuration values supplied from outside the database are not valid. An invalid setting falls back to its saved value, its default, or the value its add-on chose; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ); ?></strong></p>
 			<ul>
 			<?php foreach ( $problems as $problem ) : ?>
 				<li><code><?php echo esc_html( $problem['key'] ); ?></code> (<?php echo esc_html( $problem['source'] ); ?>): <?php echo esc_html( $problem['message'] ); ?></li>
@@ -131,7 +141,7 @@ final class Config_Report {
 			'sc_wpun_config',
 			'recommended',
 			__( 'WP Updates Notifier cannot use some configuration values', 'wp-updates-notifier' ),
-			'<p>' . esc_html__( 'Some values supplied by constants, environment variables or other sources are not valid. Invalid settings fall back to the saved value; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
+			'<p>' . esc_html__( 'Some values supplied by constants, environment variables or other sources are not valid. An invalid setting falls back to its saved value, its default, or the value its add-on chose; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
 			Site_Health::settings_action( $this->network_context->settings_url() )
 		);
 	}

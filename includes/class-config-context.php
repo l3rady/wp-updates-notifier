@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * The setting or channel instance field a Config_Source is asked about, and the site.
  *
- * Immutable. Build one with setting() or channel_field().
+ * Immutable. Build one with setting() or channel_field(). A setting belongs to the plugin, or to a settings group an add-on registered.
  *
  * @since 2.0.0
  */
@@ -35,6 +35,13 @@ final class Config_Context {
 	 * @var string
 	 */
 	private $setting;
+
+	/**
+	 * Settings group; empty for the plugin's own settings.
+	 *
+	 * @var string
+	 */
+	private $group;
 
 	/**
 	 * Instance id.
@@ -64,26 +71,29 @@ final class Config_Context {
 	 * @param string $setting     Setting name.
 	 * @param string $instance_id Instance id.
 	 * @param string $field       Field name.
+	 * @param string $group       Settings group.
 	 */
-	private function __construct( string $scope, string $setting, string $instance_id, string $field ) {
+	private function __construct( string $scope, string $setting, string $instance_id, string $field, string $group = '' ) {
 		$this->scope       = $scope;
 		$this->setting     = $setting;
+		$this->group       = $group;
 		$this->instance_id = $instance_id;
 		$this->field       = $field;
 		$this->site_id     = ( new Network_Context() )->owner_site_id(); // The main site in network mode.
 	}
 
 	/**
-	 * A global setting.
+	 * A global setting, or a field of a settings group.
 	 *
 	 * @since 2.0.0
 	 *
-	 * @param string $name Setting name, for example `frequency`.
+	 * @param string $name  Setting name, for example `frequency`, or the field name in a group.
+	 * @param string $group Optional. The settings group an add-on registered; empty for the plugin's own settings. Since 3.0.0.
 	 *
 	 * @return Config_Context
 	 */
-	public static function setting( string $name ): Config_Context {
-		return new self( self::SCOPE_SETTING, $name, '', '' );
+	public static function setting( string $name, string $group = '' ): Config_Context {
+		return new self( self::SCOPE_SETTING, $name, '', '', $group );
 	}
 
 	/**
@@ -112,7 +122,7 @@ final class Config_Context {
 	}
 
 	/**
-	 * The setting name; empty for a channel field.
+	 * The setting name, or the field name in a settings group; empty for a channel field.
 	 *
 	 * @since 2.0.0
 	 *
@@ -120,6 +130,17 @@ final class Config_Context {
 	 */
 	public function get_setting(): string {
 		return $this->setting;
+	}
+
+	/**
+	 * The settings group; empty for the plugin's own settings and for a channel field.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return string
+	 */
+	public function get_group(): string {
+		return $this->group;
 	}
 
 	/**
@@ -160,7 +181,8 @@ final class Config_Context {
 	/**
 	 * The name of the constant and environment variable for this value.
 	 *
-	 * `SC_WPUN_SETTING_<SETTING>` for a setting, `SC_WPUN_CHANNEL_<INSTANCE_ID>__<FIELD>` for a channel field.
+	 * `SC_WPUN_SETTING_<SETTING>` for a setting, `SC_WPUN_SETTING_<GROUP>__<FIELD>` for a field of a settings group,
+	 * `SC_WPUN_CHANNEL_<INSTANCE_ID>__<FIELD>` for a channel field.
 	 *
 	 * @since 2.0.0
 	 *
@@ -168,7 +190,7 @@ final class Config_Context {
 	 */
 	public function get_key(): string {
 		if ( self::SCOPE_SETTING === $this->scope ) {
-			return 'SC_WPUN_SETTING_' . strtoupper( $this->setting );
+			return 'SC_WPUN_SETTING_' . ( '' === $this->group ? '' : strtoupper( $this->group ) . '__' ) . strtoupper( $this->setting );
 		}
 
 		return 'SC_WPUN_CHANNEL_' . strtoupper( $this->instance_id ) . '__' . strtoupper( $this->field );
