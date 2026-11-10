@@ -649,6 +649,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#settings-of-add-ons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings of add-ons
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#whole-channels-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -764,6 +775,8 @@
       
         
           
+        
+      
         
       
         
@@ -963,6 +976,34 @@
     
   
     Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developers/settings-groups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings groups
   
 
     
@@ -1362,6 +1403,8 @@
       
         
           
+        
+      
         
       
         
@@ -2318,6 +2361,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0031-add-on-settings-share-the-configuration-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0031 Add-on settings share the configuration path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2591,6 +2662,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#settings-of-add-ons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings of add-ons
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#whole-channels-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2743,10 +2825,23 @@
 <div class="highlight"><pre><span></span><code><span class="x">define( 'SC_WPUN_CHANNEL_EMAIL__TO', 'ops@example.org,me@example.org' );</span>
 <span class="x">define( 'SC_WPUN_CHANNEL_EMAIL__FORMAT', 'html' );</span>
 </code></pre></div>
-<p>Add-ons that bring their own channels get constants named the same way. Their documentation says which options are worth setting.</p>
+<p>Add-ons that bring their own channels get constants named the same way. Their documentation says which options are worth setting. Add-ons can also add <a href="#settings-of-add-ons">settings of their own</a>.</p>
 <h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
 <p>Environment variables use the same names as the constants. They are ignored unless the environment variable <code>SC_WPUN_LOAD_FROM_ENV</code> is set to <code>1</code>, <code>true</code>, <code>yes</code> or <code>on</code>. This stops variables that your host happens to set from changing the plugin.</p>
 <p><code>SC_WPUN_LOAD_FROM_ENV</code> has to be an environment variable. Defining it as a constant in <code>wp-config.php</code> does nothing. If a constant and an environment variable both supply a value, the constant wins.</p>
+<h2 id="settings-of-add-ons">Settings of add-ons<a class="headerlink" href="#settings-of-add-ons" title="Permanent link">&para;</a></h2>
+<p>An add-on can add settings of its own to the plugin: a panel on the General tab, or a tab of its own. They are set from outside the database like the plugin's own, with one more part in the name, the <strong>group</strong> the add-on chose (its documentation says which):</p>
+<p><code>SC_WPUN_SETTING_&lt;GROUP&gt;__&lt;FIELD&gt;</code></p>
+<p>The group and the field are in capitals and are joined by two underscores. For an add-on that registers the group <code>acme</code> with the field <code>enabled</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="x">define( 'SC_WPUN_SETTING_ACME__ENABLED', false );</span>
+</code></pre></div>
+<p>Everything above works the same for them: the order of constants, environment variables and the database; the opt-in for environment variables; a field set this way is read-only on the settings screen and says "Set by constant SC_WPUN_SETTING_ACME__ENABLED"; and saving the form never changes it. A field that only code can set has no field on the screen until something sets it, and then it is shown read-only so you can see why the add-on behaves as it does.</p>
+<p>Two things can differ for an add-on's field, and the add-on's documentation says when:</p>
+<ul>
+<li><strong>A value that is not valid.</strong> The plugin lists it in Site Health and on its settings page, with the name and where it came from and never the value. The add-on can choose what is used instead: usually the saved value or the default, but a switch can be set to fall back to "off", so a mistyped value stops the feature instead of leaving it on.</li>
+<li><strong>A constant that cannot be overridden.</strong> For a switch you want to be sure of, the add-on can have the constant read first, before any other source. Then a source added by a plugin, or a filter, cannot change or remove it. Only the constant counts.</li>
+</ul>
+<p>The values the form saves are kept in one option per group, <code>sc_wpun_settings_&lt;group&gt;</code>. The plugin does not delete it when the add-on is removed; the add-on's documentation says how to clean it up.</p>
 <h2 id="whole-channels-in-code">Whole channels in code<a class="headerlink" href="#whole-channels-in-code" title="Permanent link">&para;</a></h2>
 <p>The <code>SC_WPUN_CHANNELS</code> constant defines channels as a JSON list. Each channel has an <code>id</code> and a <code>type</code>, and can have a <code>label</code>, <code>enabled</code> (on unless you say otherwise), <code>settings</code> and <code>routing</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="x">define(</span>

@@ -641,6 +641,8 @@
       
         
       
+        
+      
     
     
     
@@ -822,6 +824,34 @@
     
   
     Configuration sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../settings-groups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings groups
   
 
     
@@ -1360,6 +1390,28 @@
     <span class="md-ellipsis">
       
         sc_wpun_register_channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_register_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_register_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_settings_group_saved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_settings_group_saved
       
     </span>
   </a>
@@ -2114,6 +2166,8 @@
       
         
           
+        
+      
         
       
         
@@ -3070,6 +3124,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0031-add-on-settings-share-the-configuration-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0031 Add-on settings share the configuration path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3712,6 +3794,28 @@
     <span class="md-ellipsis">
       
         sc_wpun_register_channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_register_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_register_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sc_wpun_settings_group_saved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sc_wpun_settings_group_saved
       
     </span>
   </a>
@@ -5390,6 +5494,75 @@ is the field schema, with its <code>name</code> added. The error is reported aga
 </tbody>
 </table>
 <p>Fired in <code>includes/class-channel-registry.php</code>.</p>
+<h3 id="sc_wpun_register_settings"><code>sc_wpun_register_settings</code><a class="headerlink" href="#sc_wpun_register_settings" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 3.0.0</p>
+<p>Fires when settings groups are first needed, for add-ons to register theirs.</p>
+<p>Call <code>sc_wpun_register_settings_group()</code> from here. It fires after <code>sc_wpun_register_channels</code>, once per request,
+and not before something needs a group, such as the settings screen or <code>sc_wpun_setting()</code>.</p>
+<p>Example, a group with a switch that can also be set in <code>wp-config.php</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_register_settings',</span>
+<span class="x">    function () {</span>
+<span class="x">        sc_wpun_register_settings_group(</span>
+<span class="x">            'acme',</span>
+<span class="x">            array( 'label' =&gt; 'Acme' ),</span>
+<span class="x">            array(</span>
+<span class="x">                'enabled' =&gt; array(</span>
+<span class="x">                    'type'    =&gt; 'boolean',</span>
+<span class="x">                    'label'   =&gt; 'Enabled',</span>
+<span class="x">                    'default' =&gt; true,</span>
+<span class="x">                ),</span>
+<span class="x">            )</span>
+<span class="x">        );</span>
+<span class="x">    }</span>
+<span class="x">);</span>
+</code></pre></div>
+<p>Fired in <code>includes/class-settings-groups.php</code>.</p>
+<h3 id="sc_wpun_settings_group_saved"><code>sc_wpun_settings_group_saved</code><a class="headerlink" href="#sc_wpun_settings_group_saved" title="Permanent link">&para;</a></h3>
+<p><em>Action</em>, since 3.0.0</p>
+<p>Fires after the form of a settings group was saved with values that passed the checks.</p>
+<p>Both lists hold the stored values only (never a value supplied from a constant, an environment variable or a source),
+as they are in the option <code>sc_wpun_settings_&lt;group&gt;</code>. It also fires when nothing changed. Secrets are in the lists:
+don't log them.</p>
+<p>Example, forget a cache of your own when the group is saved:</p>
+<div class="highlight"><pre><span></span><code><span class="x">add_action(</span>
+<span class="x">    'sc_wpun_settings_group_saved',</span>
+<span class="x">    function ( $group, $new, $old ) {</span>
+<span class="x">        if ( 'acme' === $group &amp;&amp; $new !== $old ) {</span>
+<span class="x">            delete_transient( 'acme_cache' );</span>
+<span class="x">        }</span>
+<span class="x">    },</span>
+<span class="x">    10,</span>
+<span class="x">    3</span>
+<span class="x">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$group</code></td>
+<td><code>string</code></td>
+<td>The id of the settings group.</td>
+</tr>
+<tr>
+<td><code>$new</code></td>
+<td><code>array&lt;string, mixed&gt;</code></td>
+<td>The stored values after the save.</td>
+</tr>
+<tr>
+<td><code>$old</code></td>
+<td><code>array&lt;string, mixed&gt;</code></td>
+<td>The stored values before the save.</td>
+</tr>
+</tbody>
+</table>
+<p>Fired in <code>includes/admin/class-settings-group-form.php</code>.</p>
 <h3 id="sc_wpun_slack_allowed_hosts"><code>sc_wpun_slack_allowed_hosts</code><a class="headerlink" href="#sc_wpun_slack_allowed_hosts" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 3.0.0</p>
 <p>Filters the host names a Slack webhook address may have.</p>
@@ -5465,7 +5638,7 @@ and are cast to the type of the setting or field. Do not log the value: it can b
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_config_value',</span>
 <span class="x">    function ( $value, $context, $source ) {</span>
-<span class="x">        if ( 'frequency' === $context-&gt;get_setting() ) {</span>
+<span class="x">        if ( 'frequency' === $context-&gt;get_setting() &amp;&amp; '' === $context-&gt;get_group() ) {</span>
 <span class="x">            return get_site_option( 'my_frequency', $value );</span>
 <span class="x">        }</span>
 <span class="x">        return $value;</span>
@@ -5559,7 +5732,7 @@ options, under the same names.</p>
 </tr>
 </tbody>
 </table>
-<p>Fired in <code>includes/class-channel-store.php</code>, <code>includes/class-mute-store.php</code>, <code>includes/class-settings.php</code>, <code>includes/class-state.php</code>.</p>
+<p>Fired in <code>includes/class-channel-store.php</code>, <code>includes/class-mute-store.php</code>, <code>includes/class-settings-groups.php</code>, <code>includes/class-settings.php</code>, <code>includes/class-state.php</code>.</p>
 <h3 id="sc_wpun_load_from_env"><code>sc_wpun_load_from_env</code><a class="headerlink" href="#sc_wpun_load_from_env" title="Permanent link">&para;</a></h3>
 <p><em>Filter</em>, since 2.0.0</p>
 <p>Filters whether configuration is also read from environment variables.</p>
@@ -5608,7 +5781,7 @@ options, under the same names.</p>
 </tr>
 </tbody>
 </table>
-<p>Fired in <code>includes/class-channel-store.php</code>, <code>includes/class-mute-store.php</code>, <code>includes/class-settings.php</code>, <code>includes/class-state.php</code>.</p>
+<p>Fired in <code>includes/class-channel-store.php</code>, <code>includes/class-mute-store.php</code>, <code>includes/class-settings-groups.php</code>, <code>includes/class-settings.php</code>, <code>includes/class-state.php</code>.</p>
 <h2 id="muting">Muting<a class="headerlink" href="#muting" title="Permanent link">&para;</a></h2>
 <h3 id="sc_wpun_item_muted"><code>sc_wpun_item_muted</code><a class="headerlink" href="#sc_wpun_item_muted" title="Permanent link">&para;</a></h3>
 <p><em>Action</em>, since 3.0.0</p>

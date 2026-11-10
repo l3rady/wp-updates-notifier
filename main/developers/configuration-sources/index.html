@@ -16,7 +16,7 @@
         <link rel="prev" href="../muting-from-code/">
       
       
-        <link rel="next" href="../webhook-payload/">
+        <link rel="next" href="../settings-groups/">
       
       
         
@@ -641,6 +641,8 @@
       
         
       
+        
+      
     
     
     
@@ -943,6 +945,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../settings-groups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings groups
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1334,6 +1364,8 @@
       
         
           
+        
+      
         
       
         
@@ -2290,6 +2322,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0031-add-on-settings-share-the-configuration-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0031 Add-on settings share the configuration path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2637,7 +2697,7 @@
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_config_value',</span>
 <span class="x">    function ( $value, $context ) {</span>
-<span class="x">        return 'show_about' === $context-&gt;get_setting() ? false : $value;</span>
+<span class="x">        return 'show_about' === $context-&gt;get_setting() &amp;&amp; '' === $context-&gt;get_group() ? false : $value;</span>
 <span class="x">    },</span>
 <span class="x">    10,</span>
 <span class="x">    2</span>
@@ -2673,7 +2733,8 @@
 <p><code>get()</code> receives the constant-style name as <code>$key</code> and a <code>WPUN\Config_Context</code> that tells you what is being asked for:</p>
 <ul>
 <li><code>get_scope()</code>: <code>Config_Context::SCOPE_SETTING</code> or <code>Config_Context::SCOPE_CHANNEL</code>.</li>
-<li><code>get_setting()</code>: for a setting, its name, such as <code>frequency</code>.</li>
+<li><code>get_setting()</code>: for a setting, its name, such as <code>frequency</code>, or the field name in a settings group. For a field of a group, also check <code>get_group()</code>: a group can have a field with the same name as one of the plugin's settings.</li>
+<li><code>get_group()</code>: the id of the <a href="../settings-groups/">settings group</a> an add-on registered, and an empty string for the plugin's own settings and for a channel field. Its key is <code>SC_WPUN_SETTING_&lt;GROUP&gt;__&lt;FIELD&gt;</code>. Since 3.0.0.</li>
 <li><code>get_instance_id()</code> and <code>get_field()</code>: for a channel field.</li>
 <li><code>get_site_id()</code>: the site being configured.</li>
 <li><code>get_key()</code>: the same name as <code>$key</code>.</li>
