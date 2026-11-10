@@ -25,7 +25,7 @@ The first proposal in #85 kept per-site activation as an option. It would still 
   | Option storage | `get_option()` and the other option functions | `get_site_option()` and the other site option functions, under the same option names |
   | Settings screen | `options-general.php`, on `admin_menu` | `settings.php`, on `network_admin_menu` |
   | Screen URLs | `admin_url()` | `network_admin_url()` |
-  | Settings form saves through | `options.php` | `network/edit.php`, through a `network_admin_edit_{action}` handler with the same security token. `update_site_option()` runs `sanitize_option()`, so the existing `register_setting()` validator still runs once |
+  | Settings form saves through | `options.php` | `network/edit.php`, through a `network_admin_edit_{action}` handler with the same security token. `update_site_option()` runs `sanitize_option()`, so the existing `register_setting()` validator still runs once. Since #459 both modes post to one `admin-post.php` handler, on the main site only when network-activated |
   | Plugin row links and notices | `plugin_action_links_*`, `admin_notices` | `network_admin_plugin_action_links_*`, `network_admin_notices` |
   | Name and links in the notification | `get_bloginfo()`, `home_url()`, `admin_url( 'update-core.php' )` | network name, `network_home_url()`, `network_admin_url( 'update-core.php' )` |
   | Where the check runs | the site | the main site only |

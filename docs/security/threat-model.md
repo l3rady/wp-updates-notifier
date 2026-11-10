@@ -132,8 +132,13 @@ the referrer only if `wp_get_referer()` accepts it (same site), else to the Plug
 
 ### 2. The settings screen
 
-The General tab saves through core's `options.php` (`register_setting` with `sc_wpun_settings_validate`, and
-`option_page_capability_sc_wpun_settings` returns the same capability). The Channels tab and the channel form use the
+Every tab with settings, General and the tabs of add-on settings groups, has one form that posts to `admin-post.php`
+(`sc_wpun_save_settings`, `Settings_Page::process_save()`), in a site and in the network admin. It checks the capability,
+a security token made for the tab, and network-activated, that the request is on the main site. Each settings group is
+saved only by a user who also has the group's own capability; what others post for it is ignored. Everything on the tab
+is validated before anything is written, and nothing is written when anything fails. `register_setting` with
+`sc_wpun_settings_validate` still guards every write of the option, and `option_page_capability_sc_wpun_settings`
+keeps `options.php` on the same capability. The Channels tab and the channel form use the
 handlers above. Field types are in `includes/class-field-types.php`, `class-boolean-field.php` and
 `class-enum-field.php`. They render through `includes/admin/class-field-renderer.php`.
 
@@ -141,7 +146,7 @@ handlers above. Field types are in `includes/class-field-types.php`, `class-bool
 
 | STRIDE | Threat | Control | Proof |
 | --- | --- | --- | --- |
-| E | Someone without the capability opens the page. | `Settings_Page::settings_page()` refuses with a 403. Core's options.php checks the filtered capability. | `test-settings-screen.php` (`test_the_page_refuses_users_without_the_capability`). |
+| E | Someone without the capability opens the page. | `Settings_Page::settings_page()` refuses with a 403. The save handler checks the filtered capability and the main site, and a group's own capability. | `test-settings-screen.php` (`test_the_page_refuses_users_without_the_capability`). |
 | T | Invalid or hostile values are stored. | Each field type sanitises and validates. Text uses `sanitize_text_field`. URLs need an `http` or `https` scheme and pass `esc_url_raw`. Email lists go through `sanitize_email` and `is_email`. Numbers are bounded, enums are allowlisted, and only declared fields are kept. Unknown notify keys and frequencies are refused. | `test-field-types.php`, `test-settings-validation.php`, `test-boolean-field.php`, `test-enum-field.php`, `test-field-showcase.php`. `security/test-settings-input.php` (#220): hostile payloads through every field type, for the email schema and an add-on schema, and `javascript:`, `data:` and `file:` URLs. ZAP fuzzes the field showcase (`make dast`, #222). |
 | I | Stored XSS through a field value, an error message or a channel's last result. | Late escaping (`esc_html`, `esc_attr`, `esc_url`) in the renderer and tabs, checked by WPCS's `WordPress.Security.EscapeOutput`. Psalm follows options and transients to `echo`. | `test-settings-markup.php`, `test-channel-form.php` (`test_an_error_without_a_field_is_plain_text`), `make lint`, `make taint` (#218). `security/test-stored-xss.php` (#220): payloads in every tab and form, the reflected `tab`, `action`, `id` and `type` parameters, and the channel list with its last result. |
 | I | A secret is shown on the page. | Secret fields are never rendered: the renderer only learns whether a value is saved (`'1'`/`''`). An empty input keeps the stored value, and `<name>__clear` removes it. `secret => true` works on any type. Values set in code show as read-only and are never echoed unless the schema opts in with `show_external`, which email uses for its non-secret fields only. This holds for every type except `number`, `boolean` and `enum`, so a custom field type is not given an outside value by default (#325). | `test-field-types.php` (`test_render_secret_never_outputs_value`, `test_secret_keep_and_clear`, `test_secret_flag_on_other_types`), `test-channel-form.php` (`test_secrets_are_never_output_and_can_be_kept_or_cleared`, `test_secrets_are_not_kept_for_the_error_round_trip`), `test-channels-tab.php` (`test_duplicate_does_not_store_external_secrets`). `security/test-secrets.php` (#220): a secret set through the form, a constant and an env var never shows, apart from the placeholder or its source. |
