@@ -276,7 +276,7 @@ services:
   # Persistent object cache for the local site (Redis Object Cache talks to it). `make wp ARGS="redis status"`.
   valkey:
     profiles: [site]
-    image: valkey/valkey:9.1-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11
+    image: valkey/valkey:9.1-alpine@sha256:bf09d58e96d6b4524a15396b65b242bbe18beebbcc15a04d8ee75ddac62fae0b
     # Kept on disk: with the cache on, transients live only here, among them the update data WordPress fetches from
     # wordpress.org. Losing it on every restart would make the next admin page wait for those requests again.
     command: ["valkey-server", "--save", "60", "1"]
