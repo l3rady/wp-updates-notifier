@@ -117,12 +117,12 @@ class Test_Settings_Markup extends WPUN_Test_Case {
 	public function test_buttons_and_no_spacers() {
 		$xpath = $this->page();
 
-		$save = $xpath->query( '//form[contains(@action,"options.php")]//input[@type="submit"]' );
+		$save = $xpath->query( '//form[input[@name="action"][@value="sc_wpun_save_settings"]]//input[@type="submit"]' );
 		$this->assertSame( 1, $save->length );
 		$this->assertSame( 'Save settings', $save->item( 0 )->getAttribute( 'value' ) );
 		$this->assertStringContainsString( 'button-primary', $save->item( 0 )->getAttribute( 'class' ) );
 
-		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"admin-post.php")][not(@class="sc-wpun-check-now")]' )->length, 'The test form moved to the Channels tab.' );
+		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"admin-post.php")][not(@class="sc-wpun-check-now")][not(input[@name="action"][@value="sc_wpun_save_settings"])]' )->length, 'The test form moved to the Channels tab.' );
 
 		foreach ( $xpath->query( '//p' ) as $paragraph ) {
 			$empty = '' === trim( str_replace( "\xC2\xA0", ' ', $paragraph->textContent ) ) && 0 === $paragraph->getElementsByTagName( '*' )->length;

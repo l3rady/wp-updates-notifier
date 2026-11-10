@@ -10,7 +10,7 @@ use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Check_Now;
 use WPUN\Admin\Muted_Tab;
 use WPUN\Admin\Plugins_Screen_Mutes;
-use WPUN\Admin\Settings_Group_Form;
+use WPUN\Admin\Settings_Page;
 use WPUN\Channel_Instance;
 
 require_once __DIR__ . '/class-wpun-security-test-case.php';
@@ -255,7 +255,7 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 			'delete'    => Channels_Tab::DELETE_ACTION,
 			'check_now' => Check_Now::ACTION,
 			'save'      => Channel_Form::SAVE_ACTION,
-			'group'     => Settings_Group_Form::SAVE_ACTION,
+			'settings'  => Settings_Page::SAVE_ACTION,
 			'mute'      => Plugins_Screen_Mutes::MUTE_ACTION,
 			'unmute'    => Plugins_Screen_Mutes::UNMUTE_ACTION,
 			'skip'      => Plugins_Screen_Mutes::SKIP_ACTION,
@@ -374,26 +374,19 @@ class Test_Security_Capability_Matrix extends WPUN_Security_Test_Case {
 				}
 			),
 			$row(
-				$actions['group'],
+				$actions['settings'],
 				'POST',
-				$actions['group'] . '_%s',
+				$actions['settings'] . '_%s',
 				true,
 				array(
-					'group'                       => 'victim',
-					Settings_Group_Form::POST_KEY => array( 'name' => 'Renamed' ),
+					'tab'              => 'general',
+					'sc_wpun_settings' => array( 'frequency' => 'weekly' ),
 				),
 				function () {
-					$this->assertSame( 'Renamed', sc_wpun()->network_context()->get_option( 'sc_wpun_settings_victim' )['name'] ?? '', 'The settings group was not saved.' );
+					$this->assertSame( 'weekly', sc_wpun()->network_context()->get_option( 'sc_wpun_settings' )['frequency'] ?? '', 'The settings were not saved.' );
 				},
-				function () {
-					$this->forget_groups();
-					add_action(
-						'sc_wpun_register_settings',
-						static function () {
-							sc_wpun_register_settings_group( 'victim', array( 'label' => 'Victim' ), array( 'name' => array( 'type' => 'text' ) ) );
-						}
-					);
-				}
+				null,
+				'general'
 			),
 			$row(
 				$actions['mute'],

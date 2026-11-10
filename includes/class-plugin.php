@@ -297,7 +297,7 @@ class Plugin {
 	 * @return Settings_Group_Form
 	 */
 	public function settings_group_form(): Settings_Group_Form {
-		$this->settings_group_form ??= new Settings_Group_Form( $this->settings_groups, $this->notices(), $this->network_context );
+		$this->settings_group_form ??= new Settings_Group_Form( $this->settings_groups );
 
 		return $this->settings_group_form;
 	}
@@ -747,9 +747,6 @@ class Plugin {
 		add_filter( 'plugin_row_meta', array( $this->settings_page(), 'plugin_row_meta' ), 10, 2 ); // Link the documentation from the plugin's row.
 		add_action( 'after_plugin_row', array( $this->plugin_requirements(), 'render_row' ), 10, 2 ); // Notice below an add-on that needs another API version.
 		add_action( $network ? 'network_admin_menu' : 'admin_menu', array( $this->settings_page(), 'admin_settings_menu' ) ); // Add menu to options.
-		if ( $network ) {
-			add_action( 'network_admin_edit_' . Settings_Page::NETWORK_SAVE_ACTION, array( $this->settings_page(), 'handle_network_save' ) ); // Network options are not saved by options.php.
-		}
 		add_action( 'admin_init', array( $this->settings_page(), 'admin_settings_init' ) ); // Add admin init functions.
 		add_action( 'admin_init', array( $this->update_nag(), 'remove_update_nag_for_nonadmins' ) ); // See if we remove update nag for non admins.
 		add_filter( 'option_page_capability_' . Settings::OPT_FIELD, array( Settings_Page::class, 'capability' ) ); // options.php accepts saves with the same capability.
@@ -759,7 +756,7 @@ class Plugin {
 		add_action( 'admin_post_' . Channels_Tab::DELETE_ACTION, array( $this->channels_tab(), 'handle_delete' ) ); // Delete a channel.
 		add_action( 'admin_post_' . Check_Now::ACTION, array( $this->check_now(), 'handle' ) ); // Run the update check on demand.
 		add_action( 'admin_post_' . Channel_Form::SAVE_ACTION, array( $this->channel_form(), 'handle_save' ) ); // Add or edit a channel.
-		add_action( 'admin_post_' . Settings_Group_Form::SAVE_ACTION, array( $this->settings_group_form(), 'handle_save' ) ); // Save a settings group of an add-on.
+		add_action( 'admin_post_' . Settings_Page::SAVE_ACTION, array( $this->settings_page(), 'handle_save' ) ); // Save the settings of a tab: the plugin's own and the add-ons' groups, in one request.
 		add_action( 'load-plugins.php', array( $this->plugins_screen_mutes(), 'load' ) ); // Mute links and bulk actions, on the Plugins screen only.
 		add_action( 'admin_post_' . Plugins_Screen_Mutes::MUTE_ACTION, array( $this->plugins_screen_mutes(), 'handle_mute' ) ); // Mute a plugin for good.
 		add_action( 'admin_post_' . Plugins_Screen_Mutes::UNMUTE_ACTION, array( $this->plugins_screen_mutes(), 'handle_unmute' ) ); // Unmute a plugin.

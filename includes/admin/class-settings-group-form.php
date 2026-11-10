@@ -12,11 +12,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use WPUN\Field_Types;
-use WPUN\Network_Context;
 use WPUN\Settings_Groups;
 
 /**
- * Draws each settings group as a panel with a form of its own, on the General tab or on a tab of its own, and saves it.
+ * Draws the settings groups as panels in the form of the General tab or of a tab of their own, and checks and stores what they post.
  *
  * Nothing needs JavaScript. A form that fails validation is stored for the current user, and drawn again with the
  * submitted values (a secret is never kept) and an error on each field at fault.
@@ -24,9 +23,8 @@ use WPUN\Settings_Groups;
  * @internal
  */
 class Settings_Group_Form {
-	const SAVE_ACTION = 'sc_wpun_save_settings_group';
-	const META_KEY    = 'sc_wpun_settings_group_form';
-	const POST_KEY    = 'sc_wpun_group';
+	const META_KEY = 'sc_wpun_settings_group_form';
+	const POST_KEY = 'sc_wpun_group';
 
 	/**
 	 * The registered groups.
@@ -36,30 +34,12 @@ class Settings_Group_Form {
 	private $groups;
 
 	/**
-	 * Notices shown after an action.
-	 *
-	 * @var Notices
-	 */
-	private $notices;
-
-	/**
-	 * Where the plugin runs.
-	 *
-	 * @var Network_Context
-	 */
-	private $network_context;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param Settings_Groups      $groups  The registered groups.
-	 * @param Notices              $notices Notices shown after an action.
-	 * @param Network_Context|null $network_context Where the plugin runs.
+	 * @param Settings_Groups $groups  The registered groups.
 	 */
-	public function __construct( Settings_Groups $groups, Notices $notices, ?Network_Context $network_context = null ) {
-		$this->groups          = $groups;
-		$this->notices         = $notices;
-		$this->network_context = $network_context ?? new Network_Context();
+	public function __construct( Settings_Groups $groups ) {
+		$this->groups = $groups;
 	}
 
 	/**
@@ -90,7 +70,7 @@ class Settings_Group_Form {
 	}
 
 	/**
-	 * Draw the groups of the tab whose action is running.
+	 * Draw the form of the tab whose action is running: the groups of the tab and one Save settings button.
 	 *
 	 * @return void
 	 */
@@ -99,18 +79,104 @@ class Settings_Group_Form {
 	}
 
 	/**
-	 * Draw every group on a tab.
+	 * Draw the form of a tab of its own: every group registered for it, and one button when the user may save one.
 	 *
 	 * @param string $tab Tab slug.
 	 *
 	 * @return void
 	 */
 	public function render_tab( string $tab ): void {
+		$round = $this->round( $tab );
+		Settings_Page::form_open( $tab );
+		$this->render_summary( $round['errors'] );
+		$this->render_groups( $tab, $round );
+		if ( $this->may_save_any( $tab ) ) {
+			submit_button( __( 'Save settings', 'wp-updates-notifier' ) );
+		}
+		echo '</form>';
+	}
+
+	/**
+	 * What the last failed save of a tab left for the current user. Reads it once: it is deleted.
+	 *
+	 * @param string $tab Tab slug.
+	 *
+	 * @return array{settings: array<string, mixed>, groups: array<string, mixed>, errors: array<string, string>}
+	 */
+	public function round( string $tab ): array {
+		$round  = Form_Parts::round_trip( self::META_KEY, 'tab:' . $tab, true );
+		$values = null === $round ? array() : $round['values'];
+
+		return array(
+			'settings' => isset( $values['settings'] ) && is_array( $values['settings'] ) ? $values['settings'] : array(),
+			'groups'   => isset( $values['groups'] ) && is_array( $values['groups'] ) ? $values['groups'] : array(),
+			'errors'   => null === $round ? array() : $round['errors'],
+		);
+	}
+
+	/**
+	 * Output the summary of the errors of the groups of a failed save.
+	 *
+	 * @param array<string, string> $errors Messages by `<group>/<field>`.
+	 *
+	 * @return void
+	 */
+	public function render_summary( array $errors ): void {
+		$groups = $this->groups->all();
+		Form_Parts::error_summary(
+			$errors,
+			function ( string $key ) use ( $groups ): string {
+				list( $id, $name ) = explode( '/', $key, 2 ) + array( '', '' );
+				$schema            = $groups[ $id ]['fields'][ $name ] ?? null;
+
+				return is_array( $schema ) ? Form_Parts::first_control_id( $schema, $this->dom_id( $id, $name ) ) : '';
+			},
+			__( 'The settings were not saved. Please correct the following.', 'wp-updates-notifier' )
+		);
+	}
+
+	/**
+	 * Draw the panels of every group on a tab, inside the form of the tab.
+	 *
+	 * @param string                                                                                             $tab   Tab slug.
+	 * @param array{settings: array<string, mixed>, groups: array<string, mixed>, errors: array<string, string>} $round What the last failed save left, from round().
+	 *
+	 * @return void
+	 */
+	public function render_groups( string $tab, array $round ): void {
 		foreach ( $this->groups->all() as $id => $group ) {
 			if ( $tab === $group['tab'] ) {
-				$this->render_group( (string) $id, $group );
+				$this->render_group( (string) $id, $group, $round );
 			}
 		}
+	}
+
+	/**
+	 * Whether the user may save at least one group on a tab.
+	 *
+	 * @param string $tab Tab slug.
+	 *
+	 * @return bool
+	 */
+	private function may_save_any( string $tab ): bool {
+		foreach ( $this->groups->all() as $group ) {
+			if ( $tab === $group['tab'] && $this->may_save( $group ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether the tab is one the groups draw, so a form can be saved for it.
+	 *
+	 * @param string $tab Tab slug.
+	 *
+	 * @return bool
+	 */
+	public function has_tab( string $tab ): bool {
+		return 'general' === $tab || isset( $this->tab_labels()[ $tab ] );
 	}
 
 	/**
@@ -122,17 +188,6 @@ class Settings_Group_Form {
 	 */
 	private function may_save( array $group ): bool {
 		return current_user_can( Settings_Page::capability() ) && ( '' === $group['capability'] || current_user_can( $group['capability'] ) );
-	}
-
-	/**
-	 * The address of the tab a group is on.
-	 *
-	 * @param array<string, mixed> $group The group.
-	 *
-	 * @return string
-	 */
-	private function tab_url( array $group ): string {
-		return $this->network_context->settings_url( $group['tab'] );
 	}
 
 	/**
@@ -148,34 +203,31 @@ class Settings_Group_Form {
 	}
 
 	/**
-	 * Output a group: its errors, then its form.
+	 * Output a group: a panel for its fields without a field group, then a panel of its own for each field group.
 	 *
-	 * @param string               $id    Group id.
-	 * @param array<string, mixed> $group The group.
+	 * The group's panel is drawn only when it has something to show. The field groups are never inside it.
+	 *
+	 * @param string                                                                                             $id    Group id.
+	 * @param array<string, mixed>                                                                               $group The group.
+	 * @param array{settings: array<string, mixed>, groups: array<string, mixed>, errors: array<string, string>} $round What the last failed save left.
 	 *
 	 * @return void
 	 */
-	private function render_group( string $id, array $group ): void {
-		$fields    = $group['fields'];
-		$round     = Form_Parts::round_trip( self::META_KEY, $id, true );
-		$errors    = null === $round ? array() : $round['errors'];
-		$submitted = null === $round ? array() : $round['values'];
+	private function render_group( string $id, array $group, array $round ): void {
 		$editable  = $this->may_save( $group );
 		$dom_id    = 'sc_wpun_group_' . $id;
 		$text      = $group['description'];
+		$submitted = isset( $round['groups'][ $id ] ) && is_array( $round['groups'][ $id ] ) ? $round['groups'][ $id ] : array();
+		$errors    = array();
+		foreach ( $round['errors'] as $key => $message ) {
+			if ( 0 === strpos( (string) $key, $id . '/' ) ) {
+				$errors[ substr( (string) $key, strlen( $id ) + 1 ) ] = $message;
+			}
+		}
+		$buckets = $this->rows( $id, $group, $submitted, $errors, $editable );
 		?>
 		<div class="sc-wpun-group" id="<?php echo esc_attr( $dom_id ); ?>">
-			<?php
-			Form_Parts::error_summary(
-				$errors,
-				fn( string $key ): string => isset( $fields[ $key ] ) ? Form_Parts::first_control_id( $fields[ $key ], $this->dom_id( $id, $key ) ) : '',
-				__( 'The settings were not saved. Please correct the following.', 'wp-updates-notifier' )
-			);
-			?>
-			<form class="sc-wpun-group-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="<?php echo esc_attr( self::SAVE_ACTION ); ?>" />
-				<input type="hidden" name="group" value="<?php echo esc_attr( $id ); ?>" />
-				<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( self::SAVE_ACTION . '_' . $id ) ); ?>" />
+			<?php if ( '' !== $text || ! $editable || array() !== ( $buckets[''] ?? array() ) ) : ?>
 				<fieldset class="sc-wpun-panel"<?php echo '' !== $text ? ' aria-describedby="' . esc_attr( $dom_id . '-description' ) . '"' : ''; ?>>
 					<legend><h2><?php echo esc_html( $group['label'] ); ?></h2></legend>
 					<?php if ( '' !== $text ) : ?>
@@ -184,18 +236,16 @@ class Settings_Group_Form {
 					<?php if ( ! $editable ) : ?>
 						<p class="description sc-wpun-group-readonly"><?php esc_html_e( 'You can see these settings but you are not allowed to change them.', 'wp-updates-notifier' ); ?></p>
 					<?php endif; ?>
-					<?php $this->render_fields( $id, $group, $submitted, $errors, $editable ); ?>
+					<?php $this->put_table( $buckets[''] ?? array() ); ?>
 				</fieldset>
-				<?php if ( $editable ) : ?>
-					<?php submit_button( __( 'Save settings', 'wp-updates-notifier' ), 'primary', 'submit', true, array( 'id' => $dom_id . '-submit' ) ); ?>
-				<?php endif; ?>
-			</form>
+			<?php endif; ?>
+			<?php $this->render_field_groups( $id, $group, $buckets, $errors ); ?>
 		</div>
 		<?php
 	}
 
 	/**
-	 * Output the rows of a group: the fields without a field group, then each field group that has fields.
+	 * The rows of the fields of a group, by field group (an empty key for the fields without one).
 	 *
 	 * @param string               $id        Group id.
 	 * @param array<string, mixed> $group     The group.
@@ -203,9 +253,9 @@ class Settings_Group_Form {
 	 * @param array<string,string> $errors    Messages by field name.
 	 * @param bool                 $editable  Whether the user may save the group.
 	 *
-	 * @return void
+	 * @return array<string, array<string, string>> Escaped markup of the rows, by field group and field name.
 	 */
-	private function render_fields( string $id, array $group, array $submitted, array $errors, bool $editable ): void {
+	private function rows( string $id, array $group, array $submitted, array $errors, bool $editable ): array {
 		$fields  = $group['fields'];
 		$buckets = array();
 		foreach ( $fields as $name => $schema ) {
@@ -221,12 +271,25 @@ class Settings_Group_Form {
 			}
 			$field_group = isset( $schema['group'] ) && is_string( $schema['group'] ) && isset( $group['field_groups'][ $schema['group'] ] ) ? $schema['group'] : '';
 			$dom_id      = $this->dom_id( $id, $name );
-			$control     = Form_Parts::control( $schema, self::POST_KEY . '[' . $name . ']', $dom_id, $value, $errors[ $name ] ?? '', $entry['source'], Form_Parts::applies_note( $name, $schema, $fields ), ! $editable );
+			$control     = Form_Parts::control( $schema, self::POST_KEY . '[' . $id . '][' . $name . ']', $dom_id, $value, $errors[ $name ] ?? '', $entry['source'], Form_Parts::applies_note( $name, $schema, $fields ), ! $editable );
 
 			$buckets[ $field_group ][ $name ] = Form_Parts::field_row( $name, $schema, $dom_id, $control );
 		}
 
-		$this->put_table( $buckets[''] ?? array() );
+		return $buckets;
+	}
+
+	/**
+	 * Output each field group of a group that has fields, as a panel of its own after the group's panel.
+	 *
+	 * @param string                               $id      Group id.
+	 * @param array<string, mixed>                 $group   The group.
+	 * @param array<string, array<string, string>> $buckets The rows, from rows().
+	 * @param array<string,string>                 $errors  Messages by field name.
+	 *
+	 * @return void
+	 */
+	private function render_field_groups( string $id, array $group, array $buckets, array $errors ): void {
 		foreach ( $group['field_groups'] as $field_group => $details ) {
 			$rows = $buckets[ (string) $field_group ] ?? array();
 			if ( array() === $rows ) {
@@ -257,83 +320,86 @@ class Settings_Group_Form {
 	}
 
 	/**
-	 * Handle a group's form (admin-post.php), then go to the next page.
+	 * Check the posted values of the groups on a tab, without saving anything.
 	 *
-	 * @return void
+	 * Only the groups the user may save are looked at; the posted values of the others are ignored.
+	 *
+	 * @param string               $tab    Tab slug.
+	 * @param array<string, mixed> $posted The posted lists of values, by group id.
+	 *
+	 * @return array{valid: array<string, array<string, mixed>>, values: array<string, array<string, mixed>>, errors: array<string, string>} The values to store by group (stored values included), the posted values without secrets by group, and the messages by `<group>/<field>`.
 	 */
-	public function handle_save(): void {
-		Settings_Page::finish( $this->process_save() );
+	public function check( string $tab, array $posted ): array {
+		$checked = array(
+			'valid'  => array(),
+			'values' => array(),
+			'errors' => array(),
+		);
+		foreach ( $this->groups->all() as $id => $group ) {
+			if ( $tab !== $group['tab'] || ! $this->may_save( $group ) ) {
+				continue;
+			}
+
+			$id     = (string) $id;
+			$stored = $this->groups->stored( $id );
+			$list   = isset( $posted[ $id ] ) && is_array( $posted[ $id ] ) ? $posted[ $id ] : array();
+			$errors = array();
+			$clean  = $this->validate( $id, $group, $list, $stored, $errors );
+
+			$checked['values'][ $id ] = Form_Parts::without_secrets( $list, $group['fields'] );
+			foreach ( $errors as $field => $message ) {
+				$checked['errors'][ $id . '/' . $field ] = $message;
+			}
+			if ( array() === $errors ) {
+				$checked['valid'][ $id ] = array_merge( $stored, $clean );
+			}
+		}
+
+		return $checked;
 	}
 
 	/**
-	 * Check a submitted form and save the group, or remember what was wrong.
+	 * Store the groups that passed check().
 	 *
-	 * @return string|null The address to go to; null if the user may not do this or the security token is not valid.
+	 * @param array<string, array<string, mixed>> $valid The values to store by group id.
+	 *
+	 * @return void
 	 */
-	public function process_save(): ?string {
-		if ( ! current_user_can( Settings_Page::capability() ) ) {
-			return null;
+	public function save( array $valid ): void {
+		foreach ( $valid as $id => $values ) {
+			$id  = (string) $id;
+			$old = $this->groups->stored( $id );
+			$this->groups->save( $id, $values );
+
+			/**
+			 * Fires after a settings group was saved with the settings form, with values that passed the checks.
+			 *
+			 * Both lists hold the stored values only (never a value supplied from a constant, an environment variable or a source),
+			 * as they are in the option `sc_wpun_settings_<group>`. It fires once for each group the user could save on the tab,
+			 * and also when nothing changed. Nothing is saved, and it does not fire, when any value on the tab is not valid.
+			 * Secrets are in the lists: don't log them.
+			 *
+			 * Example, forget a cache of your own when the group is saved:
+			 *
+			 *     add_action(
+			 *         'sc_wpun_settings_group_saved',
+			 *         function ( $group, $new, $old ) {
+			 *             if ( 'acme' === $group && $new !== $old ) {
+			 *                 delete_transient( 'acme_cache' );
+			 *             }
+			 *         },
+			 *         10,
+			 *         3
+			 *     );
+			 *
+			 * @since 3.0.0
+			 *
+			 * @param string               $group The id of the settings group.
+			 * @param array<string, mixed> $new   The stored values after the save.
+			 * @param array<string, mixed> $old   The stored values before the save.
+			 */
+			do_action( 'sc_wpun_settings_group_saved', $id, $this->groups->stored( $id ), $old );
 		}
-
-		$id = Form_Parts::posted_key( 'group' );
-		if ( ! Settings_Page::posted_token_valid( self::SAVE_ACTION . '_' . $id ) ) {
-			return null;
-		}
-
-		$group = $this->groups->all()[ $id ] ?? null;
-		if ( null === $group ) {
-			$this->notices->add( false, __( 'There is no such settings group.', 'wp-updates-notifier' ) );
-			return $this->network_context->settings_url();
-		}
-		if ( ! $this->may_save( $group ) ) {
-			return null;
-		}
-
-		$stored = $this->groups->stored( $id );
-		$errors = array();
-		$posted = Form_Parts::posted_list( self::POST_KEY );
-		$clean  = $this->validate( $id, $group, $posted, $stored, $errors );
-
-		if ( array() !== $errors ) {
-			Form_Parts::remember( self::META_KEY, $id, Form_Parts::without_secrets( $posted, $group['fields'] ), $errors );
-
-			return $this->tab_url( $group );
-		}
-
-		$this->groups->save( $id, array_merge( $stored, $clean ) );
-
-		/**
-		 * Fires after the form of a settings group was saved with values that passed the checks.
-		 *
-		 * Both lists hold the stored values only (never a value supplied from a constant, an environment variable or a source),
-		 * as they are in the option `sc_wpun_settings_<group>`. It also fires when nothing changed. Secrets are in the lists:
-		 * don't log them.
-		 *
-		 * Example, forget a cache of your own when the group is saved:
-		 *
-		 *     add_action(
-		 *         'sc_wpun_settings_group_saved',
-		 *         function ( $group, $new, $old ) {
-		 *             if ( 'acme' === $group && $new !== $old ) {
-		 *                 delete_transient( 'acme_cache' );
-		 *             }
-		 *         },
-		 *         10,
-		 *         3
-		 *     );
-		 *
-		 * @since 3.0.0
-		 *
-		 * @param string               $group The id of the settings group.
-		 * @param array<string, mixed> $new   The stored values after the save.
-		 * @param array<string, mixed> $old   The stored values before the save.
-		 */
-		do_action( 'sc_wpun_settings_group_saved', $id, $this->groups->stored( $id ), $stored );
-
-		// translators: %s: Label of the settings group.
-		$this->notices->add( true, sprintf( __( '%s settings saved.', 'wp-updates-notifier' ), $group['label'] ) );
-
-		return $this->tab_url( $group );
 	}
 
 	/**

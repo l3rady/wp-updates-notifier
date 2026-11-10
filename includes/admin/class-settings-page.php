@@ -28,9 +28,9 @@ use WPUN\State;
  */
 class Settings_Page {
 	/**
-	 * Action of the form on the network settings screen, handled on `network_admin_edit_{action}`.
+	 * Action of the form of every settings tab, handled on `admin_post_{action}`, in a site and in the network admin.
 	 */
-	const NETWORK_SAVE_ACTION = 'sc_wpun_save_network_settings';
+	const SAVE_ACTION = 'sc_wpun_save_settings';
 
 	/**
 	 * Settings.
@@ -108,6 +108,13 @@ class Settings_Page {
 	 * @var Settings_Group_Form|null
 	 */
 	private $group_form;
+
+	/**
+	 * The plugin's own settings of the last failed save, drawn again in place of the stored ones.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private $submitted = array();
 
 	/**
 	 * Constructor.
@@ -285,32 +292,110 @@ class Settings_Page {
 	}
 
 	/**
-	 * Save the settings sent from the network settings screen. Hooked on `network_admin_edit_{action}`.
-	 *
-	 * The network admin has no `options.php` for network options, so this does what it does for one option: checks
-	 * the security token and the capability, saves what the form sent, which runs the validation of
-	 * `sc_wpun_settings_validate` once, and goes back to the screen with the messages kept for 30 seconds.
+	 * Handle the form of a settings tab (admin-post.php), then go back to the screen.
 	 *
 	 * @return void
 	 */
-	public function handle_network_save(): void {
-		check_admin_referer( Settings::OPT_FIELD . '-options' );
-		if ( ! current_user_can( self::capability() ) ) {
-			wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'wp-updates-notifier' ), '', array( 'response' => 403 ) );
+	public function handle_save(): void {
+		self::finish( $this->process_save() );
+	}
+
+	/**
+	 * Check a submitted tab and save it, or remember what was wrong.
+	 *
+	 * Everything is checked before anything is written: when a value of the plugin's settings or of any group is not
+	 * valid, nothing is saved, and the screen shows the submitted values again with the errors.
+	 *
+	 * @return string|null The address to go to; null if the user may not do this or the security token is not valid.
+	 */
+	public function process_save(): ?string {
+		// Network-activated, the settings are saved from the network admin of the main site only, as network/edit.php did:
+		// a lowered capability must not let the administrator of another site save them through its own admin-post.php.
+		if ( ! current_user_can( self::capability() ) || ( $this->network_context->is_network() && get_current_blog_id() !== $this->network_context->main_site_id() ) ) {
+			return null;
 		}
 
-		$input = isset( $_POST[ Settings::OPT_FIELD ] ) && is_array( $_POST[ Settings::OPT_FIELD ] ) ? wp_unslash( $_POST[ Settings::OPT_FIELD ] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Checked above; update_site_option() runs the validation.
-		update_site_option( Settings::OPT_FIELD, $input );
+		$tab = Form_Parts::posted_key( 'tab' );
+		if ( ! self::posted_token_valid( self::SAVE_ACTION . '_' . $tab ) ) {
+			return null;
+		}
+		if ( ! $this->group_form()->has_tab( $tab ) ) {
+			return $this->network_context->settings_url();
+		}
 
-		if ( ! count( get_settings_errors() ) ) {
+		$general = 'general' === $tab;
+		$main    = $general ? $this->scalars( Form_Parts::posted_list( Settings::OPT_FIELD ) ) : array();
+		$clean   = $general ? $this->sc_wpun_settings_validate( $main ) : array();
+		$checked = $this->group_form()->check( $tab, Form_Parts::posted_list( Settings_Group_Form::POST_KEY ) );
+
+		if ( $this->main_errors() || array() !== $checked['errors'] ) {
+			Form_Parts::remember(
+				Settings_Group_Form::META_KEY,
+				'tab:' . $tab,
+				array(
+					'settings' => $main,
+					'groups'   => $checked['values'],
+				),
+				$checked['errors']
+			);
+		} else {
+			if ( $general ) {
+				$this->network_context->update_option( Settings::OPT_FIELD, $clean );
+			}
+			$this->group_form()->save( $checked['valid'] );
 			$saved = __( 'Settings saved.' ); // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- Core's own message, already translated.
 			add_settings_error( 'general', 'settings_updated', $saved, 'success' );
 		}
-		set_transient( 'settings_errors', get_settings_errors(), 30 );
 
+		// Core's channel for the messages: it prints them on the next page load, as it does after options.php.
+		set_transient( 'settings_errors', get_settings_errors(), 30 );
 		$back = wp_get_referer();
-		wp_safe_redirect( add_query_arg( 'settings-updated', 'true', false !== $back && '' !== $back ? $back : $this->network_context->settings_url( 'general' ) ) );
-		exit;
+
+		return add_query_arg( 'settings-updated', 'true', false !== $back && '' !== $back ? $back : $this->network_context->settings_url( $tab ) );
+	}
+
+	/**
+	 * Whether checking the plugin's own settings found a value that is not valid.
+	 *
+	 * @return bool
+	 */
+	private function main_errors(): bool {
+		foreach ( get_settings_errors() as $error ) {
+			if ( 'error' === $error['type'] && 0 === strpos( $error['setting'], 'sc_wpun_settings_main_' ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * The entries of a posted list that are strings, so what is kept for the next page load stays small.
+	 *
+	 * @param array<string, mixed> $values The posted list.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function scalars( array $values ): array {
+		return array_filter( $values, 'is_scalar' );
+	}
+
+	/**
+	 * Start the form of a settings tab: it posts to admin-post.php, in a site and in the network admin.
+	 *
+	 * @internal
+	 *
+	 * @param string $tab Tab slug.
+	 *
+	 * @return void
+	 */
+	public static function form_open( string $tab ): void {
+		?>
+		<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+			<input type="hidden" name="action" value="<?php echo esc_attr( self::SAVE_ACTION ); ?>" />
+			<input type="hidden" name="tab" value="<?php echo esc_attr( $tab ); ?>" />
+			<?php wp_nonce_field( self::SAVE_ACTION . '_' . $tab ); // Also keeps the page the form is on, which the save goes back to. ?>
+		<?php
 	}
 
 	/**
@@ -538,8 +623,10 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function render_general_tab(): void {
-		$options    = $this->state->get();
-		$next_check = wp_next_scheduled( Scheduler::CRON_NAME );
+		$round           = $this->group_form()->round( 'general' );
+		$this->submitted = $round['settings'];
+		$options         = $this->state->get();
+		$next_check      = wp_next_scheduled( Scheduler::CRON_NAME );
 		?>
 		<section class="sc-wpun-panel">
 		<h2 class="sc-wpun-panel-title"><?php esc_html_e( 'Status', 'wp-updates-notifier' ); ?></h2>
@@ -570,11 +657,10 @@ class Settings_Page {
 		<?php $this->check_now->render(); ?>
 		</section>
 
-		<form action="<?php echo esc_url( $this->network_context->is_network() ? network_admin_url( 'edit.php?action=' . self::NETWORK_SAVE_ACTION ) : admin_url( 'options.php' ) ); ?>" method="post">
-			<?php
-			// Saving goes back to the page it was sent from, which is this tab: the tab links carry `tab=general`.
-			settings_fields( 'sc_wpun_settings' );
-			?>
+		<?php
+		self::form_open( 'general' );
+		$this->group_form()->render_summary( $round['errors'] );
+		?>
 			<fieldset class="sc-wpun-panel">
 				<legend><h2><?php esc_html_e( 'Settings', 'wp-updates-notifier' ); ?></h2></legend>
 				<table class="form-table" role="presentation">
@@ -584,10 +670,10 @@ class Settings_Page {
 					?>
 				</table>
 			</fieldset>
+			<?php $this->group_form()->render_groups( 'general', $round ); ?>
 			<?php submit_button( __( 'Save settings', 'wp-updates-notifier' ) ); ?>
 		</form>
 		<?php
-		$this->group_form()->render_tab( 'general' );
 	}
 
 	/**
@@ -728,16 +814,6 @@ class Settings_Page {
 		if ( ! isset( $schemas[ $name ] ) ) {
 			return;
 		}
-		$options     = $this->settings->get();
-		$value       = $options[ $name ];
-		$extra       = array();
-		$unavailable = false;
-		if ( 'frequency' === $name && is_string( $value ) && ! array_key_exists( $value, $schemas['frequency']['options'] ) ) {
-			$unavailable = true;
-			// translators: %s: Name of the saved schedule.
-			$extra[ $value ] = sprintf( __( '%s (no longer available)', 'wp-updates-notifier' ), $value );
-		}
-
 		// Core keeps the errors of the last save for this page load, whoever asked for them first.
 		$error = '';
 		foreach ( get_settings_errors( 'sc_wpun_settings_main_' . $name ) as $found ) {
@@ -745,6 +821,20 @@ class Settings_Page {
 				$error = $found['message'];
 				break;
 			}
+		}
+
+		$options = $this->settings->get();
+		$value   = $options[ $name ];
+		// A failed save elsewhere on the tab does not undo the change: show what was submitted, unless that is what failed.
+		if ( '' === $error && array_key_exists( $name, $this->submitted ) && ! $this->is_external( $name ) ) {
+			$value = $this->submitted[ $name ];
+		}
+		$extra       = array();
+		$unavailable = false;
+		if ( 'frequency' === $name && is_string( $value ) && ! array_key_exists( $value, $schemas['frequency']['options'] ) ) {
+			$unavailable = true;
+			// translators: %s: Name of the saved schedule.
+			$extra[ $value ] = sprintf( __( '%s (no longer available)', 'wp-updates-notifier' ), $value );
 		}
 
 		// The notes drawn after the control describe it; the field adds the id of its error after these.

@@ -981,11 +981,12 @@ Fired in `includes/class-settings-groups.php`.
 
 *Action*, since 3.0.0
 
-Fires after the form of a settings group was saved with values that passed the checks.
+Fires after a settings group was saved with the settings form, with values that passed the checks.
 
 Both lists hold the stored values only (never a value supplied from a constant, an environment variable or a source),
-as they are in the option `sc_wpun_settings_<group>`. It also fires when nothing changed. Secrets are in the lists:
-don't log them.
+as they are in the option `sc_wpun_settings_<group>`. It fires once for each group the user could save on the tab,
+and also when nothing changed. Nothing is saved, and it does not fire, when any value on the tab is not valid.
+Secrets are in the lists: don't log them.
 
 Example, forget a cache of your own when the group is saved:
 

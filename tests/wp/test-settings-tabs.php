@@ -131,7 +131,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		$this->assertSame( 1, $active->length );
 		$this->assertSame( 'page', $active->item( 0 )->getAttribute( 'aria-current' ) );
 		$this->assertStringContainsString( 'options-general.php?page=wp-updates-notifier&tab=general', $active->item( 0 )->getAttribute( 'href' ) );
-		$this->assertSame( 1, $xpath->query( '//form[contains(@action,"options.php")]' )->length );
+		$this->assertSame( 1, $xpath->query( '//form[input[@name="action"][@value="sc_wpun_save_settings"]]' )->length );
 		$this->assertSame( 1, $xpath->query( '//*[contains(@class,"sc-wpun-last-check")]' )->length );
 	}
 
@@ -164,11 +164,11 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		$this->assertSame( 1, $xpath->query( './/*[contains(@class,"sc-wpun-last-check")]', $status->item( 0 ) )->length );
 		$this->assertSame( 1, $xpath->query( './/form[contains(@class,"sc-wpun-check-now")]', $status->item( 0 ) )->length );
 
-		$settings = $xpath->query( '//form[contains(@action,"options.php")]/fieldset[@class="sc-wpun-panel"][legend/h2[normalize-space()="Settings"]]' );
+		$settings = $xpath->query( '//form[input[@name="action"][@value="sc_wpun_save_settings"]]/fieldset[@class="sc-wpun-panel"][legend/h2[normalize-space()="Settings"]]' );
 		$this->assertSame( 1, $settings->length );
 		$this->assertSame( 1, $xpath->query( 'table[@class="form-table"][@role="presentation"]', $settings->item( 0 ) )->length );
 		$this->assertGreaterThan( 0, $xpath->query( 'table//input[starts-with(@name,"sc_wpun_settings[")]', $settings->item( 0 ) )->length );
-		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"options.php")]//input[starts-with(@name,"sc_wpun_settings[")][not(ancestor::fieldset[@class="sc-wpun-panel"])]' )->length, 'Every setting is in the panel.' );
+		$this->assertSame( 0, $xpath->query( '//form[input[@name="action"][@value="sc_wpun_save_settings"]]//input[starts-with(@name,"sc_wpun_settings[")][not(ancestor::fieldset[@class="sc-wpun-panel"])]' )->length, 'Every setting is in the panel.' );
 	}
 
 	/**
@@ -180,7 +180,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 
 		$this->assertSame( array( 'general', 'channels', 'muted', 'about' ), $this->tab_slugs( $xpath ) );
 		$this->assertSame( 1, $xpath->query( '//table[contains(@class,"sc-wpun-channels")]' )->length );
-		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"options.php")]' )->length );
+		$this->assertSame( 0, $xpath->query( '//form[input[@name="action"][@value="sc_wpun_save_settings"]]' )->length );
 	}
 
 	/**
@@ -193,7 +193,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 
 		$this->assertSame( array( 'general', 'channels', 'muted', 'mine', 'about' ), $this->tab_slugs( $xpath ) );
 		$this->assertSame( 1, $xpath->query( '//p[@class="drawn-mine"]' )->length );
-		$this->assertSame( 0, $xpath->query( '//form[contains(@action,"options.php")]' )->length );
+		$this->assertSame( 0, $xpath->query( '//form[input[@name="action"][@value="sc_wpun_save_settings"]]' )->length );
 		$this->assertSame( 1, $xpath->query( '//a[@aria-current]' )->length );
 		$this->assertSame( 1, $xpath->query( '//a[contains(@class,"nav-tab-active")]' )->length );
 		$this->assertSame( 1, $xpath->query( '//a[contains(@class,"nav-tab-active")][@aria-current="page"][contains(@href,"tab=mine")]' )->length );
@@ -287,13 +287,13 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Saving goes back to the General tab: options.php redirects to the referer the form carries.
+	 * Saving goes back to the General tab: the form carries the page it is on, which the save goes back to.
 	 */
 	public function test_saving_returns_to_the_general_tab() {
 		$_SERVER['REQUEST_URI'] = '/wp-admin/options-general.php?page=wp-updates-notifier&tab=general';
 		$xpath                  = $this->xpath( $this->html() );
 
-		$referer = $xpath->query( '//form[contains(@action,"options.php")]//input[@name="_wp_http_referer"]' );
+		$referer = $xpath->query( '//form[input[@name="action"][@value="sc_wpun_save_settings"]]//input[@name="_wp_http_referer"]' );
 		$this->assertSame( 1, $referer->length );
 		$this->assertStringContainsString( 'tab=general', $referer->item( 0 )->getAttribute( 'value' ) );
 	}

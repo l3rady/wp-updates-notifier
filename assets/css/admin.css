@@ -129,6 +129,7 @@
 }
 
 /* The padding also keeps the first margin of a panel's content inside it: without it the margin is lost to the clearance. */
+.sc-wpun-panel > legend + .description,
 .sc-wpun-field-group > legend + .description,
 .sc-wpun-field-group > legend + .sc-wpun-form-panel-content {
 	padding-top: 12px;

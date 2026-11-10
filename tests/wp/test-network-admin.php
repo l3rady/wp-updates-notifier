@@ -236,7 +236,8 @@ class Test_Network_Admin extends WPUN_Test_Case {
 		$this->assertFalse( $this->hooked( 'admin_menu', Settings_Page::class, 'admin_settings_menu' ) );
 		$this->assertTrue( $this->hooked( 'network_admin_plugin_action_links_' . $file, Settings_Page::class, 'plugin_action_links' ) );
 		$this->assertFalse( $this->hooked( 'plugin_action_links_' . $file, Settings_Page::class, 'plugin_action_links' ) );
-		$this->assertTrue( $this->hooked( 'network_admin_edit_' . Settings_Page::NETWORK_SAVE_ACTION, Settings_Page::class, 'handle_network_save' ) );
+		$this->assertTrue( $this->hooked( 'admin_post_' . Settings_Page::SAVE_ACTION, Settings_Page::class, 'handle_save' ) );
+		$this->assertFalse( $this->hooked( 'network_admin_edit_sc_wpun_save_network_settings', Settings_Page::class, 'handle_save' ) );
 	}
 
 	/**
@@ -258,10 +259,10 @@ class Test_Network_Admin extends WPUN_Test_Case {
 			$this->assertStringContainsString( 'href="' . esc_url( $this->network_url( $tab ) ) . '"', $html, $tab );
 		}
 		$this->assertStringNotContainsString( 'options-general.php', $html );
-		$this->assertStringContainsString( 'action="' . esc_url( network_admin_url( 'edit.php?action=' . Settings_Page::NETWORK_SAVE_ACTION ) ) . '"', $html );
-		$this->assertStringNotContainsString( 'action="' . esc_url( admin_url( 'options.php' ) ) . '"', $html );
+		$this->assertStringContainsString( 'action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"', $html );
+		$this->assertStringContainsString( 'name="action" value="' . Settings_Page::SAVE_ACTION . '"', $html );
+		$this->assertStringNotContainsString( 'options.php', $html );
 		$this->assertStringContainsString( 'name="_wpnonce"', $html );
-		$this->assertStringContainsString( 'name=\'option_page\' value=\'sc_wpun_settings\'', $html );
 	}
 
 	/**
@@ -339,9 +340,9 @@ class Test_Network_Admin extends WPUN_Test_Case {
 	 */
 	private function save( array $settings, ?string $token = null ): string {
 		$_POST                   = array(
-			'option_page'      => 'sc_wpun_settings',
-			'action'           => 'update',
-			'_wpnonce'         => $token ?? wp_create_nonce( 'sc_wpun_settings-options' ),
+			'action'           => Settings_Page::SAVE_ACTION,
+			'tab'              => 'general',
+			'_wpnonce'         => $token ?? wp_create_nonce( Settings_Page::SAVE_ACTION . '_general' ),
 			'sc_wpun_settings' => wp_slash( $settings ),
 		);
 		$_REQUEST                = $_POST;
@@ -351,7 +352,7 @@ class Test_Network_Admin extends WPUN_Test_Case {
 		$this->redirected_to = null;
 		sc_wpun()->settings_page()->admin_settings_init();
 		try {
-			do_action( 'network_admin_edit_' . Settings_Page::NETWORK_SAVE_ACTION );
+			do_action( 'admin_post_' . Settings_Page::SAVE_ACTION );
 		} catch ( WPDieException $e ) {
 			return 'died';
 		} catch ( RuntimeException $e ) {
@@ -369,40 +370,29 @@ class Test_Network_Admin extends WPUN_Test_Case {
 	 * Hook the handler, as booting in the network admin does.
 	 */
 	private function hook_save() {
-		remove_all_actions( 'network_admin_edit_' . Settings_Page::NETWORK_SAVE_ACTION );
-		add_action( 'network_admin_edit_' . Settings_Page::NETWORK_SAVE_ACTION, array( sc_wpun()->settings_page(), 'handle_network_save' ) );
+		remove_all_actions( 'admin_post_' . Settings_Page::SAVE_ACTION );
+		add_action( 'admin_post_' . Settings_Page::SAVE_ACTION, array( sc_wpun()->settings_page(), 'handle_save' ) );
 	}
 
 	/**
-	 * A save stores the network option, validates once, keeps "Settings saved." and goes back.
+	 * A save stores the network option, keeps "Settings saved." and goes back.
 	 */
 	public function test_saving_stores_the_network_option_and_goes_back() {
 		$this->hook_save();
-		$runs = 0;
-		add_filter(
-			'sanitize_option_sc_wpun_settings',
-			static function ( $value ) use ( &$runs ) {
-				++$runs;
-				return $value;
-			},
-			1
-		);
-
 		$this->assertSame( 'redirected', $this->save( array( 'frequency' => 'daily' ) ) );
 
-		$this->assertSame( 1, $runs, 'The validation runs once.' );
 		$this->assertSame( 'daily', get_site_option( 'sc_wpun_settings' )['frequency'] );
 		$this->assertSame( 'hourly', get_option( 'sc_wpun_settings' )['frequency'] ?? 'hourly', 'The site option is not touched.' );
 		$this->assertSame( add_query_arg( 'settings-updated', 'true', $this->network_url( 'general' ) ), $this->redirected_to );
 
 		$errors = get_transient( 'settings_errors' );
-		$this->assertCount( 1, $errors );
+		$this->assertCount( 1, $errors, 'Only "Settings saved.", with no error from the second run of the validation.' );
 		$this->assertSame( 'settings_updated', $errors[0]['code'] );
 		$this->assertSame( 'success', $errors[0]['type'] );
 	}
 
 	/**
-	 * A value that is not valid is reported, the rest is saved, and "Settings saved." is not added.
+	 * A value that is not valid is reported, nothing is saved, and "Settings saved." is not added.
 	 */
 	public function test_saving_reports_validation_errors() {
 		$this->hook_save();
@@ -419,7 +409,7 @@ class Test_Network_Admin extends WPUN_Test_Case {
 
 		$stored = get_site_option( 'sc_wpun_settings' );
 		$this->assertSame( 'hourly', $stored['frequency'], 'The old value stays.' );
-		$this->assertSame( 'none', $stored['notify_core'] );
+		$this->assertNotSame( 'none', $stored['notify_core'], 'All or nothing.' );
 		$errors = get_transient( 'settings_errors' );
 		$this->assertCount( 1, $errors );
 		$this->assertSame( 'sc_wpun_settings_main_frequency_error', $errors[0]['code'] );
@@ -476,6 +466,25 @@ class Test_Network_Admin extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A lowered capability does not let a request on another site save the network settings: only the main site does.
+	 */
+	public function test_saving_is_refused_on_another_site() {
+		$this->hook_save();
+		add_filter( 'sc_wpun_capability', static fn() => 'manage_options' );
+		$user = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		add_user_to_blog( $this->sub_id, $user, 'administrator' );
+		switch_to_blog( $this->sub_id );
+		wp_set_current_user( $user );
+
+		$result = $this->save( array( 'frequency' => 'daily' ) );
+		restore_current_blog();
+
+		$this->assertSame( 'died', $result );
+		$this->assertSame( 403, $this->died_with );
+		$this->assertSame( 'hourly', get_site_option( 'sc_wpun_settings' )['frequency'] );
+	}
+
+	/**
 	 * Without a referrer the save goes back to the General tab.
 	 */
 	public function test_saving_without_a_referrer_goes_to_the_general_tab() {
@@ -484,10 +493,10 @@ class Test_Network_Admin extends WPUN_Test_Case {
 		$this->redirected_to = null;
 		unset( $_SERVER['HTTP_REFERER'] );
 		$_POST['sc_wpun_settings'] = array( 'frequency' => 'weekly' );
-		$_POST['_wpnonce']         = wp_create_nonce( 'sc_wpun_settings-options' );
+		$_POST['_wpnonce']         = wp_create_nonce( Settings_Page::SAVE_ACTION . '_general' );
 		$_REQUEST                  = $_POST;
 		try {
-			do_action( 'network_admin_edit_' . Settings_Page::NETWORK_SAVE_ACTION );
+			do_action( 'admin_post_' . Settings_Page::SAVE_ACTION );
 		} catch ( RuntimeException $e ) {
 			$this->assertSame( 'wpun-redirect', $e->getMessage() );
 		}
