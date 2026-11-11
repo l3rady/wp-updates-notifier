@@ -79,7 +79,7 @@ services:
       - composer-cache:/home/dev/.composer/cache
 
   db:
-    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
+    image: mariadb:13@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: wordpress_test
@@ -134,7 +134,7 @@ services:
 
   site-db:
     profiles: [site]
-    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
+    image: mariadb:13@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: wordpress
