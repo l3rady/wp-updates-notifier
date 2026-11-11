@@ -39,7 +39,7 @@ services:
       retries: 20
 
   mailpit:
-    image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48
+    image: axllent/mailpit:v1.32.0@sha256:0790692be935ea4420d085694f7985b1f692ca6a8771ab0e0bd8ba75ac180498
 
   wordpress:
     <<: *site
@@ -110,7 +110,7 @@ services:
   # Playwright from the same image and npm packages as `make a11y`. tests/flows is mounted whole at /flows, so the
   # upgrade specs share its helpers.
   playwright:
-    image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+    image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /flows
     init: true
