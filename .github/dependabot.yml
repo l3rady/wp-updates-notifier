@@ -92,7 +92,8 @@ updates:
     cooldown:
       default-days: 14
 
-  # The development tools in composer.json (PHPUnit, PHPCS, PHPStan, Rector, the stubs): one PR.
+  # The development tools in composer.json (PHPUnit, PHPCS, PHPStan, Rector, the stubs): one PR. No scope: with
+  # "(deps-dev)" the group header ("bump the dev-tools group across 1 directory with 2 updates") is over 72 characters.
   - package-ecosystem: composer
     directory: /
     schedule:
@@ -101,7 +102,6 @@ updates:
       default-days: 14
     commit-message:
       prefix: build
-      include: scope
     groups:
       dev-tools:
         patterns: ["*"]
