@@ -100,11 +100,15 @@ vendor/autoload.php: composer.json composer.lock
 
 deps: vendor/autoload.php ## Install Composer dependencies
 
+# One table prefix per checkout and per suite (TEST_TOKEN, see docker/wp-tests-entrypoint.sh), so runs in different
+# checkouts, and the two suites of one checkout, do not drop each other's tables. Digits and letters only.
+WPUN_TOKEN := $(shell printf '%s' "$(CURDIR)" | cksum | tr -d ' ' | cut -c1-8)
+
 test-wp: deps ## Run the WordPress test suite (single site)
-	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+	$(COMPOSE) run --build --rm -e TEST_TOKEN=$(WPUN_TOKEN)s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
 
 test-wp-ms: deps ## Run the WordPress test suite as multisite
-	$(COMPOSE) run --build --rm -e WP_MULTISITE=1 wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+	$(COMPOSE) run --build --rm -e WP_MULTISITE=1 -e TEST_TOKEN=$(WPUN_TOKEN)m wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
 
 # The WordPress suite with pcov (the wp-tests-coverage image, which only this target builds, so make test-wp stays
 # fast), as a single site and as a multisite, counted together. COVERAGE_MIN is a floor in whole percent that only goes
@@ -113,7 +117,7 @@ test-wp-ms: deps ## Run the WordPress test suite as multisite
 COVERAGE_MIN ?= 97
 coverage: deps ## Line coverage of the plugin by the WordPress suite (pcov, single site and multisite together); fails below COVERAGE_MIN; report in build/coverage/
 	@mkdir -p build/coverage
-	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
+	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) -e TEST_TOKEN=$(WPUN_TOKEN)c wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
 
 # Mutation testing with Infection (slow, so it is run by hand before a release, not in CI): it changes the
 # code and checks that a test fails. THREADS PHPUnit processes run at once, each on tables of its own (TEST_TOKEN).
@@ -125,9 +129,15 @@ mutation: deps ## Mutation testing of the plugin with Infection (pcov, slow); fa
 	$(COMPOSE) run --build --rm -v $(CURDIR)/build/infection:/infection wp-tests-coverage sh /opt/wp-updates-notifier/docker/mutation.sh --threads=$(THREADS) $(ARGS)
 
 test-known-bugs: deps ## Run the tests that document open bugs (they are expected to fail)
-	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
+	$(COMPOSE) run --build --rm -e TEST_TOKEN=$(WPUN_TOKEN)s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 
-test: test-wp test-wp-ms test-release test-check test-readme test-blueprint test-wporg-assets ## Run every test layer
+# The two WordPress suites run side by side (their tables differ by TEST_TOKEN); --output-sync keeps each one's output
+# together. The database and the image come first: two runs that start the database together race on its container name.
+test: deps ## Run every test layer (the two WordPress suites side by side)
+	@$(COMPOSE) up -d --wait db
+	@$(COMPOSE) build wp-tests
+	@$(MAKE) --no-print-directory -j2 --output-sync=target test-wp test-wp-ms
+	@$(MAKE) --no-print-directory test-release test-check test-readme test-blueprint test-wporg-assets
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), the plugin, the example add-on and the field showcase
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcs && vendor/bin/phpcs --standard=examples/wpun-example-channel/phpcs.xml.dist && vendor/bin/phpcs --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist'
@@ -164,8 +174,9 @@ test-check: ## Test bin/check.sh (the runner of make check) and bin/agent-stop-c
 	$(COMPOSE) run --build --rm php sh -c 'sh tests/bin/test-check.sh && sh tests/bin/test-agent-stop-check.sh'
 
 # What a pull request must pass, with short output (bin/check.sh): one line per step, the log tail of the first step
-# that fails, and the full logs in build/check/. The two suites run one after the other, as they share one test
-# database. `make check-full` adds what CI also runs; coverage runs both WordPress suites, so they are not listed.
+# that fails, and the full logs in build/check/. The two suites run one after the other, so the output stays short and
+# a failure stops the run. `make check-full` adds what CI also runs; coverage runs both WordPress suites, so they are
+# not listed.
 # `commits` is added when the branch has commits over origin/main.
 check: ## What a pull request must pass, with short output: lint, rector, stan, hooks, translations, public API and both suites (logs in build/check/)
 	@sh bin/check.sh lint rector stan check-hooks check-translations check-public-api test-wp test-wp-ms

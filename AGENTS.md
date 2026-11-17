@@ -38,8 +38,11 @@ their own throwaway sites and are safe.
 ## Worktrees and parallel work
 
 - Run `make deps` first in a new worktree: `vendor/` is not shared.
-- Never run two `make test-wp` or `make test-wp-ms` at the same time, in any checkouts: they share one test
-  database and break each other. The same goes for two runs of one browser suite.
+- Each checkout and worktree has its own test table prefix, so `make test-wp` and `make test-wp-ms` may run at
+  the same time in different checkouts. Never run the same suite twice at once in one checkout: both runs use the
+  same tables and break each other. The same goes for two runs of one browser suite. All checkouts share one
+  database container: if it is not running, start one run first, or `docker compose up -d --wait db`, as two runs
+  that start it together clash.
 - In a worktree, `make commits`, `make ci-changes`, `make dist` and `make dist-repro` fail because the
   containers cannot see the git directory, and `make secrets-history` passes without scanning anything. Run
   them from the main checkout.

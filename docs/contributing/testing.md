@@ -1,6 +1,6 @@
 # Tests and checks
 
-The plugin has several layers of tests and checks. Each one catches a different kind of mistake, and each one runs with a `make` target in Docker, so you need only Docker and `make`. `make test` runs `test-wp` and `test-wp-ms` (the WordPress suites, single site and multisite), `test-release`, `test-readme`, `test-blueprint` and `test-wporg-assets`. The other layers have their own targets.
+The plugin has several layers of tests and checks. Each one catches a different kind of mistake, and each one runs with a `make` target in Docker, so you need only Docker and `make`. `make test` runs `test-wp` and `test-wp-ms` (the WordPress suites, single site and multisite) at the same time, then `test-release`, `test-readme`, `test-blueprint` and `test-wporg-assets`. The other layers have their own targets.
 
 The rules for tests (a bug fix needs a failing test, the coverage and mutation floors only go up, how to handle a surviving mutant) are in [CONTRIBUTING.md](https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md). This page is how to run and read each layer.
 
@@ -61,7 +61,7 @@ make test-wp WP_VERSION=6.7.9 PHP_VERSION=7.4
 
 **Lives in.** `tests/wp/`, one `test-*.php` file per area, on `tests/wp/class-wpun-test-case.php`. Add a file there and it runs: they are found by name.
 
-**Run it.** `make test-wp` for a single site, `make test-wp-ms` for multisite. Pass PHPUnit options with `ARGS`, for example `make test-wp ARGS="--filter Test_Routing"`. `PHP_VERSION` and `WP_VERSION` pick the versions.
+**Run it.** `make test-wp` for a single site, `make test-wp-ms` for multisite. Pass PHPUnit options with `ARGS`, for example `make test-wp ARGS="--filter Test_Routing"`. `PHP_VERSION` and `WP_VERSION` pick the versions. Each checkout (and each git worktree) has its own table prefix, made from its path, and the single site and multisite runs have one each, so runs in different checkouts do not clash and `make test` can run both suites at once. Two runs of the same suite in one checkout still share tables, so do not start them together. `make mutation` sets its own prefixes and is not tied to the checkout.
 
 **Multisite.** The multisite run has the plugin network-activated, as a network has it. A test class that needs the plugin as one site's copy (the dormant mode, or per-site settings) sets `protected $network_activated = false;` in `WPUN_Test_Case`. `set_network_activated()` switches it inside a test.
 
