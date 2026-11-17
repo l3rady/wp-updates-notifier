@@ -217,6 +217,40 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A muted item of a type an add-on registered reads as that type, not as "not installed": the plugin only knows
+	 * whether plugins and themes are installed. Both a stored mute and one from the sc_wpun_mutes filter.
+	 */
+	public function test_a_muted_item_of_an_add_on_type_shows_its_label() {
+		add_filter(
+			'sc_wpun_item_types',
+			static function ( $types ) {
+				$types['php'] = 'PHP runtime';
+				return $types;
+			}
+		);
+		$this->assertInstanceOf( WPUN\Mute::class, sc_wpun_mutes()->mute( 'php', '8.1' ) );
+		add_filter(
+			'sc_wpun_mutes',
+			static function ( $mutes ) {
+				$mutes[] = new WPUN\Mute(
+					array(
+						'type' => 'php',
+						'key'  => 'eol-warning',
+					)
+				);
+				return $mutes;
+			}
+		);
+
+		$descriptions = array();
+		foreach ( $this->tab()->query( '//td[contains(@class,"sc-wpun-muted-name")]//span[@class="description"]' ) as $node ) {
+			$descriptions[] = trim( $node->textContent );
+		}
+
+		$this->assertSame( array( 'PHP runtime', 'PHP runtime' ), $descriptions );
+	}
+
+	/**
 	 * An ended skip mute is hidden, and pruned from the option on the next write.
 	 */
 	public function test_an_ended_mute_is_hidden_then_pruned() {

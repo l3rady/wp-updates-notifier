@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Not loaded by WordPress.
 }
 
+use WPUN\Item_Types;
 use WPUN\Mute_Store;
 use WPUN\Network_Context;
 use WPUN\Status_Report;
@@ -165,7 +166,7 @@ class Muted_Tab {
 	}
 
 	/**
-	 * The kind of item, for people.
+	 * The kind of item, for people: Plugin, Theme, or the label an add-on registered for its type.
 	 *
 	 * @param string $type Item type.
 	 *
@@ -179,7 +180,7 @@ class Muted_Tab {
 			return __( 'Theme', 'wp-updates-notifier' );
 		}
 
-		return $type;
+		return Item_Types::all()[ $type ] ?? $type;
 	}
 
 	/**
@@ -266,7 +267,8 @@ class Muted_Tab {
 				<span class="description">
 					<?php
 					echo esc_html(
-						null === $row['name']
+						// Only plugins and themes can be looked up, so only they can be "not installed".
+						null === $row['name'] && in_array( $row['type'], array( 'plugin', 'theme' ), true )
 							? sprintf( /* translators: %s: Kind of item, for example "Plugin". */ __( '%s, not installed', 'wp-updates-notifier' ), self::type_label( $row['type'] ) )
 							: self::type_label( $row['type'] )
 					);
