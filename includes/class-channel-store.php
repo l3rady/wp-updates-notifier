@@ -251,7 +251,8 @@ class Channel_Store {
 		$settings = $instance->get_settings();
 		$enabled  = $instance->is_enabled();
 
-		foreach ( $this->external_fields( $id, $instance->get_type() ) as $field ) {
+		$names = array_keys( $settings + ( isset( $previous['settings'] ) && is_array( $previous['settings'] ) ? $previous['settings'] : array() ) );
+		foreach ( $this->external_fields( $id, $instance->get_type(), $names ) as $field ) {
 			if ( 'enabled' === $field ) {
 				$enabled = ! empty( $previous['enabled'] );
 			} elseif ( isset( $previous['settings'] ) && is_array( $previous['settings'] ) && array_key_exists( $field, $previous['settings'] ) ) {
@@ -455,14 +456,27 @@ class Channel_Store {
 	/**
 	 * The names of the fields of an instance that are supplied from outside the database, `enabled` included.
 	 *
-	 * @param string $id   Identifier.
-	 * @param string $type Channel type.
+	 * When the channel's fields cannot be read (external_schemas() threw and reported it), the names of the
+	 * instance's own settings are checked instead, so a value supplied from outside is still never written.
+	 *
+	 * @param string   $id       Identifier.
+	 * @param string   $type     Channel type.
+	 * @param string[] $fallback The setting names to check when the channel's fields cannot be read.
 	 *
 	 * @return string[]
 	 */
-	private function external_fields( string $id, string $type ): array {
+	private function external_fields( string $id, string $type, array $fallback ): array {
+		try {
+			$schema = array_keys( $this->external_schemas( $type ) );
+		} catch ( \Throwable $e ) {
+			$schema = array_filter(
+				array_map( 'strval', $fallback ),
+				fn( string $name ): bool => 'enabled' !== $name && $this->is_valid_name( $name )
+			);
+		}
+
 		$fields = array();
-		$names  = array_merge( array( 'enabled' ), array_keys( $this->external_schemas( $type ) ) );
+		$names  = array_merge( array( 'enabled' ), $schema );
 
 		foreach ( $names as $name ) {
 			if ( null !== $this->config->resolve( Config_Context::channel_field( $id, (string) $name ) ) ) {
