@@ -2656,7 +2656,7 @@
 <div class="highlight"><pre><span></span><code><span class="x">// Mute for good.</span>
 <span class="x">$result = sc_wpun_mutes()-&gt;mute( 'plugin', 'noisy/noisy.php' );</span>
 
-<span class="x">// Skip version 2.1.0 only. A newer version is notified again.</span>
+<span class="x">// Skip version 2.1.0 only. A newer version is notified again. While a newer one is already offered, this is refused.</span>
 <span class="x">$result = sc_wpun_mutes()-&gt;mute( 'plugin', 'noisy/noisy.php', '2.1.0' );</span>
 
 <span class="x">// Snooze for a week: the fifth argument is a Unix time. A time that has passed is refused.</span>
@@ -2730,7 +2730,7 @@
 </code></pre></div>
 <p>Use <code>'until' =&gt; '2.1.0'</code> to skip a version only. Add <code>'expires'</code> with a Unix time to end the mute at that time, for example <code>'expires' =&gt; strtotime( '2026-12-01 09:00 UTC' )</code>. Use a fixed time: a <code>time() + …</code> in the filter moves the end on every request, so the mute never ends. A stored mute cannot be hidden by this filter. To report an item that is muted, use <code>sc_wpun_should_notify_item</code>.</p>
 <h2 id="apply-a-policy">Apply a policy<a class="headerlink" href="#apply-a-policy" title="Permanent link">&para;</a></h2>
-<p><code>sc_wpun_pre_mute</code> runs before a mute is saved. Return a <code>WP_Error</code> to refuse it. The message is shown on the screen or by WP-CLI. You may also return a changed <code>Mute</code>, for example to cap a long mute, if it is for the same item. A mute that comes back already expired is refused.</p>
+<p><code>sc_wpun_pre_mute</code> runs before a mute is saved. Return a <code>WP_Error</code> to refuse it. The message is shown on the screen or by WP-CLI. You may also return a changed <code>Mute</code>, for example to cap a long mute, if it is for the same item. A mute that comes back already expired is refused, and so is a skip mute for a version older than the one WordPress offers.</p>
 <div class="highlight"><pre><span></span><code><span class="x">// No snooze longer than 30 days.</span>
 <span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_pre_mute',</span>

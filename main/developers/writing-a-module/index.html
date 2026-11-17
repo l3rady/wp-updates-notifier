@@ -3645,6 +3645,7 @@
 <li>Support at least the features the original supports (<code>supports()</code>).</li>
 <li>Do not rely on your own extra keys being present. An instance may have been created while your add-on was inactive.</li>
 <li>Extra keys are kept while the original is active, and are there again when the replacement returns.</li>
+<li>The built-in webhook channel's <code>updates.resolved</code> message is sent only while the active <code>webhook</code> channel is a <code>Webhook_Channel</code>, so a replacement that extends it keeps the message. One that does not, and wants it, listens to <code>sc_wpun_item_resolved</code> itself.</li>
 </ul>
 <h2 id="looking-up-a-channel">Looking up a channel<a class="headerlink" href="#looking-up-a-channel" title="Permanent link">&para;</a></h2>
 <p>Code that has an instance, or a type, gets its channel with <code>sc_wpun_channel( $type )</code> (API 1.1.0). Use it to show the channel's label, to check <code>supports()</code> before acting on an instance, or to reach a public method of your own channel from a REST route or a scheduled job without keeping your own copy of it:</p>

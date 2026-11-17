@@ -2867,7 +2867,7 @@
 <li>a value a source supplies, cast to the type of the field and then checked and cleaned by it, as a saved value is (an <code>https_only</code> URL refuses <code>http://</code>);</li>
 <li>if that value cannot be used: <code>on_invalid</code> if the schema has it;</li>
 <li>the stored value;</li>
-<li>the <code>default</code>; without one, <code>false</code> for a boolean, <code>0</code> for a number, an empty list for a multiple <code>enum</code>, and an empty string for the rest.</li>
+<li>the <code>default</code>; without one, <code>false</code> for a boolean, <code>0</code> for a number, an empty list for a multiple <code>enum</code>, the first option for a single <code>enum</code> (a select or radio group always has one chosen), and an empty string for the rest. An <code>applies_when</code> condition on the field sees the same value, so a field is shown or hidden by the value <code>sc_wpun_setting()</code> returns.</li>
 </ol>
 <p>An unusable value is reported in the configuration test of Site Health and on the plugin's settings page, with the key and where it came from, never the value, and it says when <code>on_invalid</code> was used. When <code>on_invalid</code> was used the field counts as supplied: the screen locks it.</p>
 <h2 id="reading-values">Reading values<a class="headerlink" href="#reading-values" title="Permanent link">&para;</a></h2>

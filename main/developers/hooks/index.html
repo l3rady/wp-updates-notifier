@@ -5989,7 +5989,8 @@ that is muted.</p>
 <p>Receives the mute, or the <code>WP_Error</code> that says why it is refused. Return a <code>WP_Error</code> to refuse
 it; the message is shown on the screen or by WP-CLI. A returned mute must be for the same item,
 and a refusal cannot be turned into a mute. Return a changed mute to, for example, cap how long
-a mute lasts. A mute whose <code>expires</code> has passed is refused, also when the filter made it so.</p>
+a mute lasts. A mute whose <code>expires</code> has passed, or a skip mute for a version older than the one
+offered, is refused, also when the filter made it so.</p>
 <p>Example, refuse muting a security plugin:</p>
 <div class="highlight"><pre><span></span><code><span class="x">add_filter(</span>
 <span class="x">    'sc_wpun_pre_mute',</span>
