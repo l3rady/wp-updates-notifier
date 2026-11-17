@@ -109,6 +109,83 @@ class Test_Check_Isolation extends WPUN_Test_Case {
 	}
 
 	/**
+	 * An instance whose channel cannot list its fields can still be saved, and a value supplied for it from outside
+	 * the database is still never written: `enabled` and the setting keep what was stored before.
+	 */
+	public function test_an_instance_whose_fields_throw_can_be_saved_without_writing_supplied_values() {
+		$channel = new Test_Throwing_Fields_Channel( 'boom' );
+		sc_wpun()->channels()->register( $channel );
+		sc_wpun_channels()->save( new Channel_Instance( 'boomsave', 'boom', 'Broken', true, array( 'behaviour' => 'stored' ) ) );
+		define( 'SC_WPUN_CHANNEL_BOOMSAVE__BEHAVIOUR', 'from-constant' );
+		sc_wpun()->config()->flush();
+		$channel->explode = true;
+
+		$saved = $this->capture(
+			static fn() => sc_wpun_channels()->save(
+				new Channel_Instance(
+					'boomsave',
+					'boom',
+					'Renamed',
+					false,
+					array(
+						'behaviour'   => 'from-constant',
+						'retry_after' => '5',
+					)
+				)
+			)
+		);
+
+		$this->assertTrue( $saved );
+		$stored = get_option( 'sc_wpun_channels' );
+		if ( sc_wpun_is_network() ) {
+			$stored = get_site_option( 'sc_wpun_channels' );
+		}
+		$this->assertSame( 'Renamed', $stored['boomsave']['label'] );
+		$this->assertFalse( $stored['boomsave']['enabled'] );
+		$this->assertSame( 'stored', $stored['boomsave']['settings']['behaviour'], 'The supplied value is not written.' );
+		$this->assertSame( '5', $stored['boomsave']['settings']['retry_after'] );
+		$this->assertStringNotContainsString( 'secret-xyz', implode( ' ', $this->notices ) );
+	}
+
+	/**
+	 * A supplied `enabled` is not written either when the fields cannot be read.
+	 */
+	public function test_a_supplied_enabled_is_kept_when_the_fields_throw() {
+		$channel = new Test_Throwing_Fields_Channel( 'boom' );
+		sc_wpun()->channels()->register( $channel );
+		sc_wpun_channels()->save( new Channel_Instance( 'boomon', 'boom', 'Broken', false, array() ) );
+		define( 'SC_WPUN_CHANNEL_BOOMON__ENABLED', true );
+		sc_wpun()->config()->flush();
+		$channel->explode = true;
+
+		$this->assertTrue( $this->capture( static fn() => sc_wpun_channels()->save( new Channel_Instance( 'boomon', 'boom', 'Broken', true, array() ) ) ) );
+		$this->assertFalse( sc_wpun_channels()->stored_all()['boomon']->is_enabled() );
+	}
+
+	/**
+	 * The owner of a broken add-on can switch its channel off from the Channels tab.
+	 */
+	public function test_an_instance_whose_fields_throw_can_be_switched_off() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		if ( is_multisite() ) {
+			grant_super_admin( get_current_user_id() );
+		}
+		$channel = new Test_Throwing_Fields_Channel( 'boom' );
+		sc_wpun()->channels()->register( $channel );
+		sc_wpun_channels()->save( new Channel_Instance( 'boomoff', 'boom', 'Broken', true, array( 'behaviour' => 'succeed' ) ) );
+		$channel->explode  = true;
+		$_POST['id']       = 'boomoff';
+		$_POST['_wpnonce'] = wp_create_nonce( WPUN\Admin\Channels_Tab::TOGGLE_ACTION . '_boomoff' );
+
+		try {
+			$this->assertTrue( $this->capture( static fn() => sc_wpun()->channels_tab()->process_toggle() ) );
+		} finally {
+			unset( $_POST['id'], $_POST['_wpnonce'] );
+		}
+		$this->assertFalse( sc_wpun_channels()->stored_all()['boomoff']->is_enabled() );
+	}
+
+	/**
 	 * A routing callback that throws fails its own instance, and the others still go out.
 	 */
 	public function test_a_routing_callback_that_throws_does_not_stop_the_check() {
