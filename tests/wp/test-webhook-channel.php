@@ -1499,6 +1499,53 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Once an add-on has replaced the webhook type with a channel of its own, the built-in class sends no resolved
+	 * message: the replacement delivers the type's instances (decision 0030).
+	 */
+	public function test_no_resolved_message_once_another_channel_replaced_the_type() {
+		$instance = $this->instance();
+		$this->report_then_install( $instance );
+		$replacement = new Test_Channel( 'webhook' );
+		$this->assertTrue( sc_wpun()->channels()->replace( $replacement ) );
+
+		try {
+			$this->check_nothing_pending();
+		} finally {
+			sc_wpun()->channels()->unregister( 'webhook' );
+		}
+
+		$this->assertSame( array(), $this->received() );
+	}
+
+	/**
+	 * A replacement that extends the webhook channel keeps the resolved message, sent by the replacement.
+	 */
+	public function test_a_replacement_that_extends_the_webhook_channel_sends_the_resolved_message() {
+		$instance = $this->instance();
+		$this->report_then_install( $instance );
+		$replacement = new class() extends Webhook_Channel {
+			/**
+			 * The label, to tell it from the built-in channel.
+			 *
+			 * @return string
+			 */
+			public function get_label(): string {
+				return 'Replacement webhook';
+			}
+		};
+		$this->assertTrue( sc_wpun()->channels()->replace( $replacement ) );
+
+		try {
+			$this->check_nothing_pending();
+		} finally {
+			sc_wpun()->channels()->unregister( 'webhook' );
+		}
+
+		$this->assertCount( 1, $this->received() );
+		$this->assertSame( 'updates.resolved', json_decode( $this->request()['args']['body'], true )['type'] );
+	}
+
+	/**
 	 * Several resolved items go in one message, and a removed plugin says so; an entry without details has no time.
 	 */
 	public function test_resolved_items_share_one_message() {

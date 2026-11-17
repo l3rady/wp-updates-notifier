@@ -534,7 +534,12 @@ class Webhook_Channel extends Channel {
 			return;
 		}
 
-		$channel = new self();
+		// The channel that delivers the type's instances: a replacement that is not a webhook channel sends its own
+		// messages, and one that extends this class sends this one (decision 0030).
+		$channel = sc_wpun_channel( self::TYPE );
+		if ( ! $channel instanceof self ) {
+			return;
+		}
 		foreach ( $collected as $id => $held ) {
 			[$instance, $pairs] = $held;
 			if ( ! $instance->is_enabled() || ! self::is_on( $instance->get_setting( 'send_resolved', true ) ) || null !== sc_wpun_instance_waiting_until( (string) $id ) ) {
