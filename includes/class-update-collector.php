@@ -587,17 +587,19 @@ class Update_Collector {
 	 * The WordPress.org slug of a plugin update, or an empty string if it does not come from WordPress.org.
 	 *
 	 * WordPress.org entries carry an `id` like "w.org/plugins/akismet" and a URL
-	 * under https://wordpress.org/plugins/; updaters for other plugins do not.
+	 * under https://wordpress.org/plugins/ (in any case); updaters for other plugins do not.
 	 *
 	 * @param \stdClass $entry A normalised plugin update entry.
 	 *
 	 * @return string
 	 */
 	private function wporg_plugin_slug( stdClass $entry ): string {
+		// The `i` flag makes the match ignore case. Keep it: the coding standard spells the host "WordPress" (and make fix
+		// rewrites it so), which without the flag never matched a real, lower-case address.
 		$id         = (string) $entry->id;
 		$slug       = (string) $entry->slug;
 		$from_wporg = 0 === strpos( $id, 'w.org/plugins/' )
-			|| 1 === preg_match( '#^https?://(www\.)?WordPress\.org/plugins/#', (string) $entry->url );
+			|| 1 === preg_match( '#^https?://(www\.)?WordPress\.org/plugins/#i', (string) $entry->url );
 
 		if ( ! $from_wporg ) {
 			return '';

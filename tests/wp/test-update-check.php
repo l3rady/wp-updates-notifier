@@ -711,18 +711,22 @@ class Test_Update_Check extends WPUN_Test_Case {
 	public function test_a_plugin_is_on_wordpress_org_by_id_or_link() {
 		$this->save_settings();
 
-		$this->set_updates(
-			null,
-			array(
-				'hello.php' => array(
-					'new_version' => '2.0',
-					'id'          => 'elsewhere/hello',
-					'slug'        => 'hello',
-					'url'         => 'https://WordPress.org/plugins/hello/',
-				),
-			)
-		);
-		$this->assertArrayHasKey( 'changelog', $this->checked_items()[0]->get_links(), 'By its link.' );
+		foreach ( array( 'https://wordpress.org/plugins/hello/', 'https://www.wordpress.org/plugins/hello/', 'https://WordPress.org/plugins/hello/' ) as $url ) {
+			$this->set_updates(
+				null,
+				array(
+					'hello.php' => array(
+						'new_version' => '2.0',
+						'id'          => 'elsewhere/hello',
+						'slug'        => 'hello',
+						'url'         => $url,
+					),
+				)
+			);
+			$links = $this->checked_items()[0]->get_links();
+			$this->assertArrayHasKey( 'changelog', $links, 'By its link: ' . $url );
+			$this->assertArrayHasKey( 'details', $links, 'By its link: ' . $url );
+		}
 
 		$this->set_updates(
 			null,
@@ -744,10 +748,10 @@ class Test_Update_Check extends WPUN_Test_Case {
 					'new_version' => '2.0',
 					'id'          => 'elsewhere/hello',
 					'slug'        => 'hello',
-					'url'         => 'https://example.org/?from=https://WordPress.org/plugins/hello/',
+					'url'         => 'https://example.org/?from=https://wordpress.org/plugins/hello/',
 				),
 			)
 		);
-		$this->assertSame( array( 'details' => 'https://example.org/?from=https://WordPress.org/plugins/hello/' ), $this->checked_items()[0]->get_links(), 'The address only mentions WordPress.org.' );
+		$this->assertSame( array( 'details' => 'https://example.org/?from=https://wordpress.org/plugins/hello/' ), $this->checked_items()[0]->get_links(), 'The address only mentions WordPress.org.' );
 	}
 }
