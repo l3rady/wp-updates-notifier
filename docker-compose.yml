@@ -291,7 +291,7 @@ services:
   # Catches all outgoing mail: http://localhost:8025
   mailpit:
     profiles: [site]
-    image: axllent/mailpit:v1.32.0@sha256:0790692be935ea4420d085694f7985b1f692ca6a8771ab0e0bd8ba75ac180498
+    image: axllent/mailpit:v1.33.0@sha256:9b3a463be15354c0f0eba91697d80e3e0d8a5623ef0e627cacc836bc17fd5231
     ports:
       # Loopback only: Mailpit shows every captured email, password-reset links included.
       - "127.0.0.1:8025:8025"
@@ -411,7 +411,7 @@ services:
   # Known vulnerabilities in the lockfiles: `make audit` (composer.lock; docker/Dockerfile's global npm install has no lockfile).
   osv-scanner:
     profiles: [security]
-    image: ghcr.io/google/osv-scanner:v2.7.0@sha256:4f3b7e2c64b9d38a5febc5a7e4a3dfef1d1362f726dea7a2ef4762b46469fcd0
+    image: ghcr.io/google/osv-scanner:v2.7.1@sha256:a70ffffc2bfd33482953e5d6b64c6fcdb30239717a07b0f0d3ab2859ce3e4cde
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /app
     volumes:
@@ -421,7 +421,7 @@ services:
   # SBOM of the built zip (CycloneDX): `make sbom`. Writes to build/.
   syft:
     profiles: [security]
-    image: anchore/syft:v1.55.0@sha256:4cc92b64ca74ffca4c94d4c8fcc01f217731375300be14d0b6eeb2e82eaa110a
+    image: anchore/syft:v1.56.0@sha256:697ae864af1299cfa43c54b161cea3dd65c6d54de82e3dba66ea3dccb3acc313
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /build
     volumes:
@@ -436,7 +436,7 @@ services:
   # Static analysis with the plugin's own rules in .semgrep/: `make sast`. No network needed.
   semgrep:
     profiles: [security]
-    image: semgrep/semgrep:1.182.1@sha256:451b3d875c00dac7ed5db5293e584a07de11449a409c10b3c2d2652f429630b6
+    image: semgrep/semgrep:1.183.0@sha256:2e45517a85e13a9cca14a2a00df6bb48affd66b8ebfae1b0991cd57578362fb0
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /src
     volumes:
