@@ -84,7 +84,7 @@ QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
 QUALITY_BASELINE_SED := -e 's\#^\t\t\tpath: /app/\(.*\)$$\#\t\t\tpath: ../../\1\n\t\t\treportUnmatched: true\#'
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-commit-msg hooks test-git-mount check check-full
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs test-slowest coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-commit-msg hooks test-git-mount check check-full
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
@@ -108,11 +108,16 @@ deps: vendor/autoload.php ## Install Composer dependencies
 # checkouts, and the two suites of one checkout, do not drop each other's tables. Digits and letters only.
 WPUN_TOKEN := $(shell printf '%s' "$(CURDIR)" | cksum | tr -d ' ' | cut -c1-8)
 
-test-wp: deps ## Run the WordPress test suite (single site)
-	$(COMPOSE) run --build --rm -e TEST_TOKEN=$(WPUN_TOKEN)s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+# FILTER is a PHPUnit --filter regex. It goes to the container as an environment variable, so no shell reads it.
+# FILE is a test file; bin/test-filter.sh turns it into an exact filter for its test class. With both, FILTER narrows
+# the class: it is then a pattern for the method, for example FILE=tests/wp/test-routing.php FILTER=test_name.
+WP_FILTER = WPUN_FILTER="$$(sh bin/test-filter.sh)" && export WPUN_FILTER &&
 
-test-wp-ms: deps ## Run the WordPress test suite as multisite
-	$(COMPOSE) run --build --rm -e WP_MULTISITE=1 -e TEST_TOKEN=$(WPUN_TOKEN)m wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+test-wp: deps ## Run the WordPress test suite (single site): FILTER=Test_Routing, FILE=tests/wp/test-routing.php, ARGS=--stop-on-failure
+	$(WP_FILTER) $(COMPOSE) run --build --rm -e WPUN_FILTER -e TEST_TOKEN=$(WPUN_TOKEN)s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+
+test-wp-ms: deps ## Run the WordPress test suite as multisite (FILTER, FILE and ARGS as for test-wp)
+	$(WP_FILTER) $(COMPOSE) run --build --rm -e WPUN_FILTER -e WP_MULTISITE=1 -e TEST_TOKEN=$(WPUN_TOKEN)m wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
 
 # The WordPress suite with pcov (the wp-tests-coverage image, which only this target builds, so make test-wp stays
 # fast), as a single site and as a multisite, counted together. COVERAGE_MIN is a floor in whole percent that only goes
@@ -133,7 +138,13 @@ mutation: deps ## Mutation testing of the plugin with Infection (pcov, slow); fa
 	$(COMPOSE) run --build --rm -v $(CURDIR)/build/infection:/infection wp-tests-coverage sh /opt/wp-updates-notifier/docker/mutation.sh --threads=$(THREADS) $(ARGS)
 
 test-known-bugs: deps ## Run the tests that document open bugs (they are expected to fail)
+	@if ! grep -rqE '^[[:space:]]*\*[[:space:]]*@group[[:space:]]+known-bug' tests/wp; then echo 'No known bugs are recorded.'; exit 0; fi; \
 	$(COMPOSE) run --build --rm -e TEST_TOKEN=$(WPUN_TOKEN)s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
+
+# The plugin is mounted read-only in the test container, so the JUnit log goes to a mount of its own.
+test-slowest: deps ## Run the single-site suite and print the 15 slowest tests (JUnit log: build/junit/junit.xml)
+	@mkdir -p build/junit
+	$(COMPOSE) run --build --rm -e HOST_UID -e HOST_GID -e TEST_TOKEN=$(WPUN_TOKEN)s -v $(CURDIR)/build/junit:/junit wp-tests sh /opt/wp-updates-notifier/docker/slowest.sh $(ARGS)
 
 # The two WordPress suites run side by side (their tables differ by TEST_TOKEN); --output-sync keeps each one's output
 # together. The database and the image come first: two runs that start the database together race on its container name.
@@ -354,7 +365,8 @@ quality-check: quality-check-dupes quality-check-dead quality-check-complexity q
 
 quality-check-dupes: ## Gate: duplicated lines above JSCPD_THRESHOLD percent (the report is still written)
 	@mkdir -p $(QUALITY_DIR)
-	$(JSCPD) $(JSCPD_ARGS) --threshold $(JSCPD_THRESHOLD) includes modules wp-updates-notifier.php uninstall.php assets
+	@out="$$($(JSCPD) $(JSCPD_ARGS) --no-colors --threshold $(JSCPD_THRESHOLD) includes modules wp-updates-notifier.php uninstall.php assets 2>&1)"; s=$$?; \
+	if [ $$s -eq 0 ]; then printf '%s\n' "$$out" | grep 'Found .* clones'; else printf '%s\n' "$$out"; fi; exit $$s
 
 quality-check-dead: ## Gate: unused code that is not in docker/quality/phpstan-dead-baseline.neon (a baseline entry that matches nothing fails too)
 	$(QUALITY) analyse -c docker/quality/phpstan-dead-gate.neon $(QUALITY_STAN)

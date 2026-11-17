@@ -45,8 +45,8 @@ fixer() {
 		check-hooks) echo 'make hook-docs; a new hook also goes in wpun_hook_sections() in bin/hooks-scan.php' ;;
 		check-translations) echo 'the change-string skill: make translations-edit, translate, make translations' ;;
 		check-public-api) echo 'use only the public API (docs/developers/stability.md)' ;;
-		test-wp) echo 'rerun with: make test-wp ARGS="--filter Test_Class"' ;;
-		test-wp-ms) echo 'rerun with: make test-wp-ms ARGS="--filter Test_Class"' ;;
+		test-wp) echo 'rerun with: make test-wp FILE=tests/wp/test-class.php' ;;
+		test-wp-ms) echo 'rerun with: make test-wp-ms FILE=tests/wp/test-class.php' ;;
 		coverage) echo 'write the missing test; never lower COVERAGE_MIN' ;;
 		quality-check) echo 'fix the finding; make quality-baseline only after a real fix shrank a baseline' ;;
 		sast) echo 'add the " -- reason" to the ignore, or fix the finding' ;;

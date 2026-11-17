@@ -169,6 +169,8 @@ commitlint.config.js      release-scripts
 docker/commitlint/*       release-scripts
 # The runner of make check, tested by make test-check.
 bin/check.sh              release-scripts
+# FILE= of make test-wp, which only the WordPress suite uses.
+bin/test-filter.sh        wordpress
 tests/bin/test-check.sh   release-scripts
 bin/agent-stop-check.sh   release-scripts
 tests/bin/test-agent-stop-check.sh release-scripts

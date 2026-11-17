@@ -12,8 +12,8 @@ pull request.
 
 | What | Command |
 | --- | --- |
-| One test class | `make test-wp ARGS="--filter Test_Routing"` (about 4 s; a file path does not work, only `--filter`) |
-| One test | `make test-wp ARGS="--filter Test_Routing::test_name"` |
+| One test class | `make test-wp FILE=tests/wp/test-routing.php` (about 4 s) |
+| One test | `make test-wp FILTER=Test_Routing::test_name` |
 | WordPress suite | `make test-wp` (single site), `make test-wp-ms` (multisite) |
 | Before a pull request | `make check`, plus `make quality-check` and, when code was added, `make coverage` (or `make check-full` for admin screens, channels or the check itself). One line per step; a failure shows the log tail and the fix, the full output is in `build/check/<step>.log` |
 | Coverage, when code was added | `make coverage` (fails below `COVERAGE_MIN` in the `Makefile`) |

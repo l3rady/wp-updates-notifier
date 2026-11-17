@@ -61,7 +61,17 @@ make test-wp WP_VERSION=6.7.9 PHP_VERSION=7.4
 
 **Lives in.** `tests/wp/`, one `test-*.php` file per area, on `tests/wp/class-wpun-test-case.php`. Add a file there and it runs: they are found by name.
 
-**Run it.** `make test-wp` for a single site, `make test-wp-ms` for multisite. Pass PHPUnit options with `ARGS`, for example `make test-wp ARGS="--filter Test_Routing"`. `PHP_VERSION` and `WP_VERSION` pick the versions. Each checkout (and each git worktree) has its own table prefix, made from its path, and the single site and multisite runs have one each, so runs in different checkouts do not clash and `make test` can run both suites at once. Two runs of the same suite in one checkout still share tables, so do not start them together. `make mutation` sets its own prefixes and is not tied to the checkout.
+**Run it.** `make test-wp` for a single site, `make test-wp-ms` for multisite. Three variables narrow the run:
+
+- `FILE=tests/wp/test-routing.php` runs the one test class in that file. The make target stops with a message if the file does not exist or does not hold exactly one test class.
+- `FILTER=Test_Routing::test_name` is a PHPUnit `--filter` pattern, a regular expression. It may hold characters such as `(a|b)`: it reaches PHPUnit through the environment, so no shell reads it.
+- `ARGS=--stop-on-failure` passes any other PHPUnit option.
+
+With `FILE` and `FILTER` together, `FILTER` narrows the class, so it is a pattern for the method name: `make test-wp FILE=tests/wp/test-routing.php FILTER=test_name`. The same variables work for `make test-wp-ms`. A passing run prints nothing on standard error; a failing one shows the full PHPUnit report.
+
+`make test-slowest` runs the single-site suite once and prints the 15 slowest tests. Its JUnit log is `build/junit/junit.xml`. `PHP_VERSION` and `WP_VERSION` pick the versions.
+
+Each checkout (and each git worktree) has its own table prefix, made from its path, and the single site and multisite runs have one each, so runs in different checkouts do not clash and `make test` can run both suites at once. Two runs of the same suite in one checkout still share tables, so do not start them together. `make mutation` sets its own prefixes and is not tied to the checkout.
 
 **Multisite.** The multisite run has the plugin network-activated, as a network has it. A test class that needs the plugin as one site's copy (the dormant mode, or per-site settings) sets `protected $network_activated = false;` in `WPUN_Test_Case`. `set_network_activated()` switches it inside a test.
 
