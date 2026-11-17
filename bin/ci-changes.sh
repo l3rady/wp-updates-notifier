@@ -172,6 +172,10 @@ bin/check.sh              release-scripts
 tests/bin/test-check.sh   release-scripts
 bin/agent-stop-check.sh   release-scripts
 tests/bin/test-agent-stop-check.sh release-scripts
+# The git directory mount of a worktree, tested by make test-git-mount.
+bin/git-mount.sh         release-scripts
+bin/secrets-history.sh   release-scripts
+tests/bin/test-git-mount.sh release-scripts
 release-please-config.json release-scripts
 .release-please-manifest.json release-scripts
 .github/release-signers   release-scripts

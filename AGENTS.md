@@ -43,9 +43,9 @@ their own throwaway sites and are safe.
   same tables and break each other. The same goes for two runs of one browser suite. All checkouts share one
   database container: if it is not running, start one run first, or `docker compose up -d --wait db`, as two runs
   that start it together clash.
-- In a worktree, `make commits`, `make ci-changes`, `make dist` and `make dist-repro` fail because the
-  containers cannot see the git directory, and `make secrets-history` passes without scanning anything. Run
-  them from the main checkout.
+- The git targets (`make commits`, `ci-changes`, `dist`, `dist-repro`, `secrets-history`) work in a worktree:
+  the Makefile mounts the shared git directory into the container, read-only (`bin/git-mount.sh`). It needs git
+  on the host, and a path without spaces. `make secrets-history` fails when gitleaks scans no commits.
 
 ## Commits, branches and pull requests
 

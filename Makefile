@@ -1,4 +1,4 @@
-# Everything runs in Docker. The only host requirement is docker + docker compose.
+# Everything runs in Docker. The host needs docker + docker compose and git (every checkout has it).
 #
 #   make smoke                       # sanity-check the environment
 #   make smoke PHP_VERSION=7.4       # pick a PHP version (default 8.3)
@@ -15,6 +15,10 @@ export HOST_UID := $(shell id -u)
 export HOST_GID := $(shell id -g)
 
 COMPOSE := docker compose --progress quiet
+
+# In a git worktree the containers need the shared git directory too (bin/git-mount.sh): empty in a normal checkout.
+GIT_MOUNT    := $(shell sh bin/git-mount.sh)
+GIT_MOUNT_RW := $(shell sh bin/git-mount.sh rw)
 
 # The commits `make commits` checks: everything on this branch that is not on main.
 COMMITS_FROM ?= origin/main
@@ -80,7 +84,7 @@ QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
 QUALITY_BASELINE_SED := -e 's\#^\t\t\tpath: /app/\(.*\)$$\#\t\t\tpath: ../../\1\n\t\t\treportUnmatched: true\#'
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-commit-msg hooks check check-full
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-commit-msg hooks test-git-mount check check-full
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
@@ -143,7 +147,7 @@ lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), t
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcs && vendor/bin/phpcs --standard=examples/wpun-example-channel/phpcs.xml.dist && vendor/bin/phpcs --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist'
 
 commits: ## Check that the commits on this branch follow Conventional Commits
-	$(COMPOSE) run --build --rm commitlint --from $(COMMITS_FROM) --to $(COMMITS_TO) --verbose
+	$(COMPOSE) run --build --rm $(GIT_MOUNT) commitlint --from $(COMMITS_FROM) --to $(COMMITS_TO) --verbose
 
 hooks: ## Check commit messages on every commit: use .githooks in this checkout (and all its worktrees)
 	git config core.hooksPath .githooks
@@ -170,6 +174,9 @@ rector-fix: deps ## Apply Rector's upgrades, then run make fix and make lint
 test-release: ## Rehearse the scripts the release workflow runs (copyright year, signed commit request)
 	$(COMPOSE) run --build --rm php sh tests/bin/test-release-scripts.sh
 
+test-git-mount: ## Test bin/git-mount.sh (the git directory of a worktree) and bin/secrets-history.sh (0 commits scanned fails) with throwaway repositories
+	$(COMPOSE) run --build --rm php sh tests/bin/test-git-mount.sh
+
 test-check: ## Test bin/check.sh (the runner of make check) and bin/agent-stop-check.sh (the Stop hook) with a stub make
 	$(COMPOSE) run --build --rm php sh -c 'sh tests/bin/test-check.sh && sh tests/bin/test-agent-stop-check.sh'
 
@@ -186,13 +193,13 @@ check-full: ## make check plus what CI also runs: quality-check, coverage, sast,
 	@sh bin/check.sh lint rector stan check-hooks check-translations check-public-api quality-check coverage sast taint a11y e2e $(CHECK_COMMITS)
 
 dist: ## Build build/wp-updates-notifier-<version>.zip (runtime files only)
-	$(COMPOSE) run --build --rm php sh bin/build-dist.sh
+	$(COMPOSE) run --build --rm $(GIT_MOUNT) php sh bin/build-dist.sh
 
 dist-check: ## Check the zip: allowlisted contents, required files, version
 	$(COMPOSE) run --build --rm php sh bin/check-dist.sh
 
 dist-repro: ## Build the zip twice from fresh clones of HEAD (different umask, file times, time zone) and fail if the SHA-256 differs
-	$(COMPOSE) run --build --rm -e DIST_REPRO_SCRIPT php sh bin/check-dist-repro.sh
+	$(COMPOSE) run --build --rm $(GIT_MOUNT) -e DIST_REPRO_SCRIPT php sh bin/check-dist-repro.sh
 
 sbom: dist ## Write a CycloneDX SBOM of the built zip to build/wp-updates-notifier-<version>.cdx.json (Syft)
 	@v=$$(sed -n 's/^ \* Version: //p' wp-updates-notifier.php | head -n 1); \
@@ -262,7 +269,7 @@ check-workflows: ## Audit .github/ with actionlint (and shellcheck) and zizmor (
 
 # Runs in the PHP image, which has git, sh and awk, so nothing is installed on the host.
 ci-changes: ## Show which CI jobs a pull request would run: the changes since BASE (default origin/main) up to HEAD (default HEAD)
-	$(COMPOSE) run --build --rm php sh -c 'sh bin/ci-changes.sh "$$(git merge-base $(BASE) $(HEAD))" $(HEAD)'
+	$(COMPOSE) run --build --rm $(GIT_MOUNT) php sh -c 'sh bin/ci-changes.sh "$$(git merge-base $(BASE) $(HEAD))" $(HEAD)'
 
 test-ci-changes: ## Test the map of changed files to CI jobs, and that it agrees with the workflows and their gate jobs
 	$(COMPOSE) run --build --rm php sh tests/bin/test-ci-changes.sh
@@ -274,7 +281,7 @@ secrets: secrets-history secrets-tree secrets-zip ## Scan the git history, the w
 
 secrets-history: ## gitleaks over the git history (SECRETS_LOG_OPTS=base..head for just a pull request's commits)
 	@mkdir -p security-reports
-	$(GITLEAKS) gitleaks git $(GITLEAKS_ARGS) $(call secrets_report,history) $(if $(SECRETS_LOG_OPTS),--log-opts=$(SECRETS_LOG_OPTS)) /app
+	@sh bin/secrets-history.sh '$(SECRETS_LOG_OPTS)' $(GITLEAKS) $(GIT_MOUNT) gitleaks git $(GITLEAKS_ARGS) $(call secrets_report,history) $(if $(SECRETS_LOG_OPTS),--log-opts=$(SECRETS_LOG_OPTS)) /app
 
 secrets-tree: ## gitleaks over the working tree (not vendor/, build/, node_modules/ or .git/)
 	@mkdir -p security-reports
@@ -417,6 +424,8 @@ DOCS_TITLE   ?=
 DOCS_DEFAULT ?=
 DOCS_BRANCH  ?= gh-pages
 DOCS         := $(COMPOSE) --profile docs run --build --rm -T docs
+# The same with the git directory of a worktree mounted read-write: mike commits to it.
+DOCS_GIT     := $(COMPOSE) --profile docs run --build --rm -T $(GIT_MOUNT_RW) docs
 
 docs: ## Build the documentation site into build/docs (strict: broken links and anchors fail)
 	$(DOCS) mkdocs build
@@ -435,8 +444,8 @@ docs-links: docs readme ## Check the external links of the built site, README.md
 
 docs-deploy: ## Commit one version to the local gh-pages branch with mike, without pushing: make docs-deploy DOCS_VERSION=main [DOCS_ALIAS=latest] [DOCS_TITLE=...] [DOCS_DEFAULT=1]
 	@test -n "$(DOCS_VERSION)" || { echo 'Set DOCS_VERSION, e.g. make docs-deploy DOCS_VERSION=main' >&2; exit 1; }
-	$(DOCS) mike deploy --branch $(DOCS_BRANCH) $(if $(DOCS_TITLE),--title "$(DOCS_TITLE)") --update-aliases $(DOCS_VERSION) $(DOCS_ALIAS)
-	$(if $(DOCS_DEFAULT),$(DOCS) mike set-default --branch $(DOCS_BRANCH) $(or $(DOCS_ALIAS),$(DOCS_VERSION)))
+	$(DOCS_GIT) mike deploy --branch $(DOCS_BRANCH) $(if $(DOCS_TITLE),--title "$(DOCS_TITLE)") --update-aliases $(DOCS_VERSION) $(DOCS_ALIAS)
+	$(if $(DOCS_DEFAULT),$(DOCS_GIT) mike set-default --branch $(DOCS_BRANCH) $(or $(DOCS_ALIAS),$(DOCS_VERSION)))
 
 security: check-workflows secrets audit sast taint ## Run every security check
 
