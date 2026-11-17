@@ -79,7 +79,7 @@ services:
       - composer-cache:/home/dev/.composer/cache
 
   db:
-    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
+    image: mariadb:12@sha256:d46e102fa8b9b72bfcdeb56f9dd538742092119dc8b11f31fe662605cd234cd9
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: wordpress_test
@@ -134,10 +134,12 @@ services:
 
   site-db:
     profiles: [site]
-    image: mariadb:11@sha256:f16d7a344413e519dff518f27bdb221388f84b0d274c97c4fb5f2cb0dc1b34fa
+    image: mariadb:12@sha256:d46e102fa8b9b72bfcdeb56f9dd538742092119dc8b11f31fe662605cd234cd9
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: wordpress
+      # Upgrades the system tables of an existing volume after a major version bump.
+      MARIADB_AUTO_UPGRADE: "1"
     volumes:
       - site-db:/var/lib/mysql
       # Creates the multisite database on a fresh volume. It only runs then: `make site-setup` creates it on an
