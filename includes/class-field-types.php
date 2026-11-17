@@ -288,6 +288,35 @@ final class Field_Types {
 	}
 
 	/**
+	 * The value of a field when nothing is stored or supplied: its `default`, else the empty value of its type.
+	 *
+	 * Without a `default`: `false` for a boolean, `0` for a number, an empty list for a multiple `enum`, the first
+	 * option for a single `enum` (a select or a radio group always has one chosen), and `''` for the rest. The
+	 * `applies_when` conditions and `sc_wpun_setting()` both use it, so a field is shown or hidden by the value code
+	 * reads.
+	 *
+	 * @param array<string, mixed> $field Field schema.
+	 *
+	 * @return mixed
+	 */
+	public static function default_value( array $field ) {
+		if ( array_key_exists( 'default', $field ) ) {
+			return $field['default'];
+		}
+
+		switch ( self::canonical( $field['type'] ?? null ) ) {
+			case 'boolean':
+				return false;
+			case 'number':
+				return 0;
+			case 'enum':
+				return Enum_Field::default_value( $field );
+			default:
+				return '';
+		}
+	}
+
+	/**
 	 * The clean value of a controlling field.
 	 *
 	 * @param string               $name   Name of the controlling field.
@@ -299,19 +328,7 @@ final class Field_Types {
 	private static function controlling_value( string $name, array $field, array $values ): ?array {
 		$handler = self::get( $field['type'] ?? null );
 		$schema  = $field + array( 'name' => $name );
-		$type    = self::canonical( $field['type'] ?? null );
-
-		if ( array_key_exists( $name, $values ) ) {
-			$value = $values[ $name ];
-		} elseif ( array_key_exists( 'default', $field ) ) {
-			$value = $field['default'];
-		} elseif ( 'boolean' === $type ) {
-			$value = false;
-		} elseif ( 'enum' === $type ) {
-			$value = Enum_Field::default_value( $field );
-		} else {
-			$value = '';
-		}
+		$value   = array_key_exists( $name, $values ) ? $values[ $name ] : self::default_value( $field );
 
 		if ( isset( $field['sanitize_callback'] ) && is_callable( $field['sanitize_callback'] ) ) {
 			$value = call_user_func( $field['sanitize_callback'], $value );

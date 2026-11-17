@@ -586,7 +586,7 @@ final class Settings_Groups {
 
 		$kept = false === ( $schema['storage'] ?? true ) || ! array_key_exists( $name, $stored ) ? null : $this->clean( $stored[ $name ], $name, $schema );
 
-		return null !== $kept && $kept['ok'] ? $this->row( $kept['value'], null, 'database' ) : $this->row( $this->default_value( $schema ), null, 'default' );
+		return null !== $kept && $kept['ok'] ? $this->row( $kept['value'], null, 'database' ) : $this->row( Field_Types::default_value( $schema ), null, 'default' );
 	}
 
 	/**
@@ -644,30 +644,6 @@ final class Settings_Groups {
 			'ok'    => ! $clean instanceof \WP_Error,
 			'value' => $clean,
 		);
-	}
-
-	/**
-	 * The value used when nothing else is: the `default`, else what is empty for the type.
-	 *
-	 * @param array<string, mixed> $schema Field schema.
-	 *
-	 * @return mixed
-	 */
-	private function default_value( array $schema ) {
-		if ( array_key_exists( 'default', $schema ) ) {
-			return $schema['default'];
-		}
-
-		switch ( Field_Types::canonical( $schema['type'] ?? null ) ) {
-			case 'boolean':
-				return false;
-			case 'number':
-				return 0;
-			case 'enum':
-				return true === ( $schema['multiple'] ?? false ) ? array() : '';
-			default:
-				return '';
-		}
 	}
 
 	/**

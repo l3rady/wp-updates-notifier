@@ -736,6 +736,41 @@ class Test_Settings_Groups extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A field without a default and without a value gives an applies_when condition the value sc_wpun_setting() returns,
+	 * for each type: a field is shown or hidden by the value code reads.
+	 */
+	public function test_a_condition_sees_the_value_the_setting_returns() {
+		$controls = array(
+			'text'    => array( 'type' => 'text' ),
+			'boolean' => array( 'type' => 'boolean' ),
+			'number'  => array( 'type' => 'number' ),
+			'enum'    => array(
+				'type'    => 'enum',
+				'options' => array(
+					'first'  => 'First',
+					'second' => 'Second',
+				),
+			),
+		);
+		$this->register( 'cond', $controls );
+
+		foreach ( $controls as $name => $control ) {
+			$value  = sc_wpun_setting( 'cond', $name );
+			$fields = array(
+				$name => $control,
+				'dep' => array(
+					'type'         => 'text',
+					'applies_when' => array( $name => $value ),
+				),
+			);
+			$this->assertTrue( WPUN\Field_Types::applies( 'dep', $fields['dep'], $fields, array() ), $name . ': the condition sees ' . wp_json_encode( $value ) );
+		}
+		foreach ( $controls as $name => $control ) {
+			$this->assertSame( sc_wpun_setting( 'cond', $name ), WPUN\Field_Types::default_value( $control ), $name . ': one method decides it.' );
+		}
+	}
+
+	/**
 	 * Nothing set and nothing stored: the default, and the empty value of the type without one.
 	 */
 	public function test_defaults_and_empty_values() {
@@ -765,7 +800,7 @@ class Test_Settings_Groups extends WPUN_Test_Case {
 		$this->assertSame( '', sc_wpun_setting( 'dflts', 'plain' ) );
 		$this->assertFalse( sc_wpun_setting( 'dflts', 'on' ) );
 		$this->assertSame( 0, sc_wpun_setting( 'dflts', 'count' ) );
-		$this->assertSame( '', sc_wpun_setting( 'dflts', 'one' ) );
+		$this->assertSame( 'a', sc_wpun_setting( 'dflts', 'one' ), 'A single choice without a default is its first option.' );
 		$this->assertSame( array(), sc_wpun_setting( 'dflts', 'many' ) );
 		$this->assertNull( sc_wpun_setting_source( 'dflts', 'name' ) );
 	}
