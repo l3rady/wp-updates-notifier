@@ -439,6 +439,7 @@ The contract for a replacement:
 - Support at least the features the original supports (`supports()`).
 - Do not rely on your own extra keys being present. An instance may have been created while your add-on was inactive.
 - Extra keys are kept while the original is active, and are there again when the replacement returns.
+- The built-in webhook channel's `updates.resolved` message is sent only while the active `webhook` channel is a `Webhook_Channel`, so a replacement that extends it keeps the message. One that does not, and wants it, listens to `sc_wpun_item_resolved` itself.
 
 ## Looking up a channel
 
