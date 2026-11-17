@@ -39,12 +39,13 @@ section 4. Tell it to read the code and report candidates, not to edit anything.
 
 | Slice | Files |
 |---|---|
-| Configuration and settings | `includes/class-config*.php`, `includes/interface-config-source.php`, `includes/class-constant-source.php`, `includes/class-env-source.php`, `includes/class-settings.php`, `includes/class-state.php`, `includes/class-frequencies.php`, `includes/class-translations.php`, `includes/class-plugin.php`, `includes/class-autoloader.php`, `wp-updates-notifier.php`, `uninstall.php` |
+| Configuration and settings | `includes/class-config*.php`, `includes/interface-config-source.php`, `includes/class-constant-source.php`, `includes/class-env-source.php`, `includes/class-settings.php`, `includes/class-settings-groups.php`, `includes/class-instance-data.php`, `includes/class-state.php`, `includes/class-frequencies.php`, `includes/class-translations.php`, `includes/class-plugin.php`, `includes/class-autoloader.php`, `wp-updates-notifier.php`, `uninstall.php` |
 | Channels and delivery | `includes/abstract-class-channel.php`, `includes/class-channel-*.php`, `includes/class-rejected-channels.php`, `includes/class-dispatcher.php`, `includes/class-delivery-result.php`, `includes/class-routing.php`, `includes/class-field-types.php`, `includes/class-boolean-field.php`, `includes/class-enum-field.php` |
-| Update check and notifications | `includes/class-update-checker.php`, `includes/class-notification*.php`, `includes/class-notifier.php`, `includes/class-scheduler.php`, `includes/class-item-types.php`, `includes/class-version-constraint.php`, `includes/class-auto-update-policy.php`, `includes/class-status-report.php`, `includes/class-site-health.php` |
+| Update check and notifications | `includes/class-update-checker.php`, `includes/class-update-collector.php`, `includes/class-notification*.php`, `includes/class-severity.php`, `includes/class-notifier.php`, `includes/class-scheduler.php`, `includes/class-item-types.php`, `includes/class-version-constraint.php`, `includes/class-auto-update-policy.php`, `includes/class-status-report.php`, `includes/class-site-health.php` |
 | Mutes and multisite | `includes/class-mute.php`, `includes/class-mute-store.php`, `includes/class-network-*.php`, `includes/admin/class-mute-actions.php`, `includes/admin/class-muted-tab.php`, `includes/admin/class-plugins-screen-mutes.php` |
-| Admin screens | the rest of `includes/admin/`: the settings page, tabs, channel form, field renderer, notices and check-now |
-| CLI and built-in modules | `includes/cli/`, `modules/email/`, `modules/webhook/` |
+| Admin screens | the rest of `includes/admin/`: the settings page, tabs, channel form, settings group form, field renderer, notices and check-now |
+| CLI and built-in modules | `includes/cli/`, `modules/email/`, `modules/webhook/`, `modules/slack/` |
+| Tests and CI (optional) | `tests/`, `bin/`, `.github/workflows/`, the `Makefile`: duplicated test set-up that belongs in `WPUN_Test_Case`, helpers that rebuild WordPress's test factories, scripts that repeat each other, and jobs that run the same thing twice. Audit it only when asked, or when the plugin slices leave time |
 
 If files were added or moved since this table was written, put each new file in the closest slice and update
 the table in the same change.
