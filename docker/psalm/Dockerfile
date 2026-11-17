@@ -4,7 +4,7 @@
 # Psalm and the WordPress stubs come from composer.lock in this directory; the base images are pinned by digest.
 # The repository is mounted at /app when it runs (see the psalm service in docker-compose.yml).
 
-FROM composer:2.10.3@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac AS deps
+FROM composer:2.11.0@sha256:278dfc7bd35169965d03f87194816f43bf4e6b6ea61707c2114e52ad12fe24ce AS deps
 WORKDIR /opt/psalm
 COPY composer.json composer.lock patch-wpdb-stub.php ./
 RUN composer install --no-interaction --no-progress --no-scripts --prefer-dist --optimize-autoloader \
