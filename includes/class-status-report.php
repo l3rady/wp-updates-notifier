@@ -254,7 +254,7 @@ class Status_Report {
 				'code_defined' => $this->store->is_code_defined( $id ),
 				'last_result'  => $last,
 				'last_failure' => null !== $last && ! $last['success'] ? $last : null,
-				'retry_at'     => isset( $entry['retry_at'] ) ? self::format_time( $entry['retry_at'] ) : null,
+				'retry_at'     => isset( $entry['retry_at'] ) && $entry['retry_at'] > time() ? self::format_time( $entry['retry_at'] ) : null,
 				'held_until'   => isset( $entry['held_until'] ) && $entry['held_until'] > time() ? self::format_time( $entry['held_until'] ) : null,
 				'fields'       => $this->fields( $instance ),
 			);
