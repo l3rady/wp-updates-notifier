@@ -629,6 +629,113 @@ class Test_Settings_Groups extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A supplied value goes through the field's type, as a saved one does: an `https_only` URL refuses http and
+	 * something that is not a URL, so the stored value applies and the problem is reported without the value.
+	 */
+	public function test_a_supplied_url_is_checked_by_its_type() {
+		define( 'SC_WPUN_SETTING_URLA__ENDPOINT', 'http://leak.example.org/hook' );
+		define( 'SC_WPUN_SETTING_URLB__ENDPOINT', 'not a url LEAK' );
+		$fields = array(
+			'endpoint' => array(
+				'type'       => 'url',
+				'https_only' => true,
+				'default'    => 'https://default.example.org/',
+			),
+		);
+		update_option( 'sc_wpun_settings_urla', array( 'endpoint' => 'https://stored.example.org/' ) );
+		if ( sc_wpun_is_network() ) {
+			update_site_option( 'sc_wpun_settings_urla', array( 'endpoint' => 'https://stored.example.org/' ) );
+		}
+		$this->in_action(
+			function () use ( $fields ) {
+				sc_wpun_register_settings_group( 'urla', array( 'label' => 'A' ), $fields );
+				sc_wpun_register_settings_group( 'urlb', array( 'label' => 'B' ), $fields );
+			}
+		);
+
+		$this->assertSame( 'https://stored.example.org/', sc_wpun_setting( 'urla', 'endpoint' ) );
+		$this->assertNull( sc_wpun_setting_source( 'urla', 'endpoint' ) );
+		$this->assertSame( 'https://default.example.org/', sc_wpun_setting( 'urlb', 'endpoint' ) );
+
+		$problems = sc_wpun()->config()->problems();
+		$this->assertSame( array( 'SC_WPUN_SETTING_URLA__ENDPOINT', 'SC_WPUN_SETTING_URLB__ENDPOINT' ), wp_list_pluck( $problems, 'key' ) );
+		$this->assertStringNotContainsString( 'LEAK', wp_json_encode( $problems ) );
+		$this->assertStringNotContainsString( 'leak.example.org', wp_json_encode( $problems ) );
+	}
+
+	/**
+	 * A supplied https URL is used, cleaned as a saved one would be.
+	 */
+	public function test_a_valid_supplied_url_is_used() {
+		define( 'SC_WPUN_SETTING_URLC__ENDPOINT', ' https://example.org/hook ' );
+		$this->register(
+			'urlc',
+			array(
+				'endpoint' => array(
+					'type'       => 'url',
+					'https_only' => true,
+				),
+			)
+		);
+
+		$this->assertSame( 'https://example.org/hook', sc_wpun_setting( 'urlc', 'endpoint' ) );
+		$this->assertSame( 'constant SC_WPUN_SETTING_URLC__ENDPOINT', sc_wpun_setting_source( 'urlc', 'endpoint' ) );
+		$this->assertSame( array(), sc_wpun()->config()->problems() );
+	}
+
+	/**
+	 * A supplied list of addresses with one that is not an address is reported, and the default applies.
+	 */
+	public function test_a_supplied_email_list_is_checked_by_its_type() {
+		define( 'SC_WPUN_SETTING_MAILA__TO', 'ok@example.org, not-an-address' );
+		$this->register(
+			'maila',
+			array(
+				'to' => array(
+					'type'    => 'email_list',
+					'default' => 'fallback@example.org',
+				),
+			)
+		);
+
+		$this->assertSame( 'fallback@example.org', sc_wpun_setting( 'maila', 'to' ) );
+		$this->assertSame( array( 'SC_WPUN_SETTING_MAILA__TO' ), wp_list_pluck( sc_wpun()->config()->problems(), 'key' ) );
+	}
+
+	/**
+	 * A supplied text value is cleaned like a saved one; a secret and a secret textarea keep what they hold apart
+	 * from control characters; an empty value is still used as it is.
+	 */
+	public function test_supplied_text_and_secrets_are_cleaned_like_saved_ones() {
+		define( 'SC_WPUN_SETTING_CLEANA__NAME', "  Hello <b>there</b>\tworld " );
+		define( 'SC_WPUN_SETTING_CLEANA__TOKEN', " to\x01ken<%&> " );
+		define( 'SC_WPUN_SETTING_CLEANA__KEYS', "one<%\r\ntwo\x01" );
+		define( 'SC_WPUN_SETTING_CLEANA__HOOK', '' );
+		$this->register(
+			'cleana',
+			array(
+				'name'  => array( 'type' => 'text' ),
+				'token' => array( 'type' => 'secret' ),
+				'keys'  => array(
+					'type'   => 'textarea',
+					'secret' => true,
+				),
+				'hook'  => array(
+					'type'    => 'url',
+					'default' => 'https://default.example.org/',
+				),
+			)
+		);
+
+		$this->assertSame( sanitize_text_field( "  Hello <b>there</b>\tworld " ), sc_wpun_setting( 'cleana', 'name' ) );
+		$this->assertSame( 'token<%&>', sc_wpun_setting( 'cleana', 'token' ) );
+		$this->assertSame( "one<%\ntwo", sc_wpun_setting( 'cleana', 'keys' ) );
+		$this->assertSame( '', sc_wpun_setting( 'cleana', 'hook' ) );
+		$this->assertSame( 'constant SC_WPUN_SETTING_CLEANA__HOOK', sc_wpun_setting_source( 'cleana', 'hook' ) );
+		$this->assertSame( array(), sc_wpun()->config()->problems() );
+	}
+
+	/**
 	 * Nothing set and nothing stored: the default, and the empty value of the type without one.
 	 */
 	public function test_defaults_and_empty_values() {

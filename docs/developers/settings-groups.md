@@ -80,7 +80,7 @@ The constant or environment variable of a field is `SC_WPUN_SETTING_<GROUP>__<FI
 
 The effective value is, in order:
 
-1. a value a source supplies, cast to the type of the field;
+1. a value a source supplies, cast to the type of the field and then checked and cleaned by it, as a saved value is (an `https_only` URL refuses `http://`);
 2. if that value cannot be used: `on_invalid` if the schema has it;
 3. the stored value;
 4. the `default`; without one, `false` for a boolean, `0` for a number, an empty list for a multiple `enum`, and an empty string for the rest.

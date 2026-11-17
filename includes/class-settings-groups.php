@@ -556,8 +556,9 @@ final class Settings_Groups {
 	/**
 	 * The effective value of one field.
 	 *
-	 * A supplied value that can be used wins. One that cannot is recorded as a problem and replaced by `on_invalid` if the
-	 * schema has one, else by the stored value, else by the default.
+	 * A supplied value that can be used wins: it is cast, then cleaned by the field's type like a saved value (decisions
+	 * 0007 and 0031), so an `https_only` URL refuses http. One that cannot is recorded as a problem and replaced by
+	 * `on_invalid` if the schema has one, else by the stored value, else by the default.
 	 *
 	 * @param string               $group  Group id.
 	 * @param string               $name   Field name.
@@ -569,9 +570,10 @@ final class Settings_Groups {
 	private function resolve_field( string $group, string $name, array $schema, array $stored ): array {
 		$supplied = $this->supplied( Config_Context::setting( $name, $group ), $schema );
 		if ( null !== $supplied ) {
-			$cast = $this->config->cast( $supplied->get_value(), $schema );
-			if ( $cast['ok'] ) {
-				return $this->row( $cast['value'], $supplied->get_source() );
+			$cast  = $this->config->cast( $supplied->get_value(), $schema );
+			$clean = $cast['ok'] ? $this->clean( $cast['value'], $name, $schema ) : $cast;
+			if ( $clean['ok'] ) {
+				return $this->row( $clean['value'], $supplied->get_source() );
 			}
 
 			$has_fallback = array_key_exists( 'on_invalid', $schema );
