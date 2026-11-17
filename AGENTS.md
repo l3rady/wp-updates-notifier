@@ -15,7 +15,7 @@ pull request.
 | One test class | `make test-wp ARGS="--filter Test_Routing"` (about 4 s; a file path does not work, only `--filter`) |
 | One test | `make test-wp ARGS="--filter Test_Routing::test_name"` |
 | WordPress suite | `make test-wp` (single site), `make test-wp-ms` (multisite) |
-| Before a pull request | `make lint stan rector check-hooks check-translations check-public-api test quality-check` |
+| Before a pull request | `make check`, plus `make quality-check` and, when code was added, `make coverage` (or `make check-full` for admin screens, channels or the check itself). One line per step; a failure shows the log tail and the fix, the full output is in `build/check/<step>.log` |
 | Coverage, when code was added | `make coverage` (fails below `COVERAGE_MIN` in the `Makefile`) |
 | Coding standards fixer | `make fix` |
 | PHP 7.4 syntax fixer | `make rector-fix` (it runs `make fix` and `make lint` after) |

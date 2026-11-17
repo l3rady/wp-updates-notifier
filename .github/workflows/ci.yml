@@ -95,6 +95,8 @@ jobs:
         run: make test-release
       - name: Check the map of changed files to jobs against the workflows
         run: make test-ci-changes
+      - name: Test the runner of make check
+        run: make test-check
 
   # The plugin zip as users get it: runtime files only, and it installs,
   # activates, deactivates and uninstalls cleanly in a fresh WordPress.

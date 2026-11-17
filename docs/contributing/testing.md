@@ -43,6 +43,8 @@ flowchart LR
 
 CI runs most of the targets in the diagram on pull requests, but not all of them. `make dast` (about 11 minutes), `make mutation` (about 35 minutes), `make e2e-upgrade` (it downloads 1.6.0 from WordPress.org) and `make test-known-bugs` (those tests are expected to fail) never run in CI, and neither do `make screenshots` and `make blueprint-smoke`, which are not in the diagram. Run the first three before each release (see [Releases](releases.md)). A pull request also runs only the jobs its changes can affect: `make e2e` and `make e2e-ms`, for example, run only on pull requests that touch the plugin or the files the browser checks use. [CONTRIBUTING.md](https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md) says which checks a pull request runs and how the gate jobs work.
 
+`make check` runs the checks a pull request must pass, one after the other, and prints one line per step: `lint`, `rector`, `stan`, `check-hooks`, `check-translations`, `check-public-api`, `test-wp` and `test-wp-ms`. When a step fails it stops and shows the end of that step's log and how to fix it (`make` then exits with 2; `sh bin/check.sh` exits with the step's own code); the full logs are in `build/check/<step>.log`. `make check-full` adds `quality-check`, `coverage`, `sast`, `taint`, `a11y`, `e2e` and `commits` (when the branch has commits over `origin/main`), and takes several minutes. `bin/check.sh` is the runner (`sh bin/check.sh lint stan` runs just those steps) and `make test-check` tests it. `PHP_VERSION` and `WP_VERSION` reach every step.
+
 Pick the PHP and WordPress versions with `PHP_VERSION` and `WP_VERSION` (a wordpress-develop tag, or `trunk`):
 
 ```sh

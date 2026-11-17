@@ -80,7 +80,7 @@ QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
 QUALITY_BASELINE_SED := -e 's\#^\t\t\tpath: /app/\(.*\)$$\#\t\t\tpath: ../../\1\n\t\t\treportUnmatched: true\#'
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check check check-full
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
@@ -127,7 +127,7 @@ mutation: deps ## Mutation testing of the plugin with Infection (pcov, slow); fa
 test-known-bugs: deps ## Run the tests that document open bugs (they are expected to fail)
 	$(COMPOSE) run --build --rm wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 
-test: test-wp test-wp-ms test-release test-readme test-blueprint test-wporg-assets ## Run every test layer
+test: test-wp test-wp-ms test-release test-check test-readme test-blueprint test-wporg-assets ## Run every test layer
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), the plugin, the example add-on and the field showcase
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcs && vendor/bin/phpcs --standard=examples/wpun-example-channel/phpcs.xml.dist && vendor/bin/phpcs --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist'
@@ -152,6 +152,20 @@ rector-fix: deps ## Apply Rector's upgrades, then run make fix and make lint
 
 test-release: ## Rehearse the scripts the release workflow runs (copyright year, signed commit request)
 	$(COMPOSE) run --build --rm php sh tests/bin/test-release-scripts.sh
+
+test-check: ## Test bin/check.sh (the runner of make check) with a stub make
+	$(COMPOSE) run --build --rm php sh tests/bin/test-check.sh
+
+# What a pull request must pass, with short output (bin/check.sh): one line per step, the log tail of the first step
+# that fails, and the full logs in build/check/. The two suites run one after the other, as they share one test
+# database. `make check-full` adds what CI also runs; coverage runs both WordPress suites, so they are not listed.
+# `commits` is added when the branch has commits over origin/main.
+check: ## What a pull request must pass, with short output: lint, rector, stan, hooks, translations, public API and both suites (logs in build/check/)
+	@sh bin/check.sh lint rector stan check-hooks check-translations check-public-api test-wp test-wp-ms
+
+CHECK_COMMITS = $(if $(shell git rev-list origin/main..HEAD 2>/dev/null | head -n 1),commits)
+check-full: ## make check plus what CI also runs: quality-check, coverage, sast, taint, a11y, e2e and commits (slow; logs in build/check/)
+	@sh bin/check.sh lint rector stan check-hooks check-translations check-public-api quality-check coverage sast taint a11y e2e $(CHECK_COMMITS)
 
 dist: ## Build build/wp-updates-notifier-<version>.zip (runtime files only)
 	$(COMPOSE) run --build --rm php sh bin/build-dist.sh

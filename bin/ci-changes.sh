@@ -162,6 +162,9 @@ bin/sign-release-tag.sh   release-scripts
 bin/commit-payload.php    release-scripts smoke
 bin/update-copyright-year.sh release-scripts
 tests/bin/test-release-scripts.sh release-scripts
+# The runner of make check, tested by make test-check.
+bin/check.sh              release-scripts
+tests/bin/test-check.sh   release-scripts
 release-please-config.json release-scripts
 .release-please-manifest.json release-scripts
 .github/release-signers   release-scripts

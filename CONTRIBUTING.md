@@ -32,9 +32,18 @@ AI coding agents start with [AGENTS.md](AGENTS.md): the commands and the rules t
 
 ## What must pass
 
-- `make lint`, `make stan`, `make rector` and `make test` must pass. Run
-  `make security` before opening a pull request. CI runs them on pull requests
-  (see [below](#which-checks-a-pull-request-runs)).
+- `make check` must pass. It runs the fast checks of CI one after the other and
+  prints one line per step; a failure shows the end of its log and how to fix
+  it, and the full logs are in `build/check/`. It runs `lint`, `rector`,
+  `stan`, `check-hooks`, `check-translations`, `check-public-api` and both
+  WordPress suites (`test-wp`, `test-wp-ms`). CI also requires `quality-check`
+  and `coverage`: run `make quality-check` too, and `make coverage` when you
+  added code. For changes to the admin screens, channels or the update check,
+  run `make check-full` instead: it adds `quality-check`, `coverage`, `sast`,
+  `taint`, `a11y`, `e2e` and `commits`.
+  CI also runs the other tests of `make test`, the dist, smoke and docs checks
+  (see [below](#which-checks-a-pull-request-runs)). Run `make security` before
+  opening a pull request.
 - Check changes by hand on the [local sites](https://wpun.cariss.dev/main/contributing/local-sites/) (`make up`).
   A change must not add PHP notices or `doing_it_wrong` messages. For changes
   that save or read options, transients or channels, check them with the
