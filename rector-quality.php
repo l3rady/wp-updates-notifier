@@ -11,8 +11,8 @@
  * @package wp-updates-notifier
  */
 
-use Rector\CodeQuality\Rector\Identical\FlipTypeControlToUseExclusiveTypeRector;
 use Rector\CodeQuality\Rector\Identical\SimplifyBoolIdenticalTrueRector;
+use Rector\CodeQuality\Rector\If_\ExplicitNullableObjectInstanceRector;
 use Rector\Config\RectorConfig;
 use Rector\DeadCode\Rector\ClassMethod\RemoveUselessParamTagRector;
 use Rector\DeadCode\Rector\ClassMethod\RemoveUselessReturnTagRector;
@@ -42,7 +42,7 @@ return RectorConfig::configure()
 			$baseline,
 			array(
 				// The standards require Yoda conditions (`null === $x`); these rules flip them back or rewrite the comparison.
-				FlipTypeControlToUseExclusiveTypeRector::class,
+				ExplicitNullableObjectInstanceRector::class,
 				SimplifyBoolIdenticalTrueRector::class,
 				// The standards require @param and @return tags even where the native type says the same.
 				RemoveUselessParamTagRector::class,

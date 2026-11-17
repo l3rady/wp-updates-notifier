@@ -34,9 +34,6 @@ return array(
 		dirname( __DIR__, 2 ) . '/includes/admin/class-plugin-requirements.php',
 		dirname( __DIR__, 2 ) . '/includes/class-autoloader.php',
 	),
-	\Rector\DeadCode\Rector\ClassMethod\RemoveDuplicatedReturnSelfDocblockRector::class => array(
-		dirname( __DIR__, 2 ) . '/includes/class-channel-instance.php',
-	),
 	\Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPublicMethodParameterRector::class => array(
 		dirname( __DIR__, 2 ) . '/includes/class-boolean-field.php',
 		dirname( __DIR__, 2 ) . '/includes/class-field-types.php',
@@ -52,10 +49,6 @@ return array(
 		dirname( __DIR__, 2 ) . '/includes/class-config.php',
 		dirname( __DIR__, 2 ) . '/includes/class-plugin.php',
 		dirname( __DIR__, 2 ) . '/includes/class-update-checker.php',
-	),
-	\Rector\EarlyReturn\Rector\StmtsAwareInterface\ReturnEarlyIfVariableRector::class => array(
-		dirname( __DIR__, 2 ) . '/includes/admin/class-plugins-screen-mutes.php',
-		dirname( __DIR__, 2 ) . '/includes/admin/class-settings-page.php',
 	),
 	\Rector\TypeDeclaration\Rector\StmtsAwareInterface\SafeDeclareStrictTypesRector::class => array(
 		dirname( __DIR__, 2 ) . '/includes/interface-config-source.php',
