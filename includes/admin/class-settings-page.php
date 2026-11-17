@@ -436,6 +436,10 @@ class Settings_Page {
 				$errors = $view['errors'];
 			}
 		}
+		// Settings groups: on General and on the tabs of add-ons. Their errors are kept for the form, not in core's list.
+		if ( $this->group_form()->has_tab( $current ) && $this->group_form()->has_errors( $current ) ) {
+			$errors = true;
+		}
 
 		// The separator is written like core's, as an entity: core escapes the whole title.
 		// translators: 1: Name of the view, for example "Channels". 2: Title of the screen and site.

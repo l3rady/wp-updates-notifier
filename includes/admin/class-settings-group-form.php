@@ -115,6 +115,19 @@ class Settings_Group_Form {
 	}
 
 	/**
+	 * Whether the last failed save of a tab left errors for the current user. Only looks: round() still gets them.
+	 *
+	 * @param string $tab Tab slug.
+	 *
+	 * @return bool
+	 */
+	public function has_errors( string $tab ): bool {
+		$round = Form_Parts::round_trip( self::META_KEY, 'tab:' . $tab, false );
+
+		return null !== $round && array() !== $round['errors'];
+	}
+
+	/**
 	 * Output the summary of the errors of the groups of a failed save.
 	 *
 	 * @param array<string, string> $errors Messages by `<group>/<field>`.
