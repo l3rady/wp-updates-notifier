@@ -165,6 +165,8 @@ tests/bin/test-release-scripts.sh release-scripts
 # The runner of make check, tested by make test-check.
 bin/check.sh              release-scripts
 tests/bin/test-check.sh   release-scripts
+bin/agent-stop-check.sh   release-scripts
+tests/bin/test-agent-stop-check.sh release-scripts
 release-please-config.json release-scripts
 .release-please-manifest.json release-scripts
 .github/release-signers   release-scripts

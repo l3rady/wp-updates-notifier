@@ -7,6 +7,10 @@
 #
 # Runs on the host, as make starts Docker. CHECK_MAKE is the make command (the self-test uses a stub). Variables given
 # to the outer make (make check PHP_VERSION=7.4) reach the steps through MAKEFLAGS.
+#
+# A step that passes leaves build/check/<step>.ok, holding a key for the tree it passed on. With CHECK_SKIP_PASSED=1 a
+# step whose stamp equals the current key is not run again (the Stop hook, bin/agent-stop-check.sh, sets it). make check
+# does not set it: it always runs everything, and writes the stamps.
 set -eu
 
 [ "$#" -gt 0 ] || { echo 'usage: sh bin/check.sh <make-target>...' >&2; exit 2; }
@@ -15,6 +19,22 @@ cd "$(dirname "$0")/.."
 make_cmd="${CHECK_MAKE:-make}"
 logs=build/check
 mkdir -p "$logs"
+
+# The key of the tree: HEAD, the changes to tracked files, the names and contents of untracked files that are not ignored,
+# and MAKEFLAGS (PHP_VERSION=7.4 must not reuse a pass of the default version). Empty when git cannot tell (no
+# checkout, no HEAD): then no step is skipped and no stamp is written. Computed once, before the first step: the steps
+# run here (lint, checks) do not rewrite tracked files; a step that did would be stamped with the key from before.
+tree_key() {
+	{
+		git rev-parse --verify -q HEAD &&
+			git diff HEAD --binary &&
+			git ls-files -o --exclude-standard &&
+			git ls-files -o --exclude-standard | git hash-object --stdin-paths &&
+			printf '%s\n' "${MAKEFLAGS:-}"
+	} > "$logs/key.tmp" 2>/dev/null && git hash-object --stdin < "$logs/key.tmp" 2>/dev/null || true
+	rm -f "$logs/key.tmp"
+}
+key="$(tree_key)"
 
 # The hint for a step that has a known fix.
 fixer() {
@@ -36,6 +56,11 @@ fixer() {
 
 for step in "$@"; do
 	log="$logs/$step.log"
+	stamp="$logs/$step.ok"
+	if [ "${CHECK_SKIP_PASSED:-}" = 1 ] && [ -n "$key" ] && [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$key" ]; then
+		printf 'ok    %-20s unchanged\n' "$step"
+		continue
+	fi
 	rm -f "$log"
 	start="$(date +%s)"
 	status=0
@@ -43,8 +68,10 @@ for step in "$@"; do
 	secs=$(( $(date +%s) - start ))
 	if [ "$status" -eq 0 ]; then
 		printf 'ok    %-20s %ss\n' "$step" "$secs"
+		if [ -n "$key" ]; then echo "$key" > "$stamp"; else rm -f "$stamp"; fi
 		continue
 	fi
+	rm -f "$stamp"
 	printf 'FAIL  %s  %ss\n' "$step" "$secs"
 	tail -n 60 "$log"
 	echo "log: $log"

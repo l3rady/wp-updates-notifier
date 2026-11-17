@@ -23,6 +23,11 @@ pull request.
 | Translations | `make translations-edit`, translate, `make translations` |
 | Commit messages | `make commits` |
 
+A Claude Code Stop hook (`bin/agent-stop-check.sh`) runs `lint`, `check-hooks`, `check-public-api` and
+`check-translations` at the end of a turn that changed plugin code. A failure comes back as a message: fix it
+before finishing. It skips steps that already passed on the same tree, and does nothing when Docker is not
+running or `vendor/` is missing (run `make deps`).
+
 `PHP_VERSION` and `WP_VERSION` pick the versions, for example `make test-wp PHP_VERSION=7.4`.
 
 Never run `make up`, `make down`, `make clean` or `make site-setup` unless asked: they act on the one local

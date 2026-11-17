@@ -12,6 +12,16 @@ trap 'rm -rf "$work"' EXIT
 # The script writes build/check/ in the checkout it belongs to (the parent of its bin/): use a scratch copy.
 mkdir -p "$work/bin" "$work/run"
 cp "$here/bin/check.sh" "$work/bin/check.sh"
+# The pass stamps are keyed by the git tree, so the scratch copy is a tiny repository (identity and signing set for this
+# throwaway repository only).
+git -C "$work" init -q
+git -C "$work" config user.email test@example.com
+git -C "$work" config user.name Test
+git -C "$work" config commit.gpgsign false
+echo one > "$work/file.txt"
+printf '/build/\n/make\n/ran\n/out\n' > "$work/.gitignore"
+git -C "$work" add .gitignore bin file.txt
+git -C "$work" commit -q -m init
 
 # A stub make: prints a few lines, or 200 for a step in STUB_LONG, and exits with STUB_CODE for STUB_FAIL.
 cat > "$work/make" <<'STUB'
@@ -61,6 +71,36 @@ STUB_FAIL=taint STUB_CODE=5 run taint > "$work/out" 2>&1 || status=$?
 [ "$status" -eq 5 ] || fail "expected exit code 5, got $status"
 grep -q '^FAIL  taint' "$work/out" || fail "no FAIL line for taint"
 grep -q '^fix:' "$work/out" && fail "a step without a fixer printed a fix line"
+
+# Stamps: a pass writes build/check/<step>.ok, a failure removes it.
+[ -f "$work/build/check/lint.ok" ] || fail "no stamp for a passing step"
+[ -f "$work/build/check/stan.ok" ] && fail "a failing step kept its stamp"
+
+# CHECK_SKIP_PASSED=1 skips a step whose stamp matches the tree, and runs it again after a change.
+: > "$work/ran"
+run lint stan > "$work/out" 2>&1 || fail "the stamping run failed"
+: > "$work/ran"
+CHECK_SKIP_PASSED=1 run lint stan > "$work/out" 2>&1 || fail "the skipping run failed"
+[ ! -s "$work/ran" ] || fail "an unchanged tree ran: $(cat "$work/ran")"
+grep -Eq '^ok    lint +unchanged$' "$work/out" || fail "no unchanged line for lint"
+: > "$work/ran"
+run lint > "$work/out" 2>&1 || fail "a run without CHECK_SKIP_PASSED failed"
+[ "$(cat "$work/ran")" = lint ] || fail "without CHECK_SKIP_PASSED a step was skipped"
+echo two > "$work/file.txt"
+: > "$work/ran"
+CHECK_SKIP_PASSED=1 run lint stan > "$work/out" 2>&1 || fail "the run after a change failed"
+[ "$(tr '\n' ' ' < "$work/ran")" = 'lint stan ' ] || fail "a changed tree skipped steps"
+: > "$work/ran"
+CHECK_SKIP_PASSED=1 run lint > "$work/out" 2>&1
+[ ! -s "$work/ran" ] || fail "the stamp after the change did not hold"
+# A new untracked file changes the key; so do other MAKEFLAGS.
+echo new > "$work/untracked.txt"
+CHECK_SKIP_PASSED=1 run lint > "$work/out" 2>&1
+[ "$(cat "$work/ran")" = lint ] || fail "an untracked file did not change the key"
+: > "$work/ran"
+MAKEFLAGS=' -- PHP_VERSION=7.4' CHECK_SKIP_PASSED=1 run lint > "$work/out" 2>&1
+[ "$(cat "$work/ran")" = lint ] || fail "other MAKEFLAGS reused a stamp"
+rm -f "$work/untracked.txt"
 
 # No step is a usage error.
 status=0

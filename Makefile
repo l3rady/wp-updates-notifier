@@ -153,8 +153,8 @@ rector-fix: deps ## Apply Rector's upgrades, then run make fix and make lint
 test-release: ## Rehearse the scripts the release workflow runs (copyright year, signed commit request)
 	$(COMPOSE) run --build --rm php sh tests/bin/test-release-scripts.sh
 
-test-check: ## Test bin/check.sh (the runner of make check) with a stub make
-	$(COMPOSE) run --build --rm php sh tests/bin/test-check.sh
+test-check: ## Test bin/check.sh (the runner of make check) and bin/agent-stop-check.sh (the Stop hook) with a stub make
+	$(COMPOSE) run --build --rm php sh -c 'sh tests/bin/test-check.sh && sh tests/bin/test-agent-stop-check.sh'
 
 # What a pull request must pass, with short output (bin/check.sh): one line per step, the log tail of the first step
 # that fails, and the full logs in build/check/. The two suites run one after the other, as they share one test

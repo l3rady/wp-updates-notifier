@@ -17,3 +17,5 @@
 
 # make quality: the reports
 /quality-reports/
+# Personal Claude Code settings (for example "disableAllHooks")
+/.claude/settings.local.json
