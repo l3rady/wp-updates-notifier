@@ -2864,7 +2864,7 @@
 <p>The constant or environment variable of a field is <code>SC_WPUN_SETTING_&lt;GROUP&gt;__&lt;FIELD&gt;</code>, in capitals: <code>SC_WPUN_SETTING_ACME__ENABLED</code>. The two underscores cannot collide with a setting of the plugin, which has no group. Resolution, casting, the <code>SC_WPUN_LOAD_FROM_ENV</code> opt-in for environment variables and custom sources work as for the plugin's own settings (see <a href="../configuration-sources/">Configuration sources</a>). A source sees the group in <code>Config_Context::get_group()</code>.</p>
 <p>The effective value is, in order:</p>
 <ol>
-<li>a value a source supplies, cast to the type of the field;</li>
+<li>a value a source supplies, cast to the type of the field and then checked and cleaned by it, as a saved value is (an <code>https_only</code> URL refuses <code>http://</code>);</li>
 <li>if that value cannot be used: <code>on_invalid</code> if the schema has it;</li>
 <li>the stored value;</li>
 <li>the <code>default</code>; without one, <code>false</code> for a boolean, <code>0</code> for a number, an empty list for a multiple <code>enum</code>, and an empty string for the rest.</li>
