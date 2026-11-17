@@ -519,19 +519,23 @@ class Test_Config extends WPUN_Test_Case {
 	 * @return array
 	 */
 	public function casts() {
-		$select = array(
+		$select     = array(
 			'type'    => 'select',
 			'options' => array(
 				'a' => 'A',
 				'b' => 'B',
 			),
 		);
-		$number = array(
+		$number     = array(
 			'type' => 'number',
 			'min'  => 0,
 			'max'  => 2,
 		);
-		$check  = array( 'type' => 'checkbox' );
+		$string_max = array(
+			'type' => 'number',
+			'max'  => '2',
+		);
+		$check      = array( 'type' => 'checkbox' );
 
 		return array(
 			'true'          => array( 'yes', $check, true, true ),
@@ -545,6 +549,16 @@ class Test_Config extends WPUN_Test_Case {
 			'too big'       => array( '3', $number, false ),
 			'not numeric'   => array( 'two', $number, false ),
 			'bool number'   => array( true, $number, false ),
+			'int number'    => array( 2, $number, true, 2 ),
+			'padded number' => array( ' 1 ', $number, true, 1 ),
+			'decimal'       => array( '1.9', $number, false ),
+			'whole decimal' => array( '1.0', $number, false ),
+			'float'         => array( 1.0, $number, false ),
+			'exponent'      => array( '1e0', $number, false ),
+			'hex'           => array( '0x1', $number, false ), // phpcs:ignore PHPCompatibility.Miscellaneous.ValidIntegers.HexNumericStringFound -- A hex string is the input under test.
+			'blank number'  => array( ' ', $number, false ),
+			'string max'    => array( '3', $string_max, false ),
+			'in string max' => array( '2', $string_max, true, 2 ),
 			'select'        => array( 'b', $select, true, 'b' ),
 			'bad select'    => array( 'c', $select, false ),
 			'text'          => array( 42, array( 'type' => 'text' ), true, '42' ),

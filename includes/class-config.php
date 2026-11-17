@@ -247,17 +247,13 @@ final class Config {
 				return Boolean_Field::cast_external( $raw, $field );
 
 			case 'number':
-				if ( is_bool( $raw ) || ! is_numeric( $raw ) ) {
-					return $bad;
-				}
-				$number = (int) $raw;
-				if ( ( isset( $field['min'] ) && $number < $field['min'] ) || ( isset( $field['max'] ) && $number > $field['max'] ) ) {
-					return $bad;
-				}
-				return array(
+				// The form's rule: a whole number (an integer, or a string holding one) within min and max. 1.9, 1.0,
+				// 1e3 and 0x1A are refused, not rounded: a value that cannot be read is misconfigured, never guessed.
+				$number = is_bool( $raw ) ? $bad : Field_Types::number( $raw, $field );
+				return $number['ok'] ? array(
 					'ok'    => true,
-					'value' => $number,
-				);
+					'value' => $number['value'],
+				) : $bad;
 
 			case 'enum':
 			case 'select':
