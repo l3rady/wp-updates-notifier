@@ -237,7 +237,9 @@ final class Enum_Field {
 
 		$list  = array_values( array_intersect( $keys, array_keys( $chosen ) ) );
 		$count = count( $list );
-		$ok    = ( ! isset( $field['min'] ) || $count >= (int) $field['min'] ) && ( ! isset( $field['max'] ) || $count <= (int) $field['max'] );
+		$min   = Field_Types::bound( $field, 'min' );
+		$max   = Field_Types::bound( $field, 'max' );
+		$ok    = ( null === $min || $count >= $min ) && ( null === $max || $count <= $max );
 
 		return array(
 			'ok'      => $ok,
