@@ -327,6 +327,9 @@ final class Mute_Store {
 	 * @param string      $source Where the change came from: `plugins_screen`, `settings`, `cli` or `api`.
 	 * @param int|null    $expires When the mute ends, as a Unix timestamp (a snooze), or null (the default) for no time limit. A time that has passed is refused.
 	 *
+	 * A skip mute for a version older than the one WordPress offers is refused (`sc_wpun_mute_superseded`), also when the
+	 * `sc_wpun_pre_mute` filter made it so: it would have ended at once.
+	 *
 	 * @return Mute|WP_Error The mute, or the reason it was refused.
 	 */
 	public function mute( string $type, string $key, ?string $until = null, string $source = 'api', ?int $expires = null ) {
@@ -338,7 +341,8 @@ final class Mute_Store {
 		 * Receives the mute, or the `WP_Error` that says why it is refused. Return a `WP_Error` to refuse
 		 * it; the message is shown on the screen or by WP-CLI. A returned mute must be for the same item,
 		 * and a refusal cannot be turned into a mute. Return a changed mute to, for example, cap how long
-		 * a mute lasts. A mute whose `expires` has passed is refused, also when the filter made it so.
+		 * a mute lasts. A mute whose `expires` has passed, or a skip mute for a version older than the one
+		 * offered, is refused, also when the filter made it so.
 		 *
 		 * Example, refuse muting a security plugin:
 		 *
@@ -387,6 +391,10 @@ final class Mute_Store {
 
 		if ( $filtered->is_expired() ) {
 			return $this->expired_error();
+		}
+		// A skip mute that a newer offered version already ended would be dropped on write: refuse it instead.
+		if ( $this->has_ended( $filtered ) ) {
+			return new WP_Error( 'sc_wpun_mute_superseded', __( 'A newer version is already offered, so that version cannot be skipped.', 'wp-updates-notifier' ) );
 		}
 
 		$mute = new Mute( array( 'from_code' => false ) + $filtered->to_array() );

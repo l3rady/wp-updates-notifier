@@ -1336,7 +1336,8 @@ Filters a mute before it is saved, to apply a policy.
 Receives the mute, or the `WP_Error` that says why it is refused. Return a `WP_Error` to refuse
 it; the message is shown on the screen or by WP-CLI. A returned mute must be for the same item,
 and a refusal cannot be turned into a mute. Return a changed mute to, for example, cap how long
-a mute lasts. A mute whose `expires` has passed is refused, also when the filter made it so.
+a mute lasts. A mute whose `expires` has passed, or a skip mute for a version older than the one
+offered, is refused, also when the filter made it so.
 
 Example, refuse muting a security plugin:
 

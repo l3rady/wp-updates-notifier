@@ -565,6 +565,46 @@ class Test_Mute_Store extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A skip mute for a version that a newer one already replaced would end at once, so it is refused: nothing is
+	 * stored and nothing fires. Also when the pre-mute filter lowers the version. The offered version, always and a
+	 * snooze still save.
+	 */
+	public function test_a_skip_mute_for_a_superseded_version_is_refused() {
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0' ) ) );
+		$muted = 0;
+		add_action(
+			'sc_wpun_item_muted',
+			static function () use ( &$muted ) {
+				++$muted;
+			}
+		);
+
+		$result = sc_wpun_mutes()->mute( 'plugin', 'hello.php', '1.0' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'sc_wpun_mute_superseded', $result->get_error_code() );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+		$this->assertSame( 0, $muted );
+
+		add_filter(
+			'sc_wpun_pre_mute',
+			static function ( $mute, $source ) {
+				return 'lower' === $source ? new Mute( array( 'until' => '1.0' ) + $mute->to_array() ) : $mute;
+			},
+			10,
+			2
+		);
+		$this->assertSame( 'sc_wpun_mute_superseded', sc_wpun_mutes()->mute( 'plugin', 'hello.php', '2.0', 'lower' )->get_error_code() );
+		$this->assertNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+		$this->assertSame( 0, $muted );
+
+		$this->assertInstanceOf( Mute::class, sc_wpun_mutes()->mute( 'plugin', 'hello.php', '2.0' ), 'The offered version.' );
+		$this->assertInstanceOf( Mute::class, sc_wpun_mutes()->mute( 'plugin', 'hello.php' ), 'Always.' );
+		$this->assertInstanceOf( Mute::class, sc_wpun_mutes()->mute( 'plugin', 'hello.php', null, 'api', time() + HOUR_IN_SECONDS ), 'A snooze.' );
+		$this->assertSame( 3, $muted );
+		$this->assertNotNull( sc_wpun_mutes()->get( 'plugin', 'hello.php' ) );
+	}
+
+	/**
 	 * Which version WordPress offers.
 	 */
 	public function test_offered_version() {
