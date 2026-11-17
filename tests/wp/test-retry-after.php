@@ -296,6 +296,29 @@ class Test_Retry_After extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The status report, and so WP-CLI and Site Health, gives a retry time only while it is still to come.
+	 */
+	public function test_the_status_report_leaves_out_a_retry_time_that_has_passed() {
+		$this->add( 'past' );
+		$this->add( 'future' );
+		sc_wpun()->network_context()->update_option(
+			'sc_wpun_state',
+			sc_wpun()->state()->normalise(
+				array(
+					'channels' => array(
+						'past'   => array( 'retry_at' => time() - 60 ),
+						'future' => array( 'retry_at' => time() + 600 ),
+					),
+				)
+			)
+		);
+
+		$rows = array_column( sc_wpun()->status_report()->channels(), null, 'id' );
+		$this->assertNull( $rows['past']['retry_at'], 'A time that has passed is left out.' );
+		$this->assertNotNull( $rows['future']['retry_at'], 'A time still to come is given.' );
+	}
+
+	/**
 	 * A valid time is kept; junk is dropped.
 	 */
 	public function test_normalise() {
