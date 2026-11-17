@@ -15,7 +15,7 @@ Muting is decided in the global veto. `sc_wpun_should_notify_item` receives `fal
 // Mute for good.
 $result = sc_wpun_mutes()->mute( 'plugin', 'noisy/noisy.php' );
 
-// Skip version 2.1.0 only. A newer version is notified again.
+// Skip version 2.1.0 only. A newer version is notified again. While a newer one is already offered, this is refused.
 $result = sc_wpun_mutes()->mute( 'plugin', 'noisy/noisy.php', '2.1.0' );
 
 // Snooze for a week: the fifth argument is a Unix time. A time that has passed is refused.
@@ -111,7 +111,7 @@ Use `'until' => '2.1.0'` to skip a version only. Add `'expires'` with a Unix tim
 
 ## Apply a policy
 
-`sc_wpun_pre_mute` runs before a mute is saved. Return a `WP_Error` to refuse it. The message is shown on the screen or by WP-CLI. You may also return a changed `Mute`, for example to cap a long mute, if it is for the same item. A mute that comes back already expired is refused.
+`sc_wpun_pre_mute` runs before a mute is saved. Return a `WP_Error` to refuse it. The message is shown on the screen or by WP-CLI. You may also return a changed `Mute`, for example to cap a long mute, if it is for the same item. A mute that comes back already expired is refused, and so is a skip mute for a version older than the one WordPress offers.
 
 ```php
 // No snooze longer than 30 days.
