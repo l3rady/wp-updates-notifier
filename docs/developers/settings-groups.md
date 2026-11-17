@@ -83,7 +83,7 @@ The effective value is, in order:
 1. a value a source supplies, cast to the type of the field and then checked and cleaned by it, as a saved value is (an `https_only` URL refuses `http://`);
 2. if that value cannot be used: `on_invalid` if the schema has it;
 3. the stored value;
-4. the `default`; without one, `false` for a boolean, `0` for a number, an empty list for a multiple `enum`, and an empty string for the rest.
+4. the `default`; without one, `false` for a boolean, `0` for a number, an empty list for a multiple `enum`, the first option for a single `enum` (a select or radio group always has one chosen), and an empty string for the rest. An `applies_when` condition on the field sees the same value, so a field is shown or hidden by the value `sc_wpun_setting()` returns.
 
 An unusable value is reported in the configuration test of Site Health and on the plugin's settings page, with the key and where it came from, never the value, and it says when `on_invalid` was used. When `on_invalid` was used the field counts as supplied: the screen locks it.
 
