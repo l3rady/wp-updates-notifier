@@ -162,6 +162,11 @@ bin/sign-release-tag.sh   release-scripts
 bin/commit-payload.php    release-scripts smoke
 bin/update-copyright-year.sh release-scripts
 tests/bin/test-release-scripts.sh release-scripts
+# The commit-msg hook and its test, which runs it against commitlint (make test-commit-msg).
+.githooks/*               release-scripts
+tests/bin/test-commit-msg.sh release-scripts
+commitlint.config.js      release-scripts
+docker/commitlint/*       release-scripts
 # The runner of make check, tested by make test-check.
 bin/check.sh              release-scripts
 tests/bin/test-check.sh   release-scripts
@@ -231,8 +236,6 @@ tests/e2e/package.json    e2e dependencies dependency-review
 tests/e2e/package-lock.json e2e dependencies dependency-review
 
 # Only the always-on jobs (commits, secrets, workflows) look at these.
-docker/commitlint/*       -
-commitlint.config.js      -
 .gitleaks.toml            -
 .github/dependabot.yml    -
 .github/zizmor.yml        -

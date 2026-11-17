@@ -47,6 +47,8 @@ CI runs most of the targets in the diagram on pull requests, but not all of them
 
 Claude Code runs a Stop hook (`.claude/settings.json`, `bin/agent-stop-check.sh`) at the end of a turn that changed plugin code (`includes/`, `modules/`, `languages/`, `wp-updates-notifier.php`, `uninstall.php`). It runs `lint`, `check-hooks`, `check-public-api` and `check-translations` through `bin/check.sh`; a failure goes back to Claude, which fixes it before finishing. A step that already passed on the same tree (`make check` leaves a stamp in `build/check/<step>.ok`, keyed by the git state) is not run again, and the hook does nothing when no plugin code changed, Docker is not running or `vendor/` is missing. To switch it off on your machine, use Claude Code's `/hooks` menu or set `"disableAllHooks": true` in `.claude/settings.local.json` (personal, ignored by git). `make test-check` tests the hook with a stub make and a stub docker.
 
+**Commit message hook.** `make hooks` turns on `.githooks/commit-msg`, a plain `sh` check of the first line, the `!` and `BREAKING CHANGE:` rule. It is a strict subset of `commitlint.config.js`, and `make commits` stays the authority. `make test-commit-msg` runs `tests/bin/test-commit-msg.sh` in the commitlint image and checks that every message the hook accepts also passes commitlint. The `release-scripts` job runs it.
+
 Pick the PHP and WordPress versions with `PHP_VERSION` and `WP_VERSION` (a wordpress-develop tag, or `trunk`):
 
 ```sh

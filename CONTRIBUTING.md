@@ -26,9 +26,14 @@ AI coding agents start with [AGENTS.md](AGENTS.md): the commands and the rules t
   version number, so write them with care. `make commits` checks the commits on
   your branch and CI runs it on every pull request: allowed types (`feat`, `fix`,
   `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`),
-  a lower-case summary of 72 characters or fewer, and a `!` together with a
-  `BREAKING CHANGE:` footer for breaking changes. It cannot check that the
-  summary is in the imperative mood or that the body explains why; reviewers do.
+  a lower-case summary, a first line (type and scope included) of 72
+  characters or fewer, and a `!` together with a `BREAKING CHANGE:` footer for
+  breaking changes. It cannot check that the summary is in the imperative mood
+  or that the body explains why; reviewers do.
+- Run `make hooks` once in your checkout. It turns on a small commit-msg hook
+  (`.githooks/commit-msg`) that refuses a bad message when you commit, without
+  Docker and in well under a second. It applies to every worktree of the
+  checkout. It checks less than `make commits`, which stays the full check.
 
 ## What must pass
 

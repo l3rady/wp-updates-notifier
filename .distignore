@@ -9,6 +9,7 @@
 /.dockerignore
 /.git
 /.gitattributes
+/.githooks
 /.github
 /.gitignore
 /.phpcs-cache

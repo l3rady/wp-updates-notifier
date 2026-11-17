@@ -22,6 +22,7 @@ pull request.
 | Hook reference | `make hook-docs` |
 | Translations | `make translations-edit`, translate, `make translations` |
 | Commit messages | `make commits` |
+| Commit message hook | `make hooks` (once per checkout; `make commits` stays the full check) |
 
 A Claude Code Stop hook (`bin/agent-stop-check.sh`) runs `lint`, `check-hooks`, `check-public-api` and
 `check-translations` at the end of a turn that changed plugin code. A failure comes back as a message: fix it

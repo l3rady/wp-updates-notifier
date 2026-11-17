@@ -1,0 +1,38 @@
+#!/bin/sh
+# Checks a commit message before the commit is made. Turn it on with `make hooks`.
+# This is a strict subset of commitlint.config.js: it refuses a message commitlint would refuse, never the other way
+# round. CI (`make commits`) stays the authority; tests/bin/test-commit-msg.sh checks the subset against commitlint.
+set -eu
+
+die() { echo "commit-msg: $*" >&2; exit 1; }
+
+# What git keeps: no comment lines, nothing from the scissors line on, no blank lines at the start.
+msg="$(sed -e '/^# -* >8 -*$/,$d' -e '/^#/d' "$1" | sed -e '/./,$!d')"
+first="$(printf '%s\n' "$msg" | sed -n 1p)"
+
+case "$first" in
+	'Merge '*|'fixup! '*|'squash! '*|'amend! '*|'Revert "'*) exit 0 ;;
+esac
+
+length="$(printf '%s' "$first" | wc -m | tr -d ' ')"
+[ "$length" -le 72 ] || die "the first line is $length characters; the limit is 72 (type and scope included)."
+
+printf '%s\n' "$first" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: ' \
+	|| die "the first line must look like 'type(scope)!: summary'; the types are feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert; the scope is lower case."
+summary="${first#*: }"
+case "$summary" in
+	''|' '*) die "the summary is empty or starts with a space." ;;
+	[A-Z]*) die "the summary must not start with an upper-case letter." ;;
+	*.) die "the summary must not end with a full stop." ;;
+esac
+
+[ -z "$(printf '%s\n' "$msg" | sed -n 2p)" ] || die "the second line must be blank."
+
+# Same rule as commitlint.config.js: a "!" and a BREAKING CHANGE footer (after a blank line) go together.
+footer="$(printf '%s\n' "$msg" | awk 'prev == "" && /^BREAKING[ -]CHANGE:/ { found = 1 } { prev = $0 } END { print found + 0 }')"
+loose="$(printf '%s\n' "$msg" | grep -Ec '^BREAKING[ -]CHANGE:' || true)"
+marked=0
+printf '%s\n' "$first" | grep -Eq '^[a-z]+(\([^)]*\))?!:' && marked=1
+[ "$loose" -eq 0 ] || [ "$footer" -eq 1 ] || die "the 'BREAKING CHANGE:' footer must come after a blank line."
+[ "$marked" -eq 0 ] || [ "$footer" -eq 1 ] || die "a '!' in the first line needs a 'BREAKING CHANGE:' footer that says what breaks."
+[ "$footer" -eq 0 ] || [ "$marked" -eq 1 ] || die "a 'BREAKING CHANGE:' footer needs a '!' before the colon in the first line."

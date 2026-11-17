@@ -80,7 +80,7 @@ QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
 QUALITY_BASELINE_SED := -e 's\#^\t\t\tpath: /app/\(.*\)$$\#\t\t\tpath: ../../\1\n\t\t\treportUnmatched: true\#'
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check check check-full
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-commit-msg hooks check check-full
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
@@ -134,6 +134,13 @@ lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), t
 
 commits: ## Check that the commits on this branch follow Conventional Commits
 	$(COMPOSE) run --build --rm commitlint --from $(COMMITS_FROM) --to $(COMMITS_TO) --verbose
+
+hooks: ## Check commit messages on every commit: use .githooks in this checkout (and all its worktrees)
+	git config core.hooksPath .githooks
+	@echo "Commit messages are now checked locally in this checkout and in every worktree of it. 'make commits' stays the full check."
+
+test-commit-msg: ## Test the commit-msg hook, and that it accepts only what commitlint accepts
+	$(COMPOSE) run --build --rm --entrypoint sh commitlint tests/bin/test-commit-msg.sh
 
 fix: deps ## Auto-fix coding standard violations with phpcbf
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcbf; s=$$?; [ $$s -le 1 ] || exit $$s; vendor/bin/phpcbf --standard=examples/wpun-example-channel/phpcs.xml.dist; s=$$?; [ $$s -le 1 ] || exit $$s; vendor/bin/phpcbf --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist; s=$$?; [ $$s -le 1 ]'

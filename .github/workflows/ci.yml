@@ -97,6 +97,8 @@ jobs:
         run: make test-ci-changes
       - name: Test the runner of make check
         run: make test-check
+      - name: Test the commit message hook against commitlint
+        run: make test-commit-msg
 
   # The plugin zip as users get it: runtime files only, and it installs,
   # activates, deactivates and uninstalls cleanly in a fresh WordPress.
