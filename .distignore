@@ -3,6 +3,8 @@
 # 10up/action-wordpress-plugin-deploy. GitHub's source archives are the whole
 # repository on purpose: OpenSSF Scorecard reads them (see SECURITY.md).
 /.claude
+/AGENTS.md
+/CLAUDE.md
 /.distignore
 /.dockerignore
 /.git

@@ -13,6 +13,8 @@ This file holds the rules for a pull request. The how-to is in the
 [packaging](https://wpun.cariss.dev/main/contributing/packaging/), [translations](https://wpun.cariss.dev/main/contributing/translations/),
 the [documentation site](https://wpun.cariss.dev/main/contributing/documentation-site/) and [releases](https://wpun.cariss.dev/main/contributing/releases/).
 
+AI coding agents start with [AGENTS.md](AGENTS.md): the commands and the rules that are easy to break.
+
 ## Proposing a change
 
 - Branch from `main`, name the branch `<type>/<issue>-<short-name>` (for example
