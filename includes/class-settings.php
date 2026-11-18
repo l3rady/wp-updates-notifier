@@ -577,49 +577,25 @@ class Settings {
 	}
 
 	/**
-	 * Filter for when getting this plugin's settings.
+	 * Read one of the plugin's options through the get filter.
 	 *
-	 * @param string $field Option field name of where we are getting plugin settings.
+	 * @param string $field Option name.
 	 *
 	 * @return mixed The stored value after the get filter.
 	 */
 	public function read_option( $field ) {
-		/**
-		 * Filters a setting option of the plugin after it is read.
-		 *
-		 * When the plugin runs for a network (see `sc_wpun_is_network()`), the options are network
-		 * options, under the same names.
-		 *
-		 * @since 1.4.0
-		 *
-		 * @param mixed  $value The stored value.
-		 * @param string $field The name of the option.
-		 */
-		return apply_filters( 'sc_wpun_get_options_filter', $this->context->get_option( $field ), $field );
+		return $this->context->read( $field );
 	}
 
 	/**
-	 * Filter for when setting this plugin's settings.
+	 * Store one of the plugin's options through the put filter.
 	 *
-	 * @param string $field Option field name of where we are saving plugin settings.
-	 * @param mixed  $value The value you are saving.
+	 * @param string $field Option name.
+	 * @param mixed  $value The value to save.
 	 *
 	 * @return bool True if the option was updated.
 	 */
 	public function write_option( $field, $value ) {
-		/**
-		 * Filters a setting option of the plugin before it is stored.
-		 *
-		 * When the plugin runs for a network (see `sc_wpun_is_network()`), the options are network
-		 * options, under the same names.
-		 *
-		 * @since 1.4.0
-		 *
-		 * @param mixed  $value The value about to be stored.
-		 * @param string $field The name of the option.
-		 */
-		$value = apply_filters( 'sc_wpun_put_options_filter', $value, $field );
-
-		return $this->context->update_option( $field, $value );
+		return $this->context->write( $field, $value );
 	}
 }

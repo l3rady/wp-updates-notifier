@@ -96,6 +96,54 @@ class Network_Context {
 	}
 
 	/**
+	 * Read an option of the plugin through the get filter.
+	 *
+	 * @param string $name Option name.
+	 *
+	 * @return mixed The stored value after the get filter.
+	 */
+	public function read( string $name ) {
+		/**
+		 * Filters a setting option of the plugin after it is read.
+		 *
+		 * When the plugin runs for a network (see `sc_wpun_is_network()`), the options are network
+		 * options, under the same names.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param mixed  $value The stored value.
+		 * @param string $field The name of the option.
+		 */
+		return apply_filters( 'sc_wpun_get_options_filter', $this->get_option( $name ), $name );
+	}
+
+	/**
+	 * Update an option of the plugin through the put filter, creating it if it does not exist.
+	 *
+	 * @param string    $name     Option name.
+	 * @param mixed     $value    Value.
+	 * @param bool|null $autoload See update_option().
+	 *
+	 * @return bool True if the value was changed.
+	 */
+	public function write( string $name, $value, ?bool $autoload = null ): bool {
+		/**
+		 * Filters a setting option of the plugin before it is stored.
+		 *
+		 * When the plugin runs for a network (see `sc_wpun_is_network()`), the options are network
+		 * options, under the same names.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param mixed  $value The value about to be stored.
+		 * @param string $field The name of the option.
+		 */
+		$value = apply_filters( 'sc_wpun_put_options_filter', $value, $name );
+
+		return $this->update_option( $name, $value, $autoload );
+	}
+
+	/**
 	 * Delete an option of the plugin.
 	 *
 	 * @param string $name Option name.

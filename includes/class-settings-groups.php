@@ -246,8 +246,7 @@ final class Settings_Groups {
 	public function stored( string $group ): array {
 		$option = self::OPT_PREFIX . $group;
 
-		/** This filter is documented in includes/class-settings.php */
-		$stored = apply_filters( 'sc_wpun_get_options_filter', $this->context->get_option( $option ), $option );
+		$stored = $this->context->read( $option );
 
 		return is_array( $stored ) ? $stored : array();
 	}
@@ -287,12 +286,9 @@ final class Settings_Groups {
 
 		$option = self::OPT_PREFIX . $group;
 
-		/** This filter is documented in includes/class-settings.php */
-		$new = apply_filters( 'sc_wpun_put_options_filter', $new, $option );
-
 		$this->cache = array();
 
-		return $this->context->update_option( $option, $new, $this->groups[ $group ]['autoload'] );
+		return $this->context->write( $option, $new, $this->groups[ $group ]['autoload'] );
 	}
 
 	/**

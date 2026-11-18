@@ -805,8 +805,7 @@ class Channel_Store {
 	 * @return array<int|string, mixed>
 	 */
 	private function read(): array {
-		/** This filter is documented in includes/class-settings.php */
-		$stored = apply_filters( 'sc_wpun_get_options_filter', $this->context->get_option( self::OPT_FIELD ), self::OPT_FIELD );
+		$stored = $this->context->read( self::OPT_FIELD );
 
 		return is_array( $stored ) ? $stored : array();
 	}
@@ -819,10 +818,7 @@ class Channel_Store {
 	 * @return void
 	 */
 	private function write( array $stored ): void {
-		/** This filter is documented in includes/class-settings.php */
-		$stored = apply_filters( 'sc_wpun_put_options_filter', $stored, self::OPT_FIELD );
-
-		$this->context->update_option( self::OPT_FIELD, $stored, false );
+		$this->context->write( self::OPT_FIELD, $stored, false );
 	}
 
 	/**

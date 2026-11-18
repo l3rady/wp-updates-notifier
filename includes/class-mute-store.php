@@ -117,8 +117,7 @@ final class Mute_Store {
 	 * @return array<string, Mute>
 	 */
 	private function stored(): array {
-		/** This filter is documented in includes/class-settings.php */
-		$option = apply_filters( 'sc_wpun_get_options_filter', $this->context->get_option( self::OPT_FIELD ), self::OPT_FIELD );
+		$option = $this->context->read( self::OPT_FIELD );
 
 		$mutes = array();
 		foreach ( is_array( $option ) ? $option : array() as $type => $entries ) {
@@ -185,10 +184,7 @@ final class Mute_Store {
 			$stored[ $mute->get_type() ][ $mute->get_key() ] = $row;
 		}
 
-		/** This filter is documented in includes/class-settings.php */
-		$stored = apply_filters( 'sc_wpun_put_options_filter', $stored, self::OPT_FIELD );
-
-		$this->context->update_option( self::OPT_FIELD, $stored, false );
+		$this->context->write( self::OPT_FIELD, $stored, false );
 	}
 
 	/**

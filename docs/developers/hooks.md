@@ -1145,7 +1145,7 @@ options, under the same names.
 | `$value` | `mixed` | The stored value. |
 | `$field` | `string` | The name of the option. |
 
-Fired in `includes/class-channel-store.php`, `includes/class-mute-store.php`, `includes/class-settings-groups.php`, `includes/class-settings.php`, `includes/class-state.php`.
+Fired in `includes/class-network-context.php`.
 
 ### `sc_wpun_load_from_env`
 
@@ -1176,7 +1176,7 @@ options, under the same names.
 | `$value` | `mixed` | The value about to be stored. |
 | `$field` | `string` | The name of the option. |
 
-Fired in `includes/class-channel-store.php`, `includes/class-mute-store.php`, `includes/class-settings-groups.php`, `includes/class-settings.php`, `includes/class-state.php`.
+Fired in `includes/class-network-context.php`.
 
 ## Muting
 

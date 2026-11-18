@@ -134,6 +134,7 @@ final class Instance_Data {
 		}
 
 		// The value is wrapped: WordPress stores false as an empty string, and does not create an option for it.
+		// Not written through Network_Context::write(): see read().
 		$this->network->update_option( $this->value_name( $key ), array( self::WRAP => $value ), false );
 
 		$keys = $this->read_keys();
@@ -238,6 +239,10 @@ final class Instance_Data {
 
 	/**
 	 * Read an option.
+	 *
+	 * These are an add-on's runtime values, not the plugin's settings, and they are stored wrapped. They skip
+	 * the `sc_wpun_get_options_filter` and `sc_wpun_put_options_filter` filters, which are documented for the
+	 * plugin's setting options, so a filter that transforms settings never sees them.
 	 *
 	 * @param string $name Option name.
 	 *
