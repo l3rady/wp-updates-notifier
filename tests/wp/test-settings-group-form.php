@@ -689,6 +689,32 @@ class Test_Settings_Group_Form extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Saving the General tab passes the settings through the put filter, like every other write of the option.
+	 */
+	public function test_saving_the_general_tab_applies_the_put_filter() {
+		$this->admin();
+		$this->register( array( 'acme' => array( 'fields' => $this->fields() ) ) );
+		sc_wpun_settings_groups();
+
+		$names = array();
+		add_filter(
+			'sc_wpun_put_options_filter',
+			static function ( $value, $name ) use ( &$names ) {
+				$names[] = $name;
+				return $value;
+			},
+			10,
+			2
+		);
+
+		$this->post( array( 'acme' => array( 'name' => 'x' ) ), array( 'frequency' => 'daily' ) );
+		$this->save();
+
+		$this->assertContains( 'sc_wpun_settings', $names );
+		$this->assertSame( 'daily', $this->frequency() );
+	}
+
+	/**
 	 * Saving needs the screen capability.
 	 */
 	public function test_saving_needs_the_screen_capability() {

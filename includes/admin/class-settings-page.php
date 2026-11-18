@@ -341,7 +341,7 @@ class Settings_Page {
 			);
 		} else {
 			if ( $general ) {
-				$this->network_context->update_option( Settings::OPT_FIELD, $clean );
+				$this->network_context->write( Settings::OPT_FIELD, $clean );
 			}
 			$this->group_form()->save( $checked['valid'] );
 			$saved = __( 'Settings saved.' ); // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- Core's own message, already translated.
