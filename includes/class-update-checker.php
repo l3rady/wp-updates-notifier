@@ -120,7 +120,7 @@ class Update_Checker {
 	 * @return void
 	 */
 	public function do_update_check() {
-		$this->check( 'cron', false, false );
+		$this->run_check( 'cron' );
 	}
 
 	/**
@@ -129,7 +129,7 @@ class Update_Checker {
 	 * @return void
 	 */
 	public function run_manual_check() {
-		$this->check( 'manual', false, false );
+		$this->run_check( 'manual' );
 	}
 
 	/**
@@ -146,6 +146,18 @@ class Update_Checker {
 	 * while a skip is pending, which a successful send clears. Switched-off and waiting (Retry-After)
 	 * instances, routing, the veto and a missing module are respected. A dry run can be forced too.
 	 *
+	 * The check collects what is waiting for an update, then delivers to each enabled channel instance
+	 * the items it has not been told about yet. What was delivered is remembered per instance, so an
+	 * instance that failed is tried again on the next run without the others sending twice.
+	 *
+	 * An instance with reminders on (the `remind` routing key) also gets one message, marked as a
+	 * reminder, with everything still waiting for it once its interval has passed since the last
+	 * reminder (with `every_check`, at every check after the first). The interval starts when
+	 * something first waits for the instance, and stops when nothing does. A due reminder replaces
+	 * the message of new items of that run; new items between reminders are sent at once as usual.
+	 * A failed reminder does not restart the interval, and a reminder that stopped halfway (the channel
+	 * said which items went out, see Delivery_Result::with_delivered()) resumes without the delivered items.
+	 *
 	 * @internal
 	 *
 	 * @param string $source  What started the check, kept in the notification context.
@@ -159,31 +171,6 @@ class Update_Checker {
 	 *                                      `pending` everything waiting that its routing gives it.
 	 */
 	public function run_check( string $source, bool $dry_run = false, bool $force = false ): array {
-		return $this->check( $source, $dry_run, $force );
-	}
-
-	/**
-	 * The update check collects what is waiting for an update, then delivers to each enabled
-	 * channel instance the items it has not been told about yet.
-	 *
-	 * What was delivered is remembered per instance, so an instance that failed is tried again
-	 * on the next run without the others sending twice.
-	 *
-	 * An instance with reminders on (the `remind` routing key) also gets one message, marked as a
-	 * reminder, with everything still waiting for it once its interval has passed since the last
-	 * reminder (with `every_check`, at every check after the first). The interval starts when
-	 * something first waits for the instance, and stops when nothing does. A due reminder replaces
-	 * the message of new items of that run; new items between reminders are sent at once as usual.
-	 * A failed reminder does not restart the interval, and a reminder that stopped halfway (the channel
-	 * said which items went out, see Delivery_Result::with_delivered()) resumes without the delivered items.
-	 *
-	 * @param string $source  What started the check, kept in the notification context.
-	 * @param bool   $dry_run Whether to only report, see run_check().
-	 * @param bool   $force   Whether to send what was notified again, see run_check().
-	 *
-	 * @return array<string, Instance_Plan>
-	 */
-	private function check( string $source, bool $dry_run, bool $force ): array {
 		/**
 		 * Fires when an update check starts, before anything is looked up.
 		 *

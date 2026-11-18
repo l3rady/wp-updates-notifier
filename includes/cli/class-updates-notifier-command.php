@@ -60,13 +60,8 @@ class Updates_Notifier_Command {
 		unset( $args );
 		$dry_run = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false );
 		$force   = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
-		$report  = sc_wpun()->status_report();
 
-		$usable = false;
-		foreach ( sc_wpun()->channel_store()->all() as $instance ) {
-			$usable = $usable || ( $instance->is_enabled() && Status_Report::AVAILABLE === $report->availability( $instance ) );
-		}
-		if ( ! $usable ) {
+		if ( ! sc_wpun()->status_report()->has_usable_channel() ) {
 			\WP_CLI::warning( __( 'No channel instance is switched on and available, so there is nobody to notify.', 'wp-updates-notifier' ) );
 			return;
 		}

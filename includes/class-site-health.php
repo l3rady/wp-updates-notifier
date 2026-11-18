@@ -209,10 +209,8 @@ class Site_Health {
 	 * @return array<string, mixed>
 	 */
 	public function channels_result(): array {
-		foreach ( $this->store->all() as $instance ) {
-			if ( $instance->is_enabled() && Status_Report::AVAILABLE === $this->report->availability( $instance ) ) {
-				return $this->settings_result( 'sc_wpun_channels', 'good', __( 'WP Updates Notifier has a channel to send through', 'wp-updates-notifier' ), '<p>' . esc_html__( 'At least one channel is switched on and can send.', 'wp-updates-notifier' ) . '</p>' );
-			}
+		if ( $this->report->has_usable_channel() ) {
+			return $this->settings_result( 'sc_wpun_channels', 'good', __( 'WP Updates Notifier has a channel to send through', 'wp-updates-notifier' ), '<p>' . esc_html__( 'At least one channel is switched on and can send.', 'wp-updates-notifier' ) . '</p>' );
 		}
 
 		return $this->settings_result( 'sc_wpun_channels', 'recommended', __( 'WP Updates Notifier has no channel to send through', 'wp-updates-notifier' ), '<p>' . esc_html__( 'No channel is switched on and able to send, so nothing will be sent. Switch a channel on if you want to be told about updates.', 'wp-updates-notifier' ) . '</p>' );

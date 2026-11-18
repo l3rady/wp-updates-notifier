@@ -264,6 +264,21 @@ class Status_Report {
 	}
 
 	/**
+	 * Whether any channel instance is switched on and its module is registered.
+	 *
+	 * @return bool
+	 */
+	public function has_usable_channel(): bool {
+		foreach ( $this->store->all() as $instance ) {
+			if ( $instance->is_enabled() && $this->dispatcher->is_available( $instance ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Whether the module of an instance is registered, and if not, why.
 	 *
 	 * @param Channel_Instance $instance The instance.

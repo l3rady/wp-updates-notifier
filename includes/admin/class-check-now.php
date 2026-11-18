@@ -13,10 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use WPUN\Channel_Store;
 use WPUN\Delivery_Result;
-use WPUN\Dispatcher;
 use WPUN\Network_Context;
-use WPUN\Notification;
 use WPUN\State;
+use WPUN\Status_Report;
 use WPUN\Update_Checker;
 
 /**
@@ -38,11 +37,11 @@ class Check_Now {
 	private $store;
 
 	/**
-	 * Dispatcher, to tell whether a channel is available.
+	 * Status report, to tell whether a channel can send.
 	 *
-	 * @var Dispatcher
+	 * @var Status_Report
 	 */
-	private $dispatcher;
+	private $report;
 
 	/**
 	 * Notices shown after an action.
@@ -76,15 +75,15 @@ class Check_Now {
 	 * Constructor.
 	 *
 	 * @param Channel_Store        $store      Channel instance storage.
-	 * @param Dispatcher           $dispatcher Dispatcher.
+	 * @param Status_Report        $report     Status report.
 	 * @param Notices              $notices    Notices shown after an action.
 	 * @param Update_Checker       $checker   The update check.
 	 * @param State                $state     Run state.
 	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Channel_Store $store, Dispatcher $dispatcher, Notices $notices, Update_Checker $checker, State $state, ?Network_Context $network_context = null ) {
+	public function __construct( Channel_Store $store, Status_Report $report, Notices $notices, Update_Checker $checker, State $state, ?Network_Context $network_context = null ) {
 		$this->store           = $store;
-		$this->dispatcher      = $dispatcher;
+		$this->report          = $report;
 		$this->notices         = $notices;
 		$this->checker         = $checker;
 		$this->state           = $state;
@@ -147,21 +146,13 @@ class Check_Now {
 			return false;
 		}
 
-		$has_channel = false;
-		foreach ( $this->store->all() as $instance ) {
-			if ( $instance->is_enabled() && $this->dispatcher->is_available( $instance ) ) {
-				$has_channel = true;
-				break;
+		$has_channel = $this->report->has_usable_channel();
+		$results     = array();
+		foreach ( $this->checker->run_check( 'manual' ) as $id => $entry ) { // What the `sc_wpun_run_check` action runs.
+			if ( null !== $entry['result'] ) {
+				$results[ $id ] = $entry['result'];
 			}
 		}
-
-		$results  = array();
-		$listener = static function ( Notification $notification, array $sent ) use ( &$results ): void {
-			$results = $sent;
-		};
-		add_action( 'sc_wpun_after_update_check', $listener, 10, 2 );
-		$this->checker->run_manual_check(); // What the `sc_wpun_run_check` action runs.
-		remove_action( 'sc_wpun_after_update_check', $listener, 10 );
 
 		if ( ! $has_channel ) {
 			$this->notices->add( true, __( 'Checked just now. Nothing was sent because no channel is enabled.', 'wp-updates-notifier' ) );

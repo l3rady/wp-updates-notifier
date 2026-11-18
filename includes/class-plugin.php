@@ -273,7 +273,7 @@ class Plugin {
 	 * @return Check_Now
 	 */
 	public function check_now(): Check_Now {
-		$this->check_now ??= new Check_Now( $this->channel_store, $this->dispatcher, $this->notices(), $this->update_checker, $this->state, $this->network_context );
+		$this->check_now ??= new Check_Now( $this->channel_store, $this->status_report(), $this->notices(), $this->update_checker, $this->state, $this->network_context );
 
 		return $this->check_now;
 	}
