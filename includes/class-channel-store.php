@@ -255,15 +255,7 @@ class Channel_Store {
 			}
 		}
 
-		$stored[ $id ] = array(
-			'type'     => $instance->get_type(),
-			'label'    => $instance->get_label(),
-			'enabled'  => $enabled,
-			'settings' => $settings,
-			'routing'  => $instance->get_routing(),
-		);
-
-		$this->write( $stored );
+		$this->store_entry( $instance->with_enabled( $enabled )->with_settings( $settings ) );
 
 		return true;
 	}
@@ -286,16 +278,7 @@ class Channel_Store {
 			return;
 		}
 
-		$stored                        = $this->read();
-		$stored[ $instance->get_id() ] = array(
-			'type'     => $instance->get_type(),
-			'label'    => $instance->get_label(),
-			'enabled'  => $instance->is_enabled(),
-			'settings' => $instance->get_settings(),
-			'routing'  => $instance->get_routing(),
-		);
-
-		$this->write( $stored );
+		$this->store_entry( $instance );
 	}
 
 	/**
@@ -599,48 +582,7 @@ class Channel_Store {
 		$this->code_generation = $this->config->generation();
 		$this->code_defined    = array();
 
-		// translators: Describes where a configuration value comes from; shown in "Set by %s". Keep SC_WPUN_CHANNELS as is.
-		$json_source = __( 'constant SC_WPUN_CHANNELS', 'wp-updates-notifier' );
-		$entries     = array();
-		$constant    = null;
-		if ( defined( 'SC_WPUN_CHANNELS' ) ) {
-			$constant = constant( 'SC_WPUN_CHANNELS' );
-			if ( ! is_string( $constant ) ) {
-				$this->config->report_problem( 'SC_WPUN_CHANNELS', $json_source, __( 'The constant must be a JSON string.', 'wp-updates-notifier' ) );
-				$constant = null;
-			}
-		}
-
-		/**
-		 * Filters the JSON text of the `SC_WPUN_CHANNELS` constant, which defines channel instances in code.
-		 *
-		 * Null when the constant is not defined. A filter can supply the JSON itself, for example from a secrets
-		 * service. The text is a JSON array of objects with the keys `id`, `type`, `label`, `enabled`, `settings`
-		 * and `routing`.
-		 *
-		 * @since 2.0.0
-		 *
-		 * @param string|null $json The JSON text, or null.
-		 */
-		$json = apply_filters( 'sc_wpun_channels_json', $constant );
-		if ( null !== $json && ! is_string( $json ) ) {
-			$this->config->report_problem( 'SC_WPUN_CHANNELS', $json_source, __( 'The value must be a JSON string.', 'wp-updates-notifier' ) );
-		} elseif ( is_string( $json ) && '' !== trim( $json ) ) {
-			$decoded   = json_decode( $json, true );
-			$json_fail = json_last_error() !== JSON_ERROR_NONE;
-			if ( $json_fail || ! is_array( $decoded ) ) {
-				// The JSON error message names the kind of error, not any of the content.
-				$this->config->report_problem( 'SC_WPUN_CHANNELS', $json_source, $json_fail ? json_last_error_msg() : __( 'The JSON must be a list of channels.', 'wp-updates-notifier' ) );
-			} else {
-				$seen = array();
-				foreach ( array_values( $decoded ) as $position => $entry ) {
-					$instance = $this->entry_to_instance( $entry, 'SC_WPUN_CHANNELS', $json_source, $position, $seen );
-					if ( null !== $instance ) {
-						$entries[] = $instance;
-					}
-				}
-			}
-		}
+		$entries = $this->json_entries();
 
 		/**
 		 * Filters the channel instances defined in code.
@@ -684,6 +626,65 @@ class Channel_Store {
 		}
 
 		return $this->code_defined;
+	}
+
+	/**
+	 * The instances of the `SC_WPUN_CHANNELS` constant, or of the `sc_wpun_channels_json` filter.
+	 *
+	 * Invalid entries are reported as configuration problems and skipped.
+	 *
+	 * @return array<int, Channel_Instance>
+	 */
+	private function json_entries(): array {
+		// translators: Describes where a configuration value comes from; shown in "Set by %s". Keep SC_WPUN_CHANNELS as is.
+		$json_source = __( 'constant SC_WPUN_CHANNELS', 'wp-updates-notifier' );
+		$entries     = array();
+		$constant    = null;
+		if ( defined( 'SC_WPUN_CHANNELS' ) ) {
+			$constant = constant( 'SC_WPUN_CHANNELS' );
+			if ( ! is_string( $constant ) ) {
+				$this->config->report_problem( 'SC_WPUN_CHANNELS', $json_source, __( 'The constant must be a JSON string.', 'wp-updates-notifier' ) );
+				$constant = null;
+			}
+		}
+
+		/**
+		 * Filters the JSON text of the `SC_WPUN_CHANNELS` constant, which defines channel instances in code.
+		 *
+		 * Null when the constant is not defined. A filter can supply the JSON itself, for example from a secrets
+		 * service. The text is a JSON array of objects with the keys `id`, `type`, `label`, `enabled`, `settings`
+		 * and `routing`.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param string|null $json The JSON text, or null.
+		 */
+		$json = apply_filters( 'sc_wpun_channels_json', $constant );
+		if ( null !== $json && ! is_string( $json ) ) {
+			$this->config->report_problem( 'SC_WPUN_CHANNELS', $json_source, __( 'The value must be a JSON string.', 'wp-updates-notifier' ) );
+			return $entries;
+		}
+		if ( null === $json || '' === trim( $json ) ) {
+			return $entries;
+		}
+
+		$decoded   = json_decode( $json, true );
+		$json_fail = json_last_error() !== JSON_ERROR_NONE;
+		if ( $json_fail || ! is_array( $decoded ) ) {
+			// The JSON error message names the kind of error, not any of the content.
+			$this->config->report_problem( 'SC_WPUN_CHANNELS', $json_source, $json_fail ? json_last_error_msg() : __( 'The JSON must be a list of channels.', 'wp-updates-notifier' ) );
+			return $entries;
+		}
+
+		$seen = array();
+		foreach ( array_values( $decoded ) as $position => $entry ) {
+			$instance = $this->entry_to_instance( $entry, 'SC_WPUN_CHANNELS', $json_source, $position, $seen );
+			if ( null !== $instance ) {
+				$entries[] = $instance;
+			}
+		}
+
+		return $entries;
 	}
 
 	/**
@@ -747,18 +748,55 @@ class Channel_Store {
 		}
 
 		try {
-			return new Channel_Instance(
-				$entry['id'],
-				$entry['type'],
-				isset( $entry['label'] ) && is_scalar( $entry['label'] ) ? (string) $entry['label'] : $entry['id'],
-				(bool) $enabled['value'],
-				isset( $entry['settings'] ) && is_array( $entry['settings'] ) ? $entry['settings'] : array(),
-				isset( $entry['routing'] ) && is_array( $entry['routing'] ) ? $entry['routing'] : array()
-			);
+			return $this->from_entry( $entry['id'], array( 'enabled' => $enabled['value'] ) + $entry, $entry['id'] );
 		} catch ( InvalidArgumentException $e ) {
 			$this->config->report_problem( $key, $source, $where );
 			return null;
 		}
+	}
+
+	/**
+	 * Build an instance from an entry array, with the same guards for every source.
+	 *
+	 * The caller has checked that `type` is a string.
+	 *
+	 * @param string               $id             Identifier.
+	 * @param array<string, mixed> $entry          Entry with a string `type`.
+	 * @param string               $label_fallback Label when the entry has none.
+	 *
+	 * @return Channel_Instance
+	 *
+	 * @throws InvalidArgumentException If the id or type is not valid.
+	 */
+	private function from_entry( string $id, array $entry, string $label_fallback ): Channel_Instance {
+		return new Channel_Instance(
+			$id,
+			(string) $entry['type'],
+			isset( $entry['label'] ) && is_scalar( $entry['label'] ) ? (string) $entry['label'] : $label_fallback,
+			! empty( $entry['enabled'] ),
+			isset( $entry['settings'] ) && is_array( $entry['settings'] ) ? $entry['settings'] : array(),
+			isset( $entry['routing'] ) && is_array( $entry['routing'] ) ? $entry['routing'] : array()
+		);
+	}
+
+	/**
+	 * Store an instance as the entry for its id, keeping the order of the other entries.
+	 *
+	 * @param Channel_Instance $instance The instance.
+	 *
+	 * @return void
+	 */
+	private function store_entry( Channel_Instance $instance ): void {
+		$stored                        = $this->read();
+		$stored[ $instance->get_id() ] = array(
+			'type'     => $instance->get_type(),
+			'label'    => $instance->get_label(),
+			'enabled'  => $instance->is_enabled(),
+			'settings' => $instance->get_settings(),
+			'routing'  => $instance->get_routing(),
+		);
+
+		$this->write( $stored );
 	}
 
 	/**
@@ -801,14 +839,7 @@ class Channel_Store {
 		}
 
 		try {
-			return new Channel_Instance(
-				$id,
-				$entry['type'],
-				isset( $entry['label'] ) && is_scalar( $entry['label'] ) ? (string) $entry['label'] : '',
-				! empty( $entry['enabled'] ),
-				isset( $entry['settings'] ) && is_array( $entry['settings'] ) ? $entry['settings'] : array(),
-				isset( $entry['routing'] ) && is_array( $entry['routing'] ) ? $entry['routing'] : array()
-			);
+			return $this->from_entry( $id, $entry, '' );
 		} catch ( InvalidArgumentException $e ) {
 			return null;
 		}

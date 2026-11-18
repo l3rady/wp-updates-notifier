@@ -43,13 +43,6 @@ parameters:
 			reportUnmatched: true
 
 		-
-			message: '#^Cognitive complexity for "WPUN\\Channel_Store\:\:code_defined\(\)" is 29, keep it under 20$#'
-			identifier: complexity.functionLike
-			count: 1
-			path: ../../includes/class-channel-store.php
-			reportUnmatched: true
-
-		-
 			message: '#^Cognitive complexity for "WPUN\\Channel_Store\:\:overlay\(\)" is 51, keep it under 20$#'
 			identifier: complexity.functionLike
 			count: 1
