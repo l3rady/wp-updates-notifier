@@ -15,6 +15,7 @@ use WPUN\Boolean_Field;
 use WPUN\Config_Report;
 use WPUN\Rejected_Channels;
 use WPUN\Enum_Field;
+use WPUN\Field_Types;
 use WPUN\Network_Context;
 use WPUN\Plugin;
 use WPUN\Scheduler;
@@ -754,7 +755,7 @@ class Settings_Page {
 			if ( ! array_key_exists( $name, $input ) || false === ( $schema['storage'] ?? true ) ) {
 				continue; // Not submitted, or code-only: a posted value is never written.
 			}
-			$checked = Boolean_Field::is_boolean( $schema ) ? Boolean_Field::sanitize( $input[ $name ], $schema ) : Enum_Field::sanitize( $input[ $name ], $schema );
+			$checked = 'boolean' === Field_Types::canonical( $schema['type'] ?? null ) ? Boolean_Field::sanitize( $input[ $name ], $schema ) : Enum_Field::sanitize( $input[ $name ], $schema );
 			if ( $checked['ok'] ) {
 				$valid[ $name ] = $checked['value'];
 			} else {

@@ -65,13 +65,6 @@ class Channel_Store {
 	private $code_generation = -1;
 
 	/**
-	 * Field names already complained about.
-	 *
-	 * @var array<string, true>
-	 */
-	private $warned = array();
-
-	/**
 	 * Constructor.
 	 *
 	 * @param Config               $config   Resolver of values supplied from outside the database.
@@ -419,8 +412,7 @@ class Channel_Store {
 			try {
 				$fields = $channel->get_form_fields();
 			} catch ( \Throwable $e ) {
-				if ( ! isset( $this->warned[ $type . '|' ] ) ) {
-					$this->warned[ $type . '|' ] = true;
+				if ( Field_Types::first_time( 'channel-store-fields:' . $type ) ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						// Not the message: it can contain a secret.
 						wp_trigger_error( self::class, sprintf( 'The fields of the "%1$s" channel could not be read: %2$s was thrown.', $type, get_class( $e ) ) );
@@ -434,17 +426,12 @@ class Channel_Store {
 		foreach ( $fields as $name => $field ) {
 			$name = (string) $name;
 			if ( 'enabled' === $name || ! $this->is_valid_name( $name ) ) {
-				if ( ! isset( $this->warned[ $type . '|' . $name ] ) ) {
-					$this->warned[ $type . '|' . $name ] = true;
-					_doing_it_wrong(
-						__METHOD__,
-						esc_html(
-							// translators: 1: Channel type. 2: Field name.
-							sprintf( __( 'The field "%2$s" of the "%1$s" channel cannot be supplied from outside the database: the name "enabled" is reserved, and names may only contain a-z, 0-9 and single underscores.', 'wp-updates-notifier' ), $type, $name )
-						),
-						'2.0.0'
-					);
-				}
+				Field_Types::complain(
+					'channel-store-name:' . $type . '|' . $name,
+					__METHOD__,
+					// translators: 1: Channel type. 2: Field name.
+					sprintf( __( 'The field "%2$s" of the "%1$s" channel cannot be supplied from outside the database: the name "enabled" is reserved, and names may only contain a-z, 0-9 and single underscores.', 'wp-updates-notifier' ), $type, $name )
+				);
 				continue;
 			}
 			$schemas[ $name ] = $field;

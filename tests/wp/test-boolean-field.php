@@ -347,10 +347,10 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 			'default' => true,
 		);
 
-		$this->assertTrue( Boolean_Field::is_boolean( $alias ) );
-		$this->assertTrue( Boolean_Field::is_boolean( $boolean ) );
-		$this->assertFalse( Boolean_Field::is_boolean( array( 'type' => 'text' ) ) );
-		$this->assertFalse( Boolean_Field::is_boolean( array() ) );
+		$this->assertSame( 'boolean', \WPUN\Field_Types::canonical( $alias['type'] ) );
+		$this->assertSame( 'boolean', \WPUN\Field_Types::canonical( $boolean['type'] ) );
+		$this->assertNotSame( 'boolean', \WPUN\Field_Types::canonical( 'text' ) );
+		$this->assertNotSame( 'boolean', \WPUN\Field_Types::canonical( null ) );
 		$this->assertEquals( Boolean_Field::normalise( $boolean ), Boolean_Field::normalise( $alias ) );
 
 		foreach ( array( true, false, 1, 0, '1', '0', '', 'yes', 2, null, array() ) as $value ) {

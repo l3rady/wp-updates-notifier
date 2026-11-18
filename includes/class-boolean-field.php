@@ -35,17 +35,6 @@ final class Boolean_Field {
 	const DISPLAYS = array( 'checkbox', 'radio', 'select' );
 
 	/**
-	 * Whether a field schema is a boolean, including the `checkbox` alias.
-	 *
-	 * @param array<string, mixed> $field Field schema.
-	 *
-	 * @return bool
-	 */
-	public static function is_boolean( array $field ): bool {
-		return isset( $field['type'] ) && in_array( $field['type'], array( 'boolean', 'checkbox' ), true );
-	}
-
-	/**
 	 * The schema with `type` boolean, and `display` and `labels` always set to usable values.
 	 *
 	 * A display that is not known falls back to `checkbox`, with a notice to the developer (once per field).
@@ -61,7 +50,7 @@ final class Boolean_Field {
 			if ( is_string( $field['display'] ) && in_array( $field['display'], self::DISPLAYS, true ) ) {
 				$display = $field['display'];
 			} else {
-				$shown = is_string( $field['display'] ) ? $field['display'] : gettype( $field['display'] );
+				$shown = Field_Types::shown( $field['display'] );
 				$id    = md5( (string) wp_json_encode( array( $shown, $field['label'] ?? null ) ) );
 				Field_Types::complain(
 					'boolean-display:' . $id,
@@ -131,21 +120,9 @@ final class Boolean_Field {
 			$raw = strtolower( trim( $raw ) );
 		}
 
-		if ( in_array( $raw, array( true, 1, '1', 'true', 'yes', 'on' ), true ) ) {
-			return array(
-				'ok'    => true,
-				'value' => true,
-			);
-		}
+		$result = self::result( $raw, array( true, 1, '1', 'true', 'yes', 'on' ), array( false, 0, '0', 'false', 'no', 'off', '' ) );
 
-		if ( in_array( $raw, array( false, 0, '0', 'false', 'no', 'off', '' ), true ) ) {
-			return array(
-				'ok'    => true,
-				'value' => false,
-			);
-		}
-
-		return array(
+		return $result['ok'] ? $result : array(
 			'ok'    => false,
 			'value' => null,
 		);
@@ -183,23 +160,24 @@ final class Boolean_Field {
 	 * @return array{ok: bool, value: bool} The value is the cleaned one when ok.
 	 */
 	private static function check( $value ): array {
-		if ( in_array( $value, array( true, 1, '1' ), true ) ) {
-			return array(
-				'ok'    => true,
-				'value' => true,
-			);
-		}
+		return self::result( $value, array( true, 1, '1' ), array( false, 0, '0', '' ) );
+	}
 
-		if ( in_array( $value, array( false, 0, '0', '' ), true ) ) {
-			return array(
-				'ok'    => true,
-				'value' => false,
-			);
-		}
+	/**
+	 * Look a value up in the "on" and "off" lists.
+	 *
+	 * @param mixed             $value The value.
+	 * @param array<int, mixed> $on    Values that mean on.
+	 * @param array<int, mixed> $off   Values that mean off.
+	 *
+	 * @return array{ok: bool, value: bool} Ok when the value is in either list; the value is true for the "on" list.
+	 */
+	private static function result( $value, array $on, array $off ): array {
+		$is_on = in_array( $value, $on, true );
 
 		return array(
-			'ok'    => false,
-			'value' => false,
+			'ok'    => $is_on || in_array( $value, $off, true ),
+			'value' => $is_on,
 		);
 	}
 }

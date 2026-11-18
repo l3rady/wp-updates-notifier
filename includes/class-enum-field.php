@@ -58,7 +58,7 @@ final class Enum_Field {
 			if ( is_string( $field['display'] ) && in_array( $field['display'], $allowed, true ) ) {
 				$display = $field['display'];
 			} else {
-				$shown = is_string( $field['display'] ) ? $field['display'] : gettype( $field['display'] );
+				$shown = Field_Types::shown( $field['display'] );
 				$id    = md5( (string) wp_json_encode( array( $multiple, $shown, array_keys( $options ) ) ) );
 				Field_Types::complain(
 					'enum-display:' . $id,

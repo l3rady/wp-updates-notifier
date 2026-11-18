@@ -241,9 +241,8 @@ final class Config {
 			return $bad; // Arrays, objects and null are never usable.
 		}
 
-		switch ( $type ) {
+		switch ( Field_Types::canonical( $type ) ) {
 			case 'boolean':
-			case 'checkbox':
 				return Boolean_Field::cast_external( $raw, $field );
 
 			case 'number':
@@ -256,7 +255,6 @@ final class Config {
 				) : $bad;
 
 			case 'enum':
-			case 'select':
 				return Enum_Field::cast_external( $raw, $field );
 
 			default:

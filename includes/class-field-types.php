@@ -169,7 +169,7 @@ final class Field_Types {
 	 * @return void
 	 */
 	public static function unknown( $type ): void {
-		$shown = is_string( $type ) ? $type : gettype( $type );
+		$shown = self::shown( $type );
 		self::complain(
 			'unknown:' . $shown,
 			__METHOD__,
@@ -191,7 +191,7 @@ final class Field_Types {
 	 * @return void
 	 */
 	public static function unknown_group( $group ): void {
-		$shown = is_string( $group ) ? $group : gettype( $group );
+		$shown = self::shown( $group );
 		self::complain(
 			'group:' . $shown,
 			__METHOD__,
@@ -516,11 +516,12 @@ final class Field_Types {
 	 * @return array{ok: bool, value: mixed, message?: string}
 	 */
 	public static function text( $value, array $field ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Same signature as the other types.
-		if ( ! is_string( $value ) && ! is_int( $value ) && ! is_float( $value ) ) {
+		$text = self::as_text( $value );
+		if ( null === $text ) {
 			return self::bad();
 		}
 
-		return self::good( sanitize_text_field( (string) $value ) );
+		return self::good( sanitize_text_field( $text ) );
 	}
 
 	/**
@@ -535,11 +536,12 @@ final class Field_Types {
 	 * @return array{ok: bool, value: mixed, message?: string}
 	 */
 	public static function secret( $value, array $field ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Same signature as the other types.
-		if ( ! is_string( $value ) && ! is_int( $value ) && ! is_float( $value ) ) {
+		$text = self::as_text( $value );
+		if ( null === $text ) {
 			return self::bad();
 		}
 
-		return self::good( trim( (string) preg_replace( '/[\x00-\x1F\x7F]/', '', (string) $value ) ) );
+		return self::good( trim( (string) preg_replace( '/[\x00-\x1F\x7F]/', '', $text ) ) );
 	}
 
 	/**
@@ -551,18 +553,19 @@ final class Field_Types {
 	 * @return array{ok: bool, value: mixed, message?: string}
 	 */
 	public static function textarea( $value, array $field ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Same signature as the other types.
-		if ( ! is_string( $value ) && ! is_int( $value ) && ! is_float( $value ) ) {
+		$text = self::as_text( $value );
+		if ( null === $text ) {
 			return self::bad();
 		}
 
 		// A secret list (credentials, one per line) keeps what it holds, like the `secret` type, except that line breaks stay.
 		if ( self::is_secret( $field ) ) {
-			$lines = str_replace( array( "\r\n", "\r" ), "\n", (string) $value );
+			$lines = str_replace( array( "\r\n", "\r" ), "\n", $text );
 
 			return self::good( trim( (string) preg_replace( '/[\x00-\x09\x0B-\x1F\x7F]/', '', $lines ) ) );
 		}
 
-		return self::good( sanitize_textarea_field( (string) $value ) );
+		return self::good( sanitize_textarea_field( $text ) );
 	}
 
 	/**
@@ -926,6 +929,44 @@ final class Field_Types {
 	}
 
 	/**
+	 * A string or a number as text.
+	 *
+	 * @param mixed $value Value.
+	 *
+	 * @return string|null Null when the value is not a string, an integer or a float.
+	 */
+	private static function as_text( $value ): ?string {
+		return is_string( $value ) || is_int( $value ) || is_float( $value ) ? (string) $value : null;
+	}
+
+	/**
+	 * A value for a message: a string as it is, anything else as its type.
+	 *
+	 * @param mixed $value Value.
+	 *
+	 * @return string
+	 */
+	public static function shown( $value ): string {
+		return is_string( $value ) ? $value : gettype( $value );
+	}
+
+	/**
+	 * Whether this is the first time a key is seen in this request, and remember it.
+	 *
+	 * @param string $key What it is about.
+	 *
+	 * @return bool
+	 */
+	public static function first_time( string $key ): bool {
+		if ( isset( self::$warned[ $key ] ) ) {
+			return false;
+		}
+		self::$warned[ $key ] = true;
+
+		return true;
+	}
+
+	/**
 	 * Tell the developer something is wrong, once per key.
 	 *
 	 * @param string $key     What it is about.
@@ -936,10 +977,9 @@ final class Field_Types {
 	 * @return void
 	 */
 	public static function complain( string $key, string $method, string $message, string $since = '2.0.0' ): void {
-		if ( isset( self::$warned[ $key ] ) ) {
+		if ( ! self::first_time( $key ) ) {
 			return;
 		}
-		self::$warned[ $key ] = true;
 		_doing_it_wrong( esc_html( $method ), esc_html( $message ), esc_html( $since ) );
 	}
 }

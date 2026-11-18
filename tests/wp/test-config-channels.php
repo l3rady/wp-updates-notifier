@@ -21,6 +21,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
+		WPUN\Field_Types::forget_warnings();
 		sc_wpun()->config()->flush();
 		$this->save_settings();
 	}
