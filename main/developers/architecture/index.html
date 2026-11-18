@@ -2661,7 +2661,7 @@
 <h2 id="multisite">Multisite<a class="headerlink" href="#multisite" title="Permanent link">&para;</a></h2>
 <p>On multisite the plugin runs only when it is network-activated (<a href="../../decisions/0021-network-only-on-multisite/">ADR 0021</a>). One internal object, <code>WPUN\Network_Context</code>, answers every question that depends on the mode, so each screen, handler and store is registered once and asks it. Network mode is multisite plus network activation, whichever screen the request comes from.</p>
 <ul>
-<li><strong>Storage.</strong> Options are read and written with the site option functions in network mode, under the same names. The options filters wrap them the same way.</li>
+<li><strong>Storage.</strong> Options are read and written with the site option functions in network mode, under the same names. <code>Network_Context::read()</code> and <code>write()</code> apply the options filters, and every store of the plugin's settings and state goes through them. The exception is <code>Instance_Data</code>: it holds an add-on's runtime values, not settings, so it skips the filters.</li>
 <li><strong>Screens and URLs.</strong> The settings screen is in the network admin, and its links come from <code>network_admin_url()</code>. Code outside the plugin uses <code>sc_wpun_settings_url()</code>, and <code>sc_wpun_mute_url()</code> for a link that opens the Muted tab with its form filled in.</li>
 <li><strong>Cron.</strong> The check is scheduled on the main site only. <code>Config_Context::get_site_id()</code> returns the main site's id.</li>
 <li><strong>Notifications.</strong> The site name, home URL and updates link in a <code>Notification</code> are the network's.</li>
