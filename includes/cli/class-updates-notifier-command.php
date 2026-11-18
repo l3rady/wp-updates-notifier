@@ -10,6 +10,7 @@ namespace WPUN\CLI;
 use WPUN\Channel_Instance;
 use WPUN\Notification_Renderer;
 use WPUN\Status_Report;
+use WPUN\Update_Collector;
 use WPUN\Update_Checker;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -278,7 +279,7 @@ class Updates_Notifier_Command {
 			function ( string $type, string $key, string $name ) use ( $skip, $expires ): ?string {
 				$store    = sc_wpun()->mute_store();
 				$existing = $store->get( $type, $key );
-				$until    = $skip ? $store->offered_version( $type, $key ) : null;
+				$until    = $skip ? Update_Collector::offered_version( $type, $key ) : null;
 				if ( null !== $existing && ! $existing->is_from_code() && ( ! $skip || null !== $until ) && $existing->get_until() === $until && null === $expires && null === $existing->get_expires() ) {
 					// translators: %s: Name of the plugin or theme.
 					\WP_CLI::warning( sprintf( __( '%s is already muted that way.', 'wp-updates-notifier' ), $name ) );

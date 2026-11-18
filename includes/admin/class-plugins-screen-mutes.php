@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use WPUN\Mute;
 use WPUN\Mute_Store;
 use WPUN\Network_Context;
+use WPUN\Update_Collector;
 
 /**
  * Adds the mute links to the Plugins screen, and handles them.
@@ -127,11 +128,8 @@ class Plugins_Screen_Mutes {
 		}
 
 		$waiting = array();
-		foreach ( array_keys( $transient->response ) as $file ) {
-			$version = $this->store->offered_version( 'plugin', (string) $file );
-			if ( null !== $version ) {
-				$waiting[ (string) $file ] = $version;
-			}
+		foreach ( Update_Collector::normalise_plugin_updates( $transient->response ) as $file => $update ) {
+			$waiting[ (string) $file ] = $update->new_version;
 		}
 
 		return $waiting;
@@ -240,7 +238,7 @@ class Plugins_Screen_Mutes {
 		}
 
 		$mute    = $this->store->get( 'plugin', $file );
-		$offered = $this->store->offered_version( 'plugin', $file );
+		$offered = Update_Collector::offered_version( 'plugin', $file );
 		$hidden  = null !== $offered && ! current_user_can( 'update_plugins' ); // Core shows no update notice.
 
 		if ( null === $mute ) {
@@ -360,7 +358,7 @@ class Plugins_Screen_Mutes {
 	 * @return void
 	 */
 	public function update_message( string $file ): void {
-		$offered = $this->store->offered_version( 'plugin', $file );
+		$offered = Update_Collector::offered_version( 'plugin', $file );
 		if ( null === $offered ) {
 			return;
 		}

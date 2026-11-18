@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use WPUN\Mute_Store;
+use WPUN\Update_Collector;
 
 /**
  * Mutes and unmutes an item for a screen, and says what happened in words.
@@ -122,7 +123,7 @@ class Mute_Actions {
 
 		$until = null;
 		if ( $skip ) {
-			$until = $this->store->offered_version( $type, $key );
+			$until = Update_Collector::offered_version( $type, $key );
 			if ( null === $until ) {
 				// translators: %s: Name of the plugin or theme.
 				return array( false, sprintf( __( 'No update is waiting for %s, so there is no version to skip.', 'wp-updates-notifier' ), $name ) );

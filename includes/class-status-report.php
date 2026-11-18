@@ -144,7 +144,7 @@ class Status_Report {
 				'from_code' => $mute->is_from_code(),
 				'time'      => $mute->get_time(),
 				'user'      => $mute->get_user_id(),
-				'offered'   => $this->mutes->offered_version( $type, $key ),
+				'offered'   => Update_Collector::offered_version( $type, $key ),
 				'expires'   => $mute->get_expires(),
 				'source'    => $mute->get_source(),
 			);

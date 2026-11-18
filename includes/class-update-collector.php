@@ -550,6 +550,37 @@ class Update_Collector {
 	}
 
 	/**
+	 * The version WordPress offers for a plugin or theme now.
+	 *
+	 * @internal
+	 *
+	 * @param string $type Item type.
+	 * @param string $key  Plugin file or theme stylesheet.
+	 *
+	 * @return string|null Null if no update is waiting, or the type is not plugin or theme.
+	 */
+	public static function offered_version( string $type, string $key ): ?string {
+		if ( 'plugin' !== $type && 'theme' !== $type ) {
+			return null;
+		}
+
+		$transient = get_site_transient( 'plugin' === $type ? 'update_plugins' : 'update_themes' );
+		if ( ! is_object( $transient ) || ! isset( $transient->response ) || ! is_array( $transient->response ) || ! isset( $transient->response[ $key ] ) ) {
+			return null;
+		}
+
+		// Read the entry as the update check does, so both agree on what is offered.
+		$response = array( $key => $transient->response[ $key ] );
+		if ( 'plugin' === $type ) {
+			$update = self::normalise_plugin_updates( $response )[ $key ] ?? null;
+
+			return null === $update ? null : $update->new_version;
+		}
+
+		return self::normalise_theme_updates( $response )[ $key ]['new_version'] ?? null;
+	}
+
+	/**
 	 * The facts the compatibility notes of a plugin update are drawn from.
 	 *
 	 * @param \stdClass $entry A normalised plugin update entry.

@@ -355,6 +355,32 @@ class Test_Mute_Plugins_Screen extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Loading the screen reads the plugin update data once, however many updates wait.
+	 */
+	public function test_loading_the_screen_reads_the_update_data_once() {
+		$this->set_updates(
+			null,
+			array(
+				'hello.php'       => array( 'new_version' => '2.0.0' ),
+				'other/other.php' => array( 'new_version' => '3' ),
+			)
+		);
+		$reads = 0;
+		add_filter(
+			'site_transient_update_plugins',
+			static function ( $value ) use ( &$reads ) {
+				++$reads;
+				return $value;
+			}
+		);
+
+		$this->load_screen();
+
+		$this->assertSame( 1, $reads );
+		$this->assertNotFalse( has_action( 'in_plugin_update_message-other/other.php' ) );
+	}
+
+	/**
 	 * The skip link encodes its values, so a version with a + (build metadata) still works.
 	 */
 	public function test_the_skip_link_works_for_a_version_with_a_plus() {

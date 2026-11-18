@@ -754,4 +754,38 @@ class Test_Update_Check extends WPUN_Test_Case {
 		);
 		$this->assertSame( array( 'details' => 'https://example.org/?from=https://wordpress.org/plugins/hello/' ), $this->checked_items()[0]->get_links(), 'The address only mentions WordPress.org.' );
 	}
+
+	/**
+	 * Which version WordPress offers.
+	 */
+	public function test_offered_version() {
+		list( $theme ) = array_keys( wp_get_themes() );
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '1.6' ) ), array( $theme => array( 'new_version' => '4.0' ) ) );
+
+		$this->assertSame( '1.6', WPUN\Update_Collector::offered_version( 'plugin', 'hello.php' ) );
+		$this->assertSame( '4.0', WPUN\Update_Collector::offered_version( 'theme', $theme ) );
+		$this->assertNull( WPUN\Update_Collector::offered_version( 'plugin', 'none/none.php' ) );
+		$this->assertNull( WPUN\Update_Collector::offered_version( 'theme', 'none' ) );
+		$this->assertNull( WPUN\Update_Collector::offered_version( 'core', 'core' ) );
+	}
+
+	/**
+	 * A version another updater stores as a number counts, as it does for the update check.
+	 */
+	public function test_offered_version_accepts_a_numeric_version() {
+		list( $theme ) = array_keys( wp_get_themes() );
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => 2.1 ) ), array( $theme => array( 'new_version' => 5 ) ) );
+
+		$this->assertSame( '2.1', WPUN\Update_Collector::offered_version( 'plugin', 'hello.php' ) );
+		$this->assertSame( '5', WPUN\Update_Collector::offered_version( 'theme', $theme ) );
+	}
+
+	/**
+	 * An entry without a version offers nothing.
+	 */
+	public function test_offered_version_ignores_an_entry_without_a_version() {
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '' ) ) );
+
+		$this->assertNull( WPUN\Update_Collector::offered_version( 'plugin', 'hello.php' ) );
+	}
 }

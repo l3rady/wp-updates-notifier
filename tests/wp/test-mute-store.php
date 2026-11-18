@@ -605,29 +605,12 @@ class Test_Mute_Store extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Which version WordPress offers.
-	 */
-	public function test_offered_version() {
-		list( $theme ) = array_keys( wp_get_themes() );
-		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '1.6' ) ), array( $theme => array( 'new_version' => '4.0' ) ) );
-		$store = new Mute_Store();
-
-		$this->assertSame( '1.6', $store->offered_version( 'plugin', 'hello.php' ) );
-		$this->assertSame( '4.0', $store->offered_version( 'theme', $theme ) );
-		$this->assertNull( $store->offered_version( 'plugin', 'none/none.php' ) );
-		$this->assertNull( $store->offered_version( 'core', 'core' ) );
-	}
-
-	/**
 	 * A version another updater stores as a number counts, as it does for the update check.
 	 */
-	public function test_offered_version_accepts_a_numeric_version() {
+	public function test_a_numeric_offered_version_ends_a_skip_mute() {
 		list( $theme ) = array_keys( wp_get_themes() );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => 2.1 ) ), array( $theme => array( 'new_version' => 5 ) ) );
 		$store = new Mute_Store();
-
-		$this->assertSame( '2.1', $store->offered_version( 'plugin', 'hello.php' ) );
-		$this->assertSame( '5', $store->offered_version( 'theme', $theme ) );
 
 		$store->mute( 'plugin', 'hello.php', '2.0' );
 		$store->mute( 'theme', $theme, '4.0' );
