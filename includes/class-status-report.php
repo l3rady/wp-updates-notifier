@@ -356,10 +356,9 @@ class Status_Report {
 
 		$rows = array();
 		foreach ( $schema as $name => $field ) {
-			$value  = $this->display( $instance->get_setting( (string) $name ) );
 			$rows[] = array(
 				'field'  => (string) $name,
-				'value'  => Field_Types::is_secret( $field ) ? ( '' === $value ? __( 'not set', 'wp-updates-notifier' ) : __( 'set', 'wp-updates-notifier' ) ) : $value,
+				'value'  => $this->display_field( $instance->get_setting( (string) $name ), $field ),
 				'source' => $this->store->external_source( $instance->get_id(), (string) $name ) ?? 'database',
 			);
 		}
@@ -383,5 +382,22 @@ class Status_Report {
 		}
 
 		return is_scalar( $value ) ? (string) $value : (string) wp_json_encode( $value );
+	}
+
+	/**
+	 * A field value as text: a secret shows `set` or `not set`, never its value.
+	 *
+	 * @param mixed                $value  The value.
+	 * @param array<string, mixed> $schema The schema of the field.
+	 *
+	 * @return string
+	 */
+	public function display_field( $value, array $schema ): string {
+		$text = $this->display( $value );
+		if ( ! Field_Types::is_secret( $schema ) ) {
+			return $text;
+		}
+
+		return '' === $text ? __( 'not set', 'wp-updates-notifier' ) : __( 'set', 'wp-updates-notifier' );
 	}
 }

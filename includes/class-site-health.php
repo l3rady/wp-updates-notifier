@@ -279,7 +279,6 @@ class Site_Health {
 			$fields[ 'setting_' . $row['setting'] ] = array(
 				'label' => $row['setting'],
 				'value' => sprintf( '%s (%s)', $row['value'], $row['source'] ),
-				'debug' => sprintf( '%s (%s)', $row['value'], $row['source'] ),
 			);
 		}
 
@@ -304,11 +303,12 @@ class Site_Health {
 			'debug' => $cron_off ? 'true' : 'false',
 		);
 
+		$labels = $this->channel_labels();
 		foreach ( $this->report->channels() as $row ) {
 			$fields[ 'channel_' . $row['id'] ] = array(
 				'label' => $row['label'],
-				'value' => $this->describe_channel( $row, true ),
-				'debug' => $this->describe_channel( $row, false ),
+				'value' => $this->describe_channel( $row, $labels['translated'] ),
+				'debug' => $this->describe_channel( $row, $labels['english'] ),
 			);
 		}
 
@@ -370,14 +370,9 @@ class Site_Health {
 				if ( null === $entry ) {
 					continue;
 				}
-				$value = $this->report->display( $entry['value'] );
-				if ( Field_Types::is_secret( $schema ) ) {
-					$value = '' === $value ? __( 'not set', 'wp-updates-notifier' ) : __( 'set', 'wp-updates-notifier' );
-				}
 				$fields[ (string) $name ] = array(
 					'label' => (string) $name,
-					'value' => sprintf( '%s (%s)', $value, $entry['origin'] ),
-					'debug' => sprintf( '%s (%s)', $value, $entry['origin'] ),
+					'value' => sprintf( '%s (%s)', $this->report->display_field( $entry['value'], $schema ), $entry['origin'] ),
 				);
 			}
 			$info[ self::SECTION . '-' . $id ] = $this->mask_emails(
@@ -410,31 +405,57 @@ class Site_Health {
 	}
 
 	/**
-	 * One channel instance as a line of text.
+	 * The labels of a channel line, in the site's language and in English.
 	 *
 	 * Site Health shows `value` in the site's language and copies `debug`, so the copy is in English for a support forum.
+	 *
+	 * @return array{translated: array<string, string>, english: array<string, string>}
+	 */
+	private function channel_labels(): array {
+		return array(
+			'translated' => array(
+				'yes'          => __( 'Yes', 'wp-updates-notifier' ),
+				'no'           => __( 'No', 'wp-updates-notifier' ),
+				'module'       => __( 'Module', 'wp-updates-notifier' ),
+				'replaced_by'  => __( 'Replaced by', 'wp-updates-notifier' ),
+				'availability' => __( 'Availability', 'wp-updates-notifier' ),
+				'enabled'      => __( 'Enabled', 'wp-updates-notifier' ),
+				'code_defined' => __( 'Defined in code', 'wp-updates-notifier' ),
+				'last_result'  => __( 'Last delivery', 'wp-updates-notifier' ),
+				'retry_at'     => __( 'Next try after', 'wp-updates-notifier' ),
+				'held_until'   => __( 'Held until', 'wp-updates-notifier' ),
+			),
+			'english'    => array(
+				'yes'          => 'yes',
+				'no'           => 'no',
+				'module'       => 'module',
+				'replaced_by'  => 'replaced by',
+				'availability' => 'availability',
+				'enabled'      => 'enabled',
+				'code_defined' => 'code-defined',
+				'last_result'  => 'last result',
+				'retry_at'     => 'retry at',
+				'held_until'   => 'held until',
+			),
+		);
+	}
+
+	/**
+	 * One channel instance as a line of text.
+	 *
 	 * The availability and the last result come from the report, already translated.
 	 *
 	 * @param array{id: string, label: string, module: string, replaced_by: ?string, availability: string, enabled: bool, code_defined: bool, last_result: ?array{success: bool, message: string, time: string}, last_failure: ?array{success: bool, message: string, time: string}, retry_at: ?string, held_until: ?string, fields: array<int, array{field: string, value: string, source: string}>} $row The instance from the report.
-	 * @param bool                                                                                                                                                                                                                                                                                                                                                                                    $translate Whether to use the site's language.
+	 * @param array<string, string>                                                                                                                                                                                                                                                                                                                                                                   $labels The labels from channel_labels().
 	 *
 	 * @return string
 	 */
-	private function describe_channel( array $row, bool $translate ): string {
-		$yes  = $translate ? __( 'Yes', 'wp-updates-notifier' ) : 'yes';
-		$no   = $translate ? __( 'No', 'wp-updates-notifier' ) : 'no';
+	private function describe_channel( array $row, array $labels ): string {
+		$yes  = $labels['yes'];
+		$no   = $labels['no'];
 		$last = Status_Report::describe_last( $row['last_result'] );
 
-		$labels = array(
-			'module'       => $translate ? __( 'Module', 'wp-updates-notifier' ) : 'module',
-			'replaced_by'  => $translate ? __( 'Replaced by', 'wp-updates-notifier' ) : 'replaced by',
-			'availability' => $translate ? __( 'Availability', 'wp-updates-notifier' ) : 'availability',
-			'enabled'      => $translate ? __( 'Enabled', 'wp-updates-notifier' ) : 'enabled',
-			'code_defined' => $translate ? __( 'Defined in code', 'wp-updates-notifier' ) : 'code-defined',
-			'last_result'  => $translate ? __( 'Last delivery', 'wp-updates-notifier' ) : 'last result',
-			'retry_at'     => $translate ? __( 'Next try after', 'wp-updates-notifier' ) : 'retry at',
-			'held_until'   => $translate ? __( 'Held until', 'wp-updates-notifier' ) : 'held until',
-		);
+		$names  = array( 'module', 'replaced_by', 'availability', 'enabled', 'code_defined', 'last_result', 'retry_at', 'held_until' );
 		$values = array(
 			'module'       => $row['module'],
 			'replaced_by'  => $row['replaced_by'] ?? '-',
@@ -447,8 +468,8 @@ class Site_Health {
 		);
 
 		$parts = array();
-		foreach ( $labels as $key => $label ) {
-			$parts[] = sprintf( '%s: %s', $label, $values[ $key ] );
+		foreach ( $names as $key ) {
+			$parts[] = sprintf( '%s: %s', $labels[ $key ], $values[ $key ] );
 		}
 		foreach ( $row['fields'] as $field ) {
 			$parts[] = sprintf( '%s: %s (%s)', $field['field'], $field['value'], $field['source'] );
