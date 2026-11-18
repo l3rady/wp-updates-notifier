@@ -77,14 +77,22 @@ class Update_Collector {
 
 		$this->with_download_links = (bool) $options['download_links'];
 
+		$parts = array();
 		if ( 'none' !== $options['notify_core'] ) { // are we to check for WP core updates?
-			$this->core_update_check( $items, $options['notify_core'], $checked ); // check the WP core for updates.
+			$parts[] = $this->core_update_check( $options['notify_core'] ); // check the WP core for updates.
 		}
 		if ( 'none' !== $options['notify_plugins'] ) { // are we to check for plugin updates?
-			$this->plugins_update_check( $items, $options['notify_plugins'], $checked ); // check for plugin updates.
+			$parts[] = $this->plugins_update_check( $options['notify_plugins'] ); // check for plugin updates.
 		}
 		if ( 'none' !== $options['notify_themes'] ) { // are we to check for theme updates?
-			$this->themes_update_check( $items, $options['notify_themes'], $checked ); // check for theme updates.
+			$parts[] = $this->themes_update_check( $options['notify_themes'] ); // check for theme updates.
+		}
+
+		foreach ( $parts as $part ) {
+			$items = array_merge( $items, $part['items'] );
+			if ( isset( $part['checked'] ) ) {
+				$checked = array_merge( $checked, $part['checked'] );
+			}
 		}
 
 		return array(
@@ -151,30 +159,31 @@ class Update_Collector {
 	/**
 	 * Checks to see if any WP core updates
 	 *
-	 * @param Notification_Item[]          $items   Collects the items to report.
-	 * @param string                       $setting The notify_core setting: `all` or `major`.
-	 * @param array<string, array<string>> $checked Collects the keys still waiting, by item type.
+	 * @param string $setting The notify_core setting: `all` or `major`.
 	 *
-	 * @return void
+	 * @return array{items: Notification_Item[], checked?: array<string, string[]>} The items to report, and the keys still waiting
+	 *                                                                          when core was looked at (absent when there is no usable data).
 	 */
-	private function core_update_check( array &$items, string $setting, array &$checked ): void {
+	private function core_update_check( string $setting ): array {
 		$update_core = get_site_transient( 'update_core' ); // get information of updates.
 
 		// No usable data (new site, api.wordpress.org unreachable): we know nothing,
 		// so keep what was notified instead of forgetting it.
 		if ( ! is_object( $update_core ) || empty( $update_core->updates ) || ! is_array( $update_core->updates ) ) {
-			return;
+			return array( 'items' => array() );
 		}
 
 		$found = $this->core_upgrade_offer( $update_core->updates );
 		if ( null === $found ) {
-			$checked['core'] = array(); // No update is waiting, so nothing about core stays notified.
-			return;
+			return array(
+				'items'   => array(),
+				'checked' => array( 'core' => array() ), // No update is waiting, so nothing about core stays notified.
+			);
 		}
 
 		$offer           = $found['offer'];
 		$new_core_ver    = $found['version'];
-		$checked['core'] = array( 'core' );
+		$checked         = array( 'core' => array( 'core' ) );
 		$current_version = wp_get_wp_version(); // Read from version.php, so plugins that change the $wp_version global do not affect it.
 
 		/**
@@ -203,11 +212,14 @@ class Update_Collector {
 		 */
 		$needs = 'major' !== $setting || Routing::is_major_core_update( $current_version, $new_core_ver );
 		if ( ! apply_filters( 'sc_wpun_core_needs_update', $needs, $new_core_ver, $current_version ) ) {
-			return;
+			return array(
+				'items'   => array(),
+				'checked' => $checked,
+			);
 		}
 
 		$auto_update = $this->auto_updates->is_on( 'core', 'core', $offer, $new_core_ver );
-		$items[]     = new Notification_Item(
+		$item        = new Notification_Item(
 			array(
 				'type'            => 'core',
 				'key'             => 'core',
@@ -218,6 +230,11 @@ class Update_Collector {
 				'notes'           => $this->auto_update_notes( $auto_update ),
 				'flags'           => array( 'auto_update' => $auto_update ),
 			)
+		);
+
+		return array(
+			'items'   => array( $item ),
+			'checked' => $checked,
 		);
 	}
 
@@ -324,27 +341,29 @@ class Update_Collector {
 	/**
 	 * Check to see if any plugin updates.
 	 *
-	 * @param Notification_Item[]          $items         Collects the items to report.
-	 * @param string                       $all_or_active `all` to look at all plugins or `active` for just the active ones.
-	 * @param array<string, array<string>> $checked       Collects the keys still waiting, by item type.
+	 * @param string $all_or_active `all` to look at all plugins or `active` for just the active ones.
 	 *
-	 * @return void
+	 * @return array{items: Notification_Item[], checked: array<string, string[]>} The items to report, and the plugin keys still waiting.
 	 */
-	private function plugins_update_check( array &$items, string $all_or_active, array &$checked ): void {
+	private function plugins_update_check( string $all_or_active ): array {
 		do_action( 'wp_update_plugins' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_plugins = get_site_transient( 'update_plugins' ); // get information of updates.
 		$pending        = self::normalise_plugin_updates( is_object( $update_plugins ) && isset( $update_plugins->response ) ? $update_plugins->response : array() );
 
 		// Everything still waiting, before any filtering, so the instances can forget plugins that were updated or deleted.
-		$checked['plugin'] = array_map( 'strval', array_keys( $pending ) );
+		$result = array(
+			'items'   => array(),
+			'checked' => array( 'plugin' => array_map( 'strval', array_keys( $pending ) ) ),
+		);
 
 		if ( empty( $pending ) ) { // no plugin updates available.
-			return;
+			return $result;
 		}
 
+		$active_plugins      = 'active' === $all_or_active ? $this->active_plugins() : null; // Read once, for the filter below and the flag of each item.
 		$plugins_need_update = $pending; // plugins that need updating.
-		if ( 'active' === $all_or_active ) { // are we to check just active plugins?
-			$plugins_need_update = array_intersect_key( $plugins_need_update, array_flip( $this->active_plugins() ) ); // only keep plugins that are active.
+		if ( null !== $active_plugins ) { // are we to check just active plugins?
+			$plugins_need_update = array_intersect_key( $plugins_need_update, array_flip( $active_plugins ) ); // only keep plugins that are active.
 		}
 		/**
 		 * Filters the plugins that are waiting for an update and will be reported.
@@ -357,10 +376,11 @@ class Update_Collector {
 		$installed           = $this->installed_plugins();
 		$plugins_need_update = array_intersect_key( $plugins_need_update, $installed ); // Only plugins that are installed, whatever the transient or a filter holds: no path is built from the key.
 		if ( empty( $plugins_need_update ) ) { // nothing needs updating after all the filtering gone on above.
-			return;
+			return $result;
 		}
 
-		$active_plugins = $this->active_plugins();
+		$active_plugins ??= $this->active_plugins();
+		$items            = array();
 		foreach ( $plugins_need_update as $key => $data ) { // loop through the plugins that need updating.
 			$plugin_info = $installed[ $key ]; // The header core read once for get_plugins().
 			$wporg_slug  = $this->wporg_plugin_slug( $data );
@@ -373,6 +393,7 @@ class Update_Collector {
 			}
 			$links += $this->download_links( 'plugin', (string) $key, $data->package );
 
+			$flags       = $this->plugin_flags( $data );
 			$auto_update = $this->auto_updates->is_on( 'plugin', (string) $key, $data, $data->new_version );
 			$items[]     = new Notification_Item(
 				array(
@@ -382,9 +403,9 @@ class Update_Collector {
 					'current_version' => $plugin_info['Version'],
 					'new_version'     => $data->new_version,
 					'links'           => $links,
-					'notes'           => array_merge( $this->plugin_compatibility_notes( $data ), $this->auto_update_notes( $auto_update ) ),
+					'notes'           => array_merge( $this->plugin_compatibility_notes( $flags ), $this->auto_update_notes( $auto_update ) ),
 					'flags'           => array_merge(
-						$this->plugin_flags( $data ),
+						$flags,
 						array(
 							'active'      => in_array( (string) $key, $active_plugins, true ),
 							'auto_update' => $auto_update,
@@ -393,27 +414,32 @@ class Update_Collector {
 				)
 			);
 		}
+
+		$result['items'] = $items;
+
+		return $result;
 	}
 
 	/**
 	 * Check to see if any theme updates.
 	 *
-	 * @param Notification_Item[]          $items         Collects the items to report.
-	 * @param string                       $all_or_active `all` to look at all themes or `active` for just the active ones.
-	 * @param array<string, array<string>> $checked       Collects the keys still waiting, by item type.
+	 * @param string $all_or_active `all` to look at all themes or `active` for just the active ones.
 	 *
-	 * @return void
+	 * @return array{items: Notification_Item[], checked: array<string, string[]>} The items to report, and the theme keys still waiting.
 	 */
-	private function themes_update_check( array &$items, string $all_or_active, array &$checked ): void {
+	private function themes_update_check( string $all_or_active ): array {
 		do_action( 'wp_update_themes' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, run to refresh WordPress's update data.
 		$update_themes = get_site_transient( 'update_themes' ); // get information of updates.
 		$pending       = self::normalise_theme_updates( is_object( $update_themes ) && isset( $update_themes->response ) ? $update_themes->response : array() );
 
 		// Everything still waiting, before any filtering, so the instances can forget themes that were updated or deleted.
-		$checked['theme'] = array_map( 'strval', array_keys( $pending ) );
+		$result = array(
+			'items'   => array(),
+			'checked' => array( 'theme' => array_map( 'strval', array_keys( $pending ) ) ),
+		);
 
 		if ( empty( $pending ) ) { // no theme updates available.
-			return;
+			return $result;
 		}
 
 		$themes_need_update = $pending; // themes that need updating.
@@ -432,9 +458,10 @@ class Update_Collector {
 		$installed          = $this->installed_themes();
 		$themes_need_update = array_intersect_key( $themes_need_update, $installed ); // Only themes that are installed, whatever the transient or a filter holds.
 		if ( empty( $themes_need_update ) ) { // nothing needs updating after all the filtering gone on above.
-			return;
+			return $result;
 		}
 
+		$items = array();
 		foreach ( $themes_need_update as $key => $data ) { // loop through the themes that need updating.
 			$theme_info  = $installed[ $key ]; // The theme wp_get_themes() already loaded.
 			$auto_update = $this->auto_updates->is_on( 'theme', (string) $key, (object) $data, $data['new_version'] );
@@ -454,6 +481,10 @@ class Update_Collector {
 				)
 			);
 		}
+
+		$result['items'] = $items;
+
+		return $result;
 	}
 
 	/**
@@ -548,13 +579,13 @@ class Update_Collector {
 	 * the update_plugins transient, so no request per plugin is needed. "Tested
 	 * up to 6.5" covers every 6.5.x release, so only major.minor is compared.
 	 *
-	 * @param \stdClass $entry A normalised plugin update entry.
+	 * @param array<string, string> $flags The facts of the update, from plugin_flags().
 	 *
 	 * @return string[]
 	 */
-	private function plugin_compatibility_notes( stdClass $entry ): array {
+	private function plugin_compatibility_notes( array $flags ): array {
 		$site_wp = Routing::major_minor( wp_get_wp_version() );
-		$tested  = isset( $entry->tested ) && is_scalar( $entry->tested ) ? (string) $entry->tested : '';
+		$tested  = $flags['tested'] ?? '';
 		$notes   = array();
 
 		if ( '' === $tested ) {
@@ -568,13 +599,13 @@ class Update_Collector {
 			$notes[] = sprintf( __( 'Compatibility with WordPress %1$s: not tested yet (tested up to %2$s)', 'wp-updates-notifier' ), $site_wp, $tested );
 		}
 
-		$requires_php = isset( $entry->requires_php ) && is_scalar( $entry->requires_php ) ? (string) $entry->requires_php : '';
+		$requires_php = $flags['requires_php'] ?? '';
 		if ( '' !== $requires_php && version_compare( PHP_VERSION, $requires_php, '<' ) ) {
 			// translators: 1: PHP version the update needs. 2: PHP version of the site.
 			$notes[] = sprintf( __( 'Warning: this version needs PHP %1$s; the site runs PHP %2$s.', 'wp-updates-notifier' ), $requires_php, PHP_VERSION );
 		}
 
-		$requires_wp = isset( $entry->requires ) && is_scalar( $entry->requires ) ? (string) $entry->requires : '';
+		$requires_wp = $flags['requires_wp'] ?? '';
 		if ( '' !== $requires_wp && version_compare( wp_get_wp_version(), $requires_wp, '<' ) ) {
 			// translators: 1: WordPress version the update needs. 2: WordPress version of the site.
 			$notes[] = sprintf( __( 'Warning: this version needs WordPress %1$s; the site runs WordPress %2$s.', 'wp-updates-notifier' ), $requires_wp, wp_get_wp_version() );

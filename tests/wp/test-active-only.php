@@ -135,4 +135,27 @@ class Test_Active_Only extends WPUN_Test_Case {
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
+
+	/**
+	 * The list of active plugins is read once per check, not once per use.
+	 */
+	public function test_the_active_plugins_are_read_once_per_check() {
+		update_option( 'active_plugins', array( 'hello.php' ) );
+		$this->save_settings( array( 'notify_plugins' => 'active' ) );
+		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
+
+		$reads = 0;
+		$count = function ( $value ) use ( &$reads ) {
+			if ( false !== strpos( wp_debug_backtrace_summary(), 'Update_Collector->active_plugins' ) ) { // Core reads the option as well.
+				++$reads;
+			}
+			return $value;
+		};
+		add_filter( 'option_active_plugins', $count );
+
+		$this->plugin()->do_update_check();
+
+		remove_filter( 'option_active_plugins', $count );
+		$this->assertSame( 1, $reads );
+	}
 }
