@@ -7,7 +7,6 @@
 
 namespace WPUN\CLI;
 
-use WPUN\Admin\Mute_Actions;
 use WPUN\Channel_Instance;
 use WPUN\Notification_Renderer;
 use WPUN\Status_Report;
@@ -286,7 +285,7 @@ class Updates_Notifier_Command {
 					return null;
 				}
 
-				$result = ( new Mute_Actions( $store ) )->mute( $type, $key, 'cli', $skip, null, $expires );
+				$result = sc_wpun()->mute_actions()->mute( $type, $key, 'cli', $skip, null, $expires );
 				if ( ! $result[0] ) {
 					return $result[1];
 				}
@@ -394,7 +393,7 @@ class Updates_Notifier_Command {
 					return null;
 				}
 
-				$result = ( new Mute_Actions( $store ) )->unmute( $type, $key, 'cli' );
+				$result = sc_wpun()->mute_actions()->unmute( $type, $key, 'cli' );
 				if ( ! $result[0] ) {
 					return $result[1];
 				}
@@ -454,7 +453,7 @@ class Updates_Notifier_Command {
 			\WP_CLI::error( __( 'Say whether the names are plugins or themes, then one or more names.', 'wp-updates-notifier' ) );
 		}
 
-		$installed = ( new Mute_Actions( sc_wpun()->mute_store() ) )->installed()[ $type ];
+		$installed = sc_wpun()->mute_actions()->installed()[ $type ];
 		$failed    = 0;
 		foreach ( $names as $name ) {
 			$key = $this->resolve( $type, (string) $name, array_keys( $installed ) );

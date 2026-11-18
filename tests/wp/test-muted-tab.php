@@ -304,6 +304,25 @@ class Test_Muted_Tab extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Drawing the tab reads the mutes once, however many plugins and themes are installed: the form leaves out the muted items using the rows already fetched.
+	 */
+	public function test_the_form_reads_the_mutes_once() {
+		$reads = 0;
+		add_filter(
+			'sc_wpun_mutes',
+			static function ( $mutes ) use ( &$reads ) {
+				++$reads;
+				return $mutes;
+			}
+		);
+
+		$xpath = $this->tab();
+
+		$this->assertGreaterThan( 1, $xpath->query( '//form[contains(@class,"sc-wpun-mute-form")]//option' )->length, 'Several items are offered.' );
+		$this->assertSame( 1, $reads );
+	}
+
+	/**
 	 * A user with the settings capability but not the mute capability sees the list, no form and no Unmute button.
 	 */
 	public function test_without_the_mute_capability_the_tab_is_read_only() {

@@ -177,26 +177,4 @@ class Mute_Actions {
 		// translators: %s: Name of the plugin or theme.
 		return array( true, sprintf( __( 'Update notifications for %s are on again.', 'wp-updates-notifier' ), $name ) );
 	}
-
-	/**
-	 * Refuse the request with a 403.
-	 *
-	 * @return void
-	 */
-	public function deny(): void {
-		Settings_Page::finish( null );
-	}
-
-	/**
-	 * Go back to the screen the request came from, or to the fallback. A referrer on another site is not followed.
-	 *
-	 * @param string $fallback Where to go when there is no usable referrer.
-	 *
-	 * @return void
-	 */
-	public function go_back( string $fallback ): void {
-		$referer = wp_get_referer();
-		wp_safe_redirect( false !== $referer && '' !== $referer ? $referer : $fallback );
-		exit;
-	}
 }

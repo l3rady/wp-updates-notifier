@@ -37,13 +37,6 @@ class Muted_Tab {
 	const ARG_SNOOZE = 'mute_snooze';
 
 	/**
-	 * Mute storage.
-	 *
-	 * @var Mute_Store
-	 */
-	private $store;
-
-	/**
 	 * What muting shares with the Plugins screen.
 	 *
 	 * @var Mute_Actions
@@ -74,14 +67,12 @@ class Muted_Tab {
 	/**
 	 * Constructor.
 	 *
-	 * @param Mute_Store           $store   Mute storage.
 	 * @param Mute_Actions         $actions What muting shares with the Plugins screen.
 	 * @param Notices              $notices Notices shown after an action.
 	 * @param Status_Report        $report  The report that lists the mutes.
 	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Mute_Store $store, Mute_Actions $actions, Notices $notices, Status_Report $report, ?Network_Context $network_context = null ) {
-		$this->store           = $store;
+	public function __construct( Mute_Actions $actions, Notices $notices, Status_Report $report, ?Network_Context $network_context = null ) {
 		$this->actions         = $actions;
 		$this->notices         = $notices;
 		$this->report          = $report;
@@ -115,7 +106,7 @@ class Muted_Tab {
 			$this->render_list( $rows, $can );
 		}
 		if ( $can ) {
-			$this->render_form();
+			$this->render_form( $rows );
 		}
 	}
 
@@ -310,20 +301,40 @@ class Muted_Tab {
 	}
 
 	/**
+	 * The installed items that are not muted, in groups by type; a type with none left is left out.
+	 *
+	 * @param array<string, array<string, string>> $installed The installed items by type, key and name.
+	 * @param array<int, array<string, mixed>>     $rows      The muted items, as the report lists them.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	private static function unmuted( array $installed, array $rows ): array {
+		$muted = array();
+		foreach ( $rows as $row ) {
+			$muted[ (string) $row['type'] ][ (string) $row['key'] ] = true;
+		}
+
+		$groups = array();
+		foreach ( $installed as $type => $items ) {
+			$left = array_diff_key( $items, $muted[ $type ] ?? array() );
+			if ( array() !== $left ) {
+				$groups[ $type ] = $left;
+			}
+		}
+
+		return $groups;
+	}
+
+	/**
 	 * Output the form that mutes a plugin or theme.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The muted items, as the report lists them.
 	 *
 	 * @return void
 	 */
-	private function render_form(): void {
+	private function render_form( array $rows ): void {
 		$installed = $this->actions->installed();
-		$groups    = array();
-		foreach ( $installed as $type => $items ) {
-			foreach ( $items as $key => $name ) {
-				if ( null === $this->store->get( $type, $key ) ) {
-					$groups[ $type ][ $key ] = $name;
-				}
-			}
-		}
+		$groups    = self::unmuted( $installed, $rows );
 
 		// A link can fill the form in. Only the type and key are looked up, in the installed list; the name shown is the list's.
 		$linked  = $this->linked_item( $installed );
@@ -523,10 +534,6 @@ class Muted_Tab {
 			$expires = self::parse_snooze( $snooze );
 			if ( null === $expires ) {
 				$this->notices->add( false, __( 'Enter the end of the snooze as a date and time.', 'wp-updates-notifier' ) );
-				return true;
-			}
-			if ( $expires <= time() ) {
-				$this->notices->add( false, __( 'The end of the snooze must be in the future.', 'wp-updates-notifier' ) );
 				return true;
 			}
 		}

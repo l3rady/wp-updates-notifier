@@ -29,13 +29,6 @@ parameters:
 			reportUnmatched: true
 
 		-
-			message: '#^Cognitive complexity for "WPUN\\Admin\\Muted_Tab\:\:render_form\(\)" is 24, keep it under 20$#'
-			identifier: complexity.functionLike
-			count: 1
-			path: ../../includes/admin/class-muted-tab.php
-			reportUnmatched: true
-
-		-
 			message: '#^Cognitive complexity for "WPUN\\Admin\\Plugins_Screen_Mutes\:\:handle_bulk_actions\(\)" is 24, keep it under 20$#'
 			identifier: complexity.functionLike
 			count: 1

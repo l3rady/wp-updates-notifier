@@ -408,7 +408,7 @@ class Plugins_Screen_Mutes {
 			return $redirect_to;
 		}
 		if ( ! Mute_Actions::can_mute() ) {
-			$this->actions->deny();
+			Settings_Page::finish( null );
 			return $redirect_to;
 		}
 
@@ -599,10 +599,11 @@ class Plugins_Screen_Mutes {
 	 */
 	private function finish( bool $allowed ): void {
 		if ( ! $allowed ) {
-			$this->actions->deny();
+			Settings_Page::finish( null );
 			return;
 		}
 
-		$this->actions->go_back( $this->network_context->admin_page_url( 'plugins.php' ) );
+		$referer = wp_get_referer(); // Only a safe referrer: one on another site is not followed.
+		Settings_Page::finish( false !== $referer && '' !== $referer ? $referer : $this->network_context->admin_page_url( 'plugins.php' ) );
 	}
 }

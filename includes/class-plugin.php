@@ -218,7 +218,7 @@ class Plugin {
 	 * @return Muted_Tab
 	 */
 	public function muted_tab(): Muted_Tab {
-		$this->muted_tab ??= new Muted_Tab( $this->mute_store, $this->mute_actions(), $this->notices(), $this->status_report(), $this->network_context );
+		$this->muted_tab ??= new Muted_Tab( $this->mute_actions(), $this->notices(), $this->status_report(), $this->network_context );
 
 		return $this->muted_tab;
 	}
