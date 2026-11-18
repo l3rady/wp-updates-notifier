@@ -393,7 +393,7 @@ class Channel_Store {
 	 * @return bool
 	 */
 	private function is_valid_name( string $name ): bool {
-		return 1 === preg_match( '/^[a-z0-9]+(?:_[a-z0-9]+)*$/D', $name );
+		return 1 === preg_match( Channel_Instance::ID_PATTERN, $name );
 	}
 
 	/**

@@ -25,6 +25,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Channel_Instance {
 	/**
+	 * Pattern an instance id must match: lower case letters and digits, with single underscores between them.
+	 *
+	 * The shape lets the id be part of a constant name, as in `SC_WPUN_CHANNEL_<ID>__<FIELD>`.
+	 *
+	 * @since 3.0.0
+	 */
+	const ID_PATTERN = '/^[a-z0-9]+(?:_[a-z0-9]+)*$/D';
+
+	/**
 	 * Identifier, unique among the instances.
 	 *
 	 * @var string
@@ -71,7 +80,7 @@ final class Channel_Instance {
 	 *
 	 * @since 2.0.0
 	 *
-	 * @param string               $id       Identifier; must match /^[a-z0-9]+(?:_[a-z0-9]+)*$/, so it can be part of a constant name.
+	 * @param string               $id       Identifier; must match ID_PATTERN, so it can be part of a constant name.
 	 * @param string               $type     Channel type; must match /^[a-z0-9_]+$/.
 	 * @param string               $label    Label.
 	 * @param bool                 $enabled  Whether the instance is switched on.
@@ -81,7 +90,7 @@ final class Channel_Instance {
 	 * @throws InvalidArgumentException If the id or the type is not valid.
 	 */
 	public function __construct( string $id, string $type, string $label, bool $enabled, array $settings = array(), array $routing = array() ) {
-		if ( 1 !== preg_match( '/^[a-z0-9]+(?:_[a-z0-9]+)*$/D', $id ) ) {
+		if ( 1 !== preg_match( self::ID_PATTERN, $id ) ) {
 			throw new InvalidArgumentException( 'A channel instance id may only contain a-z, 0-9 and single underscores between them.' );
 		}
 		if ( 1 !== preg_match( '/^[a-z0-9_]+$/D', $type ) ) {

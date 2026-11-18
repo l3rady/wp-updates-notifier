@@ -33,7 +33,6 @@ use WPUN\State;
 class Channel_Form {
 	const SAVE_ACTION = 'sc_wpun_save_channel';
 	const META_KEY    = 'sc_wpun_channel_form';
-	const ID_PATTERN  = '/^[a-z0-9]+(?:_[a-z0-9]+)*$/D';
 
 	/**
 	 * Channel instance storage.
@@ -798,10 +797,10 @@ class Channel_Form {
 	 */
 	public static function generate_id( string $label, string $type, array $taken ): string {
 		$base = self::slug( $label );
-		if ( 1 !== preg_match( self::ID_PATTERN, $base ) ) {
+		if ( 1 !== preg_match( Channel_Instance::ID_PATTERN, $base ) ) {
 			$base = self::slug( $type );
 		}
-		if ( 1 !== preg_match( self::ID_PATTERN, $base ) ) {
+		if ( 1 !== preg_match( Channel_Instance::ID_PATTERN, $base ) ) {
 			$base = 'channel';
 		}
 

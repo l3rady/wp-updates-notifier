@@ -37,11 +37,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Instance_Data {
 
 	/**
-	 * Pattern of an instance id, as in Channel_Instance.
-	 */
-	const ID_PATTERN = '/^[a-z0-9]+(?:_[a-z0-9]+)*$/D';
-
-	/**
 	 * Pattern of a key.
 	 */
 	const KEY_PATTERN = '/^[a-z0-9_]{1,64}$/D';
@@ -212,7 +207,7 @@ final class Instance_Data {
 	 * @return bool
 	 */
 	private function is_valid( ?string $key = null ): bool {
-		if ( 1 !== preg_match( self::ID_PATTERN, $this->instance_id ) ) {
+		if ( 1 !== preg_match( Channel_Instance::ID_PATTERN, $this->instance_id ) ) {
 			return false;
 		}
 
