@@ -140,39 +140,36 @@ class Plugins_Screen_Mutes {
 	/**
 	 * The action of a security token, for the action and the plugin (and the version, when skipping it, or the seconds, when snoozing).
 	 *
-	 * @param string $action  The admin-post action.
-	 * @param string $file    Plugin file.
-	 * @param string $version The version the link skips, or the length of the snooze in seconds; empty for the other actions.
+	 * @param string $action The admin-post action.
+	 * @param string $file   Plugin file.
+	 * @param string $value  The version the link skips, or the length of the snooze in seconds; empty for the other actions.
 	 *
 	 * @return string
 	 */
-	private static function token_action( string $action, string $file, string $version = '' ): string {
-		return $action . '|plugin|' . $file . ( '' === $version ? '' : '|' . $version ); // A separator that cannot be in a file name or version keeps the parts apart.
+	private static function token_action( string $action, string $file, string $value = '' ): string {
+		return $action . '|plugin|' . $file . ( '' === $value ? '' : '|' . $value ); // A separator that cannot be in a file name or version keeps the parts apart.
 	}
 
 	/**
 	 * The address of an action link.
 	 *
-	 * @param string $action  The admin-post action.
-	 * @param string $file    Plugin file.
-	 * @param string $version The version to skip, for the skip action.
-	 * @param int    $seconds The length of the snooze, for the snooze action.
+	 * @param string $action The admin-post action.
+	 * @param string $file   Plugin file.
+	 * @param string $arg    The name of the extra query argument: `version` to skip, `seconds` to snooze; empty for none.
+	 * @param string $value  The value of that argument: the version, or the length of the snooze in seconds.
 	 *
 	 * @return string Not escaped for HTML.
 	 */
-	private function link_url( string $action, string $file, string $version = '', int $seconds = 0 ): string {
+	private function link_url( string $action, string $file, string $arg = '', string $value = '' ): string {
 		$args = array(
 			'action' => $action,
 			'type'   => 'plugin',
 			'key'    => rawurlencode( $file ), // add_query_arg() does not encode values; a + in a version would arrive as a space.
 		);
-		if ( '' !== $version ) {
-			$args['version'] = rawurlencode( $version );
+		if ( '' !== $arg && '' !== $value ) {
+			$args[ $arg ] = rawurlencode( $value );
 		}
-		if ( $seconds > 0 ) {
-			$args['seconds'] = (string) $seconds;
-		}
-		$args['_wpnonce'] = wp_create_nonce( self::token_action( $action, $file, $seconds > 0 ? (string) $seconds : $version ) );
+		$args['_wpnonce'] = wp_create_nonce( self::token_action( $action, $file, $value ) );
 
 		return add_query_arg( $args, admin_url( 'admin-post.php' ) );
 	}
@@ -185,13 +182,13 @@ class Plugins_Screen_Mutes {
 	 * @param string $text    Link text.
 	 * @param string $name    Accessible name, with the name of the plugin.
 	 * @param string $class_name   CSS class.
-	 * @param string $version The version to skip, for the skip action.
-	 * @param int    $seconds The length of the snooze, for the snooze action.
+	 * @param string $arg     The name of the extra query argument: `version` to skip, `seconds` to snooze; empty for none.
+	 * @param string $value   The value of that argument: the version, or the length of the snooze in seconds.
 	 *
 	 * @return string The escaped markup.
 	 */
-	private function link( string $action, string $file, string $text, string $name, string $class_name, string $version = '', int $seconds = 0 ): string {
-		return '<a class="' . esc_attr( $class_name ) . '" href="' . esc_url( $this->link_url( $action, $file, $version, $seconds ) ) . '" aria-label="' . esc_attr( $name ) . '">' . esc_html( $text ) . '</a>';
+	private function link( string $action, string $file, string $text, string $name, string $class_name, string $arg = '', string $value = '' ): string {
+		return '<a class="' . esc_attr( $class_name ) . '" href="' . esc_url( $this->link_url( $action, $file, $arg, $value ) ) . '" aria-label="' . esc_attr( $name ) . '">' . esc_html( $text ) . '</a>';
 	}
 
 	/**
@@ -305,7 +302,7 @@ class Plugins_Screen_Mutes {
 		// translators: %s: Version of the update that is waiting.
 		$text = sprintf( __( 'Don\'t notify me about version %s', 'wp-updates-notifier' ), $version );
 
-		return $this->link( self::SKIP_ACTION, $file, $text, $text, 'sc-wpun-skip', $version );
+		return $this->link( self::SKIP_ACTION, $file, $text, $text, 'sc-wpun-skip', 'version', $version );
 	}
 
 	/**
@@ -320,7 +317,7 @@ class Plugins_Screen_Mutes {
 		foreach ( Mute_Store::snooze_durations() as $seconds => $label ) {
 			// translators: %s: Length of the snooze, for example "1 week".
 			$name    = sprintf( __( 'Snooze update notifications for %s', 'wp-updates-notifier' ), $label );
-			$links[] = $this->link( self::SNOOZE_ACTION, $file, $label, $name, 'sc-wpun-snooze', '', $seconds );
+			$links[] = $this->link( self::SNOOZE_ACTION, $file, $label, $name, 'sc-wpun-snooze', 'seconds', (string) $seconds );
 		}
 		if ( array() === $links ) {
 			return '';
@@ -372,12 +369,8 @@ class Plugins_Screen_Mutes {
 		if ( null === $mute ) {
 			echo ' ' . $this->skip_link( $file, $offered ) . ' ' . $this->snooze_links( $file ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built.
 		} elseif ( $this->can_undo( $mute ) ) {
-			if ( null !== $mute->get_expires() ) {
-				echo ' ' . esc_html( $this->note( $mute ) . '.' ) . ' ';
-			} else {
-				// translators: %s: Version that is skipped.
-				echo ' ' . esc_html( sprintf( __( 'Notifications for version %s are skipped.', 'wp-updates-notifier' ), (string) $mute->get_until() ) ) . ' ';
-			}
+			// translators: %s: What the mute says, for example "Notifications snoozed until 3 May".
+			echo ' ' . esc_html( sprintf( __( '%s.', 'wp-updates-notifier' ), $this->note( $mute ) ) ) . ' ';
 			echo $this->undo_link( $file, $mute ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built.
 		}
 	}
@@ -469,23 +462,23 @@ class Plugins_Screen_Mutes {
 			return null;
 		}
 
-		$file    = sanitize_text_field( wp_unslash( $_GET['key'] ) );
-		$version = '';
+		$file  = sanitize_text_field( wp_unslash( $_GET['key'] ) );
+		$value = '';
 		if ( '' !== $extra ) {
 			if ( ! isset( $_GET[ $extra ] ) || ! is_string( $_GET[ $extra ] ) ) {
 				return null;
 			}
-			$version = sanitize_text_field( wp_unslash( $_GET[ $extra ] ) );
-			if ( '' === $version ) {
+			$value = sanitize_text_field( wp_unslash( $_GET[ $extra ] ) );
+			if ( '' === $value ) {
 				return null;
 			}
 		}
 
-		if ( '' === $file || false === wp_verify_nonce( sanitize_key( wp_unslash( $_GET['_wpnonce'] ) ), self::token_action( $action, $file, $version ) ) ) {
+		if ( '' === $file || false === wp_verify_nonce( sanitize_key( wp_unslash( $_GET['_wpnonce'] ) ), self::token_action( $action, $file, $value ) ) ) {
 			return null;
 		}
 
-		return array( $file, $version );
+		return array( $file, $value );
 	}
 
 	/**
