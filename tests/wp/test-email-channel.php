@@ -451,6 +451,80 @@ class Test_Email_Channel extends WPUN_Test_Case {
 	}
 
 	/**
+	 * An address that needed repairing is refused now, not saved repaired: the owner is told and nothing is stored.
+	 *
+	 * @dataProvider data_address_fields
+	 *
+	 * @param string $field The field.
+	 */
+	public function test_an_address_with_a_space_is_refused( $field ) {
+		$result = $this->channel->validate_settings(
+			array(
+				'to'   => 'a@example.org',
+				$field => 'a b@example.org',
+			)
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_email', $result->get_error_code() );
+		$this->assertSame( 'The email address is invalid.', $result->get_error_message() );
+		$this->assertSame( array( 'field' => $field ), $result->get_error_data() );
+	}
+
+	/**
+	 * The From and Reply-To fields.
+	 *
+	 * @return array<string, array{string}>
+	 */
+	public function data_address_fields() {
+		return array(
+			'from'     => array( 'from' ),
+			'reply_to' => array( 'reply_to' ),
+		);
+	}
+
+	/**
+	 * An array posted for a text field is refused by the text type, like for every other text field.
+	 *
+	 * @dataProvider data_text_fields
+	 *
+	 * @param string $field The field.
+	 */
+	public function test_an_array_for_a_text_field_is_refused( $field ) {
+		$result = $this->channel->validate_settings(
+			array(
+				'to'   => 'a@example.org',
+				$field => array( 'x@example.org' ),
+			)
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'field' => $field ), $result->get_error_data() );
+	}
+
+	/**
+	 * Text fields.
+	 *
+	 * @return array<string, array{string}>
+	 */
+	public function data_text_fields() {
+		return array(
+			'subject_prefix' => array( 'subject_prefix' ),
+			'from'           => array( 'from' ),
+			'reply_to'       => array( 'reply_to' ),
+		);
+	}
+
+	/**
+	 * The address check accepts an empty value or a valid address.
+	 */
+	public function test_check_address() {
+		$this->assertTrue( $this->channel->check_address( '' ) );
+		$this->assertTrue( $this->channel->check_address( 'ops@example.org' ) );
+		$this->assertWPError( $this->channel->check_address( 'nope' ) );
+	}
+
+	/**
 	 * Blank entries between addresses are skipped, not the end of the list.
 	 */
 	public function test_validate_settings_skips_blank_entries() {

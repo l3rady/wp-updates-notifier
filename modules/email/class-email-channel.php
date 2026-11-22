@@ -110,14 +110,14 @@ class Email_Channel extends Channel {
 				'label'             => __( 'From address', 'wp-updates-notifier' ),
 				'description'       => __( 'Leave empty to use the WordPress default. Only set an address at a domain this site is allowed to send mail for.', 'wp-updates-notifier' ),
 				'show_external'     => true,
-				'sanitize_callback' => 'sanitize_text_field',
+				'validate_callback' => array( $this, 'check_address' ),
 			),
 			'reply_to'       => array(
 				'group'             => 'message',
 				'type'              => 'text',
 				'label'             => __( 'Reply-To address', 'wp-updates-notifier' ),
 				'show_external'     => true,
-				'sanitize_callback' => 'sanitize_text_field',
+				'validate_callback' => array( $this, 'check_address' ),
 			),
 			'format'         => array(
 				'group'             => 'message',
@@ -131,11 +131,10 @@ class Email_Channel extends Channel {
 				),
 			),
 			'subject_prefix' => array(
-				'group'             => 'message',
-				'type'              => 'text',
-				'label'             => __( 'Subject prefix', 'wp-updates-notifier' ),
-				'show_external'     => true,
-				'sanitize_callback' => 'sanitize_text_field',
+				'group'         => 'message',
+				'type'          => 'text',
+				'label'         => __( 'Subject prefix', 'wp-updates-notifier' ),
+				'show_external' => true,
 			),
 		);
 	}
@@ -209,34 +208,20 @@ class Email_Channel extends Channel {
 	}
 
 	/**
-	 * Clean and check the settings submitted for an instance.
+	 * Check an optional address: empty is fine, anything else must be a valid email address.
 	 *
-	 * The fields are checked by the default, from their schema (so a field added with the `sc_wpun_channel_fields` filter is too);
-	 * the From and Reply-To addresses, which may be empty, are then checked as addresses.
+	 * The validate_callback of the From and Reply-To fields. send() cleans the addresses again before it uses them.
 	 *
-	 * @param array<string, mixed> $settings Submitted settings.
-	 * @param array<string, mixed> $stored   The settings stored for the instance.
+	 * @param mixed $value Clean value.
 	 *
-	 * @return array<string, mixed>|\WP_Error The settings to store, or an error naming the field at fault.
+	 * @return true|\WP_Error
 	 */
-	public function validate_settings( array $settings, array $stored = array() ) {
-		$clean = parent::validate_settings( $settings, $stored );
-		if ( $clean instanceof \WP_Error ) {
-			return $clean;
+	public function check_address( $value ) {
+		if ( is_string( $value ) && '' !== $value && ! is_email( $value ) ) {
+			return new \WP_Error( 'invalid_email', __( 'The email address is invalid.', 'wp-updates-notifier' ) );
 		}
 
-		foreach ( array( 'from', 'reply_to' ) as $name ) {
-			if ( ! isset( $clean[ $name ] ) || '' === $clean[ $name ] ) {
-				continue;
-			}
-			$address = sanitize_email( (string) $clean[ $name ] );
-			if ( ! is_email( $address ) ) {
-				return new \WP_Error( 'invalid_email', __( 'The email address is invalid.', 'wp-updates-notifier' ), array( 'field' => $name ) );
-			}
-			$clean[ $name ] = $address;
-		}
-
-		return $clean;
+		return true;
 	}
 
 	/**
@@ -259,7 +244,7 @@ class Email_Channel extends Channel {
 		$subject  = $composed['subject'];
 		$body     = $composed['body'];
 		if ( $is_html ) {
-			$body = $this->document( (string) $body, (string) $subject );
+			$body = $this->document( $body, $subject );
 		}
 
 		// No From is set unless asked for: the WordPress default is the address the host accepts mail from (#76).
@@ -275,22 +260,13 @@ class Email_Channel extends Channel {
 		}
 
 		// Site code may still change the whole mail; anything of the wrong shape is ignored.
-		$payload = $this->checked_payload(
-			$this->filter_payload(
-				array(
-					'to'      => $to,
-					'subject' => (string) $subject,
-					'message' => (string) $body,
-					'headers' => $headers,
-				),
-				$notification,
-				$instance
-			),
-			$to,
-			(string) $subject,
-			(string) $body,
-			$headers
+		$original = array(
+			'to'      => $to,
+			'subject' => $subject,
+			'message' => $body,
+			'headers' => $headers,
 		);
+		$payload  = $this->checked_payload( $this->filter_payload( $original, $notification, $instance ), $original );
 
 		$error        = null;
 		$content_type = static fn() => $is_html ? 'text/html' : 'text/plain';
@@ -455,16 +431,13 @@ class Email_Channel extends Channel {
 	 *
 	 * Header lines must be strings without line breaks, so a filter cannot inject headers.
 	 *
-	 * @param mixed    $payload  What the filters returned.
-	 * @param string[] $to       Original recipients.
-	 * @param string   $subject  Original subject.
-	 * @param string   $message  Original message.
-	 * @param string[] $headers  Original header lines.
+	 * @param mixed                                                                    $filtered What the filters returned. A filter can return anything.
+	 * @param array{to: string[], subject: string, message: string, headers: string[]} $original The payload before the filters.
 	 *
 	 * @return array{to: string[], subject: string, message: string, headers: string[]}
 	 */
-	private function checked_payload( $payload, array $to, string $subject, string $message, array $headers ): array {
-		$payload = is_array( $payload ) ? $payload : array();
+	private function checked_payload( $filtered, array $original ): array {
+		$payload = is_array( $filtered ) ? $filtered : array();
 
 		$recipients = array();
 		if ( isset( $payload['to'] ) && is_array( $payload['to'] ) ) {
@@ -483,13 +456,13 @@ class Email_Channel extends Channel {
 				}
 			}
 		} else {
-			$lines = $headers;
+			$lines = $original['headers'];
 		}
 
 		return array(
-			'to'      => array() !== $recipients ? $recipients : $to,
-			'subject' => isset( $payload['subject'] ) && is_string( $payload['subject'] ) ? $payload['subject'] : $subject,
-			'message' => isset( $payload['message'] ) && is_string( $payload['message'] ) ? $payload['message'] : $message,
+			'to'      => array() !== $recipients ? $recipients : $original['to'],
+			'subject' => isset( $payload['subject'] ) && is_string( $payload['subject'] ) ? $payload['subject'] : $original['subject'],
+			'message' => isset( $payload['message'] ) && is_string( $payload['message'] ) ? $payload['message'] : $original['message'],
 			'headers' => $lines,
 		);
 	}
