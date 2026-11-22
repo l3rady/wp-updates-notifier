@@ -711,6 +711,27 @@ class Test_Form_Panels extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A bad secret and bad extra headers together give both notes, the secret first, and leak neither value.
+	 */
+	public function test_the_webhook_preview_shows_both_notes_when_secret_and_headers_are_bad() {
+		$content = $this->hook_preview(
+			array(
+				'signing_secret' => 'BAD-SECRET-555',
+				'headers'        => 'Not a header BAD-LINE-666',
+			)
+		)['content'];
+
+		$secret_note  = 'The signing secret is not valid, so no message is sent until it is fixed.';
+		$headers_note = 'The extra headers are not valid, so no message is sent until they are fixed. They are left out here.';
+		$this->assertStringContainsString( $secret_note, $content );
+		$this->assertStringContainsString( $headers_note, $content );
+		$this->assertLessThan( strpos( $content, $headers_note ), strpos( $content, $secret_note ) );
+		$this->assertStringNotContainsString( 'Not signed', $content );
+		$this->assertStringNotContainsString( 'BAD-SECRET-555', $content );
+		$this->assertStringNotContainsString( 'BAD-LINE-666', $content );
+	}
+
+	/**
 	 * The body is the pretty-printed payload of a sample update.
 	 */
 	public function test_the_webhook_preview_body_is_the_sample_payload() {

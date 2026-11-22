@@ -64,29 +64,6 @@ class Slack_Channel extends Channel {
 	const TIMEOUT = 10;
 
 	/**
-	 * What Slack answers when it refuses a message, and what to do about it.
-	 *
-	 * Slack answers a webhook with a short word in the body. The keys are those words. The messages are in
-	 * error_message(), where they can be translated.
-	 */
-	const KNOWN_ERRORS = array(
-		'invalid_payload',
-		'action_prohibited',
-		'posting_to_general_channel_denied',
-		'channel_not_found',
-		'user_not_found',
-		'channel_is_archived',
-		'no_service',
-		'no_service_id',
-		'no_active_hooks',
-		'no_team',
-		'team_disabled',
-		'invalid_token',
-		'too_many_attachments',
-		'no_text',
-	);
-
-	/**
 	 * Channel type.
 	 *
 	 * @return string
@@ -385,10 +362,11 @@ class Slack_Channel extends Channel {
 		}
 
 		// Slack answers with a short word such as `no_service`. Anything else, such as an HTML page, is not repeated.
-		$word = trim( wp_remote_retrieve_body( $response ) );
-		if ( 1 === preg_match( '/^[a-z0-9_]{1,64}$/i', $word ) && in_array( $word, self::KNOWN_ERRORS, true ) ) {
+		$word     = trim( wp_remote_retrieve_body( $response ) );
+		$messages = $this->error_messages();
+		if ( isset( $messages[ $word ] ) ) {
 			return Delivery_Result::failure(
-				$this->error_message( $word ),
+				$messages[ $word ],
 				$word,
 				$result->get_status(),
 				null,
@@ -400,41 +378,29 @@ class Slack_Channel extends Channel {
 	}
 
 	/**
-	 * What to tell the site owner about an error word of Slack.
+	 * What to tell the site owner about each error word Slack answers a webhook with.
 	 *
-	 * @param string $code One of KNOWN_ERRORS.
-	 * @return string
+	 * Slack answers with a short word in the body. The keys are those words, and a word that is not a key is not
+	 * repeated. The messages are built here so they can be translated.
+	 *
+	 * @return array<string, string>
 	 */
-	private function error_message( string $code ): string {
-		switch ( $code ) {
-			case 'invalid_payload':
-				return __( 'Slack could not read the message (invalid_payload). If a filter changes the Slack message, check it.', 'wp-updates-notifier' );
-			case 'action_prohibited':
-				return __( 'A Slack administrator has blocked this webhook from posting (action_prohibited). Ask a workspace administrator to allow it.', 'wp-updates-notifier' );
-			case 'posting_to_general_channel_denied':
-				return __( 'Only administrators may post to the #general channel of this workspace (posting_to_general_channel_denied). Choose another channel.', 'wp-updates-notifier' );
-			case 'channel_not_found':
-				return __( 'Slack cannot find the channel (channel_not_found). Check the channel setting, or clear it to post to the channel of the webhook.', 'wp-updates-notifier' );
-			case 'user_not_found':
-				return __( 'Slack cannot find the person set as the channel (user_not_found). Check the channel setting, or clear it.', 'wp-updates-notifier' );
-			case 'channel_is_archived':
-				return __( 'The channel is archived (channel_is_archived). Unarchive it, or create a webhook for another channel.', 'wp-updates-notifier' );
-			case 'no_service':
-				return __( 'Slack no longer knows this webhook (no_service). It was probably revoked or its app was removed. Create a new webhook and save its address.', 'wp-updates-notifier' );
-			case 'no_service_id':
-				return __( 'The webhook address is not complete (no_service_id). Copy it again from Slack.', 'wp-updates-notifier' );
-			case 'no_active_hooks':
-				return __( 'Incoming webhooks are turned off for the Slack app (no_active_hooks). Turn them on in the settings of the app.', 'wp-updates-notifier' );
-			case 'no_team':
-				return __( 'Slack cannot find the workspace of this webhook (no_team). Create a new webhook and save its address.', 'wp-updates-notifier' );
-			case 'team_disabled':
-				return __( 'The Slack workspace of this webhook has been disabled (team_disabled).', 'wp-updates-notifier' );
-			case 'invalid_token':
-				return __( 'Slack does not accept the token in the webhook address (invalid_token). Create a new webhook and save its address.', 'wp-updates-notifier' );
-			case 'too_many_attachments':
-				return __( 'The message has too many attachments (too_many_attachments). If a filter adds attachments, check it.', 'wp-updates-notifier' );
-			default:
-				return __( 'Slack found no text to post (no_text). If a filter changes the Slack message, check it.', 'wp-updates-notifier' );
-		}
+	private function error_messages(): array {
+		return array(
+			'invalid_payload'                   => __( 'Slack could not read the message (invalid_payload). If a filter changes the Slack message, check it.', 'wp-updates-notifier' ),
+			'action_prohibited'                 => __( 'A Slack administrator has blocked this webhook from posting (action_prohibited). Ask a workspace administrator to allow it.', 'wp-updates-notifier' ),
+			'posting_to_general_channel_denied' => __( 'Only administrators may post to the #general channel of this workspace (posting_to_general_channel_denied). Choose another channel.', 'wp-updates-notifier' ),
+			'channel_not_found'                 => __( 'Slack cannot find the channel (channel_not_found). Check the channel setting, or clear it to post to the channel of the webhook.', 'wp-updates-notifier' ),
+			'user_not_found'                    => __( 'Slack cannot find the person set as the channel (user_not_found). Check the channel setting, or clear it.', 'wp-updates-notifier' ),
+			'channel_is_archived'               => __( 'The channel is archived (channel_is_archived). Unarchive it, or create a webhook for another channel.', 'wp-updates-notifier' ),
+			'no_service'                        => __( 'Slack no longer knows this webhook (no_service). It was probably revoked or its app was removed. Create a new webhook and save its address.', 'wp-updates-notifier' ),
+			'no_service_id'                     => __( 'The webhook address is not complete (no_service_id). Copy it again from Slack.', 'wp-updates-notifier' ),
+			'no_active_hooks'                   => __( 'Incoming webhooks are turned off for the Slack app (no_active_hooks). Turn them on in the settings of the app.', 'wp-updates-notifier' ),
+			'no_team'                           => __( 'Slack cannot find the workspace of this webhook (no_team). Create a new webhook and save its address.', 'wp-updates-notifier' ),
+			'team_disabled'                     => __( 'The Slack workspace of this webhook has been disabled (team_disabled).', 'wp-updates-notifier' ),
+			'invalid_token'                     => __( 'Slack does not accept the token in the webhook address (invalid_token). Create a new webhook and save its address.', 'wp-updates-notifier' ),
+			'too_many_attachments'              => __( 'The message has too many attachments (too_many_attachments). If a filter adds attachments, check it.', 'wp-updates-notifier' ),
+			'no_text'                           => __( 'Slack found no text to post (no_text). If a filter changes the Slack message, check it.', 'wp-updates-notifier' ),
+		);
 	}
 }

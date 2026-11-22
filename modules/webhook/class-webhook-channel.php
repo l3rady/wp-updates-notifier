@@ -282,27 +282,17 @@ class Webhook_Channel extends Channel {
 	private function preview( Channel_Instance $instance ): string {
 		$notification = Notification::sample();
 
+		$inputs = $this->signing_inputs( $instance );
+		$key    = $inputs['key'];
+		$extra  = $inputs['headers'];
 		$notes  = array();
-		$secret = $instance->get_setting( 'signing_secret', '' );
-		$key    = null;
-		if ( is_string( $secret ) && '' !== $secret ) {
-			$key = self::decode_secret( $secret );
-			if ( null === $key ) {
-				$notes[] = __( 'The signing secret is not valid, so no message is sent until it is fixed.', 'wp-updates-notifier' );
-			}
-		} else {
+		if ( in_array( 'invalid_secret', $inputs['errors'], true ) ) {
+			$notes[] = __( 'The signing secret is not valid, so no message is sent until it is fixed.', 'wp-updates-notifier' );
+		} elseif ( null === $key ) {
 			$notes[] = __( 'Not signed: no signing secret is set.', 'wp-updates-notifier' );
 		}
-
-		$extra      = array();
-		$lines_text = $instance->get_setting( 'headers', '' );
-		if ( is_string( $lines_text ) && '' !== $lines_text ) {
-			$parsed = self::parse_headers( $lines_text );
-			if ( null !== $parsed['error'] ) {
-				$notes[] = __( 'The extra headers are not valid, so no message is sent until they are fixed. They are left out here.', 'wp-updates-notifier' );
-			} else {
-				$extra = $parsed['headers'];
-			}
+		if ( in_array( 'invalid_headers', $inputs['errors'], true ) ) {
+			$notes[] = __( 'The extra headers are not valid, so no message is sent until they are fixed. They are left out here.', 'wp-updates-notifier' );
 		}
 
 		$items   = array_map( array( self::class, 'item_data' ), $notification->get_items() );
@@ -608,6 +598,50 @@ class Webhook_Channel extends Channel {
 	}
 
 	/**
+	 * Read and check the signing secret and the extra headers of an instance, for deliver() and preview().
+	 *
+	 * Settings can arrive by other ways than the form, so they are checked here every time. Both are always read:
+	 * `error` is the first problem (the secret is checked before the headers), and `errors` lists every problem, so
+	 * the preview can show both.
+	 *
+	 * @param Channel_Instance $instance The instance.
+	 *
+	 * @return array{secret: mixed, key: string|null, headers: array<string, string>, error: string|null, errors: string[]} The secret as stored,
+	 *     the decoded key (null when there is none or it is not valid), the extra headers (empty when there are none or they are
+	 *     not valid), and the problems: `invalid_secret` or `invalid_headers`.
+	 */
+	private function signing_inputs( Channel_Instance $instance ): array {
+		$errors = array();
+		$secret = $instance->get_setting( 'signing_secret', '' );
+		$key    = null;
+		if ( is_string( $secret ) && '' !== $secret ) {
+			$key = self::decode_secret( $secret );
+			if ( null === $key ) {
+				$errors[] = 'invalid_secret';
+			}
+		}
+
+		$extra      = array();
+		$lines_text = $instance->get_setting( 'headers', '' );
+		if ( is_string( $lines_text ) && '' !== $lines_text ) {
+			$parsed = self::parse_headers( $lines_text );
+			if ( null !== $parsed['error'] ) {
+				$errors[] = 'invalid_headers';
+			} else {
+				$extra = $parsed['headers'];
+			}
+		}
+
+		return array(
+			'secret'  => $secret,
+			'key'     => $key,
+			'headers' => $extra,
+			'error'   => $errors[0] ?? null,
+			'errors'  => $errors,
+		);
+	}
+
+	/**
 	 * Build, sign and post one message.
 	 *
 	 * The same path for every type of message, the resolved ones included.
@@ -626,23 +660,15 @@ class Webhook_Channel extends Channel {
 		}
 
 		// Settings can arrive by other ways than the form, so the secret and the headers are checked again before anything is signed or sent.
-		$secret = $instance->get_setting( 'signing_secret', '' );
-		$key    = null;
-		if ( is_string( $secret ) && '' !== $secret ) {
-			$key = self::decode_secret( $secret );
-			if ( null === $key ) {
-				return Delivery_Result::failure( __( 'The signing secret is not valid, so nothing was sent.', 'wp-updates-notifier' ), 'invalid_secret' );
-			}
+		$inputs = $this->signing_inputs( $instance );
+		$secret = $inputs['secret'];
+		$key    = $inputs['key'];
+		$extra  = $inputs['headers'];
+		if ( 'invalid_secret' === $inputs['error'] ) {
+			return Delivery_Result::failure( __( 'The signing secret is not valid, so nothing was sent.', 'wp-updates-notifier' ), 'invalid_secret' );
 		}
-
-		$extra      = array();
-		$lines_text = $instance->get_setting( 'headers', '' );
-		if ( is_string( $lines_text ) && '' !== $lines_text ) {
-			$parsed = self::parse_headers( $lines_text );
-			if ( null !== $parsed['error'] ) {
-				return Delivery_Result::failure( __( 'The extra headers are not valid, so nothing was sent.', 'wp-updates-notifier' ), 'invalid_headers' );
-			}
-			$extra = $parsed['headers'];
+		if ( 'invalid_headers' === $inputs['error'] ) {
+			return Delivery_Result::failure( __( 'The extra headers are not valid, so nothing was sent.', 'wp-updates-notifier' ), 'invalid_headers' );
 		}
 
 		$message = $this->build_message( $type, $notification, $instance, $items, $extra, $key );
