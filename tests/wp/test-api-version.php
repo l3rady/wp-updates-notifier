@@ -19,6 +19,17 @@ class Test_Api_Version extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The plugin version function returns the constant, which matches the plugin header.
+	 */
+	public function test_plugin_version_matches_the_header() {
+		$data = get_file_data( dirname( __DIR__, 2 ) . '/wp-updates-notifier.php', array( 'Version' => 'Version' ) );
+
+		$this->assertSame( SC_WPUN_VERSION, sc_wpun_version() );
+		$this->assertNotSame( '', sc_wpun_version() );
+		$this->assertSame( $data['Version'], sc_wpun_version() );
+	}
+
+	/**
 	 * Same major and at least as new is supported; anything else is not.
 	 *
 	 * @dataProvider data_requirements

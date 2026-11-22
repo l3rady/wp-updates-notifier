@@ -717,7 +717,7 @@ class Webhook_Channel extends Channel {
 
 		$headers                               = $extra + array(
 			'Content-Type' => 'application/json',
-			'User-Agent'   => 'WP-Updates-Notifier/' . self::plugin_version() . '; ' . home_url(),
+			'User-Agent'   => 'WP-Updates-Notifier/' . sc_wpun_version() . '; ' . home_url(),
 		);
 		$headers[ $names['id_header'] ]        = $id;
 		$headers[ $names['timestamp_header'] ] = (string) $time;
@@ -1177,22 +1177,5 @@ class Webhook_Channel extends Channel {
 	 */
 	private static function is_on( $value ): bool {
 		return ! in_array( $value, array( false, 0, '0', '' ), true );
-	}
-
-	/**
-	 * The version of the plugin, for the User-Agent.
-	 *
-	 * Read from the header of the main plugin file: the constant is not part of the public API.
-	 *
-	 * @return string
-	 */
-	private static function plugin_version(): string {
-		static $version = null;
-		if ( null === $version ) {
-			$data    = get_file_data( dirname( __DIR__, 2 ) . '/wp-updates-notifier.php', array( 'Version' => 'Version' ) );
-			$version = '' !== $data['Version'] ? $data['Version'] : '0';
-		}
-
-		return $version;
 	}
 }

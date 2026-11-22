@@ -907,6 +907,21 @@ if ( ! function_exists( 'sc_wpun_mute_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sc_wpun_version' ) ) {
+	/**
+	 * The version of the plugin, for a User-Agent or a diagnostics screen.
+	 *
+	 * An add-on checks what it can use with the API version (sc_wpun_api_version()), not with this one.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return string For example "3.0.0".
+	 */
+	function sc_wpun_version(): string {
+		return SC_WPUN_VERSION;
+	}
+}
+
 if ( ! function_exists( 'sc_wpun_api_version' ) ) {
 	/**
 	 * The version of the public API, for add-ons to check what they can use.
