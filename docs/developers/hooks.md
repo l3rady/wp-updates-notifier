@@ -554,7 +554,7 @@ add_filter(
 | `$hidden` | `int` | How many items were left out. |
 | `$notification` | `Notification` | The notification, with all its items. |
 
-Fired in `includes/class-notification-renderer.php`, `modules/slack/class-slack-message.php`.
+Fired in `includes/class-notification-renderer.php`.
 
 ### `sc_wpun_notification_deferred`
 

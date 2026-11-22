@@ -145,7 +145,7 @@ final class Slack_Message {
 		$updates = self::link( $notification->get_updates_url(), __( 'Open the Updates screen', 'wp-updates-notifier' ) );
 
 		if ( $hidden > 0 ) {
-			$blocks[] = self::section( self::escape_to_fit( self::more_text( $hidden, $notification ), 500 ) . "\n" . $updates );
+			$blocks[] = self::section( self::escape_to_fit( Notification_Renderer::more_items_text( $hidden, $notification ), 500 ) . "\n" . $updates );
 		}
 
 		// A test message has nothing to update, so it links only to the site.
@@ -191,10 +191,9 @@ final class Slack_Message {
 	 * @return string
 	 */
 	public static function link( string $url, string $label ): string {
-		$url    = trim( $url );
-		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
-		$safe   = in_array( $scheme, array( 'http', 'https' ), true ) ? esc_url_raw( $url, array( 'http', 'https' ) ) : '';
-		$text   = self::escape( '' === trim( $label ) ? $url : $label );
+		$url  = trim( $url );
+		$safe = Notification_Renderer::web_url( $url );
+		$text = self::escape( '' === trim( $label ) ? $url : $label );
 		if ( '' === $safe || mb_strlen( $safe ) > self::MAX_URL ) {
 			return $text;
 		}
@@ -282,21 +281,6 @@ final class Slack_Message {
 				'text' => $text,
 			),
 		);
-	}
-
-	/**
-	 * The "…and N more" line, which the `sc_wpun_more_items_text` filter can change.
-	 *
-	 * @param int          $hidden       How many items were left out.
-	 * @param Notification $notification The notification, with all its items.
-	 * @return string Not escaped.
-	 */
-	private static function more_text( int $hidden, Notification $notification ): string {
-		// translators: %d: Number of updates that are not listed in the message.
-		$line = sprintf( _n( '…and %d more', '…and %d more', $hidden, 'wp-updates-notifier' ), $hidden );
-
-		/** This filter is documented in includes/class-notification-renderer.php */
-		return (string) apply_filters( 'sc_wpun_more_items_text', $line, $hidden, $notification );
 	}
 
 	/**
@@ -414,7 +398,7 @@ final class Slack_Message {
 		$links = array();
 		$size  = mb_strlen( $line );
 		foreach ( $item->get_links() as $label => $url ) {
-			$text = self::link( $url, self::link_text( (string) $label, $name ) );
+			$text = self::link( $url, Notification_Renderer::item_link_text( (string) $label, $name ) );
 			// Only real links are listed: an address that is not a web address comes back as plain text.
 			if ( '<' === substr( $text, 0, 1 ) && $size + 3 + mb_strlen( $text ) <= self::MAX_ENTRY ) {
 				$links[] = $text;
@@ -434,26 +418,6 @@ final class Slack_Message {
 		}
 
 		return $line;
-	}
-
-	/**
-	 * The text of a link, named after the item: "Akismet details".
-	 *
-	 * @param string $label Label of the link, such as `details`, `changelog` or `download`.
-	 * @param string $name  Name of the item.
-	 * @return string Not escaped.
-	 */
-	private static function link_text( string $label, string $name ): string {
-		$formats = array(
-			// translators: %s: Name of the plugin, theme or WordPress.
-			'details'   => __( '%s details', 'wp-updates-notifier' ),
-			// translators: %s: Name of the plugin, theme or WordPress.
-			'changelog' => __( '%s changelog', 'wp-updates-notifier' ),
-			// translators: %s: Name of the plugin, theme or WordPress.
-			'download'  => __( '%s download', 'wp-updates-notifier' ),
-		);
-
-		return isset( $formats[ $label ] ) ? sprintf( $formats[ $label ], $name ) : $name . ' ' . ucfirst( str_replace( '_', ' ', $label ) );
 	}
 
 	/**

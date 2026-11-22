@@ -143,14 +143,19 @@ final class Notification_Renderer {
 	}
 
 	/**
-	 * The line that says how many items were left out, as plain text.
+	 * The line that says how many items were left out of a shortened message, as plain text.
+	 *
+	 * A channel that builds its own messages uses it, so the line reads as in the email and the
+	 * `sc_wpun_more_items_text` filter applies once, here. The caller escapes it for its own format.
+	 *
+	 * @since 3.0.0
 	 *
 	 * @param int          $hidden       How many items were left out.
 	 * @param Notification $notification The notification, in full.
 	 *
-	 * @return string
+	 * @return string For example "…and 3 more". Plain text, not escaped.
 	 */
-	private static function more_text( int $hidden, Notification $notification ): string {
+	public static function more_items_text( int $hidden, Notification $notification ): string {
 		// translators: %d: Number of updates that are not listed in the message.
 		$text = sprintf( _n( '…and %d more', '…and %d more', $hidden, 'wp-updates-notifier' ), $hidden );
 
@@ -227,7 +232,7 @@ final class Notification_Renderer {
 		}
 
 		if ( $hidden > 0 ) {
-			$lines[] = self::more_text( $hidden, $full );
+			$lines[] = self::more_items_text( $hidden, $full );
 			$lines[] = '';
 		}
 
@@ -280,7 +285,7 @@ final class Notification_Renderer {
 			$lines[] = '- ' . sprintf( __( '%1$s from version %2$s to %3$s', 'wp-updates-notifier' ), '**' . self::escape_markdown( $item->get_name() ) . '**', self::escape_markdown( $item->get_current_version() ), self::escape_markdown( $item->get_new_version() ) ) . self::escape_markdown( self::severity_marker( $item ) );
 			foreach ( $item->get_links() as $label => $url ) {
 				$link_url = self::markdown_url( $url );
-				$text     = self::escape_markdown( self::item_link_label( (string) $label, $item->get_name() ) );
+				$text     = self::escape_markdown( self::item_link_text( (string) $label, $item->get_name() ) );
 				$lines[]  = '  - ' . ( '' === $link_url ? $text : '[' . $text . '](' . $link_url . ')' );
 			}
 			foreach ( $item->get_notes() as $note ) {
@@ -290,7 +295,7 @@ final class Notification_Renderer {
 
 		$lines[] = '';
 		if ( $hidden > 0 ) {
-			$lines[] = self::escape_markdown( self::more_text( $hidden, $full ) );
+			$lines[] = self::escape_markdown( self::more_items_text( $hidden, $full ) );
 			$lines[] = '';
 		}
 		$updates_url  = self::markdown_url( $notification->get_updates_url() );
@@ -326,7 +331,7 @@ final class Notification_Renderer {
 			$details = '';
 			foreach ( $item->get_links() as $label => $url ) {
 				$link_url = self::web_url( $url );
-				$text     = esc_html( self::item_link_label( (string) $label, $item->get_name() ) );
+				$text     = esc_html( self::item_link_text( (string) $label, $item->get_name() ) );
 				$details .= '<li>' . ( '' === $link_url ? $text : '<a href="' . esc_url( $link_url ) . '">' . $text . '</a>' ) . '</li>';
 			}
 			foreach ( $item->get_notes() as $note ) {
@@ -341,7 +346,7 @@ final class Notification_Renderer {
 
 		$html .= "</ul>\n";
 		if ( $hidden > 0 ) {
-			$html .= '<p>' . esc_html( self::more_text( $hidden, $full ) ) . "</p>\n";
+			$html .= '<p>' . esc_html( self::more_items_text( $hidden, $full ) ) . "</p>\n";
 		}
 		// The link says where it goes, not the address: a screen reader would spell the URL out.
 		$html .= '<p><a href="' . esc_url( $notification->get_updates_url() ) . '">' . esc_html__( 'Go to the Updates screen to update.', 'wp-updates-notifier' ) . '</a></p>';
@@ -401,38 +406,48 @@ final class Notification_Renderer {
 	/**
 	 * The text of a link that names the item it is about, for Markdown and HTML, where links are listed out of context.
 	 *
-	 * @param string $label Label of the link, for example "details".
-	 * @param string $name  Name of the plugin, theme or WordPress the link is about.
+	 * The caller escapes it for its own format.
 	 *
-	 * @return string
+	 * @since 3.0.0
+	 *
+	 * @param string $label     Label of the link, for example "details".
+	 * @param string $item_name Name of the plugin, theme or WordPress the link is about.
+	 *
+	 * @return string For example "Akismet details". Plain text, not escaped.
 	 */
-	private static function item_link_label( string $label, string $name ): string {
+	public static function item_link_text( string $label, string $item_name ): string {
 		switch ( $label ) {
 			case 'details':
 				// translators: %s: Name of the plugin, theme or WordPress.
-				return sprintf( __( '%s details', 'wp-updates-notifier' ), $name );
+				return sprintf( __( '%s details', 'wp-updates-notifier' ), $item_name );
 			case 'changelog':
 				// translators: %s: Name of the plugin, theme or WordPress.
-				return sprintf( __( '%s changelog', 'wp-updates-notifier' ), $name );
+				return sprintf( __( '%s changelog', 'wp-updates-notifier' ), $item_name );
 			case 'download':
 				// translators: %s: Name of the plugin, theme or WordPress.
-				return sprintf( __( '%s download', 'wp-updates-notifier' ), $name );
+				return sprintf( __( '%s download', 'wp-updates-notifier' ), $item_name );
 			case 'mute':
 				// translators: %s: Name of the plugin or theme.
-				return sprintf( __( 'Mute %s in WordPress', 'wp-updates-notifier' ), $name );
+				return sprintf( __( 'Mute %s in WordPress', 'wp-updates-notifier' ), $item_name );
 			default:
-				return $name . ' ' . self::link_label( $label );
+				return $item_name . ' ' . self::link_label( $label );
 		}
 	}
 
 	/**
 	 * A safe http or https URL as esc_url_raw() cleans it, or an empty string when the URL is not one.
 	 *
+	 * The rule `markdown()` and `html()` use to link: only an explicit `http` or `https` address. `javascript:`, `data:`,
+	 * a scheme-relative `//host` address and an empty string give an empty string. The result is a raw URL: the caller
+	 * escapes it for its own format.
+	 *
+	 * @since 3.0.0
+	 *
 	 * @param string $url URL.
 	 *
-	 * @return string
+	 * @return string The cleaned URL, or an empty string.
 	 */
-	private static function web_url( string $url ): string {
+	public static function web_url( string $url ): string {
 		$url    = trim( $url );
 		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
 

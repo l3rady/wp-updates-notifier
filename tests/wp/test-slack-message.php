@@ -197,6 +197,17 @@ class Test_Slack_Message extends WPUN_Slack_Test_Case {
 		);
 	}
 
+	/**
+	 * A mute link reads as it does in the email, not "Akismet Mute".
+	 */
+	public function test_a_mute_link_reads_like_the_email() {
+		$item    = $this->item( array( 'links' => array( 'mute' => 'https://example.org/wp-admin/options-general.php?page=x' ) ) );
+		$message = Slack_Message::build( $this->notification_of( array( $item ) ) );
+
+		$this->assertStringContainsString( '|Mute Akismet in WordPress>', $this->section_texts( $message )[0] );
+		$this->assertStringNotContainsString( 'Akismet Mute', $this->section_texts( $message )[0] );
+	}
+
 	// Escaping.
 
 	/**
