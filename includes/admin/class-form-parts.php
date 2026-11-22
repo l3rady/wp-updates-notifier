@@ -110,10 +110,11 @@ final class Form_Parts {
 	 * @param string|null          $external Where the value comes from, if outside the database.
 	 * @param string               $applies  The note on when the field applies, if it is conditional.
 	 * @param bool                 $disabled Whether to disable the control, as for a user who may not change it.
+	 * @param array<string,string> $extra    Extra choices of a list, by value, for example a saved value that is no longer offered.
 	 *
 	 * @return string The markup of the cell.
 	 */
-	public static function control( array $schema, string $name, string $id, $value, string $error, ?string $external = null, string $applies = '', bool $disabled = false ): string {
+	public static function control( array $schema, string $name, string $id, $value, string $error, ?string $external = null, string $applies = '', bool $disabled = false, array $extra = array() ): string {
 		$description = isset( $schema['description'] ) && is_string( $schema['description'] ) && '' !== $schema['description'] ? $schema['description'] : '';
 		if ( null !== $external && Field_Types::hides_external( $schema ) ) {
 			// A value from outside the database may be a secret the schema forgot to flag: don't print it.
@@ -121,10 +122,9 @@ final class Form_Parts {
 		}
 		// The field adds the id of its error after these.
 		$described_by = trim( ( '' !== $description ? $id . '-description' : '' ) . ( null !== $external ? ' ' . $id . '-external' : '' ) . ( '' !== $applies ? ' ' . $id . '-applies-when' : '' ) );
-		$html         = Field_Renderer::field( $schema, $name, $id, $value, null !== $external || $disabled, $described_by, array(), $error );
+		$html         = Field_Renderer::field( $schema, $name, $id, $value, null !== $external || $disabled, $described_by, $extra, $error );
 		if ( null !== $external ) {
-			// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
-			$html .= ' <span class="description sc-wpun-external" id="' . esc_attr( $id . '-external' ) . '">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';
+			$html .= self::external_note( $external, $id . '-external' );
 		}
 		if ( '' !== $description ) {
 			$html .= '<p class="description" id="' . esc_attr( $id . '-description' ) . '">' . esc_html( $description ) . '</p>';
@@ -134,6 +134,19 @@ final class Form_Parts {
 		}
 
 		return $html;
+	}
+
+	/**
+	 * The note on where a value that is set outside the database comes from.
+	 *
+	 * @param string $source Where the value comes from, for example `constant SC_WPUN_SETTING_FREQUENCY`.
+	 * @param string $id     Id of the note, so a control can point to it; none when empty.
+	 *
+	 * @return string Escaped markup.
+	 */
+	public static function external_note( string $source, string $id = '' ): string {
+		// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
+		return ' <span class="description sc-wpun-external"' . ( '' !== $id ? ' id="' . esc_attr( $id ) . '"' : '' ) . '>' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $source ) ) . '</span>';
 	}
 
 	/**

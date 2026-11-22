@@ -323,15 +323,21 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	 * Each setting is titled with its label, or its name when it has none.
 	 */
 	public function test_settings_are_titled_with_their_labels() {
-		global $wp_settings_fields;
-
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
-		sc_wpun()->settings_page()->admin_settings_init();
-		$fields = $wp_settings_fields['wp-updates-notifier']['sc_wpun_settings_main'];
+		$_GET['tab'] = 'general';
+		ob_start();
+		sc_wpun()->settings_page()->settings_page();
+		$html = (string) ob_get_clean();
 
-		$this->assertSame( 'Frequency to check', wp_strip_all_tags( $fields['sc_wpun_settings_main_frequency']['title'] ) );
-		$this->assertArrayNotHasKey( 'sc_wpun_settings_main_show_about', $fields, 'Code-only settings have no field.' );
-		$this->assertArrayHasKey( 'sc_wpun_settings_main_hide_updates', $fields, 'The setting after the code-only one is still added.' );
+		$doc = new DOMDocument();
+		libxml_use_internal_errors( true );
+		$doc->loadHTML( '<html><body>' . $html . '</body></html>' );
+		libxml_clear_errors();
+		$xpath = new DOMXPath( $doc );
+
+		$this->assertSame( 1, $xpath->query( '//th[@scope="row"][normalize-space(.)="Frequency to check"]' )->length );
+		$this->assertSame( 0, $xpath->query( '//*[@id="sc_wpun_settings_main_show_about"]' )->length, 'Code-only settings have no field.' );
+		$this->assertSame( 1, $xpath->query( '//*[@id="sc_wpun_settings_main_hide_updates"]' )->length, 'The setting after the code-only one is still drawn.' );
 	}
 
 	/**
@@ -369,7 +375,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Every setting of the page draws its own control, and an unknown one draws nothing.
+	 * Every setting of the page draws its own control, and an unknown or code-only one draws nothing.
 	 */
 	public function test_each_setting_draws_its_control() {
 		$page = sc_wpun()->settings_page();
@@ -381,8 +387,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		}
 
 		ob_start();
-		$page->render_setting( array() );
-		$page->render_setting( array( 'name' => 'unknown' ) );
+		echo $page->main_control( '' ), $page->main_control( 'unknown' ), $page->main_control( 'show_about' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A test.
 		$this->assertSame( '', ob_get_clean() );
 	}
 
@@ -425,21 +430,19 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Of several errors on a setting, the first is the one drawn with it.
+	 * The error of a setting, from the round trip of the last save, is drawn with it.
 	 */
-	public function test_the_first_error_of_a_setting_is_drawn() {
-		global $wp_settings_errors;
+	public function test_the_error_of_a_setting_is_drawn() {
+		$round = array(
+			'settings' => array( 'frequency' => 'bogus' ),
+			'groups'   => array(),
+			'errors'   => array( 'main/frequency' => 'The error' ),
+		);
 
-		$wp_settings_errors = array(); // Core keeps them for the whole request, and other tests save settings.
-		add_settings_error( 'sc_wpun_settings_main_frequency', 'first', 'The first error', 'error' );
-		add_settings_error( 'sc_wpun_settings_main_frequency', 'second', 'The second error', 'error' );
+		$html = sc_wpun()->settings_page()->main_control( 'frequency', $round );
 
-		ob_start();
-		$this->plugin()->sc_wpun_settings_main_field_frequency();
-		$html               = (string) ob_get_clean();
-		$wp_settings_errors = array();
-
-		$this->assertStringContainsString( 'The first error', $html );
-		$this->assertStringNotContainsString( 'The second error', $html );
+		$this->assertStringContainsString( 'The error', $html );
+		$this->assertStringContainsString( 'aria-invalid="true"', $html );
+		$this->assertStringNotContainsString( 'bogus', $html, 'The submitted value of the field that failed is not drawn.' );
 	}
 }

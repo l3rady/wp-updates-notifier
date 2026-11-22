@@ -111,13 +111,6 @@ class Settings_Page {
 	private $group_form;
 
 	/**
-	 * The plugin's own settings of the last failed save, drawn again in place of the stored ones.
-	 *
-	 * @var array<string, mixed>
-	 */
-	private $submitted = array();
-
-	/**
 	 * Constructor.
 	 *
 	 * @param Settings                 $settings  Settings.
@@ -326,10 +319,18 @@ class Settings_Page {
 
 		$general = 'general' === $tab;
 		$main    = $general ? $this->scalars( Form_Parts::posted_list( Settings::OPT_FIELD ) ) : array();
-		$clean   = $general ? $this->sc_wpun_settings_validate( $main ) : array();
+		$check   = $general ? $this->check_main( $main ) : array(
+			'valid'  => array(),
+			'errors' => array(),
+		);
 		$checked = $this->group_form()->check( $tab, Form_Parts::posted_list( Settings_Group_Form::POST_KEY ) );
+		$errors  = array();
+		foreach ( $check['errors'] as $name => $message ) {
+			$errors[ 'main/' . $name ] = $message; // `main` is a reserved group id, so a key cannot be a group's.
+		}
+		$errors += $checked['errors'];
 
-		if ( $this->main_errors() || array() !== $checked['errors'] ) {
+		if ( array() !== $errors ) {
 			Form_Parts::remember(
 				Settings_Group_Form::META_KEY,
 				'tab:' . $tab,
@@ -337,11 +338,11 @@ class Settings_Page {
 					'settings' => $main,
 					'groups'   => $checked['values'],
 				),
-				$checked['errors']
+				$errors
 			);
 		} else {
 			if ( $general ) {
-				$this->network_context->write( Settings::OPT_FIELD, $clean );
+				$this->network_context->write( Settings::OPT_FIELD, $check['valid'] );
 			}
 			$this->group_form()->save( $checked['valid'] );
 			$saved = __( 'Settings saved.' ); // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- Core's own message, already translated.
@@ -353,21 +354,6 @@ class Settings_Page {
 		$back = wp_get_referer();
 
 		return add_query_arg( 'settings-updated', 'true', false !== $back && '' !== $back ? $back : $this->network_context->settings_url( $tab ) );
-	}
-
-	/**
-	 * Whether checking the plugin's own settings found a value that is not valid.
-	 *
-	 * @return bool
-	 */
-	private function main_errors(): bool {
-		foreach ( get_settings_errors() as $error ) {
-			if ( 'error' === $error['type'] && 0 === strpos( $error['setting'], 'sc_wpun_settings_main_' ) ) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	/**
@@ -424,20 +410,14 @@ class Settings_Page {
 		$name    = $tabs[ $current ];
 		$errors  = false;
 
-		if ( 'general' === $current ) {
-			foreach ( get_settings_errors() as $error ) {
-				if ( 'error' === $error['type'] ) {
-					$errors = true;
-				}
-			}
-		} elseif ( 'channels' === $current ) {
+		if ( 'channels' === $current ) {
 			$view = $this->channels_tab->view();
 			if ( null !== $view ) {
 				$name   = $view['name'];
 				$errors = $view['errors'];
 			}
 		}
-		// Settings groups: on General and on the tabs of add-ons. Their errors are kept for the form, not in core's list.
+		// The plugin's own settings and settings groups: on General and on the tabs of add-ons. Their errors are kept for the form, not in core's list.
 		if ( $this->group_form()->has_tab( $current ) && $this->group_form()->has_errors( $current ) ) {
 			$errors = true;
 		}
@@ -628,10 +608,9 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function render_general_tab(): void {
-		$round           = $this->group_form()->round( 'general' );
-		$this->submitted = $round['settings'];
-		$options         = $this->state->get();
-		$next_check      = wp_next_scheduled( Scheduler::CRON_NAME );
+		$round      = $this->group_form()->round( 'general' );
+		$options    = $this->state->get();
+		$next_check = wp_next_scheduled( Scheduler::CRON_NAME );
 		?>
 		<section class="sc-wpun-panel">
 		<h2 class="sc-wpun-panel-title"><?php esc_html_e( 'Status', 'wp-updates-notifier' ); ?></h2>
@@ -664,21 +643,75 @@ class Settings_Page {
 
 		<?php
 		self::form_open( 'general' );
-		$this->group_form()->render_summary( $round['errors'] );
+		$rows    = '';
+		$anchors = array();
+		foreach ( $this->settings->schemas() as $name => $schema ) {
+			if ( false === ( $schema['storage'] ?? true ) ) {
+				continue; // Code-only settings have no field.
+			}
+			$id                         = 'sc_wpun_settings_main_' . $name;
+			$anchors[ 'main/' . $name ] = Form_Parts::first_control_id( $schema, $id );
+			$rows                      .= Form_Parts::field_row( (string) $name, $schema, $id, $this->main_control( (string) $name, $round ) );
+		}
+		$this->group_form()->render_summary( $round['errors'], $anchors );
 		?>
 			<fieldset class="sc-wpun-panel">
 				<legend><h2><?php esc_html_e( 'Settings', 'wp-updates-notifier' ); ?></h2></legend>
 				<table class="form-table" role="presentation">
-					<?php
-					// The rows only: the section's heading is the legend, so the settings are a panel like the sections of the channel form.
-					do_settings_fields( 'wp-updates-notifier', 'sc_wpun_settings_main' );
-					?>
+					<?php echo $rows; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Form_Parts. ?>
 				</table>
 			</fieldset>
 			<?php $this->group_form()->render_groups( 'general', $round ); ?>
 			<?php submit_button( __( 'Save settings', 'wp-updates-notifier' ) ); ?>
 		</form>
 		<?php
+	}
+
+	/**
+	 * The cell of a setting of the plugin: its control, with its error and its notes.
+	 *
+	 * The field is disabled, with a note, when the setting is supplied from outside the database. A saved frequency
+	 * that is no longer offered is shown as an extra, current choice.
+	 *
+	 * @internal
+	 *
+	 * @param string                                                                                                  $name  Setting name.
+	 * @param array{settings: array<string, mixed>, groups: array<string, mixed>, errors: array<string, string>}|null $round What the last failed save left; nothing when null.
+	 *
+	 * @return string Escaped markup; empty for a name that is not a setting with a field.
+	 */
+	public function main_control( string $name, ?array $round = null ): string {
+		$schema = $this->settings->schemas()[ $name ] ?? null;
+		if ( null === $schema || false === ( $schema['storage'] ?? true ) ) {
+			return '';
+		}
+		$round  ??= array(
+			'settings' => array(),
+			'groups'   => array(),
+			'errors'   => array(),
+		);
+		$id       = 'sc_wpun_settings_main_' . $name;
+		$error    = $round['errors'][ 'main/' . $name ] ?? '';
+		$external = $this->settings->external_source( $name );
+		$options  = $this->settings->get();
+		$value    = $options[ $name ];
+		// A failed save elsewhere on the tab does not undo the change: show what was submitted, unless that is what failed.
+		if ( '' === $error && array_key_exists( $name, $round['settings'] ) && null === $external ) {
+			$value = $round['settings'][ $name ];
+		}
+
+		$extra = array();
+		if ( 'notify_core' === $name ) {
+			$schema['description'] = __( 'Scheduled checks run WordPress\'s automatic updates first, so updates it installs by itself are not reported.', 'wp-updates-notifier' );
+		} elseif ( 'download_links' === $name ) {
+			$schema['description'] = __( 'Some paid plugins and themes put a licence key or a private token in their download address. With this on, that address is sent to everyone who receives the notifications, on every channel.', 'wp-updates-notifier' );
+		} elseif ( 'frequency' === $name && is_string( $value ) && isset( $schema['options'] ) && is_array( $schema['options'] ) && ! array_key_exists( $value, $schema['options'] ) ) {
+			// translators: %s: Name of the saved schedule.
+			$extra[ $value ]       = sprintf( __( '%s (no longer available)', 'wp-updates-notifier' ), $value );
+			$schema['description'] = __( 'The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it.', 'wp-updates-notifier' );
+		}
+
+		return Form_Parts::control( $schema, Settings::OPT_FIELD . '[' . $name . ']', $id, $value, $error, $external, '', false, $extra );
 	}
 
 	/**
@@ -706,23 +739,6 @@ class Settings_Page {
 	 */
 	public function admin_settings_init() {
 		register_setting( Settings::OPT_FIELD, Settings::OPT_FIELD, array( $this, 'sc_wpun_settings_validate' ) ); // Register Settings.
-
-		// Make settings main section.
-		add_settings_section( 'sc_wpun_settings_main', esc_html__( 'Settings', 'wp-updates-notifier' ), null, 'wp-updates-notifier' );  // @phpstan-ignore argument.type (Core accepts no callback: the sections have no intro text.)
-		foreach ( $this->settings->schemas() as $name => $schema ) {
-			if ( false === ( $schema['storage'] ?? true ) ) {
-				continue; // Code-only settings have no field.
-			}
-			$id   = 'sc_wpun_settings_main_' . $name;
-			$args = array( 'name' => $name );
-			// A checkbox has its own label and radios have a legend, so only a single control is labelled by the row title.
-			if ( Field_Renderer::labels_one_control( $schema ) ) {
-				$args['label_for'] = $id;
-			}
-			// Core prints the title as it is, so the label is escaped and the marker (trusted markup) is added here.
-			$title = esc_html( isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name ) . ( Field_Renderer::is_required( $schema ) ? Field_Renderer::required_marker() : '' );
-			add_settings_field( $id, $title, array( $this, 'render_setting' ), 'wp-updates-notifier', 'sc_wpun_settings_main', $args );
-		}
 	}
 
 	/**
@@ -735,12 +751,29 @@ class Settings_Page {
 	public function sc_wpun_settings_validate( $input ) {
 		// Runs for every update_option() of the settings once admin_init has
 		// registered them, not only for the settings form (options.php checks
-		// the form's nonce itself). Start from the stored settings.
-		$valid = $this->settings->stored(); // Never the effective settings: a value supplied from outside the database is not written to it.
-
+		// the form's nonce itself).
 		if ( ! is_array( $input ) ) {
-			return $valid;
+			return $this->settings->stored(); // Never the effective settings: a value supplied from outside the database is not written to it.
 		}
+
+		$check = $this->check_main( $input );
+		foreach ( $check['errors'] as $name => $message ) {
+			add_settings_error( 'sc_wpun_settings_main_' . $name, 'sc_wpun_settings_main_' . $name . '_error', esc_html( $message ), 'error' );
+		}
+
+		return $check['valid'];
+	}
+
+	/**
+	 * Check the submitted settings of the plugin.
+	 *
+	 * @param array<mixed> $input Array of unsanitized options from the page form.
+	 *
+	 * @return array{valid: array<mixed>, errors: array<string, string>} The settings to save, and a plain message for each value that is not valid, by setting name.
+	 */
+	private function check_main( array $input ): array {
+		$valid  = $this->settings->stored(); // Never the effective settings: a value supplied from outside the database is not written to it.
+		$errors = array();
 
 		// Validate main settings with their field types. A missing value keeps the stored one: a read-only setting is not submitted.
 		$messages = array(
@@ -760,8 +793,8 @@ class Settings_Page {
 				$valid[ $name ] = $checked['value'];
 			} else {
 				// translators: %s: Label of the setting.
-				$fallback = sprintf( __( 'Choose a value for %s.', 'wp-updates-notifier' ), isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name );
-				add_settings_error( 'sc_wpun_settings_main_' . $name, 'sc_wpun_settings_main_' . $name . '_error', esc_html( $messages[ $name ] ?? $fallback ), 'error' );
+				$fallback        = sprintf( __( 'Choose a value for %s.', 'wp-updates-notifier' ), isset( $schema['label'] ) && is_string( $schema['label'] ) ? $schema['label'] : $name );
+				$errors[ $name ] = $messages[ $name ] ?? $fallback;
 			}
 		}
 
@@ -773,110 +806,9 @@ class Settings_Page {
 			}
 		}
 
-		return $valid;
-	}
-
-	/**
-	 * Whether a setting is supplied from outside the database, so its field is read-only.
-	 *
-	 * @param string $name Setting name.
-	 *
-	 * @return bool
-	 */
-	private function is_external( string $name ): bool {
-		return null !== $this->settings->external_source( $name );
-	}
-
-	/**
-	 * Say where an externally supplied setting comes from. Settings are not secrets, so the field shows the value.
-	 *
-	 * @param string $name Setting name.
-	 * @param string $id   Id for the note, which the control points to.
-	 *
-	 * @return void
-	 */
-	private function external_note( string $name, string $id ): void {
-		$source = $this->settings->external_source( $name );
-		if ( null !== $source ) {
-			// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
-			echo ' <span class="description sc-wpun-external" id="' . esc_attr( $id ) . '">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $source ) ) . '</span>';
-		}
-	}
-
-	/**
-	 * Draw a global setting from its schema.
-	 *
-	 * The field is disabled, with a note, when the setting is supplied from outside the database. A saved
-	 * frequency that is no longer offered is shown as an extra, current choice.
-	 *
-	 * @param array<string, mixed> $args Arguments of the field: `name`, the name of the setting.
-	 *
-	 * @return void
-	 */
-	public function render_setting( $args ) {
-		$name    = isset( $args['name'] ) && is_string( $args['name'] ) ? $args['name'] : '';
-		$schemas = $this->settings->schemas();
-		if ( ! isset( $schemas[ $name ] ) ) {
-			return;
-		}
-		// Core keeps the errors of the last save for this page load, whoever asked for them first.
-		$error = '';
-		foreach ( get_settings_errors( 'sc_wpun_settings_main_' . $name ) as $found ) {
-			if ( 'error' === $found['type'] ) {
-				$error = $found['message'];
-				break;
-			}
-		}
-
-		$options = $this->settings->get();
-		$value   = $options[ $name ];
-		// A failed save elsewhere on the tab does not undo the change: show what was submitted, unless that is what failed.
-		if ( '' === $error && array_key_exists( $name, $this->submitted ) && ! $this->is_external( $name ) ) {
-			$value = $this->submitted[ $name ];
-		}
-		$extra       = array();
-		$unavailable = false;
-		if ( 'frequency' === $name && is_string( $value ) && ! array_key_exists( $value, $schemas['frequency']['options'] ) ) {
-			$unavailable = true;
-			// translators: %s: Name of the saved schedule.
-			$extra[ $value ] = sprintf( __( '%s (no longer available)', 'wp-updates-notifier' ), $value );
-		}
-
-		// The notes drawn after the control describe it; the field adds the id of its error after these.
-		$id           = 'sc_wpun_settings_main_' . $name;
-		$described_by = array();
-		if ( $unavailable ) {
-			$described_by[] = $id . '-unavailable';
-		}
-		if ( in_array( $name, array( 'notify_core', 'download_links' ), true ) ) {
-			$described_by[] = $id . '-help';
-		}
-		if ( $this->is_external( $name ) ) {
-			$described_by[] = $id . '-external';
-		}
-
-		echo Field_Renderer::field( $schemas[ $name ], Settings::OPT_FIELD . '[' . $name . ']', $id, $value, $this->is_external( $name ), implode( ' ', $described_by ), $extra, $error ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Field_Renderer.
-		if ( $unavailable ) {
-			?>
-			<p class="description sc-wpun-frequency-unavailable" id="<?php echo esc_attr( $id . '-unavailable' ); ?>">
-				<?php esc_html_e( 'The saved frequency is no longer available on this site, so checks run at the interval they were last scheduled with. Choose a frequency and save to change it.', 'wp-updates-notifier' ); ?>
-			</p>
-			<?php
-		}
-		if ( 'notify_core' === $name ) {
-			?>
-			<p class="description" id="<?php echo esc_attr( $id . '-help' ); ?>">
-				<?php esc_html_e( 'Scheduled checks run WordPress\'s automatic updates first, so updates it installs by itself are not reported.', 'wp-updates-notifier' ); ?>
-			</p>
-			<?php
-		}
-		if ( 'download_links' === $name ) {
-			?>
-			<p class="description" id="<?php echo esc_attr( $id . '-help' ); ?>">
-				<?php esc_html_e( 'Some paid plugins and themes put a licence key or a private token in their download address. With this on, that address is sent to everyone who receives the notifications, on every channel.', 'wp-updates-notifier' ); ?>
-			</p>
-			<?php
-		}
-		$this->external_note( $name, $id . '-external' );
+		return array(
+			'valid'  => $valid,
+			'errors' => $errors,
+		);
 	}
 }

@@ -350,8 +350,7 @@ class Channels_Tab {
 				<span class="sc-wpun-state"><?php echo esc_html( $instance->is_enabled() ? __( 'On', 'wp-updates-notifier' ) : __( 'Off', 'wp-updates-notifier' ) ); ?></span>
 				<?php
 				if ( ! $code_defined && null !== $external ) {
-					// translators: %s: Where the value comes from, for example "constant SC_WPUN_SETTING_FREQUENCY".
-					echo ' <span class="description sc-wpun-external">' . esc_html( sprintf( __( 'Set by %s', 'wp-updates-notifier' ), $external ) ) . '</span>';
+					echo Form_Parts::external_note( $external ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Form_Parts.
 				}
 				?>
 			</td>

@@ -5,6 +5,8 @@
  * @package wp-updates-notifier
  */
 
+use WPUN\Admin\Settings_Page;
+
 /**
  * `sc_wpun_settings_validate()`, which runs for every update of the settings once admin_init has run.
  */
@@ -366,16 +368,28 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * An invalid value marks its own field and describes it with the message that says what to choose; the others stay clean.
 	 */
 	public function test_an_invalid_value_is_shown_on_its_field() {
-		$this->plugin()->sc_wpun_settings_validate(
-			array(
+		// A real save, then the next page load: the errors travel with the form, not in core's list (#512).
+		$_POST = array(
+			'action'                 => Settings_Page::SAVE_ACTION,
+			'tab'                    => 'general',
+			WPUN\Settings::OPT_FIELD => array(
 				'frequency'      => 'every_second',
 				'notify_plugins' => 'sometimes',
-			)
+			),
+			'_wpnonce'               => wp_create_nonce( Settings_Page::SAVE_ACTION . '_general' ),
 		);
-		get_settings_errors(); // The page title asks first.
+		$url   = sc_wpun()->settings_page()->process_save();
+		$this->assertIsString( $url );
 
+		$GLOBALS['wp_settings_errors'] = array(); // A new request.
+		$_POST                         = array();
+		$_GET['tab']                   = 'general';
+		wp_parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $query );
+		$_GET = array_merge( $_GET, $query );
+
+		$title = sc_wpun()->settings_page()->admin_title( 'Updates Notifier' );
 		ob_start();
-		$this->plugin()->settings_page();
+		sc_wpun()->settings_page()->settings_page();
 		$html = ob_get_clean();
 
 		$doc = new DOMDocument();
@@ -396,7 +410,12 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$this->assertSame( 2, $xpath->query( '//p[contains(@class,"sc-wpun-field-error")]' )->length );
 		$this->assertSame( 2, $xpath->query( '//*[@aria-invalid]' )->length );
 		$this->assertSame( 0, $xpath->query( '//fieldset[@id="sc_wpun_settings_main_notify_themes"][@aria-invalid]' )->length );
-		$this->assertStringContainsString( 'Choose how often to check for updates.', $html, 'Core still shows its notice.' );
+
+		// The summary lists both, each with a link to its field, and core shows no notice of its own.
+		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//a[@href="#sc_wpun_settings_main_frequency_0"][.="Choose how often to check for updates."]' )->length );
+		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//a[@href="#sc_wpun_settings_main_notify_plugins_0"][.="Choose whether to be told about plugin updates."]' )->length );
+		$this->assertSame( 0, $xpath->query( '//div[contains(@class,"settings-error")]' )->length );
+		$this->assertStringStartsWith( 'Error: ', $title );
 	}
 
 	/**

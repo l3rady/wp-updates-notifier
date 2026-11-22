@@ -41,6 +41,8 @@ test( 'an invalid value shows its error on its own field and is not saved', asyn
 	await expect( page.locator( 'tr', { has: frequency } ).locator( '.sc-wpun-field-error' ) ).toHaveCount( 1 );
 	await expect( page.locator( '.sc-wpun-field-error' ) ).toHaveCount( 1 );
 	await expect( page.locator( '#sc_wpun_settings_main_notify_core' ) ).not.toHaveAttribute( 'aria-invalid', 'true' );
+	// The error summary links to the field.
+	await expect( page.locator( '.sc-wpun-form-errors a[href^="#sc_wpun_settings_main_frequency"]' ) ).toHaveCount( 1 );
 
 	const stored = JSON.parse( await wp( request, 'option', 'get', 'sc_wpun_settings', '--format=json' ) );
 	expect( stored.frequency, 'the invalid frequency was not stored' ).toBe( 'hourly' );

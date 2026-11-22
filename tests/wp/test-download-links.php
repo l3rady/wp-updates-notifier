@@ -404,8 +404,8 @@ class Test_Download_Links extends WPUN_Test_Case {
 		$box = $xpath->query( '//input[@type="checkbox"][@id="sc_wpun_settings_main_download_links"][@name="sc_wpun_settings[download_links]"]' );
 		$this->assertSame( 1, $box->length );
 		$this->assertFalse( $box->item( 0 )->hasAttribute( 'checked' ) );
-		$this->assertSame( 'sc_wpun_settings_main_download_links-help', $box->item( 0 )->getAttribute( 'aria-describedby' ) );
-		$help = $xpath->query( '//p[@id="sc_wpun_settings_main_download_links-help"]' );
+		$this->assertSame( 'sc_wpun_settings_main_download_links-description', $box->item( 0 )->getAttribute( 'aria-describedby' ) );
+		$help = $xpath->query( '//p[@id="sc_wpun_settings_main_download_links-description"]' );
 		$this->assertSame( 1, $help->length );
 		$this->assertStringContainsString( 'licence key or a private token', $help->item( 0 )->textContent );
 		$this->assertSame( ' Include download links in notifications', $xpath->query( '//label[@for="sc_wpun_settings_main_download_links"]' )->item( 0 )->textContent );

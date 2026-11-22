@@ -113,7 +113,7 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 		$this->assertSame( 1, $xpath->query( '//fieldset[@id="' . $id . '"]//input[@value="major"][@checked]' )->length );
 		$this->assertSame( 0, $xpath->query( '//fieldset[@id="' . $id . '"]//input[@value="active"]' )->length );
 		$this->assertSame( 1, $xpath->query( '//th[contains(., "Notify about WordPress updates?")]' )->length );
-		$this->assertSame( 1, $xpath->query( '//p[@id="' . $id . '-help"][contains(., "run WordPress\'s automatic updates first")]' )->length );
+		$this->assertSame( 1, $xpath->query( '//p[@id="' . $id . '-description"][contains(., "run WordPress\'s automatic updates first")]' )->length );
 		$this->assertSame( 1, $xpath->query( '//tr[.//fieldset[@id="' . $id . '"]]/following-sibling::tr[.//fieldset[@id="sc_wpun_settings_main_notify_plugins"]]' )->length, 'Before the plugin setting.' );
 		$this->assertSame( 0, $xpath->query( '//tr[.//fieldset[@id="sc_wpun_settings_main_notify_plugins"]]/following-sibling::tr[.//fieldset[@id="' . $id . '"]]' )->length );
 	}
@@ -168,8 +168,8 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 		$this->assertTrue( $radios->item( 0 )->hasAttribute( 'checked' ) );
 		$this->assertSame( 1, $xpath->query( '//fieldset[@id="sc_wpun_settings_main_frequency"]//input[@checked]' )->length );
 		$this->assertSame( 1, $xpath->query( '//label[contains(.,"schedule_from_a_removed_plugin (no longer available)")]' )->length );
-		$this->assertSame( 1, $xpath->query( '//p[contains(@class,"sc-wpun-frequency-unavailable")][@id="sc_wpun_settings_main_frequency-unavailable"]' )->length );
-		$this->assertSame( 'sc_wpun_settings_main_frequency-unavailable', $xpath->query( '//fieldset[@id="sc_wpun_settings_main_frequency"]' )->item( 0 )->getAttribute( 'aria-describedby' ) );
+		$this->assertSame( 1, $xpath->query( '//p[contains(@class,"description")][@id="sc_wpun_settings_main_frequency-description"][contains(.,"no longer available on this site")]' )->length );
+		$this->assertSame( 'sc_wpun_settings_main_frequency-description', $xpath->query( '//fieldset[@id="sc_wpun_settings_main_frequency"]' )->item( 0 )->getAttribute( 'aria-describedby' ) );
 		$this->assertSame( 0, $xpath->query( '//select[@name="sc_wpun_settings[frequency]"]' )->length );
 	}
 

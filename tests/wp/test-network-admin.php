@@ -411,9 +411,10 @@ class Test_Network_Admin extends WPUN_Test_Case {
 		$this->assertSame( 'hourly', $stored['frequency'], 'The old value stays.' );
 		$this->assertNotSame( 'none', $stored['notify_core'], 'All or nothing.' );
 		$errors = get_transient( 'settings_errors' );
-		$this->assertCount( 1, $errors );
-		$this->assertSame( 'sc_wpun_settings_main_frequency_error', $errors[0]['code'] );
-		$this->assertSame( 'error', $errors[0]['type'] );
+		$this->assertSame( array(), wp_list_filter( (array) $errors, array( 'code' => 'settings_updated' ) ), '"Settings saved." is not added.' );
+		// The errors are kept with the form (#512), not in core's list.
+		$meta = get_user_meta( get_current_user_id(), WPUN\Admin\Settings_Group_Form::META_KEY, true );
+		$this->assertSame( array( 'main/frequency' ), array_keys( $meta['errors'] ) );
 	}
 
 	/**

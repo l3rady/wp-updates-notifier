@@ -130,15 +130,19 @@ class Settings_Group_Form {
 	/**
 	 * Output the summary of the errors of the groups of a failed save.
 	 *
-	 * @param array<string, string> $errors Messages by `<group>/<field>`.
+	 * @param array<string, string> $errors  Messages by `<group>/<field>`.
+	 * @param array<string, string> $anchors Ids of the controls of errors that are not in a group, by key, for example the plugin's own settings.
 	 *
 	 * @return void
 	 */
-	public function render_summary( array $errors ): void {
+	public function render_summary( array $errors, array $anchors = array() ): void {
 		$groups = $this->groups->all();
 		Form_Parts::error_summary(
 			$errors,
-			function ( string $key ) use ( $groups ): string {
+			function ( string $key ) use ( $groups, $anchors ): string {
+				if ( isset( $anchors[ $key ] ) ) {
+					return $anchors[ $key ];
+				}
 				$parts  = explode( '/', $key, 2 ) + array( '', '' );
 				$schema = $groups[ $parts[0] ]['fields'][ $parts[1] ] ?? null;
 

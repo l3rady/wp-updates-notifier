@@ -5,6 +5,7 @@
  * @package wp-updates-notifier
  */
 
+use WPUN\Admin\Form_Parts;
 use WPUN\Admin\Settings_Group_Form;
 use WPUN\Admin\Settings_Page;
 use WPUN\Settings_Groups;
@@ -1110,10 +1111,10 @@ class Test_Settings_Group_Form extends WPUN_Test_Case {
 		$this->assertFalse( $this->stored( 'acme' ) );
 		$this->assertSame( array(), $this->saved );
 		$errors = get_transient( 'settings_errors' );
-		$this->assertSame( 'sc_wpun_settings_main_frequency_error', $errors[0]['code'] );
-		$this->assertCount( 1, $errors );
+		$this->assertCount( 0, wp_list_filter( (array) $errors, array( 'type' => 'error' ) ), 'The error is not a core notice: it is kept for the form.' );
 		$meta = get_user_meta( $user, Settings_Group_Form::META_KEY, true );
-		$this->assertSame( array(), $meta['errors'] );
+		$this->assertSame( array( 'main/frequency' ), array_keys( $meta['errors'] ), 'The error of a main setting is kept with the form, as main/<name>.' );
+		$this->assertSame( 'Choose how often to check for updates.', $meta['errors']['main/frequency'] );
 		$this->assertSame( 'typed', $meta['values']['groups']['acme']['name'] );
 
 		$this->assertSame( 'typed', $this->xpath( $this->html() )->query( '//input[@id="sc_wpun_group_acme_name"]' )->item( 0 )->getAttribute( 'value' ) );
@@ -1266,6 +1267,42 @@ class Test_Settings_Group_Form extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The id the error summary links a main setting to.
+	 *
+	 * @param string $name Setting name.
+	 * @return string
+	 */
+	private function main_anchor( $name ) {
+		return Form_Parts::first_control_id( sc_wpun()->settings()->schemas()[ $name ], 'sc_wpun_settings_main_' . $name );
+	}
+
+	/**
+	 * A failed save with only a main setting error: the summary links to the field, the title says Error, and nothing is saved.
+	 *
+	 * @dataProvider modes
+	 *
+	 * @param bool $network Whether the plugin is network-activated.
+	 */
+	public function test_the_page_after_a_main_error( $network ) {
+		$this->admin_in_mode( $network );
+		$before = $this->frequency();
+
+		$this->post( array(), array( 'notify_plugins' => 'sometimes' ) );
+		[ $title, $html ] = $this->page_after( $this->save() );
+
+		$this->assertSame( $before, $this->frequency() );
+		$xpath = $this->xpath( $html );
+		$this->assertSame( 1, $xpath->query( self::FORM . '/div[contains(@class,"sc-wpun-form-errors")]' )->length );
+		$link = $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//a[@href="#' . $this->main_anchor( 'notify_plugins' ) . '"]' );
+		$this->assertSame( 1, $link->length );
+		$this->assertSame( 'Choose whether to be told about plugin updates.', trim( $link->item( 0 )->textContent ) );
+		$this->assertSame( 1, $xpath->query( '//*[@id="' . $this->main_anchor( 'notify_plugins' ) . '"]' )->length );
+		$this->assertSame( 'true', $xpath->query( '//fieldset[@id="sc_wpun_settings_main_notify_plugins"]' )->item( 0 )->getAttribute( 'aria-invalid' ) );
+		$this->assertSame( 0, $xpath->query( '//div[contains(@class,"settings-error")]' )->length );
+		$this->assertStringStartsWith( 'Error: ', $title );
+	}
+
+	/**
 	 * A failed save with only a group error: the error summary, and no "Settings saved." notice.
 	 *
 	 * @dataProvider modes
@@ -1330,8 +1367,11 @@ class Test_Settings_Group_Form extends WPUN_Test_Case {
 
 		$xpath = $this->xpath( $html );
 		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//a[@href="#sc_wpun_group_acme_limit"]' )->length, 'The group error.' );
-		$this->assertSame( 1, $xpath->query( '//div[@id="setting-error-sc_wpun_settings_main_frequency_error"][contains(@class,"notice-error")]' )->length, 'The main setting error.' );
-		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"settings-error")]' )->length, 'Only that notice.' );
+		$anchor = $this->main_anchor( 'frequency' );
+		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//a[@href="#' . $anchor . '"][.="Choose how often to check for updates."]' )->length, 'The main setting error, linked to its field.' );
+		$this->assertSame( 1, $xpath->query( '//*[@id="' . $anchor . '"]' )->length, 'The link has a target.' );
+		$this->assertSame( 2, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//li' )->length );
+		$this->assertSame( 0, $xpath->query( '//div[contains(@class,"settings-error")]' )->length, 'No core notice at all.' );
 		$this->assertStringNotContainsString( 'Settings saved.', $html );
 		$this->assertStringStartsWith( 'Error: ', $title );
 	}

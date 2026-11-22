@@ -325,15 +325,15 @@ class Test_Settings_Title extends WPUN_Test_Case {
 	}
 
 	/**
-	 * An invalid General save gives an Error title, and the page still shows the message.
+	 * An invalid General save of a setting of the plugin gives an Error title, and the page still shows the message
+	 * after the title looked. The error travels with the form (#512), like the errors of a settings group.
 	 */
 	public function test_an_invalid_general_save_flags_the_title() {
-		add_settings_error( 'sc_wpun_settings_main_x', 'sc_wpun_settings_main_x_error', 'Bad value.', 'error' );
-		set_transient( 'settings_errors', $GLOBALS['wp_settings_errors'], 30 );
-		unset( $GLOBALS['wp_settings_errors'] );
+		WPUN\Admin\Form_Parts::remember( WPUN\Admin\Settings_Group_Form::META_KEY, 'tab:general', array(), array( 'main/frequency' => 'Bad value.' ) );
 
 		$this->assertSame( 'Error: General &lsaquo; ' . self::CORE, $this->title( array( 'settings-updated' => 'true' ) ) );
-		$this->assertStringContainsString( 'Bad value.', get_echo( 'settings_errors' ) );
+		$this->assertNotEmpty( get_user_meta( self::$admin_id, WPUN\Admin\Settings_Group_Form::META_KEY, true ), 'The title does not use it up.' );
+		$this->assertStringContainsString( 'Bad value.', $this->html() );
 	}
 
 	/**
