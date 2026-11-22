@@ -219,7 +219,9 @@ final class Delivery_Result {
 	 *
 	 * For a service that answers with plain HTTP status codes. A `WP_Error` is a failure with the code `http_error`
 	 * and only the error code in the context: the error message is left out, because cURL puts the address in some
-	 * of them. A 2xx status is a success. 429 is a failure with the code `rate_limited` and the wait from
+	 * of them. The code comes from whoever raised the error, so it is kept only when it looks like a code: 1 to 64
+	 * letters, digits or underscores, such as `http_request_failed`. Any other code is left out and the context is
+	 * empty. A 2xx status is a success. 429 is a failure with the code `rate_limited` and the wait from
 	 * `Retry-After` (see retry_after_from_response()). Any other status is a failure with the code `bad_status`.
 	 * The messages are translated and never contain the address, a secret or a header value.
 	 *
@@ -233,12 +235,20 @@ final class Delivery_Result {
 	 */
 	public static function from_response( $response ): Delivery_Result {
 		if ( is_wp_error( $response ) || ! is_array( $response ) ) {
+			$context = array();
+			if ( is_wp_error( $response ) ) {
+				$error_code = (string) $response->get_error_code();
+				if ( 1 === preg_match( '/^[a-z0-9_]{1,64}$/i', $error_code ) ) {
+					$context = array( 'error_code' => $error_code );
+				}
+			}
+
 			return self::failure(
 				__( 'The request failed.', 'wp-updates-notifier' ),
 				'http_error',
 				null,
 				null,
-				is_wp_error( $response ) ? array( 'error_code' => (string) $response->get_error_code() ) : array()
+				$context
 			);
 		}
 

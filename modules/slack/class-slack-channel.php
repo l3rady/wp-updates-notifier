@@ -369,12 +369,6 @@ class Slack_Channel extends Channel {
 		if ( $result->is_success() ) {
 			return Delivery_Result::success( __( 'The message was posted to Slack.', 'wp-updates-notifier' ) );
 		}
-		if ( is_wp_error( $response ) ) {
-			// The code of the error comes from whoever raised it, so it is only kept when it looks like a code.
-			$code = $result->get_context()['error_code'] ?? '';
-
-			return 1 === preg_match( '/^[a-z0-9_]{1,64}$/i', (string) $code ) ? $result : Delivery_Result::failure( $result->get_message(), $result->get_code() );
-		}
 		if ( 'bad_status' !== $result->get_code() ) {
 			return $result;
 		}

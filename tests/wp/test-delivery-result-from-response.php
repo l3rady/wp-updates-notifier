@@ -47,6 +47,48 @@ class Test_Delivery_Result_From_Response extends WPUN_Test_Case {
 	}
 
 	/**
+	 * A code that does not look like a code is left out: the code comes from whoever raised the error.
+	 *
+	 * @dataProvider data_codes_that_are_left_out
+	 *
+	 * @param string $code The WP_Error code.
+	 */
+	public function test_a_code_that_does_not_look_like_a_code_is_left_out( $code ) {
+		$result = Delivery_Result::from_response( new WP_Error( $code, 'message' ) );
+
+		$this->assertFalse( $result->is_success() );
+		$this->assertSame( 'http_error', $result->get_code() );
+		$this->assertSame( 'The request failed.', $result->get_message() );
+		$this->assertSame( array(), $result->get_context() );
+	}
+
+	/**
+	 * Codes the helper refuses to put in the context.
+	 *
+	 * @return array<string, array{string}>
+	 */
+	public function data_codes_that_are_left_out() {
+		return array(
+			'spaces'       => array( 'could not resolve host' ),
+			'an address'   => array( 'https://secret.example.com/hook/TOKEN' ),
+			'65 chars'     => array( str_repeat( 'a', 65 ) ),
+			'empty string' => array( '' ),
+		);
+	}
+
+	/**
+	 * A code of 64 characters, or a number, is kept.
+	 */
+	public function test_codes_at_the_limit_and_numeric_codes_are_kept() {
+		$long   = str_repeat( 'a', 64 );
+		$result = Delivery_Result::from_response( new WP_Error( $long, 'message' ) );
+		$this->assertSame( array( 'error_code' => $long ), $result->get_context() );
+
+		$result = Delivery_Result::from_response( new WP_Error( 404, 'message' ) );
+		$this->assertSame( array( 'error_code' => '404' ), $result->get_context() );
+	}
+
+	/**
 	 * Something that is neither an array nor a WP_Error is a failure too.
 	 */
 	public function test_an_unexpected_value_is_a_failure() {
