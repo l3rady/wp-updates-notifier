@@ -80,7 +80,7 @@ class Test_Settings_Group_Form extends WPUN_Test_Case {
 		}
 		$_POST    = array();
 		$_REQUEST = array();
-		unset( $_GET['tab'] );
+		unset( $_GET['tab'], $_GET['settings-updated'] );
 		$GLOBALS['wp_settings_errors'] = array();
 		delete_transient( 'settings_errors' );
 		sc_wpun()->config()->flush();
@@ -1202,6 +1202,162 @@ class Test_Settings_Group_Form extends WPUN_Test_Case {
 		$this->save();
 		$this->assertSame( 'FINE', $this->stored( 'acme' )['name'], 'The callback may change the values.' );
 		$this->assertCount( 1, $this->saved );
+	}
+
+	// The page after a save (#511).
+
+	/**
+	 * A single site, and a network-activated plugin on a multisite.
+	 *
+	 * @return array
+	 */
+	public function modes() {
+		return array(
+			'single site' => array( false ),
+			'network'     => array( true ),
+		);
+	}
+
+	/**
+	 * Be a user who may save the settings, in the mode asked for.
+	 *
+	 * @param bool $network Whether the plugin is network-activated.
+	 */
+	private function admin_in_mode( $network ) {
+		if ( $network ) {
+			if ( ! is_multisite() ) {
+				$this->markTestSkipped( 'Multisite only.' );
+			}
+			$this->set_network_activated( true );
+		}
+		$this->admin();
+		if ( $network ) {
+			grant_super_admin( get_current_user_id() );
+		}
+		$this->assertSame( $network, sc_wpun_is_network() );
+	}
+
+	/**
+	 * The page the redirect of a save leads to, drawn as a new request draws it.
+	 *
+	 * @param string|null $url Where the save went.
+	 * @return array The page title and the page HTML.
+	 */
+	private function page_after( $url ) {
+		$this->assertIsString( $url );
+		$this->assertStringContainsString( 'settings-updated=true', $url );
+		// A new request: what the save added to core's list is gone, and only the stored messages come back.
+		$GLOBALS['wp_settings_errors'] = array();
+		$_POST                         = array();
+		$_REQUEST                      = array();
+		wp_parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $query );
+		$_GET = array_merge( $_GET, $query );
+
+		$page = sc_wpun()->settings_page();
+		$page->admin_settings_init();
+		$title = $page->admin_title( 'Updates Notifier' );
+		ob_start();
+		if ( ! sc_wpun_is_network() ) {
+			settings_errors(); // As options-head.php does above the screens under Settings; the network screen prints them itself.
+		}
+		$page->settings_page();
+
+		return array( $title, (string) ob_get_clean() );
+	}
+
+	/**
+	 * A failed save with only a group error: the error summary, and no "Settings saved." notice.
+	 *
+	 * @dataProvider modes
+	 *
+	 * @param bool $network Whether the plugin is network-activated.
+	 */
+	public function test_the_page_after_a_group_error( $network ) {
+		$this->admin_in_mode( $network );
+		$this->register( array( 'acme' => array( 'fields' => $this->fields() ) ) );
+		sc_wpun_settings_groups();
+		$before = $this->frequency();
+
+		$this->post( array( 'acme' => array( 'limit' => '99' ) ), array( 'frequency' => 'weekly' ) );
+		[ $title, $html ] = $this->page_after( $this->save() );
+
+		$this->assertFalse( $this->stored( 'acme' ) );
+		$this->assertSame( $before, $this->frequency() );
+		$xpath = $this->xpath( $html );
+		$this->assertSame( 1, $xpath->query( self::FORM . '/div[contains(@class,"sc-wpun-form-errors")]' )->length );
+		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//a[@href="#sc_wpun_group_acme_limit"]' )->length );
+		$this->assertSame( 0, $xpath->query( '//div[contains(@class,"settings-error")]' )->length, 'No core notice: no "Settings saved." and no error.' );
+		$this->assertStringNotContainsString( 'Settings saved.', $html );
+		$this->assertStringStartsWith( 'Error: ', $title );
+	}
+
+	/**
+	 * A failed save with an error in a main setting and one in a group: both are shown, and nothing is saved anywhere.
+	 *
+	 * @dataProvider modes
+	 *
+	 * @param bool $network Whether the plugin is network-activated.
+	 */
+	public function test_the_page_after_a_main_and_a_group_error( $network ) {
+		$this->admin_in_mode( $network );
+		$this->register(
+			array(
+				'acme'  => array( 'fields' => $this->fields() ),
+				'other' => array( 'fields' => $this->fields() ),
+			)
+		);
+		sc_wpun_settings_groups();
+		$before = $this->frequency();
+
+		$this->post(
+			array(
+				'acme'  => array( 'limit' => '99' ),
+				'other' => array( 'name' => 'fine' ),
+			),
+			array(
+				'frequency'   => 'bogus',
+				'notify_core' => 'none',
+			)
+		);
+		[ $title, $html ] = $this->page_after( $this->save() );
+
+		$this->assertFalse( $this->stored( 'acme' ) );
+		$this->assertFalse( $this->stored( 'other' ) );
+		$this->assertSame( array(), $this->saved );
+		$stored = sc_wpun()->network_context()->get_option( 'sc_wpun_settings' );
+		$this->assertSame( $before, $stored['frequency'] );
+		$this->assertNotSame( 'none', $stored['notify_core'], 'The valid main setting is not saved either.' );
+
+		$xpath = $this->xpath( $html );
+		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]//a[@href="#sc_wpun_group_acme_limit"]' )->length, 'The group error.' );
+		$this->assertSame( 1, $xpath->query( '//div[@id="setting-error-sc_wpun_settings_main_frequency_error"][contains(@class,"notice-error")]' )->length, 'The main setting error.' );
+		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"settings-error")]' )->length, 'Only that notice.' );
+		$this->assertStringNotContainsString( 'Settings saved.', $html );
+		$this->assertStringStartsWith( 'Error: ', $title );
+	}
+
+	/**
+	 * A successful save: "Settings saved." once, and no error summary.
+	 *
+	 * @dataProvider modes
+	 *
+	 * @param bool $network Whether the plugin is network-activated.
+	 */
+	public function test_the_page_after_a_successful_save( $network ) {
+		$this->admin_in_mode( $network );
+		$this->register( array( 'acme' => array( 'fields' => $this->fields() ) ) );
+		sc_wpun_settings_groups();
+
+		$this->post( array( 'acme' => array( 'limit' => '3' ) ), array( 'frequency' => 'weekly' ) );
+		[ $title, $html ] = $this->page_after( $this->save() );
+
+		$this->assertSame( 3, $this->stored( 'acme' )['limit'] );
+		$this->assertSame( 'weekly', $this->frequency() );
+		$xpath = $this->xpath( $html );
+		$this->assertSame( 1, $xpath->query( '//div[@id="setting-error-settings_updated"][contains(@class,"notice-success")]' )->length );
+		$this->assertSame( 1, substr_count( $html, 'Settings saved.' ) );
+		$this->assertSame( 0, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]' )->length );
+		$this->assertStringStartsNotWith( 'Error: ', $title );
 	}
 
 	// Network mode.
