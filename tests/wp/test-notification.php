@@ -129,6 +129,16 @@ class Test_Notification extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The plain-text site name decodes the entities WordPress puts in the name; the raw name is unchanged.
+	 */
+	public function test_site_name_text_decodes_entities() {
+		$notification = $this->notification( array( $this->item() ), 'Tom &amp; Jerry&#039;s' );
+
+		$this->assertSame( "Tom & Jerry's", $notification->get_site_name_text() );
+		$this->assertSame( 'Tom &amp; Jerry&#039;s', $notification->get_site_name() );
+	}
+
+	/**
 	 * Selecting items copies the notification and keeps its context.
 	 */
 	public function test_with_items() {

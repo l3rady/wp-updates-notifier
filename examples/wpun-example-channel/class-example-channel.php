@@ -217,7 +217,7 @@ class Example_Channel extends Channel {
 	 * @return string
 	 */
 	private function message( Notification $notification ): string {
-		$site = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
+		$site = $notification->get_site_name_text();
 
 		if ( $notification->is_test() ) {
 			// translators: 1: Site name. 2: Site address.

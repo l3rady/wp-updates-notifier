@@ -690,7 +690,7 @@ class Webhook_Channel extends Channel {
 			'schema_version' => self::SCHEMA_VERSION,
 			'data'           => array(
 				'site'         => array(
-					'name'        => wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES ),
+					'name'        => $notification->get_site_name_text(),
 					'url'         => $notification->get_site_url(),
 					'updates_url' => $notification->get_updates_url(),
 					'network'     => sc_wpun_is_network(),

@@ -111,7 +111,7 @@ final class Slack_Message {
 	 * @return array<string, mixed>
 	 */
 	public static function build( Notification $notification ): array {
-		$site   = self::single_line( wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES ) );
+		$site   = self::single_line( $notification->get_site_name_text() );
 		$title  = self::title( $notification, $site );
 		$blocks = array(
 			array(

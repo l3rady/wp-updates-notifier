@@ -207,7 +207,7 @@ final class Notification_Renderer {
 	 * @return string
 	 */
 	private static function render_plain_text( Notification $notification, int $hidden, Notification $full ): string {
-		$site = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
+		$site = $notification->get_site_name_text();
 
 		$lines = array( sprintf( self::intro( $notification ), $site, $notification->get_site_url() ), '' );
 
@@ -271,7 +271,7 @@ final class Notification_Renderer {
 	 * @return string
 	 */
 	private static function render_markdown( Notification $notification, int $hidden, Notification $full ): string {
-		$site = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
+		$site = $notification->get_site_name_text();
 
 		$lines = array( '**' . sprintf( self::intro( $notification ), self::escape_markdown( $site ), self::escape_markdown( $notification->get_site_url() ) ) . '**', '' );
 
@@ -311,7 +311,7 @@ final class Notification_Renderer {
 	 * @return string
 	 */
 	private static function render_html( Notification $notification, int $hidden, Notification $full ): string {
-		$site = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
+		$site = $notification->get_site_name_text();
 
 		$html = '<p>' . esc_html( sprintf( self::intro( $notification ), $site, $notification->get_site_url() ) ) . "</p>\n<ul>\n";
 

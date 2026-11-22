@@ -147,6 +147,20 @@ final class Notification {
 	}
 
 	/**
+	 * Site name as plain text: the HTML entities of get_site_name() are decoded, so `Tom &amp; Jerry`
+	 * comes back as `Tom & Jerry`.
+	 *
+	 * It is plain text. A channel that prints it in HTML must escape it, for example with `esc_html()`.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return string
+	 */
+	public function get_site_name_text(): string {
+		return wp_specialchars_decode( $this->get_site_name(), ENT_QUOTES );
+	}
+
+	/**
 	 * Site address. The network's home when the plugin runs for a network.
 	 *
 	 * @since 2.0.0

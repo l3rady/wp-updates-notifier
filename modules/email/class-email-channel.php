@@ -328,7 +328,7 @@ class Email_Channel extends Channel {
 	private function compose( Notification $notification, Channel_Instance $instance ): array {
 		$settings = $instance->get_settings();
 		$is_html  = 'html' === $this->text( $settings, 'format', 'text' );
-		$site     = wp_specialchars_decode( $notification->get_site_name(), ENT_QUOTES );
+		$site     = $notification->get_site_name_text();
 
 		if ( $notification->is_test() ) {
 			// translators: %s: Site name.
