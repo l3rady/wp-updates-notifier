@@ -73,4 +73,49 @@ class Test_Form_Parts extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'f_x-external', $html );
 		$this->assertStringContainsString( 'disabled', $html );
 	}
+
+	/**
+	 * A table wraps its rows, and no rows draw nothing.
+	 */
+	public function test_a_table_of_rows() {
+		$this->assertSame( '', Form_Parts::table( array() ) );
+		$this->assertSame( '<table class="form-table" role="presentation"><tbody><tr>a</tr><tr>b</tr></tbody></table>', Form_Parts::table( array( '<tr>a</tr>', '<tr>b</tr>' ) ) );
+	}
+
+	/**
+	 * Only the field groups with rows are drawn, in the order declared, with a clean id; a collapsed one opens on an error.
+	 */
+	public function test_the_frames_of_field_groups() {
+		$groups  = array(
+			'empty'   => array( 'label' => 'Empty' ),
+			'two'     => array(
+				'label'     => 'Two',
+				'collapsed' => true,
+			),
+			'one.dot' => array(
+				'label'       => 'One',
+				'description' => 'Help.',
+			),
+			'folded'  => array(
+				'label'     => 'Folded',
+				'collapsed' => true,
+			),
+		);
+		$buckets = array(
+			''        => array( 'loose' => '<tr>loose</tr>' ),
+			'one.dot' => array( 'a' => '<tr>a</tr>' ),
+			'two'     => array( 'b' => '<tr>b</tr>' ),
+			'folded'  => array( 'c' => '<tr>c</tr>' ),
+		);
+
+		$html = Form_Parts::field_group_frames( 'p_', $groups, $buckets, array( 'b', 'loose' ) );
+
+		$this->assertStringNotContainsString( 'Empty', $html );
+		$this->assertStringNotContainsString( 'loose', $html, 'The rows without a group are not drawn here.' );
+		$this->assertLessThan( strpos( $html, '<legend><h3>One' ), strpos( $html, '<summary>Two' ), 'In the order declared.' );
+		$this->assertStringContainsString( 'id="p_one_dot-description"', $html );
+		$this->assertStringContainsString( '<details class="sc-wpun-field-group-details" open><summary>Two</summary>', $html, 'Opened by the error of one of its fields.' );
+		$this->assertStringContainsString( '<details class="sc-wpun-field-group-details"><summary>Folded</summary>', $html );
+		$this->assertSame( 3, substr_count( $html, '<table class="form-table"' ) );
+	}
 }

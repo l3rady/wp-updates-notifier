@@ -253,10 +253,10 @@ class Settings_Group_Form {
 					<?php if ( ! $editable ) : ?>
 						<p class="description sc-wpun-group-readonly"><?php esc_html_e( 'You can see these settings but you are not allowed to change them.', 'wp-updates-notifier' ); ?></p>
 					<?php endif; ?>
-					<?php $this->put_table( $buckets[''] ?? array() ); ?>
+					<?php echo Form_Parts::table( $buckets[''] ?? array() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built. ?>
 				</fieldset>
 			<?php endif; ?>
-			<?php $this->render_field_groups( $id, $group, $buckets, $errors ); ?>
+			<?php echo Form_Parts::field_group_frames( $dom_id . '_group_', $group['field_groups'], $buckets, array_map( 'strval', array_keys( $errors ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built. ?>
 		</div>
 		<?php
 	}
@@ -294,46 +294,6 @@ class Settings_Group_Form {
 		}
 
 		return $buckets;
-	}
-
-	/**
-	 * Output each field group of a group that has fields, as a panel of its own after the group's panel.
-	 *
-	 * @param string                               $id      Group id.
-	 * @param array<string, mixed>                 $group   The group.
-	 * @param array<string, array<string, string>> $buckets The rows, from rows().
-	 * @param array<string,string>                 $errors  Messages by field name.
-	 *
-	 * @return void
-	 */
-	private function render_field_groups( string $id, array $group, array $buckets, array $errors ): void {
-		foreach ( $group['field_groups'] as $field_group => $details ) {
-			$rows = $buckets[ (string) $field_group ] ?? array();
-			if ( array() === $rows ) {
-				continue;
-			}
-
-			$collapsed = true === ( $details['collapsed'] ?? false );
-			$open      = array() !== array_intersect_key( $errors, $rows );
-			$dom_id    = 'sc_wpun_group_' . $id . '_group_' . preg_replace( '/[^A-Za-z0-9_-]/', '_', (string) $field_group );
-
-			echo Form_Parts::frame_open( $dom_id, $details['label'], isset( $details['description'] ) && is_string( $details['description'] ) ? $details['description'] : '', $collapsed, $open, false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built.
-			$this->put_table( $rows );
-			echo Form_Parts::frame_close( $collapsed ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup without input.
-		}
-	}
-
-	/**
-	 * Output a form table of rows, unless there are none.
-	 *
-	 * @param array<string, string> $rows The markup of the rows, escaped.
-	 *
-	 * @return void
-	 */
-	private function put_table( array $rows ): void {
-		if ( array() !== $rows ) {
-			echo '<table class="form-table" role="presentation"><tbody>' . implode( '', $rows ) . '</tbody></table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped where it is built.
-		}
 	}
 
 	/**

@@ -203,6 +203,49 @@ final class Form_Parts {
 	}
 
 	/**
+	 * A form table of rows.
+	 *
+	 * @param array<string, string> $rows The markup of the rows, escaped.
+	 *
+	 * @return string Escaped markup; empty when there are no rows.
+	 */
+	public static function table( array $rows ): string {
+		return array() === $rows ? '' : '<table class="form-table" role="presentation"><tbody>' . implode( '', $rows ) . '</tbody></table>';
+	}
+
+	/**
+	 * The field groups that have rows, each in its frame, in the order declared (decision 0026).
+	 *
+	 * A collapsed group starts open when one of its fields has an error.
+	 *
+	 * @param string                               $id_prefix   Start of the DOM id of each group; the group key follows it, cleaned.
+	 * @param array<int|string, array<mixed>>      $groups      The field groups by key: `label`, and optionally `description` and `collapsed`.
+	 * @param array<string, array<string, string>> $buckets     The markup of the rows, escaped, by group key and field name.
+	 * @param string[]                             $error_names The names of the fields that have an error.
+	 *
+	 * @return string Escaped markup.
+	 */
+	public static function field_group_frames( string $id_prefix, array $groups, array $buckets, array $error_names ): string {
+		$html = '';
+		foreach ( $groups as $key => $group ) {
+			$rows = $buckets[ (string) $key ] ?? array();
+			if ( array() === $rows ) {
+				continue;
+			}
+
+			$dom_id    = $id_prefix . preg_replace( '/[^A-Za-z0-9_-]/', '_', (string) $key );
+			$label     = isset( $group['label'] ) && is_scalar( $group['label'] ) ? (string) $group['label'] : '';
+			$text      = isset( $group['description'] ) && is_string( $group['description'] ) ? $group['description'] : '';
+			$collapsed = true === ( $group['collapsed'] ?? false );
+			$open      = array() !== array_intersect_key( array_flip( $error_names ), $rows );
+
+			$html .= self::frame_open( $dom_id, $label, $text, $collapsed, $open, false ) . self::table( $rows ) . self::frame_close( $collapsed );
+		}
+
+		return $html;
+	}
+
+	/**
 	 * The note on when a conditional field is used.
 	 *
 	 * @param string                              $name   Name of the field.

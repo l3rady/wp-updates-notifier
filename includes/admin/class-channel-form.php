@@ -689,29 +689,16 @@ class Channel_Form {
 		// Fields without a group first, under "Settings"; then each group that has fields, in the order declared, as a section of its own.
 		if ( array() !== ( $buckets[''] ?? array() ) ) {
 			$this->put( '<fieldset class="sc-wpun-form-section"><legend><h3>' . esc_html__( 'Settings', 'wp-updates-notifier' ) . '</h3></legend>' );
-			$this->settings_table( $buckets[''] );
+			$this->put( Form_Parts::table( $buckets[''] ) );
 			$this->put( '</fieldset>' );
 		}
-		foreach ( $groups as $group_id => $group ) {
-			$rows = $buckets[ (string) $group_id ] ?? array();
-			if ( array() === $rows ) {
-				continue;
+		$error_names = array();
+		foreach ( array_keys( $errors ) as $key ) {
+			if ( 0 === strpos( (string) $key, 'settings.' ) ) {
+				$error_names[] = substr( (string) $key, strlen( 'settings.' ) );
 			}
-
-			$group_id = (string) $group_id;
-			$dom_id   = 'sc_wpun_channel_group_' . preg_replace( '/[^A-Za-z0-9_-]/', '_', $group_id );
-			$label    = (string) $group['label'];
-			$text     = isset( $group['description'] ) && is_string( $group['description'] ) && '' !== $group['description'] ? $group['description'] : '';
-			$open     = false;
-			foreach ( array_keys( $rows ) as $row_name ) {
-				$open = $open || isset( $errors[ 'settings.' . $row_name ] );
-			}
-			$collapsed = true === ( $group['collapsed'] ?? false );
-
-			$this->put( Form_Parts::frame_open( $dom_id, $label, $text, $collapsed, $open, false ) );
-			$this->settings_table( $rows );
-			$this->put( Form_Parts::frame_close( $collapsed ) );
 		}
+		$this->put( Form_Parts::field_group_frames( 'sc_wpun_channel_group_', $groups, $buckets, $error_names ) );
 	}
 
 	/**
@@ -731,21 +718,6 @@ class Channel_Form {
 			echo '<div class="sc-wpun-form-panel-content">' . $panel['content'] . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup of the channel module, escaped by it like a custom field.
 			$this->put( Form_Parts::frame_close( $collapsed ) );
 		}
-	}
-
-	/**
-	 * Output a form table of settings rows, unless there are none.
-	 *
-	 * @param array<string, string> $rows The markup of the rows, escaped.
-	 *
-	 * @return void
-	 */
-	private function settings_table( array $rows ): void {
-		if ( array() === $rows ) {
-			return;
-		}
-
-		$this->put( '<table class="form-table" role="presentation"><tbody>' . implode( '', $rows ) . '</tbody></table>' );
 	}
 
 	/**
