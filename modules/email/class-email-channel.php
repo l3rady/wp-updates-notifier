@@ -48,6 +48,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * In HTML format every value in it is escaped.
  *
  * @since 2.0.0
+ *
+ * @internal
  */
 class Email_Channel extends Channel {
 
@@ -58,6 +60,15 @@ class Email_Channel extends Channel {
 	 */
 	public function get_type(): string {
 		return 'email';
+	}
+
+	/**
+	 * The API versions this channel needs: 1.1.0 added `Notification::sample()`, `to_array()`, form panels and `sc_wpun_mute_url()`.
+	 *
+	 * @return string
+	 */
+	public function get_api_constraint(): string {
+		return '^1.1';
 	}
 
 	/**

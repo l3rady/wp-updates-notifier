@@ -48,6 +48,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Besides the settings the instance has its label, switch and routing, which WP Updates Notifier adds to every channel.
  * A site that was upgraded from WP Updates Notifier 1.x has an instance with the id and type `slack` and the settings
  * `webhook_url` and `channel`: it is paused until this module is registered, and then delivers without being set up again.
+ *
+ * @internal
  */
 class Slack_Channel extends Channel {
 
@@ -91,6 +93,15 @@ class Slack_Channel extends Channel {
 	 */
 	public function get_type(): string {
 		return self::TYPE;
+	}
+
+	/**
+	 * The API versions this channel needs: 1.1.0 added `https_only`, `Delivery_Result::from_response()` and more.
+	 *
+	 * @return string
+	 */
+	public function get_api_constraint(): string {
+		return '^1.1';
 	}
 
 	/**

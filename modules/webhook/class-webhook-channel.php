@@ -47,6 +47,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `sc_wpun_webhook_resolved_sent` ( Delivery_Result $result, Notification_Item[] $items, Channel_Instance $instance )
  *
  * @since 3.0.0
+ *
+ * @internal
  */
 class Webhook_Channel extends Channel {
 
