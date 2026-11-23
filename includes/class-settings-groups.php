@@ -566,14 +566,18 @@ final class Settings_Groups {
 	private function resolve_field( string $group, string $name, array $schema, array $stored ): array {
 		$supplied = $this->supplied( Config_Context::setting( $name, $group ), $schema );
 		if ( null !== $supplied ) {
-			$cast  = $this->config->cast( $supplied->get_value(), $schema );
-			$clean = $cast['ok'] ? $this->clean( $cast['value'], $name, $schema ) : $cast;
-			if ( $clean['ok'] ) {
+			$has_fallback = array_key_exists( 'on_invalid', $schema );
+			$message      = $this->invalid_message( $schema, $has_fallback );
+			$typed        = $this->config->typed( $supplied, $schema, $message );
+			$clean        = null === $typed ? null : $this->clean( $typed->get_value(), $name, $schema );
+			if ( null !== $clean && $clean['ok'] ) {
 				return $this->row( $clean['value'], $supplied->get_source() );
 			}
 
-			$has_fallback = array_key_exists( 'on_invalid', $schema );
-			$this->config->report_problem( $supplied->get_key(), $supplied->get_source(), $this->invalid_message( $schema, $has_fallback ) );
+			if ( null !== $typed ) {
+				// Cast, but the field's type refuses it; `typed()` recorded nothing.
+				$this->config->report_problem( $supplied->get_key(), $supplied->get_source(), $message );
+			}
 			$fallback = $has_fallback ? $this->clean( $schema['on_invalid'], $name, $schema ) : null;
 			if ( null !== $fallback && $fallback['ok'] ) {
 				return $this->row( $fallback['value'], $supplied->get_source() );
@@ -618,9 +622,7 @@ final class Settings_Groups {
 			return __( 'The value is not valid for this setting, so the value the add-on chose for this case is used.', 'wp-updates-notifier' );
 		}
 
-		return false === ( $schema['storage'] ?? true )
-			? __( 'The value is not valid for this setting, so the default is used.', 'wp-updates-notifier' )
-			: __( 'The value is not valid for this setting, so the saved one is used.', 'wp-updates-notifier' );
+		return $this->config->invalid_setting_message( $schema );
 	}
 
 	/**

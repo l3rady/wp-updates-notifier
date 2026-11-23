@@ -149,16 +149,7 @@ final class Config {
 		$raw    = $this->resolve( $context );
 		$result = null;
 		if ( null !== $raw ) {
-			$cast = $this->cast( $raw->get_value(), $field );
-			if ( $cast['ok'] ) {
-				$result = new Config_Value( $cast['value'], $raw->get_source(), $raw->get_key() );
-			} else {
-				// A setting with no storage has no saved value to fall back to.
-				$message = isset( $field['storage'] ) && false === $field['storage']
-					? __( 'The value is not valid for this setting, so the default is used.', 'wp-updates-notifier' )
-					: __( 'The value is not valid for this setting, so the saved one is used.', 'wp-updates-notifier' );
-				$this->add_problem( $raw->get_key(), $raw->get_source(), $message );
-			}
+			$result = $this->typed( $raw, $field, $this->invalid_setting_message( $field ) );
 		}
 
 		$this->cache[ $cache_key ] = $result;
@@ -184,20 +175,46 @@ final class Config {
 			);
 		}
 
-		$cast = $this->cast( $raw->get_value(), $field );
-		if ( ! $cast['ok'] ) {
-			$this->add_problem( $raw->get_key(), $raw->get_source(), __( 'The value is not valid for this field.', 'wp-updates-notifier' ) );
-
-			return array(
-				'ok'    => false,
-				'value' => null,
-			);
-		}
+		$typed = $this->typed( $raw, $field, __( 'The value is not valid for this field.', 'wp-updates-notifier' ) );
 
 		return array(
-			'ok'    => true,
-			'value' => new Config_Value( $cast['value'], $raw->get_source(), $raw->get_key() ),
+			'ok'    => null !== $typed,
+			'value' => $typed,
 		);
+	}
+
+	/**
+	 * Cast a supplied value by its field, or record why it cannot be used.
+	 *
+	 * @param Config_Value         $raw     The supplied value.
+	 * @param array<string, mixed> $field   Field schema, see resolve_typed().
+	 * @param string               $message Why it is not used, recorded when it cannot be cast. Never says the value.
+	 *
+	 * @return Config_Value|null The typed value, or null when a problem was recorded.
+	 */
+	public function typed( Config_Value $raw, array $field, string $message ): ?Config_Value {
+		$cast = $this->cast( $raw->get_value(), $field );
+		if ( ! $cast['ok'] ) {
+			$this->add_problem( $raw->get_key(), $raw->get_source(), $message );
+
+			return null;
+		}
+
+		return new Config_Value( $cast['value'], $raw->get_source(), $raw->get_key() );
+	}
+
+	/**
+	 * Why a supplied value of a setting is not used, and what is used instead.
+	 *
+	 * @param array<string, mixed> $field Field schema.
+	 *
+	 * @return string
+	 */
+	public function invalid_setting_message( array $field ): string {
+		// A setting with no storage has no saved value to fall back to.
+		return false === ( $field['storage'] ?? true )
+			? __( 'The value is not valid for this setting, so the default is used.', 'wp-updates-notifier' )
+			: __( 'The value is not valid for this setting, so the saved one is used.', 'wp-updates-notifier' );
 	}
 
 	/**
