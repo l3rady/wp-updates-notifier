@@ -64,13 +64,6 @@ parameters:
 			reportUnmatched: true
 
 		-
-			message: '#^Cognitive complexity for "WPUN\\Update_Checker\:\:find_ended_mutes\(\)" is 33, keep it under 20$#'
-			identifier: complexity.functionLike
-			count: 1
-			path: ../../includes/class-update-checker.php
-			reportUnmatched: true
-
-		-
 			message: '#^Cognitive complexity for "WPUN\\Update_Checker\:\:find_resolved\(\)" is 22, keep it under 20$#'
 			identifier: complexity.functionLike
 			count: 1
@@ -79,13 +72,6 @@ parameters:
 
 		-
 			message: '#^Cognitive complexity for "WPUN\\Update_Checker\:\:plan_instance\(\)" is 21, keep it under 20$#'
-			identifier: complexity.functionLike
-			count: 1
-			path: ../../includes/class-update-checker.php
-			reportUnmatched: true
-
-		-
-			message: '#^Cognitive complexity for "WPUN\\Update_Checker\:\:run_check\(\)" is 32, keep it under 20$#'
 			identifier: complexity.functionLike
 			count: 1
 			path: ../../includes/class-update-checker.php

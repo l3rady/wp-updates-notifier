@@ -94,6 +94,11 @@ class Update_Checker {
 	private $network_context;
 
 	/**
+	 * The item types WordPress itself reports.
+	 */
+	private const BUILTIN_TYPES = array( 'core', 'plugin', 'theme' );
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Settings             $settings Settings.
@@ -234,7 +239,7 @@ class Update_Checker {
 
 		// Registered add-on types are checked too: what they report now is what is waiting.
 		foreach ( array_keys( Item_Types::all() ) as $type ) {
-			if ( ! in_array( $type, array( 'core', 'plugin', 'theme' ), true ) ) {
+			if ( ! in_array( $type, self::BUILTIN_TYPES, true ) ) {
 				$checked[ $type ] ??= array();
 			}
 		}
@@ -247,13 +252,7 @@ class Update_Checker {
 		$ended = $this->find_ended_mutes( $items, $state );
 
 		// A snooze in force: its items are flagged as snoozed below, so they are new again when it ends.
-		$snoozed = array();
-		foreach ( $items as $item ) {
-			$mute = $this->mutes->find( $item->get_type(), $item->get_key() );
-			if ( null !== $mute && null !== $mute->get_expires() && $this->mutes->is_muted( $item ) ) {
-				$snoozed[ $item->get_type() ][ $item->get_key() ] = true;
-			}
-		}
+		$snoozed = $this->snoozed_keys( $items );
 
 		// The global veto comes after, so a vetoed item still counts as waiting.
 		$items = array_values( array_filter( $items, array( $this, 'should_notify' ) ) );
@@ -322,17 +321,52 @@ class Update_Checker {
 
 		$this->last_results = $results;
 
-		// Sending saved each instance's last result, retry time and hold in the stored state, which the copy read at the start lacks.
-		$fresh    = $this->state->get()['channels'];
 		$resolved = $this->find_resolved( $gone, $state, $instances, $collector ); // Read before the details of what was notified are trimmed.
+		$this->save_check( $state, $channels, $ended );
+
+		$this->fire_after_check( $ended['fire'], $resolved, $results, $notification );
+
+		return $plan;
+	}
+
+	/**
+	 * Collect the items that are snoozed now.
+	 *
+	 * @param Notification_Item[] $items The items found.
+	 *
+	 * @return array<string, array<string, true>> Item type => key => true.
+	 */
+	private function snoozed_keys( array $items ): array {
+		$snoozed = array();
+		foreach ( $items as $item ) {
+			$mute = $this->mutes->find( $item->get_type(), $item->get_key() );
+			if ( null !== $mute && null !== $mute->get_expires() && $this->mutes->is_muted( $item ) ) {
+				$snoozed[ $item->get_type() ][ $item->get_key() ] = true;
+			}
+		}
+		return $snoozed;
+	}
+
+	/**
+	 * Save the run state after a check.
+	 *
+	 * @param array<string, mixed>                                                                                                                                                    $state    The run state as it was read.
+	 * @param array<string, Channel_State>                                                                                                                                            $channels The state of each instance, after the check.
+	 * @param array{recorded: array<string, array<string, string>>, snoozes: array<string, array<string, string>>, fire: array<int, array{0: Mute, 1: Notification_Item, 2: string}>} $ended The result of find_ended_mutes().
+	 */
+	private function save_check( array $state, array $channels, array $ended ): void {
+		// Sending saved each instance's last result, retry time and hold in the stored state, which the copy read at the start lacks.
+		$fresh = $this->state->get()['channels'];
 		foreach ( $channels as $id => $entry ) {
-			$channels[ $id ] = $this->trim_notified_meta( $entry );
-			unset( $channels[ $id ]['last_result'], $channels[ $id ]['retry_at'], $channels[ $id ]['held_until'] );
+			$entry = $this->trim_notified_meta( $entry );
 			foreach ( array( 'last_result', 'retry_at', 'held_until' ) as $key ) {
 				if ( isset( $fresh[ $id ][ $key ] ) ) {
-					$channels[ $id ][ $key ] = $fresh[ $id ][ $key ];
+					$entry[ $key ] = $fresh[ $id ][ $key ];
+				} else {
+					unset( $entry[ $key ] );
 				}
 			}
+			$channels[ $id ] = $entry;
 		}
 
 		$state['channels']        = $channels;
@@ -349,10 +383,6 @@ class Update_Checker {
 			}
 		}
 		$this->state->save( $state );
-
-		$this->fire_after_check( $ended['fire'], $resolved, $results, $notification );
-
-		return $plan;
 	}
 
 	/**
@@ -376,7 +406,7 @@ class Update_Checker {
 			foreach ( $checked as $type => $pending_keys ) {
 				if ( isset( $entry['notified'][ $type ] ) ) {
 					$waiting = array_intersect_key( $entry['notified'][ $type ], array_flip( $pending_keys ) );
-					if ( in_array( $type, array( 'core', 'plugin', 'theme' ), true ) && count( $waiting ) < count( $entry['notified'][ $type ] ) ) {
+					if ( in_array( $type, self::BUILTIN_TYPES, true ) && count( $waiting ) < count( $entry['notified'][ $type ] ) ) {
 						$gone[ $id ][ $type ] = array_diff_key( $entry['notified'][ $type ], $waiting );
 					}
 					$channels[ $id ]['notified'][ $type ] = $waiting;
@@ -817,6 +847,29 @@ class Update_Checker {
 	}
 
 	/**
+	 * Keep the stored ended mutes whose mute is still as it was.
+	 *
+	 * @param mixed    $stored The stored list, item type => key => value.
+	 * @param callable $same   Called with the mute and the stored value; true when the mute is unchanged.
+	 *
+	 * @phpstan-param callable(Mute, mixed): bool $same
+	 *
+	 * @return array<string, array<string, string>> Item type => key => the stored value, as a string.
+	 */
+	private function still_ended( $stored, callable $same ): array {
+		$kept = array();
+		foreach ( is_array( $stored ) ? $stored : array() as $type => $keys ) {
+			foreach ( $keys as $key => $value ) {
+				$mute = $this->mutes->find( (string) $type, (string) $key );
+				if ( null !== $mute && $same( $mute, $value ) ) {
+					$kept[ (string) $type ][ (string) $key ] = (string) $value;
+				}
+			}
+		}
+		return $kept;
+	}
+
+	/**
 	 * Find the mutes that a newer version or their expiry has ended, and those not reported yet.
 	 *
 	 * A mute that both a newer version and its expiry have ended is reported once, as expired.
@@ -827,37 +880,14 @@ class Update_Checker {
 	 * @return array{recorded: array<string, array<string, string>>, snoozes: array<string, array<string, string>>, fire: array<int, array{0: Mute, 1: Notification_Item, 2: string}>}
 	 */
 	private function find_ended_mutes( array $items, array $state ): array {
-		/**
-		 * Item type => key => the version of the ended mute.
-		 *
-		 * @var array<string, array<string, string>> $recorded
-		 */
-		$recorded = array();
-		$known    = is_array( $state['ended_mutes'] ?? null ) ? $state['ended_mutes'] : array();
-		foreach ( $known as $type => $keys ) {
-			foreach ( $keys as $key => $until ) {
-				$mute = $this->mutes->find( (string) $type, (string) $key );
-				if ( null !== $mute && $mute->get_until() === $until ) {
-					$recorded[ (string) $type ][ (string) $key ] = (string) $until;
-				}
-			}
-		}
-
-		/**
-		 * Item type => key => the expiry time of the ended snooze, as a string.
-		 *
-		 * @var array<string, array<string, string>> $snoozes
-		 */
-		$snoozes = array();
-		$known   = is_array( $state['ended_snoozes'] ?? null ) ? $state['ended_snoozes'] : array();
-		foreach ( $known as $type => $keys ) {
-			foreach ( $keys as $key => $expires ) {
-				$mute = $this->mutes->find( (string) $type, (string) $key );
-				if ( null !== $mute && (string) $mute->get_expires() === (string) $expires ) {
-					$snoozes[ (string) $type ][ (string) $key ] = (string) $expires;
-				}
-			}
-		}
+		$recorded = $this->still_ended(
+			$state['ended_mutes'] ?? null,
+			static fn( Mute $mute, $until ): bool => $mute->get_until() === $until
+		);
+		$snoozes  = $this->still_ended(
+			$state['ended_snoozes'] ?? null,
+			static fn( Mute $mute, $expires ): bool => (string) $mute->get_expires() === (string) $expires
+		);
 
 		$fire = array();
 		foreach ( $items as $item ) {
