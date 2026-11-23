@@ -32,7 +32,6 @@ class Test_Example_Channel extends WPUN_Test_Case {
 		parent::set_up();
 
 		WPUN_Example_Channel\boot();
-		$this->forget_settings_groups();
 		// The first read of the registry fires the registration action, which the add-on now answers too.
 		if ( ! sc_wpun()->channels()->has( Example_Channel::TYPE ) ) {
 			sc_wpun()->channels()->register( new Example_Channel() );
@@ -51,26 +50,7 @@ class Test_Example_Channel extends WPUN_Test_Case {
 		if ( ! sc_wpun()->channels()->has( 'email' ) ) {
 			sc_wpun()->channels()->register( new WPUN\Modules\Email\Email_Channel() );
 		}
-		$this->forget_settings_groups();
-		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings_' . Example_Channel::SETTINGS_GROUP );
-		sc_wpun()->config()->flush();
 		parent::tear_down();
-	}
-
-	/**
-	 * Make the plugin's settings groups register again on the next use, so the add-on's group is registered by this test's hook.
-	 */
-	private function forget_settings_groups() {
-		$groups = sc_wpun()->settings_groups();
-		foreach ( array(
-			'loaded' => false,
-			'groups' => array(),
-			'cache'  => array(),
-		) as $name => $value ) {
-			$property = new ReflectionProperty( $groups, $name );
-			$property->setAccessible( true );
-			$property->setValue( $groups, $value );
-		}
 	}
 
 	/**

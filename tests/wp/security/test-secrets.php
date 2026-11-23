@@ -121,7 +121,6 @@ class Test_Security_Secrets extends WPUN_Security_Test_Case {
 		putenv( 'SC_WPUN_CHANNEL_SEC_ENV__TOKEN' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- The environment route is under test.
 		putenv( 'SC_WPUN_CHANNEL_SEC_ENV__WEBHOOK' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- The environment route is under test.
 		sc_wpun()->channels()->unregister( 'security_secret' );
-		sc_wpun()->config()->flush();
 		$_POST = array();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();

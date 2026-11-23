@@ -45,7 +45,6 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 		wp_set_current_user( self::$admin_id );
 	}
@@ -57,7 +56,6 @@ class Test_Channels_Tab extends WPUN_Test_Case {
 		foreach ( array( 'retired', 'test', 'test_secret' ) as $type ) {
 			sc_wpun()->channels()->unregister( $type );
 		}
-		sc_wpun()->config()->flush();
 		unset( $_POST['id'], $_POST['_wpnonce'], $_GET['tab'], $_GET['action'], $_GET['id'] );
 		parent::tear_down();
 	}

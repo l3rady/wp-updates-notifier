@@ -29,6 +29,13 @@ class Test_Network_Check extends WPUN_Test_Case {
 	private $other_id = 0;
 
 	/**
+	 * The network object loaded at boot, while a test names a copy of it.
+	 *
+	 * @var WP_Network|null
+	 */
+	private $boot_network = null;
+
+	/**
 	 * Make two more sites in the network.
 	 */
 	public function set_up() {
@@ -50,6 +57,30 @@ class Test_Network_Check extends WPUN_Test_Case {
 
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 		$this->fake_http( 'api.wordpress.org/plugins/info', $this->fake_response( 200, wp_json_encode( array( 'name' => 'Hello Dolly' ) ) ) );
+	}
+
+	/**
+	 * Put back the network object a test named.
+	 */
+	public function tear_down() {
+		if ( null !== $this->boot_network ) {
+			$GLOBALS['current_site'] = $this->boot_network; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Undoes name_network().
+			$this->boot_network      = null;
+		}
+		parent::tear_down();
+	}
+
+	/**
+	 * Give the network a name. get_network() hands out the object loaded at boot, not the option, so a copy of that
+	 * object gets the name, and tear_down() puts the original back.
+	 *
+	 * @param string $name The network's name.
+	 */
+	private function name_network( $name ) {
+		$this->boot_network                 = $GLOBALS['current_site'];
+		$GLOBALS['current_site']            = clone $this->boot_network; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restored in tear_down().
+		$GLOBALS['current_site']->site_name = $name;
+		update_site_option( 'site_name', $name );
 	}
 
 	/**
@@ -204,8 +235,7 @@ class Test_Network_Check extends WPUN_Test_Case {
 	public function test_a_check_notification_has_the_networks_name_and_links() {
 		$this->save_network_settings();
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '9.9.9' ) ) );
-		get_network()->site_name = 'The Network';
-		update_site_option( 'site_name', 'The Network' );
+		$this->name_network( 'The Network' );
 
 		$seen = null;
 		add_filter(
@@ -229,7 +259,7 @@ class Test_Network_Check extends WPUN_Test_Case {
 	 */
 	public function test_a_test_message_has_the_networks_name_and_links() {
 		$this->save_network_settings();
-		update_site_option( 'site_name', 'The Network' );
+		$this->name_network( 'The Network' );
 
 		$context = new Network_Context();
 		$this->assertSame( 'The Network', $context->site_name() );

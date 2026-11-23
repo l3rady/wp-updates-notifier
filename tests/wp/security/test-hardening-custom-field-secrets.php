@@ -50,7 +50,6 @@ class Test_Hardening_Custom_Field_Secrets extends WPUN_Security_Test_Case {
 		parent::set_up();
 
 		$this->seen = array();
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 		wp_set_current_user( self::$admin_id );
 
@@ -74,7 +73,6 @@ class Test_Hardening_Custom_Field_Secrets extends WPUN_Security_Test_Case {
 	 */
 	public function tear_down() {
 		sc_wpun()->channels()->unregister( 'hardening' );
-		sc_wpun()->config()->flush();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();
 	}

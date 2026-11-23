@@ -20,6 +20,9 @@ parameters:
         - %currentWorkingDirectory%/examples
         - %currentWorkingDirectory%/docker/dev-plugins
         - %currentWorkingDirectory%/tests/fixtures/plugins
+        # The test reset calls the `@internal` methods that exist only for it.
+        - %currentWorkingDirectory%/tests/bootstrap.php
+        - %currentWorkingDirectory%/tests/wp/class-wpun-test-case.php
     scanFiles:
         - /opt/quality/vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
         - %currentWorkingDirectory%/tests/stubs/wp-cli.php

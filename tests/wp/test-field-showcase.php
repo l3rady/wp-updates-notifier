@@ -57,7 +57,6 @@ class Test_Field_Showcase extends WPUN_Test_Case {
 	public function tear_down() {
 		sc_wpun()->channels()->unregister( 'field_showcase' );
 		sc_wpun()->channels()->unregister( 'field_showcase_custom' );
-		sc_wpun()->config()->flush();
 		$_POST = array();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();

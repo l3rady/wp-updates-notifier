@@ -53,7 +53,6 @@ class Test_Form_Panels extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 		wp_set_current_user( self::$admin_id );
 
@@ -85,7 +84,6 @@ class Test_Form_Panels extends WPUN_Test_Case {
 	 */
 	public function tear_down() {
 		sc_wpun()->channels()->unregister( 'pnl' );
-		sc_wpun()->config()->flush();
 		$_POST = array();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();

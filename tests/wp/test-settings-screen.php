@@ -28,14 +28,6 @@ class Test_Settings_Screen extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Remove what tests added.
-	 */
-	public function tear_down() {
-		sc_wpun()->config()->flush();
-		parent::tear_down();
-	}
-
-	/**
 	 * The settings page, parsed.
 	 *
 	 * @return DOMXPath

@@ -356,6 +356,41 @@ class Channel_Registry {
 	}
 
 	/**
+	 * Everything the registry holds, after the registration action has fired, for tests.
+	 *
+	 * @internal
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function snapshot(): array {
+		$this->load();
+
+		return array(
+			'channels'             => $this->channels,
+			'rejected'             => $this->rejected,
+			'replaced'             => $this->replaced,
+			'refused_replacements' => $this->refused_replacements,
+		);
+	}
+
+	/**
+	 * Put the registry back as a snapshot had it, without firing the registration action, for tests.
+	 *
+	 * @internal
+	 *
+	 * @param array<string, mixed> $snapshot What snapshot() returned.
+	 *
+	 * @return void
+	 */
+	public function restore( array $snapshot ): void {
+		$this->channels             = $snapshot['channels'];
+		$this->rejected             = $snapshot['rejected'];
+		$this->replaced             = $snapshot['replaced'];
+		$this->refused_replacements = $snapshot['refused_replacements'];
+		$this->loaded               = true;
+	}
+
+	/**
 	 * Let add-ons register their channels, once.
 	 *
 	 * @return void

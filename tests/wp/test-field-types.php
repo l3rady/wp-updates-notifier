@@ -14,15 +14,6 @@ use WPUN\Field_Types;
 class Test_Field_Types extends WPUN_Test_Case {
 
 	/**
-	 * Start clean.
-	 */
-	public function set_up() {
-		parent::set_up();
-
-		Field_Types::forget_warnings();
-	}
-
-	/**
 	 * The markup parsed.
 	 *
 	 * @param string $html Markup.

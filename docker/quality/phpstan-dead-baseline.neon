@@ -1,13 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Unused WPUN\\Field_Types\:\:forget_warnings$#'
-			identifier: shipmonk.deadMethod
-			count: 1
-			path: ../../includes/class-field-types.php
-			reportUnmatched: true
-
-		-
 			message: '#^Unused WPUN\\Plugin\:\:config$#'
 			identifier: shipmonk.deadMethod
 			count: 1

@@ -308,6 +308,21 @@ final class Settings_Groups {
 	}
 
 	/**
+	 * Forget the registered groups and what was resolved, so the next use registers them again, for tests.
+	 *
+	 * @internal
+	 *
+	 * @return void
+	 */
+	public function forget(): void {
+		$this->groups      = array();
+		$this->loaded      = false;
+		$this->registering = false;
+		$this->cache       = array();
+		$this->generation  = -1;
+	}
+
+	/**
 	 * Let add-ons register their groups, once.
 	 *
 	 * @return void

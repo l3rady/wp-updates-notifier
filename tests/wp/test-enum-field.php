@@ -15,21 +15,10 @@ use WPUN\Enum_Field;
 class Test_Enum_Field extends WPUN_Test_Case {
 
 	/**
-	 * Start clean.
-	 */
-	public function set_up() {
-		parent::set_up();
-
-		\WPUN\Field_Types::forget_warnings();
-		sc_wpun()->config()->flush();
-	}
-
-	/**
 	 * Remove what tests registered.
 	 */
 	public function tear_down() {
 		sc_wpun()->channels()->unregister( 'test_enum' );
-		sc_wpun()->config()->flush();
 		parent::tear_down();
 	}
 

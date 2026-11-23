@@ -38,12 +38,6 @@ return array(
 		dirname( __DIR__, 2 ) . '/includes/class-boolean-field.php',
 		dirname( __DIR__, 2 ) . '/includes/class-field-types.php',
 	),
-	\Rector\DeadCode\Rector\If_\RemoveOverriddenAssignBeforeIfElseRector::class => array(
-		dirname( __DIR__, 2 ) . '/includes/admin/class-channel-form.php',
-	),
-	\Rector\DeadCode\Rector\If_\RemoveUnusedNonEmptyArrayBeforeForeachRector::class => array(
-		dirname( __DIR__, 2 ) . '/includes/class-update-collector.php',
-	),
 	\Rector\DeadCode\Rector\PropertyProperty\RemoveNullPropertyInitializationRector::class => array(
 		dirname( __DIR__, 2 ) . '/includes/class-channel-store.php',
 		dirname( __DIR__, 2 ) . '/includes/class-config.php',

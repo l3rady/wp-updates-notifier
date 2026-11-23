@@ -60,7 +60,6 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 		parent::set_up();
 
 		sc_wpun()->register_admin_hooks();
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		wp_set_current_user( self::$admin_id );
@@ -76,7 +75,6 @@ class Test_Security_Stored_Xss extends WPUN_Security_Test_Case {
 		sc_wpun()->channels()->unregister( 'security_failing' );
 		sc_wpun()->channels()->register( new Test_Security_Failing_Channel( '' ) );
 		sc_wpun()->channels()->unregister( 'security_failing' );
-		sc_wpun()->config()->flush();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();
 	}

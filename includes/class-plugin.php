@@ -401,6 +401,27 @@ class Plugin {
 	}
 
 	/**
+	 * Put the components back to what they were after boot, for tests.
+	 *
+	 * The channel registry goes back to the snapshot taken once after the registration action fired: the action
+	 * does not fire again. Settings groups register again on their next use.
+	 *
+	 * @internal
+	 *
+	 * @param array<string, mixed> $channels What Channel_Registry::snapshot() returned after boot.
+	 *
+	 * @return void
+	 */
+	public function reset_for_tests( array $channels ): void {
+		$this->channels->restore( $channels );
+		$this->update_checker->forget_last_check();
+		$this->config->flush();
+		$this->settings_groups->forget();
+		Field_Types::forget_warnings();
+		Version_Constraint::forget_reported();
+	}
+
+	/**
 	 * Where the plugin's options are stored.
 	 *
 	 * @internal

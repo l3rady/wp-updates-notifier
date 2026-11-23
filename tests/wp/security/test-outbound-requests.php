@@ -77,7 +77,6 @@ class Test_Security_Outbound_Requests extends WPUN_Security_Test_Case {
 		if ( ! sc_wpun()->channels()->has( 'email' ) ) {
 			sc_wpun()->channels()->register( new Email_Channel() );
 		}
-		sc_wpun()->config()->flush();
 		$_POST = array();
 		parent::tear_down();
 	}

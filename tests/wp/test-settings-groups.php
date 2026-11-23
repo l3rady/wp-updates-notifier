@@ -46,8 +46,6 @@ class Test_Settings_Groups extends WPUN_Test_Case {
 		$this->shared  = sc_wpun()->settings_groups();
 		$this->notices = array();
 		$this->set_groups( new Settings_Groups( sc_wpun()->config(), sc_wpun()->channels(), sc_wpun()->settings(), sc_wpun()->network_context() ) );
-		WPUN\Field_Types::forget_warnings();
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 
 		add_action(
@@ -67,7 +65,6 @@ class Test_Settings_Groups extends WPUN_Test_Case {
 			putenv( $name );
 			unset( $_ENV[ $name ] );
 		}
-		sc_wpun()->config()->flush();
 		parent::tear_down();
 	}
 

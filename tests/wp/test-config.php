@@ -29,7 +29,6 @@ class Test_Config extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		sc_wpun()->config()->flush();
 		$this->save_settings( array( 'notify_plugins' => 'all' ) );
 	}
 
@@ -40,7 +39,6 @@ class Test_Config extends WPUN_Test_Case {
 		putenv( 'SC_WPUN_SETTING_FREQUENCY' );
 		putenv( 'SC_WPUN_LOAD_FROM_ENV' );
 		unset( $_ENV['SC_WPUN_SETTING_FREQUENCY'], $_ENV['SC_WPUN_LOAD_FROM_ENV'] );
-		sc_wpun()->config()->flush();
 		parent::tear_down();
 	}
 

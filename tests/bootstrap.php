@@ -35,6 +35,9 @@ tests_add_filter(
 
 require $wpun_tests_dir . '/includes/bootstrap.php';
 
+// The channel registry as the plugin's own boot leaves it: WPUN_Test_Case puts it back before each test.
+$GLOBALS['wpun_channels_snapshot'] = sc_wpun()->channels()->snapshot();
+
 // Needs WP_UnitTestCase, so it loads after core's bootstrap.
 require_once __DIR__ . '/wp/class-wpun-test-case.php';
 require_once __DIR__ . '/wp/class-wpun-slack-test-case.php';

@@ -55,6 +55,16 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// The plugin is one object for the whole run: put it back to what it was after boot.
+		sc_wpun()->reset_for_tests( $GLOBALS['wpun_channels_snapshot'] );
+		\WPUN\Modules\Webhook\Webhook_Channel::forget_collected();
+		foreach ( array( '_wpnonce', 'action', 'key', 'tab', 'type', 'mute_type', 'mute_key', 'mute_mode', 'mute_snooze' ) as $name ) {
+			unset( $_GET[ $name ] );
+		}
+		foreach ( array( '_wpnonce', 'id', 'label', 'enabled', 'skip_pending' ) as $name ) {
+			unset( $_POST[ $name ] );
+		}
+
 		if ( is_multisite() && ! $this->network_activated ) {
 			$this->set_network_activated( false );
 			// What a single site has from the plugin booting: the bootstrap created the network's defaults instead.

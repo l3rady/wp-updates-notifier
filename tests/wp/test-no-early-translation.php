@@ -42,9 +42,6 @@ class Test_No_Early_Translation extends WPUN_Test_Case {
 	 * Forget what the test seeded.
 	 */
 	public function tear_down() {
-		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings' );
-		sc_wpun()->network_context()->delete_option( 'sc_wpun_settings_ver' );
-		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 		set_current_screen( 'front' );
 		parent::tear_down();
 	}

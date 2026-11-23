@@ -20,21 +20,12 @@ use WPUN\Plugin;
 class Test_About_Tab extends WPUN_Test_Case {
 
 	/**
-	 * Start from a clean resolver.
-	 */
-	public function set_up() {
-		parent::set_up();
-		sc_wpun()->config()->flush();
-	}
-
-	/**
 	 * Clean up the environment, the request and the resolver.
 	 */
 	public function tear_down() {
 		putenv( 'SC_WPUN_SETTING_SHOW_ABOUT' );
 		putenv( 'SC_WPUN_LOAD_FROM_ENV' );
 		unset( $_ENV['SC_WPUN_SETTING_SHOW_ABOUT'], $_ENV['SC_WPUN_LOAD_FROM_ENV'], $_GET['tab'] );
-		sc_wpun()->config()->flush();
 		parent::tear_down();
 	}
 

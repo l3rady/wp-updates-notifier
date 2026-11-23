@@ -57,8 +57,6 @@ class Test_Settings_Group_Form extends WPUN_Test_Case {
 		$this->set_property( 'settings_groups', $groups );
 		$this->set_property( 'settings_group_form', new Settings_Group_Form( $groups ) );
 		$this->set_property( 'settings_page', null );
-		WPUN\Field_Types::forget_warnings();
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 
 		$this->saved = array();
@@ -84,7 +82,6 @@ class Test_Settings_Group_Form extends WPUN_Test_Case {
 		unset( $_GET['tab'], $_GET['settings-updated'] );
 		$GLOBALS['wp_settings_errors'] = array();
 		delete_transient( 'settings_errors' );
-		sc_wpun()->config()->flush();
 		parent::tear_down();
 	}
 

@@ -8,8 +8,10 @@ on:
     branches:
       - main
   # Nightly: the suite against WordPress trunk, to notice core changes before a release.
+  # Weekly (Monday): the single-site suite in random order, to notice a test that depends on the one before it.
   schedule:
     - cron: '17 3 * * *'
+    - cron: '41 3 * * 1'
   workflow_dispatch:
     inputs:
       wp_version:
@@ -294,7 +296,7 @@ jobs:
 
   # The same against WordPress trunk every night.
   wordpress-trunk:
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' && github.event.schedule == '17 3 * * *'
     name: wordpress trunk ${{ matrix.multisite == '1' && 'multisite' || 'single' }} (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -314,12 +316,29 @@ jobs:
       - name: Run the tests against trunk
         run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
 
+  # The single-site suite in random order every week. PHPUnit prints "Random Seed:" at the start of the run: repeat a
+  # failure with `make test-wp ARGS="--order-by=random --random-order-seed=<seed>"`.
+  random-order:
+    if: github.event_name == 'schedule' && github.event.schedule == '41 3 * * 1'
+    name: random order
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run the tests in random order
+        run: |
+          SEED="$(date +%s)"
+          echo "Seed: $SEED (repeat with: make test-wp ARGS=\"--order-by=random --random-order-seed=$SEED\")"
+          make test-wp ARGS="--order-by=random --random-order-seed=$SEED"
+
   # The only check this workflow requires: it fails unless every job above passed or was skipped. A job the changes
   # job skipped counts as passed, which a required check on the job itself would not. Add every new job to `needs`
   # (tests/bin/test-ci-changes.sh checks it).
   ci-gate:
     if: always()
-    needs: [changes, phpstan, rector, release-scripts, dist, dist-repro, plugin-check, smoke, wordpress, coverage, a11y, e2e, wordpress-trunk]
+    needs: [changes, phpstan, rector, release-scripts, dist, dist-repro, plugin-check, smoke, wordpress, coverage, a11y, e2e, wordpress-trunk, random-order]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

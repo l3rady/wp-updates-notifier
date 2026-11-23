@@ -28,14 +28,6 @@ class Test_Download_Links extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Remove what tests added.
-	 */
-	public function tear_down() {
-		sc_wpun()->config()->flush();
-		parent::tear_down();
-	}
-
-	/**
 	 * Offer a core, a plugin and a theme update, with these package addresses.
 	 *
 	 * @param mixed $plugin_package Package of the plugin update.

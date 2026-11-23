@@ -489,6 +489,17 @@ class Webhook_Channel extends Channel {
 	}
 
 	/**
+	 * Drop the resolved items collected so far, for tests.
+	 *
+	 * @internal
+	 *
+	 * @return void
+	 */
+	public static function forget_collected(): void {
+		self::$resolved = array();
+	}
+
+	/**
 	 * Keep a resolved item for the instance that reported it. Hooked to `sc_wpun_item_resolved`.
 	 *
 	 * Only instances of this channel are kept. The message goes out in send_resolved(), once the check has finished.

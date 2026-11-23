@@ -56,7 +56,6 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 		wp_set_current_user( self::$admin_id );
 		sc_wpun()->channels()->register( new Test_Form_Channel() );
@@ -71,7 +70,6 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		foreach ( array( 'fixture', 'fixture_custom', 'retired' ) as $type ) {
 			sc_wpun()->channels()->unregister( $type );
 		}
-		sc_wpun()->config()->flush();
 		$_POST = array();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();

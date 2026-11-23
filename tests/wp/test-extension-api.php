@@ -73,8 +73,6 @@ class Test_Extension_Api extends WPUN_Test_Case {
 			sc_wpun()->channels()->register( new WPUN\Modules\Slack\Slack_Channel() );
 		}
 		Addon::reset();
-		$this->forget_settings_groups();
-		sc_wpun()->config()->flush();
 		$_POST = array();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();
@@ -732,28 +730,10 @@ class Test_Extension_Api extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Make the plugin's settings groups register again on the next use, so what the add-on registered is gone.
-	 */
-	private function forget_settings_groups() {
-		$groups = sc_wpun()->settings_groups();
-		foreach ( array(
-			'loaded' => false,
-			'groups' => array(),
-			'cache'  => array(),
-		) as $name => $value ) {
-			$property = new ReflectionProperty( $groups, $name );
-			$property->setAccessible( true );
-			$property->setValue( $groups, $value );
-		}
-	}
-
-	/**
 	 * The add-on's settings group works through the public functions: a code-only kill switch that a constant turns
 	 * off, and a stored field with a default.
 	 */
 	public function test_the_addon_registers_a_settings_group() {
-		$this->forget_settings_groups();
-
 		$groups = sc_wpun_settings_groups();
 		$this->assertArrayHasKey( Addon::GROUP, $groups );
 		$this->assertSame( array( 'enabled', 'greeting' ), array_keys( $groups[ Addon::GROUP ]['fields'] ) );

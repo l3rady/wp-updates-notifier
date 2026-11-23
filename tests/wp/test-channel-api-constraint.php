@@ -80,7 +80,6 @@ class Test_Channel_Api_Constraint extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 		wp_set_current_user( self::$admin_id );
 	}
@@ -94,7 +93,6 @@ class Test_Channel_Api_Constraint extends WPUN_Test_Case {
 			sc_wpun()->channels()->register( new Test_Channel( $type ) );
 			sc_wpun()->channels()->unregister( $type );
 		}
-		sc_wpun()->config()->flush();
 		unset( $_GET['tab'] );
 		parent::tear_down();
 	}

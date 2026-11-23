@@ -18,7 +18,7 @@
 # A path can match several rules and all of them apply. The table below is the single source of truth;
 # tests/bin/test-ci-changes.sh checks it against the workflows. Only the jobs listed in ALL_JOBS are in the map. The
 # jobs that always run (workflows, secrets, commits) and the ones that never run on pull requests (images,
-# wordpress-trunk, deploy) are not in it.
+# wordpress-trunk, random-order, deploy) are not in it.
 set -eu
 
 # Every job the map controls: the job ids of the workflows, which are unique across them.

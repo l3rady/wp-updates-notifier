@@ -73,7 +73,6 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 		$this->env = array();
 		$this->remove_dir( WP_PLUGIN_DIR . '/wpun-webhook-fixture' );
 		wp_clean_plugins_cache();
-		sc_wpun()->config()->flush();
 
 		parent::tear_down();
 	}

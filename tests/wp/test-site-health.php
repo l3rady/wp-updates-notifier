@@ -23,7 +23,6 @@ class Test_Site_Health extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 		$this->save_state();
 		wp_clear_scheduled_hook( Scheduler::CRON_NAME );
@@ -34,7 +33,6 @@ class Test_Site_Health extends WPUN_Test_Case {
 	 */
 	public function tear_down() {
 		sc_wpun()->channels()->unregister( 'test_secret' );
-		sc_wpun()->config()->flush();
 		wp_clear_scheduled_hook( Scheduler::CRON_NAME );
 		parent::tear_down();
 	}

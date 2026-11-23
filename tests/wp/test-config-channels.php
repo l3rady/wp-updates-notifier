@@ -21,8 +21,6 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	public function set_up() {
 		parent::set_up();
 
-		WPUN\Field_Types::forget_warnings();
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 	}
 
@@ -33,7 +31,6 @@ class Test_Config_Channels extends WPUN_Test_Case {
 		foreach ( array( 'test_secret', 'odd' ) as $type ) {
 			sc_wpun()->channels()->unregister( $type );
 		}
-		sc_wpun()->config()->flush();
 		parent::tear_down();
 	}
 

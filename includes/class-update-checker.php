@@ -1198,6 +1198,18 @@ class Update_Checker {
 	}
 
 	/**
+	 * Forget the results and the notification of the most recent check, for tests.
+	 *
+	 * @internal
+	 *
+	 * @return void
+	 */
+	public function forget_last_check(): void {
+		$this->last_results      = array();
+		$this->last_notification = null;
+	}
+
+	/**
 	 * The notification built by the most recent check, with every item that was waiting, for tests.
 	 *
 	 * @internal

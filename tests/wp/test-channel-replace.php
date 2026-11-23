@@ -78,7 +78,6 @@ class Test_Channel_Replace extends WPUN_Test_Case {
 		parent::set_up();
 
 		remove_all_actions( 'sc_wpun_register_channels' );
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 		wp_set_current_user( self::$admin_id );
 	}
@@ -90,7 +89,6 @@ class Test_Channel_Replace extends WPUN_Test_Case {
 		foreach ( array( 'swap', 'swap_gated' ) as $type ) {
 			sc_wpun()->channels()->unregister( $type );
 		}
-		sc_wpun()->config()->flush();
 		$_POST = array();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();

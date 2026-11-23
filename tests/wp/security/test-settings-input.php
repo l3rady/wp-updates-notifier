@@ -45,7 +45,6 @@ class Test_Security_Settings_Input extends WPUN_Security_Test_Case {
 		parent::set_up();
 
 		sc_wpun()->register_admin_hooks();
-		sc_wpun()->config()->flush();
 		$this->save_settings();
 		wp_set_current_user( self::$admin_id );
 		sc_wpun()->channels()->register( new Test_Fields_Channel( 'security_fields', $this->schema() ) );
@@ -56,7 +55,6 @@ class Test_Security_Settings_Input extends WPUN_Security_Test_Case {
 	 */
 	public function tear_down() {
 		sc_wpun()->channels()->unregister( 'security_fields' );
-		sc_wpun()->config()->flush();
 		$_POST = array();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();

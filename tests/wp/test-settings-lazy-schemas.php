@@ -36,7 +36,6 @@ class Test_Settings_Lazy_Schemas extends WPUN_Test_Case {
 			);
 		}
 		unload_textdomain( 'wp-updates-notifier' );
-		sc_wpun()->config()->flush();
 	}
 
 	/**
@@ -44,7 +43,6 @@ class Test_Settings_Lazy_Schemas extends WPUN_Test_Case {
 	 */
 	public function tear_down() {
 		wp_clear_scheduled_hook( WPUN\Scheduler::CRON_NAME );
-		sc_wpun()->config()->flush();
 		parent::tear_down();
 	}
 

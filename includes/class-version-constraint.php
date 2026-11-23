@@ -52,6 +52,17 @@ final class Version_Constraint {
 	private static $reported = array();
 
 	/**
+	 * Forget which constraints were reported, for tests.
+	 *
+	 * @internal
+	 *
+	 * @return void
+	 */
+	public static function forget_reported(): void {
+		self::$reported = array();
+	}
+
+	/**
 	 * Whether a version satisfies a constraint.
 	 *
 	 * @since 2.0.0

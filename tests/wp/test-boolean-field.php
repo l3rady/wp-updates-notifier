@@ -14,16 +14,6 @@ use WPUN\Boolean_Field;
 class Test_Boolean_Field extends WPUN_Test_Case {
 
 	/**
-	 * Start clean.
-	 */
-	public function set_up() {
-		parent::set_up();
-
-		\WPUN\Field_Types::forget_warnings();
-		sc_wpun()->config()->flush();
-	}
-
-	/**
 	 * The markup parsed.
 	 *
 	 * @param string $html Markup.
