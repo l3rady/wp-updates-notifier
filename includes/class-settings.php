@@ -23,6 +23,13 @@ class Settings {
 	const OPT_VERSION       = '14.0';
 
 	/**
+	 * The options the plugin keeps per site, or per network on a multisite, apart from the options of settings groups
+	 * and the data of modules. The first run on a network copies them from the main site. `uninstall.php` names the
+	 * same options as literals, and `tests/wp/test-uninstall.php` checks that it does.
+	 */
+	const OPTIONS = array( self::OPT_FIELD, self::OPT_VERSION_FIELD, State::OPT_FIELD, Channel_Store::OPT_FIELD, Mute_Store::OPT_FIELD );
+
+	/**
 	 * What the notify settings were stored as before settings version 10: 0 none, 1 all, 2 active only.
 	 */
 	const LEGACY_NOTIFY = array(
@@ -187,7 +194,7 @@ class Settings {
 		}
 
 		$copied = false;
-		foreach ( array( self::OPT_FIELD, self::OPT_VERSION_FIELD, State::OPT_FIELD, Channel_Store::OPT_FIELD, Mute_Store::OPT_FIELD ) as $name ) {
+		foreach ( self::OPTIONS as $name ) {
 			$value = get_blog_option( $this->context->main_site_id(), $name );
 			if ( false !== $value ) {
 				add_site_option( $name, $value );
