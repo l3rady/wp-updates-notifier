@@ -269,7 +269,6 @@ class Test_Network_Admin extends WPUN_Test_Case {
 	 * The builders of the classes that link to a tab.
 	 */
 	public function test_every_builder_points_to_the_network_admin() {
-		$this->assertSame( $this->network_url( 'general' ), $this->call( sc_wpun()->check_now(), 'general_url' ) );
 		$this->assertSame( $this->network_url( 'muted' ), $this->call( sc_wpun()->muted_tab(), 'tab_url' ) );
 		$this->assertSame( $this->network_url( 'channels' ) . '&x=1', $this->call( sc_wpun()->channel_form(), 'tab_url', array( array( 'x' => '1' ) ) ) );
 

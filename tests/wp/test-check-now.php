@@ -309,6 +309,29 @@ class Test_Check_Now extends WPUN_Test_Case {
 	}
 
 	/**
+	 * After an accepted request the handler goes back to the General tab, in the network admin when network-activated.
+	 */
+	public function test_the_handler_goes_back_to_the_general_tab() {
+		$this->save_settings( array( 'email_notifications' => 0 ) ); // Nothing is sent, so no delivery is left for later tests.
+		add_filter(
+			'wp_redirect',
+			static function ( $location ) {
+				throw new RuntimeException( (string) $location ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test.
+			}
+		);
+
+		try {
+			sc_wpun()->check_now()->handle();
+			$this->fail( 'No redirect.' );
+		} catch ( RuntimeException $e ) {
+			$location = $e->getMessage();
+		}
+
+		$this->assertSame( sc_wpun()->network_context()->settings_url( 'general' ), $location );
+		$this->assertSame( sc_wpun_is_network(), false !== strpos( $location, '/network/' ) );
+	}
+
+	/**
 	 * The admin-post hook is registered with the other admin hooks.
 	 */
 	public function test_the_hook_is_registered() {

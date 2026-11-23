@@ -104,28 +104,28 @@ class Settings_Page {
 	private $network_context;
 
 	/**
-	 * The panels of the settings groups; the plugin's own when null.
+	 * The panels of the settings groups.
 	 *
-	 * @var Settings_Group_Form|null
+	 * @var Settings_Group_Form
 	 */
 	private $group_form;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param Settings                 $settings  Settings.
-	 * @param State                    $state     Run state.
-	 * @param Config_Report            $config_report Report of configuration problems.
-	 * @param Rejected_Channels        $rejected_channels Report of modules refused for needing a newer API.
-	 * @param Channels_Tab             $channels_tab The Channels tab.
-	 * @param Notices                  $notices Notices about what an admin action did.
-	 * @param Check_Now                $check_now The Check now button.
-	 * @param About_Tab                $about_tab The About tab.
-	 * @param Muted_Tab                $muted_tab The Muted tab.
-	 * @param Network_Context|null     $network_context Where the plugin runs.
-	 * @param Settings_Group_Form|null $group_form The panels of the settings groups; the plugin's own when null.
+	 * @param Settings            $settings  Settings.
+	 * @param State               $state     Run state.
+	 * @param Config_Report       $config_report Report of configuration problems.
+	 * @param Rejected_Channels   $rejected_channels Report of modules refused for needing a newer API.
+	 * @param Channels_Tab        $channels_tab The Channels tab.
+	 * @param Notices             $notices Notices about what an admin action did.
+	 * @param Check_Now           $check_now The Check now button.
+	 * @param About_Tab           $about_tab The About tab.
+	 * @param Muted_Tab           $muted_tab The Muted tab.
+	 * @param Network_Context     $network_context Where the plugin runs.
+	 * @param Settings_Group_Form $group_form The panels of the settings groups.
 	 */
-	public function __construct( Settings $settings, State $state, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab, ?Network_Context $network_context = null, ?Settings_Group_Form $group_form = null ) {
+	public function __construct( Settings $settings, State $state, Config_Report $config_report, Rejected_Channels $rejected_channels, Channels_Tab $channels_tab, Notices $notices, Check_Now $check_now, About_Tab $about_tab, Muted_Tab $muted_tab, Network_Context $network_context, Settings_Group_Form $group_form ) {
 		$this->settings          = $settings;
 		$this->state             = $state;
 		$this->config_report     = $config_report;
@@ -135,17 +135,8 @@ class Settings_Page {
 		$this->check_now         = $check_now;
 		$this->about_tab         = $about_tab;
 		$this->muted_tab         = $muted_tab;
-		$this->network_context   = $network_context ?? new Network_Context();
+		$this->network_context   = $network_context;
 		$this->group_form        = $group_form;
-	}
-
-	/**
-	 * The panels of the settings groups.
-	 *
-	 * @return Settings_Group_Form
-	 */
-	private function group_form(): Settings_Group_Form {
-		return $this->group_form ?? sc_wpun()->settings_group_form();
 	}
 
 	/**
@@ -313,17 +304,18 @@ class Settings_Page {
 		if ( ! self::posted_token_valid( self::SAVE_ACTION . '_' . $tab ) ) {
 			return null;
 		}
-		if ( ! $this->group_form()->has_tab( $tab ) ) {
+		if ( ! $this->group_form->has_tab( $tab ) ) {
 			return $this->network_context->settings_url();
 		}
 
 		$general = 'general' === $tab;
-		$main    = $general ? $this->scalars( Form_Parts::posted_list( Settings::OPT_FIELD ) ) : array();
+		// Scalars only, so what is kept for the next page load stays small.
+		$main    = $general ? array_filter( Form_Parts::posted_list( Settings::OPT_FIELD ), 'is_scalar' ) : array();
 		$check   = $general ? $this->check_main( $main ) : array(
 			'valid'  => array(),
 			'errors' => array(),
 		);
-		$checked = $this->group_form()->check( $tab, Form_Parts::posted_list( Settings_Group_Form::POST_KEY ) );
+		$checked = $this->group_form->check( $tab, Form_Parts::posted_list( Settings_Group_Form::POST_KEY ) );
 		$errors  = array();
 		foreach ( $check['errors'] as $name => $message ) {
 			$errors[ 'main/' . $name ] = $message; // `main` is a reserved group id, so a key cannot be a group's.
@@ -344,7 +336,7 @@ class Settings_Page {
 			if ( $general ) {
 				$this->network_context->write( Settings::OPT_FIELD, $check['valid'] );
 			}
-			$this->group_form()->save( $checked['valid'] );
+			$this->group_form->save( $checked['valid'] );
 			$saved = __( 'Settings saved.' ); // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- Core's own message, already translated.
 			add_settings_error( 'general', 'settings_updated', $saved, 'success' );
 		}
@@ -354,17 +346,6 @@ class Settings_Page {
 		$back = wp_get_referer();
 
 		return add_query_arg( 'settings-updated', 'true', false !== $back && '' !== $back ? $back : $this->network_context->settings_url( $tab ) );
-	}
-
-	/**
-	 * The entries of a posted list that are strings, so what is kept for the next page load stays small.
-	 *
-	 * @param array<string, mixed> $values The posted list.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function scalars( array $values ): array {
-		return array_filter( $values, 'is_scalar' );
 	}
 
 	/**
@@ -418,7 +399,7 @@ class Settings_Page {
 			}
 		}
 		// The plugin's own settings and settings groups: on General and on the tabs of add-ons. Their errors are kept for the form, not in core's list.
-		if ( $this->group_form()->has_tab( $current ) && $this->group_form()->has_errors( $current ) ) {
+		if ( $this->group_form->has_tab( $current ) && $this->group_form->has_errors( $current ) ) {
 			$errors = true;
 		}
 
@@ -446,8 +427,8 @@ class Settings_Page {
 		if ( $this->settings->show_about() ) {
 			add_action( 'sc_wpun_settings_tab_about', array( $this->about_tab, 'render' ) );
 		}
-		foreach ( array_keys( $this->group_form()->tab_labels() ) as $slug ) {
-			add_action( "sc_wpun_settings_tab_{$slug}", array( $this->group_form(), 'render_current_tab' ) );
+		foreach ( array_keys( $this->group_form->tab_labels() ) as $slug ) {
+			add_action( "sc_wpun_settings_tab_{$slug}", array( $this->group_form, 'render_current_tab' ) );
 		}
 	}
 
@@ -477,7 +458,7 @@ class Settings_Page {
 		);
 
 		// Tabs of the settings groups of add-ons, before the filter so it can still change them.
-		$defaults = array_slice( $defaults, 0, 3, true ) + $this->group_form()->tab_labels() + array_slice( $defaults, 3, null, true );
+		$defaults = array_slice( $defaults, 0, 3, true ) + $this->group_form->tab_labels() + array_slice( $defaults, 3, null, true );
 
 		/**
 		 * Filters the tabs of the settings screen.
@@ -541,17 +522,6 @@ class Settings_Page {
 	}
 
 	/**
-	 * The address of a tab.
-	 *
-	 * @param string $tab Tab slug.
-	 *
-	 * @return string
-	 */
-	private function tab_url( string $tab ): string {
-		return $this->network_context->settings_url( $tab );
-	}
-
-	/**
 	 * Output the settings page.
 	 *
 	 * @return void
@@ -583,7 +553,7 @@ class Settings_Page {
 
 			<nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'Settings sections', 'wp-updates-notifier' ); ?>">
 				<?php foreach ( $tabs as $slug => $label ) : ?>
-					<a class="nav-tab<?php echo $slug === $current ? ' nav-tab-active' : ''; ?>" href="<?php echo esc_url( $this->tab_url( $slug ) ); ?>"<?php echo $slug === $current ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
+					<a class="nav-tab<?php echo $slug === $current ? ' nav-tab-active' : ''; ?>" href="<?php echo esc_url( $this->network_context->settings_url( $slug ) ); ?>"<?php echo $slug === $current ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
 				<?php endforeach; ?>
 			</nav>
 
@@ -608,7 +578,7 @@ class Settings_Page {
 	 * @return void
 	 */
 	public function render_general_tab(): void {
-		$round      = $this->group_form()->round( 'general' );
+		$round      = $this->group_form->round( 'general' );
 		$options    = $this->state->get();
 		$next_check = wp_next_scheduled( Scheduler::CRON_NAME );
 		?>
@@ -653,7 +623,7 @@ class Settings_Page {
 			$anchors[ 'main/' . $name ] = Form_Parts::first_control_id( $schema, $id );
 			$rows                      .= Form_Parts::field_row( (string) $name, $schema, $id, $this->main_control( (string) $name, $round ) );
 		}
-		$this->group_form()->render_summary( $round['errors'], $anchors );
+		$this->group_form->render_summary( $round['errors'], $anchors );
 		?>
 			<fieldset class="sc-wpun-panel">
 				<legend><h2><?php esc_html_e( 'Settings', 'wp-updates-notifier' ); ?></h2></legend>
@@ -661,7 +631,7 @@ class Settings_Page {
 					<?php echo $rows; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in Form_Parts. ?>
 				</table>
 			</fieldset>
-			<?php $this->group_form()->render_groups( 'general', $round ); ?>
+			<?php $this->group_form->render_groups( 'general', $round ); ?>
 			<?php submit_button( __( 'Save settings', 'wp-updates-notifier' ) ); ?>
 		</form>
 		<?php

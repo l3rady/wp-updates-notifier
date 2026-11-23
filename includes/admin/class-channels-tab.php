@@ -579,7 +579,7 @@ class Channels_Tab {
 			return null;
 		}
 
-		$id = sanitize_key( wp_unslash( $_POST['id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only used to find the nonce action.
+		$id = Form_Parts::posted_key( 'id' );
 		if ( ! Settings_Page::posted_token_valid( $action . '_' . $id ) ) {
 			return null;
 		}

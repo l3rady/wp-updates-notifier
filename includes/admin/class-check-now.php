@@ -91,15 +91,6 @@ class Check_Now {
 	}
 
 	/**
-	 * The address of the General tab.
-	 *
-	 * @return string
-	 */
-	private function general_url(): string {
-		return $this->network_context->settings_url( 'general' );
-	}
-
-	/**
 	 * Output the form with the button, and what it does.
 	 *
 	 * @return void
@@ -251,6 +242,6 @@ class Check_Now {
 	 * @return void
 	 */
 	public function handle(): void {
-		Settings_Page::finish( $this->process() ? $this->general_url() : null );
+		Settings_Page::finish( $this->process() ? $this->network_context->settings_url( 'general' ) : null );
 	}
 }
