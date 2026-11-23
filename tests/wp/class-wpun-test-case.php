@@ -30,7 +30,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	/**
 	 * Settings version and key set of the current release, used as the base for fixtures.
 	 */
-	const SETTINGS_VERSION = '14.0';
+	const SETTINGS_VERSION = \WPUN\Settings::OPT_VERSION;
 
 	/**
 	 * Whether the tests run with the default settings capability. On multisite that is `manage_network_options`,

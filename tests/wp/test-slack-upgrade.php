@@ -190,7 +190,7 @@ class Test_Slack_Upgrade extends WPUN_Slack_Test_Case {
 
 		sc_wpun()->settings()->maybe_upgrade();
 
-		$this->assertSame( '14.0', $context->get_option( 'sc_wpun_settings_ver' ) );
+		$this->assertSame( self::SETTINGS_VERSION, $context->get_option( 'sc_wpun_settings_ver' ) );
 		$this->assertArrayNotHasKey( 'slack_notice_sent', $this->stored_state() );
 		$this->assertSame( 1700000000, $this->stored_state()['last_check_time'], 'The rest of the state is kept.' );
 		$this->assertSame( '', get_user_meta( $user_id, 'sc_wpun_dismissed_slack_notice', true ) );

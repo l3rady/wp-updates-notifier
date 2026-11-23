@@ -1191,7 +1191,7 @@ class Test_Settings_Groups extends WPUN_Test_Case {
 		$this->register( 'delg', $this->text_fields() );
 		sc_wpun()->settings_groups()->save( 'delg', array( 'name' => 'x' ) );
 		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_gone', array( 'a' => 1 ) );
-		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', '14.0' );
+		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
 		$version = sc_wpun()->network_context()->get_option( 'sc_wpun_settings_ver' );
 
 		sc_wpun_delete_settings_group( 'delg' );

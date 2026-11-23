@@ -243,6 +243,15 @@ class Test_Contract extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The settings version is pinned here on purpose, so a bump is one conscious edit.
+	 *
+	 * Every other test uses `WPUN_Test_Case::SETTINGS_VERSION`.
+	 */
+	public function test_the_settings_version_is_pinned() {
+		$this->assertSame( '14.0', \WPUN\Settings::OPT_VERSION, 'A settings version bump needs the upgrade step in maybe_upgrade(), a test for it, and the new version in tests/fixtures/stored-shapes.php (see the bump-settings-version skill).' );
+	}
+
+	/**
 	 * Reads a setting through the plugin's filtered getter (private), as the plugin itself does.
 	 *
 	 * @param string $key Setting key.
