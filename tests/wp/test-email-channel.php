@@ -582,7 +582,7 @@ class Test_Email_Channel extends WPUN_Test_Case {
 		$this->assertSame( 'good@example.org', $this->mailer()->get_recipient( 'to', 0, 0 )->address );
 		$this->assertFalse( $this->mailer()->get_recipient( 'to', 0, 1 ) );
 		$this->assertStringContainsString( 'X-Ok: 1', $this->headers() );
-		$this->assertStringNotContainsString( 'Bcc', $this->headers() );
+		$this->assertDoesNotMatchRegularExpression( '/^Bcc:/mi', $this->headers() );
 		$this->assertStringContainsString( 'Hello & <Dolly>', $this->sent_mail()->body );
 	}
 
