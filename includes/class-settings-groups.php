@@ -26,7 +26,7 @@ final class Settings_Groups {
 	/**
 	 * Ids that would collide with the plugin's own options, tabs and hooks, apart from the names of its settings.
 	 */
-	const RESERVED = array( 'general', 'channels', 'muted', 'about', 'ver', 'main', 'tab', 'tabs', 'validate', 'group', 'show_about' );
+	const RESERVED = array( 'general', 'channels', 'muted', 'about', 'ver', 'main', 'tab', 'tabs', 'validate', 'group' );
 
 	/**
 	 * Tabs the plugin draws itself.
@@ -491,9 +491,10 @@ final class Settings_Groups {
 				// translators: %s: Field name.
 				return sprintf( __( 'The field name "%s" is not valid: use a-z, 0-9 and single underscores, starting with a letter.', 'wp-updates-notifier' ), $name );
 			}
-			if ( null !== $this->bad_field( $name, $schema ) ) {
-				// translators: %s: Field name.
-				return sprintf( __( 'The schema of the field "%s" is not valid: it needs a known type, and a valid on_invalid, constant_first and storage.', 'wp-updates-notifier' ), $name );
+			$bad = $this->bad_field( $name, $schema );
+			if ( null !== $bad ) {
+				// translators: 1: Field name. 2: Key of the field schema, such as type or on_invalid.
+				return sprintf( __( 'The "%2$s" key of the field "%1$s" is not valid.', 'wp-updates-notifier' ), $name, $bad );
 			}
 		}
 

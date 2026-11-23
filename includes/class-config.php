@@ -316,14 +316,15 @@ final class Config {
 	 */
 	private function env_opt_in(): bool {
 		$key   = 'SC_WPUN_LOAD_FROM_ENV';
-		$value = ( new Env_Source() )->get( $key, Config_Context::setting( 'load_from_env' ) );
+		$env   = new Env_Source();
+		$value = $env->get( $key, Config_Context::setting( 'load_from_env' ) );
 		if ( null === $value ) {
 			return false;
 		}
 
 		$cast = $this->cast( $value, array( 'type' => 'boolean' ) );
 		if ( ! $cast['ok'] ) {
-			$this->add_problem( $key, ( new Env_Source() )->get_label( $key ), __( 'The value is not a recognised on or off value (1, true, yes, on, 0, false, no, off), so environment variables are not read.', 'wp-updates-notifier' ) );
+			$this->add_problem( $key, $env->get_label( $key ), __( 'The value is not a recognised on or off value (1, true, yes, on, 0, false, no, off), so environment variables are not read.', 'wp-updates-notifier' ) );
 			return false;
 		}
 

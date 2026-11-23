@@ -832,7 +832,7 @@ if ( ! function_exists( 'sc_wpun_instance_problems' ) ) {
 			$problems[] = 'misconfigured';
 		}
 
-		return array_values( array_unique( $problems ) );
+		return $problems;
 	}
 }
 

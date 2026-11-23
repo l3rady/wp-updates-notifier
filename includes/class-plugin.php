@@ -202,6 +202,62 @@ class Plugin {
 	private $network_activation_notice = null;
 
 	/**
+	 * Resolver of configuration supplied from outside the database.
+	 *
+	 * @var Config
+	 */
+	private $config;
+
+	/**
+	 * Report of configuration problems.
+	 *
+	 * @var Config_Report
+	 */
+	private $config_report;
+
+	/**
+	 * Site Health tests and debug information.
+	 *
+	 * @var Site_Health
+	 */
+	private $site_health;
+
+	/**
+	 * Report of modules refused for needing a newer API.
+	 *
+	 * @var Rejected_Channels
+	 */
+	private $rejected_channels;
+
+	/**
+	 * Bundled translations.
+	 *
+	 * @var Translations
+	 */
+	private $translations;
+
+	/**
+	 * Storage of the mutes.
+	 *
+	 * @var Mute_Store
+	 */
+	private $mute_store;
+
+	/**
+	 * Where the plugin's options are stored.
+	 *
+	 * @var Network_Context
+	 */
+	private $network_context;
+
+	/**
+	 * Settings groups registered by add-ons.
+	 *
+	 * @var Settings_Groups
+	 */
+	private $settings_groups;
+
+	/**
 	 * What muting shares between the Plugins screen and the Muted tab, built on first use.
 	 *
 	 * @return Mute_Actions
@@ -321,62 +377,6 @@ class Plugin {
 	public function status_report(): Status_Report {
 		return new Status_Report( $this->settings, $this->channel_store, $this->channels, $this->dispatcher, $this->state, $this->update_checker, $this->mute_store );
 	}
-
-	/**
-	 * Resolver of configuration supplied from outside the database.
-	 *
-	 * @var Config
-	 */
-	private $config;
-
-	/**
-	 * Report of configuration problems.
-	 *
-	 * @var Config_Report
-	 */
-	private $config_report;
-
-	/**
-	 * Site Health tests and debug information.
-	 *
-	 * @var Site_Health
-	 */
-	private $site_health;
-
-	/**
-	 * Report of modules refused for needing a newer API.
-	 *
-	 * @var Rejected_Channels
-	 */
-	private $rejected_channels;
-
-	/**
-	 * Bundled translations.
-	 *
-	 * @var Translations
-	 */
-	private $translations;
-
-	/**
-	 * Storage of the mutes.
-	 *
-	 * @var Mute_Store
-	 */
-	private $mute_store;
-
-	/**
-	 * Where the plugin's options are stored.
-	 *
-	 * @var Network_Context
-	 */
-	private $network_context;
-
-	/**
-	 * Settings groups registered by add-ons.
-	 *
-	 * @var Settings_Groups
-	 */
-	private $settings_groups;
 
 	/**
 	 * Build the components. Nothing is hooked until register() runs.
@@ -661,13 +661,14 @@ class Plugin {
 		 * @since 2.0.0
 		 */
 		add_action( 'sc_wpun_run_check', array( $this->update_checker, 'run_manual_check' ) );
-		if ( $this->network_context->is_network() && get_current_blog_id() !== $this->network_context->main_site_id() ) {
+		$runs_check_here = ! $this->network_context->is_network() || get_current_blog_id() === $this->network_context->main_site_id();
+		if ( ! $runs_check_here ) {
 			// Only the main site checks in network mode: an event a site kept from before just removes itself.
 			add_action( Scheduler::CRON_NAME, array( $this->scheduler, 'clear_leftover_event' ) );
 		} else {
 			add_action( Scheduler::CRON_NAME, array( $this->update_checker, 'do_update_check' ) ); // action to link cron task to actual task.
 		}
-		if ( ! $this->network_context->is_network() || get_current_blog_id() === $this->network_context->main_site_id() ) {
+		if ( $runs_check_here ) {
 			// Network-activated, the network has one check, so only the main site reports on it.
 			add_filter( 'site_status_tests', array( $this->config_report, 'add_site_health_test' ) ); // Site Health test while a supplied value cannot be used.
 			add_filter( 'site_status_tests', array( $this->rejected_channels, 'add_site_health_test' ) ); // Site Health test while a module is refused for needing a newer API.

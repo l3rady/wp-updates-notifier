@@ -116,10 +116,8 @@ class Settings {
 			}
 
 			// Settings version 11 stores the on/off settings as true and false instead of 1 and 0.
-			foreach ( array( 'hide_updates' ) as $name ) {
-				if ( array_key_exists( $name, $options ) ) {
-					$options[ $name ] = $this->bool_setting( $options, $name, $defaults[ $name ] );
-				}
+			if ( array_key_exists( 'hide_updates', $options ) ) {
+				$options['hide_updates'] = $this->bool_setting( $options, 'hide_updates', $defaults['hide_updates'] );
 			}
 
 			// Settings version 8 moved the run state (what was notified, when the last check ran) to its own option.

@@ -17,6 +17,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @internal
  */
 final class Config_Report {
+	/**
+	 * The only tags the list of problems has. Each part of it is escaped when built.
+	 */
+	const LIST_TAGS = array(
+		'li'   => array(),
+		'code' => array(),
+	);
 
 	/**
 	 * Resolver.
@@ -98,11 +105,9 @@ final class Config_Report {
 		}
 		?>
 		<div class="notice notice-error sc-wpun-config-problems">
-			<p><strong><?php esc_html_e( 'Some configuration values supplied from outside the database are not valid. An invalid setting falls back to its saved value, its default, or the value its add-on chose; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ); ?></strong></p>
+			<p><strong><?php echo esc_html( $this->summary() ); ?></strong></p>
 			<ul>
-			<?php foreach ( $problems as $problem ) : ?>
-				<li><code><?php echo esc_html( $problem['key'] ); ?></code> (<?php echo esc_html( $problem['source'] ); ?>): <?php echo esc_html( $problem['message'] ); ?></li>
-			<?php endforeach; ?>
+			<?php echo wp_kses( $this->items_html(), self::LIST_TAGS ); ?>
 			</ul>
 		</div>
 		<?php
@@ -118,7 +123,7 @@ final class Config_Report {
 	public function add_site_health_test( $tests ) {
 		if ( is_array( $tests ) && array() !== $this->problems() ) {
 			$tests['direct']['sc_wpun_config'] = array(
-				'label' => __( 'WP Updates Notifier cannot use some configuration values', 'wp-updates-notifier' ),
+				'label' => $this->label(),
 				'test'  => array( $this, 'site_health_result' ),
 			);
 		}
@@ -132,17 +137,44 @@ final class Config_Report {
 	 * @return array<string, mixed>
 	 */
 	public function site_health_result(): array {
+		return Site_Health::result(
+			'sc_wpun_config',
+			'recommended',
+			$this->label(),
+			'<p>' . esc_html( $this->summary() ) . '</p><ul>' . $this->items_html() . '</ul>',
+			Site_Health::settings_action( $this->network_context->settings_url() )
+		);
+	}
+
+	/**
+	 * The title of the notice and of the Site Health test.
+	 *
+	 * @return string
+	 */
+	private function label(): string {
+		return __( 'WP Updates Notifier cannot use some configuration values', 'wp-updates-notifier' );
+	}
+
+	/**
+	 * The sentence above the list of problems. Plain text: the caller escapes it.
+	 *
+	 * @return string
+	 */
+	private function summary(): string {
+		return __( 'Some values supplied by constants, environment variables or other sources are not valid. An invalid setting falls back to its saved value, its default, or the value its add-on chose; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' );
+	}
+
+	/**
+	 * One list item for each problem: where the value came from and why, never the value. Every part is escaped.
+	 *
+	 * @return string
+	 */
+	private function items_html(): string {
 		$items = '';
 		foreach ( $this->problems() as $problem ) {
 			$items .= '<li><code>' . esc_html( $problem['key'] ) . '</code> (' . esc_html( $problem['source'] ) . '): ' . esc_html( $problem['message'] ) . '</li>';
 		}
 
-		return Site_Health::result(
-			'sc_wpun_config',
-			'recommended',
-			__( 'WP Updates Notifier cannot use some configuration values', 'wp-updates-notifier' ),
-			'<p>' . esc_html__( 'Some values supplied by constants, environment variables or other sources are not valid. An invalid setting falls back to its saved value, its default, or the value its add-on chose; a channel with an invalid value does not send until it is fixed.', 'wp-updates-notifier' ) . '</p><ul>' . $items . '</ul>',
-			Site_Health::settings_action( $this->network_context->settings_url() )
-		);
+		return $items;
 	}
 }

@@ -503,6 +503,69 @@ class Test_Settings_Groups extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The notice for a bad field schema names the key that is wrong.
+	 *
+	 * @dataProvider data_bad_field_keys
+	 *
+	 * @param string $key    The key that is not valid.
+	 * @param array  $schema The field schema.
+	 */
+	public function test_a_bad_field_schema_names_the_key( string $key, array $schema ) {
+		$this->setExpectedIncorrectUsage( 'sc_wpun_register_settings_group' );
+		$messages = array();
+		add_action(
+			'doing_it_wrong_run',
+			static function ( $function_name, $message ) use ( &$messages ) {
+				$messages[] = $message;
+			},
+			10,
+			2
+		);
+
+		$this->in_action(
+			static function () use ( $schema ) {
+				return sc_wpun_register_settings_group( 'acme', array( 'label' => 'Acme' ), array( 'x' => $schema ) );
+			}
+		);
+
+		$this->assertCount( 1, $messages );
+		$this->assertStringContainsString( sprintf( 'The "%s" key of the field "x" is not valid.', $key ), html_entity_decode( $messages[0] ) );
+	}
+
+	/**
+	 * Field schemas with one bad key each.
+	 *
+	 * @return array
+	 */
+	public function data_bad_field_keys() {
+		return array(
+			'type'           => array( 'type', array( 'type' => 'nope' ) ),
+			'constant_first' => array(
+				'constant_first',
+				array(
+					'type'           => 'text',
+					'constant_first' => 'yes',
+				),
+			),
+			'storage'        => array(
+				'storage',
+				array(
+					'type'    => 'text',
+					'storage' => 0,
+				),
+			),
+			'on_invalid'     => array(
+				'on_invalid',
+				array(
+					'type'       => 'number',
+					'min'        => 1,
+					'on_invalid' => 0,
+				),
+			),
+		);
+	}
+
+	/**
 	 * An on_invalid that a multiple choice accepts as a list is valid.
 	 */
 	public function test_on_invalid_is_checked_with_the_type_of_the_field() {
