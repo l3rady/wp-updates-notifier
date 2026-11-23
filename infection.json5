@@ -143,7 +143,7 @@
         },
         "Break_": {
             // Once one instance has not been told, the answer is no; carrying on with the others cannot change it.
-            "ignore": ["WPUN\\Update_Checker::without_notified"]
+            "ignore": ["WPUN\\Notifier::without_notified"]
         },
         "UnwrapArrayValues": {
             // Notification re-indexes the items it is given, and the other lists are only walked or flipped.

@@ -188,7 +188,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		public function check_plugins_against_notified( $plugins_need_update ) {
 			_deprecated_function( __METHOD__, '2.0.0' );
 
-			return sc_wpun()->update_checker()->check_plugins_against_notified( $plugins_need_update );
+			return sc_wpun()->notifier()->check_plugins_against_notified( $plugins_need_update );
 		}
 
 		/**
@@ -203,7 +203,7 @@ if ( ! class_exists( 'SC_WP_Updates_Notifier' ) ) {
 		public function check_themes_against_notified( $themes_need_update ) {
 			_deprecated_function( __METHOD__, '2.0.0' );
 
-			return sc_wpun()->update_checker()->check_themes_against_notified( $themes_need_update );
+			return sc_wpun()->notifier()->check_themes_against_notified( $themes_need_update );
 		}
 
 		/**

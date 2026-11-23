@@ -80,6 +80,13 @@ class Update_Checker {
 	private $last_notification = null;
 
 	/**
+	 * The reminder rules.
+	 *
+	 * @var Reminder_Clock
+	 */
+	private $reminders;
+
+	/**
 	 * The results of the last check by instance id.
 	 *
 	 * @var array<string, Delivery_Result>
@@ -107,9 +114,11 @@ class Update_Checker {
 	 * @param Channel_Store        $channels Channel instance storage.
 	 * @param Mute_Store           $mutes    Mute storage.
 	 * @param Auto_Update_Policy   $auto_updates Tells whether WordPress is set to install an update by itself.
+	 * @param Reminder_Clock       $reminders The reminder rules.
 	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Settings $settings, State $state, Dispatcher $dispatcher, Channel_Store $channels, Mute_Store $mutes, Auto_Update_Policy $auto_updates, ?Network_Context $network_context = null ) {
+	public function __construct( Settings $settings, State $state, Dispatcher $dispatcher, Channel_Store $channels, Mute_Store $mutes, Auto_Update_Policy $auto_updates, Reminder_Clock $reminders, ?Network_Context $network_context = null ) {
+		$this->reminders       = $reminders;
 		$this->network_context = $network_context ?? new Network_Context();
 		$this->auto_updates    = $auto_updates;
 		$this->mutes           = $mutes;
@@ -488,7 +497,7 @@ class Update_Checker {
 			}
 		}
 
-		$clock = $this->tick_reminder_clock( $instance, $entry, $pending, $options, $force );
+		$clock = $this->reminders->tick( $instance, $entry, $pending, $options, $force );
 		$entry = $clock['entry'];
 		$due   = $clock['due'];
 
@@ -506,7 +515,7 @@ class Update_Checker {
 			$entry['skip_pending'] = false;
 			$entry                 = $this->record( $entry, $for_instance );
 		} elseif ( $due ) {
-			$reminder       = $this->plan_reminder( $notification, $entry, $pending );
+			$reminder       = $this->reminders->plan( $notification, $entry, $pending );
 			$entry          = $reminder['entry'];
 			$send           = $reminder['send'];
 			$plan['status'] = $reminder['status'];
@@ -531,90 +540,6 @@ class Update_Checker {
 		return array(
 			'plan'  => $plan,
 			'entry' => $store ? $entry : null,
-		);
-	}
-
-	/**
-	 * Plan the reminder that is due: one message with everything waiting, new items included, instead of a second message.
-	 *
-	 * A reminder that stopped halfway resumes with the items it has not delivered yet. With none left the round is
-	 * complete: the interval restarts and nothing is sent.
-	 *
-	 * @param Notification        $notification The notification of the check.
-	 * @param Channel_State       $entry        The state of the instance.
-	 * @param Notification_Item[] $pending      Everything waiting that the instance receives.
-	 *
-	 * @return array{entry: Channel_State, send: Notification|null, status: string, items: Notification_Item[]} The state, the message (null if there is nothing to send), the status of the plan and its items.
-	 */
-	private function plan_reminder( Notification $notification, array $entry, array $pending ): array { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint -- A phpstan-type alias.
-		$remaining = array();
-		foreach ( $pending as $item ) {
-			if ( ( $entry['reminder_sent'][ $item->get_type() ][ $item->get_key() ] ?? null ) !== $item->get_new_version() ) {
-				$remaining[] = $item;
-			}
-		}
-
-		if ( array() === $remaining ) {
-			$entry['last_reminder'] = time();
-			unset( $entry['reminder_sent'] );
-
-			return array(
-				'entry'  => $entry,
-				'send'   => null,
-				'status' => self::STATUS_NOTHING,
-				'items'  => array(),
-			);
-		}
-
-		return array(
-			'entry'  => $entry,
-			'send'   => new Notification(
-				$notification->get_site_name(),
-				$notification->get_site_url(),
-				$notification->get_updates_url(),
-				$remaining,
-				array(
-					'is_reminder' => true,
-					'source'      => $notification->get_source(),
-				)
-			),
-			'status' => self::STATUS_REMINDER,
-			'items'  => $remaining,
-		);
-	}
-
-	/**
-	 * Start, keep or stop the reminder clock of an instance, and tell whether a reminder is due.
-	 *
-	 * The clock runs while the instance wants reminders and something is waiting for it.
-	 *
-	 * @param Channel_Instance     $instance The instance.
-	 * @param Channel_State        $entry    Its state.
-	 * @param Notification_Item[]  $pending  Everything waiting that it receives.
-	 * @param array<string, mixed> $options  The settings.
-	 * @param bool                 $force    Whether to send what was notified again, which never sends a reminder.
-	 *
-	 * @return array{entry: Channel_State, due: bool} The state with the clock changed, and whether a reminder is due.
-	 */
-	private function tick_reminder_clock( Channel_Instance $instance, array $entry, array $pending, array $options, bool $force ): array { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint -- A phpstan-type alias.
-		$remind   = Routing::normalise( $instance->get_routing() )['remind'];
-		$interval = $this->reminder_interval( $remind );
-		$due      = false;
-		if ( isset( $entry['reminder_sent'] ) ) {
-			$entry = $this->prune_reminder_sent( $entry, $pending ); // Progress only counts for items still waiting at the same version.
-		}
-		if ( 0 === $interval || array() === $pending ) {
-			unset( $entry['last_reminder'], $entry['reminder_sent'] ); // The clock stops, and a new round starts clean.
-		} elseif ( ! isset( $entry['last_reminder'] ) ) {
-			unset( $entry['reminder_sent'] );
-			$entry['last_reminder'] = time(); // Starts now: the first reminder comes one interval after items start waiting.
-		} else {
-			$due = ! $force && ! $entry['skip_pending'] && ( 'every_check' === $remind || $this->reminder_is_due( $entry['last_reminder'], $interval, $options ) );
-		}
-
-		return array(
-			'entry' => $entry,
-			'due'   => $due,
 		);
 	}
 
@@ -704,32 +629,6 @@ class Update_Checker {
 		}
 
 		return $part;
-	}
-
-	/**
-	 * Keep the reminder progress of items that still wait at the same version.
-	 *
-	 * @param Channel_State       $entry   The state of the instance.
-	 * @param Notification_Item[] $pending Everything waiting that the instance receives.
-	 *
-	 * @return Channel_State
-	 */
-	private function prune_reminder_sent( array $entry, array $pending ): array { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint -- A phpstan-type alias.
-		$kept = array();
-		foreach ( $pending as $item ) {
-			$type = $item->get_type();
-			$key  = $item->get_key();
-			if ( ( $entry['reminder_sent'][ $type ][ $key ] ?? null ) === $item->get_new_version() ) {
-				$kept[ $type ][ $key ] = $item->get_new_version();
-			}
-		}
-		if ( array() === $kept ) {
-			unset( $entry['reminder_sent'] );
-		} else {
-			$entry['reminder_sent'] = $kept;
-		}
-
-		return $entry;
 	}
 
 	/**
@@ -1174,49 +1073,6 @@ class Update_Checker {
 	}
 
 	/**
-	 * The seconds between reminders for a `remind` routing value.
-	 *
-	 * @param mixed $remind The normalised `remind` routing value: never, daily, weekly or every_check.
-	 *
-	 * @return int 0 for never, 1 for every check (a reminder is due at each check, so there is no real interval).
-	 */
-	private function reminder_interval( $remind ): int {
-		if ( 'every_check' === $remind ) {
-			return 1;
-		}
-
-		if ( 'daily' === $remind ) {
-			return DAY_IN_SECONDS;
-		}
-
-		return 'weekly' === $remind ? WEEK_IN_SECONDS : 0;
-	}
-
-	/**
-	 * Whether a reminder is due, a little early if the interval is not reached yet.
-	 *
-	 * WP-Cron only runs when the site gets a visit, so a check is often late, and the next one is
-	 * scheduled from the planned time, not the actual one. With a strict comparison a daily reminder
-	 * on a daily check would then be a few minutes short at the next run and wait a whole extra
-	 * cycle. So a reminder is due when the time since the last one is within half of the check
-	 * frequency's interval of the reminder interval. The tolerance is never more than half the
-	 * reminder interval, so with checks less often than reminders (weekly checks, daily reminders)
-	 * every check sends one, but a "Check now" soon after a reminder does not send another.
-	 *
-	 * @param int                  $last_reminder When the last reminder was sent, or the clock started.
-	 * @param int                  $interval      Seconds between reminders.
-	 * @param array<string, mixed> $options       The settings, for the check frequency.
-	 *
-	 * @return bool
-	 */
-	private function reminder_is_due( int $last_reminder, int $interval, array $options ): bool {
-		$frequency = is_string( $options['frequency'] ?? null ) ? $options['frequency'] : '';
-		$tolerance = (int) min( ( Frequencies::all()[ $frequency ]['interval'] ?? 0 ) / 2, $interval / 2 );
-
-		return time() - $last_reminder >= $interval - $tolerance;
-	}
-
-	/**
 	 * The results of the most recent check by instance id, for the instances that were sent to, for tests.
 	 *
 	 * @internal
@@ -1248,67 +1104,5 @@ class Update_Checker {
 	 */
 	public function last_notification(): ?Notification {
 		return $this->last_notification;
-	}
-
-	/**
-	 * Remove plugins from an update list if every channel instance has been told about that version.
-	 *
-	 * Kept for the deprecated SC_WP_Updates_Notifier method of the same name: the update check no
-	 * longer uses it, because what was notified is tracked per instance.
-	 *
-	 * @param array<mixed> $plugins_need_update Array of plugins that need an update.
-	 *
-	 * @return array<mixed> $plugins_need_update
-	 */
-	public function check_plugins_against_notified( $plugins_need_update ) {
-		return $this->without_notified( $plugins_need_update, 'plugin' );
-	}
-
-	/**
-	 * Remove themes from an update list if every channel instance has been told about that version.
-	 *
-	 * Kept for the deprecated SC_WP_Updates_Notifier method of the same name.
-	 *
-	 * @param array<mixed> $themes_need_update Array of themes that need an update.
-	 *
-	 * @return array<mixed> $themes_need_update
-	 */
-	public function check_themes_against_notified( $themes_need_update ) {
-		return $this->without_notified( $themes_need_update, 'theme' );
-	}
-
-	/**
-	 * Remove the entries of an update list that every stored instance has been told about.
-	 *
-	 * @param mixed  $needing_update Update list, keyed by plugin file or stylesheet.
-	 * @param string $type           Item type: plugin or theme.
-	 *
-	 * @return mixed The list, unchanged if it is not an array or no instance has state.
-	 */
-	private function without_notified( $needing_update, string $type ) {
-		$instances = $this->channels->all();
-		if ( ! is_array( $needing_update ) || array() === $instances ) {
-			return $needing_update;
-		}
-
-		$channels = $this->state->get()['channels'];
-		foreach ( $needing_update as $key => $data ) {
-			$version = is_object( $data ) ? ( $data->new_version ?? null ) : ( is_array( $data ) ? ( $data['new_version'] ?? null ) : null );
-			if ( ! is_scalar( $version ) ) {
-				continue;
-			}
-			$told_all = true;
-			foreach ( array_keys( $instances ) as $id ) {
-				if ( ( $channels[ $id ]['notified'][ $type ][ (string) $key ] ?? null ) !== (string) $version ) {
-					$told_all = false;
-					break;
-				}
-			}
-			if ( $told_all ) {
-				unset( $needing_update[ $key ] );
-			}
-		}
-
-		return $needing_update;
 	}
 }

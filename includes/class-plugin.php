@@ -393,10 +393,10 @@ class Plugin {
 		$this->config_report     = new Config_Report( $this->config, $this->settings, $this->channel_store, $this->settings_groups, $this->network_context );
 		$this->rejected_channels = new Rejected_Channels( $this->channels, $this->network_context );
 		$this->scheduler         = new Scheduler( $this->settings, $this->network_context );
-		$this->notifier          = new Notifier( $this->channel_store, $this->network_context );
+		$this->notifier          = new Notifier( $this->channel_store, $this->state, $this->network_context );
 		$this->dispatcher        = new Dispatcher( $this->channels, $this->channel_store, $this->network_context );
 		$this->mute_store        = new Mute_Store( $this->network_context );
-		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store, new Auto_Update_Policy(), $this->network_context );
+		$this->update_checker    = new Update_Checker( $this->settings, $this->state, $this->dispatcher, $this->channel_store, $this->mute_store, new Auto_Update_Policy(), new Reminder_Clock(), $this->network_context );
 		$this->site_health       = new Site_Health( $this->settings, $this->state, $this->channel_store, $this->config_report, $this->status_report(), $this->settings_groups, $this->network_context );
 	}
 

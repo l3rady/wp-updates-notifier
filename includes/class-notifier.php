@@ -25,6 +25,13 @@ class Notifier {
 	private $channels;
 
 	/**
+	 * Run state, where what each instance was told is kept.
+	 *
+	 * @var State
+	 */
+	private $state;
+
+	/**
 	 * Where the plugin runs: one site or a whole network.
 	 *
 	 * @var Network_Context
@@ -35,10 +42,12 @@ class Notifier {
 	 * Constructor.
 	 *
 	 * @param Channel_Store        $channels        Channel instance storage.
+	 * @param State                $state           Run state.
 	 * @param Network_Context|null $network_context Where the plugin runs.
 	 */
-	public function __construct( Channel_Store $channels, ?Network_Context $network_context = null ) {
+	public function __construct( Channel_Store $channels, State $state, ?Network_Context $network_context = null ) {
 		$this->channels        = $channels;
+		$this->state           = $state;
 		$this->network_context = $network_context ?? new Network_Context();
 	}
 
@@ -73,5 +82,67 @@ class Notifier {
 		}
 
 		return $sent;
+	}
+
+	/**
+	 * Remove plugins from an update list if every channel instance has been told about that version.
+	 *
+	 * Kept for the deprecated SC_WP_Updates_Notifier method of the same name: the update check no
+	 * longer uses it, because what was notified is tracked per instance.
+	 *
+	 * @param array<mixed> $plugins_need_update Array of plugins that need an update.
+	 *
+	 * @return array<mixed> $plugins_need_update
+	 */
+	public function check_plugins_against_notified( $plugins_need_update ) {
+		return $this->without_notified( $plugins_need_update, 'plugin' );
+	}
+
+	/**
+	 * Remove themes from an update list if every channel instance has been told about that version.
+	 *
+	 * Kept for the deprecated SC_WP_Updates_Notifier method of the same name.
+	 *
+	 * @param array<mixed> $themes_need_update Array of themes that need an update.
+	 *
+	 * @return array<mixed> $themes_need_update
+	 */
+	public function check_themes_against_notified( $themes_need_update ) {
+		return $this->without_notified( $themes_need_update, 'theme' );
+	}
+
+	/**
+	 * Remove the entries of an update list that every stored instance has been told about.
+	 *
+	 * @param mixed  $needing_update Update list, keyed by plugin file or stylesheet.
+	 * @param string $type           Item type: plugin or theme.
+	 *
+	 * @return mixed The list, unchanged if it is not an array or no instance has state.
+	 */
+	private function without_notified( $needing_update, string $type ) {
+		$instances = $this->channels->all();
+		if ( ! is_array( $needing_update ) || array() === $instances ) {
+			return $needing_update;
+		}
+
+		$channels = $this->state->get()['channels'];
+		foreach ( $needing_update as $key => $data ) {
+			$version = is_object( $data ) ? ( $data->new_version ?? null ) : ( is_array( $data ) ? ( $data['new_version'] ?? null ) : null );
+			if ( ! is_scalar( $version ) ) {
+				continue;
+			}
+			$told_all = true;
+			foreach ( array_keys( $instances ) as $id ) {
+				if ( ( $channels[ $id ]['notified'][ $type ][ (string) $key ] ?? null ) !== (string) $version ) {
+					$told_all = false;
+					break;
+				}
+			}
+			if ( $told_all ) {
+				unset( $needing_update[ $key ] );
+			}
+		}
+
+		return $needing_update;
 	}
 }

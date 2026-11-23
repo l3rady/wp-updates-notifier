@@ -466,7 +466,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_channel_state( 'email', array( 'plugin' => array( 'hello.php' => '3' ) ) );
 		$plugins = array( 'hello.php' => (object) array( 'new_version' => 3 ) );
 
-		$this->assertSame( array(), $this->plugin_checker()->check_plugins_against_notified( $plugins ) );
+		$this->assertSame( array(), sc_wpun()->notifier()->check_plugins_against_notified( $plugins ) );
 	}
 
 	/**
@@ -480,7 +480,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 			'b.php' => array( 'new_version' => '3' ),
 		);
 
-		$this->assertSame( array( 'a.php' ), array_keys( $this->plugin_checker()->check_plugins_against_notified( $plugins ) ) );
+		$this->assertSame( array( 'a.php' ), array_keys( sc_wpun()->notifier()->check_plugins_against_notified( $plugins ) ) );
 	}
 
 	/**
