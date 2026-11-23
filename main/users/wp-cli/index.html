@@ -2833,9 +2833,9 @@ plugin  Hello Dolly  hello.php            version 1.7.3                         
 <p><strong>Exit code.</strong> 0.</p>
 <h2 id="channels-list">channels list<a class="headerlink" href="#channels-list" title="Permanent link">&para;</a></h2>
 <p>Lists the channel instances.</p>
-<div class="highlight"><pre><span></span><code>wp updates-notifier channels list [--format=&lt;table|json|csv|yaml&gt;] [--fields=&lt;fields&gt;]
+<div class="highlight"><pre><span></span><code>wp updates-notifier channels list [--format=&lt;table|json|csv|yaml|count&gt;] [--fields=&lt;fields&gt;]
 </code></pre></div>
-<p>The fields are <code>id</code>, <code>label</code>, <code>module</code>, <code>availability</code>, <code>enabled</code>, <code>code_defined</code> (<code>yes</code> when the instance is defined in code, so it can not be changed on the settings screen) and <code>last_result</code>. <code>wp updates-notifier status</code> shows where each setting of an instance comes from.</p>
+<p>The fields are <code>id</code>, <code>label</code>, <code>module</code>, <code>availability</code>, <code>enabled</code>, <code>code_defined</code> (<code>yes</code> when the instance is defined in code, so it can not be changed on the settings screen), <code>last_result</code>, <code>last_failure</code>, <code>retry_at</code> and <code>held_until</code>. The list shows <code>id</code>, <code>label</code>, <code>module</code>, <code>availability</code>, <code>enabled</code>, <code>code_defined</code>, <code>last_result</code> and <code>held_until</code> unless you pass <code>--fields</code>. <code>--format=count</code> prints only the number of instances. <code>wp updates-notifier status</code> shows where each setting of an instance comes from.</p>
 <div class="highlight"><pre><span></span><code>id      label   module  availability  enabled  code_defined  last_result
 office  Office  email   available     yes      no            success, 2026-01-01 08:00:01 UTC:
 </code></pre></div>
