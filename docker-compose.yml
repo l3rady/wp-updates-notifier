@@ -293,7 +293,7 @@ services:
   # Catches all outgoing mail: http://localhost:8025
   mailpit:
     profiles: [site]
-    image: axllent/mailpit:v1.33.0@sha256:9b3a463be15354c0f0eba91697d80e3e0d8a5623ef0e627cacc836bc17fd5231
+    image: axllent/mailpit:v1.33.1@sha256:aef2aacc11f075ec0fb6874275ee4a421e688e11a96ebb296134d1735c7761ce
     ports:
       # Loopback only: Mailpit shows every captured email, password-reset links included.
       - "127.0.0.1:8025:8025"
@@ -390,7 +390,7 @@ services:
   # set (zizmor refuses an empty token), so the gh CLI's own login on the host is left alone.
   zizmor:
     profiles: [security]
-    image: ghcr.io/zizmorcore/zizmor:1.32.0@sha256:3014cc8f68f663935f69b3c3e0e41f5ce102b268d97db13db0f62208747f860d
+    image: ghcr.io/zizmorcore/zizmor:1.33.1@sha256:ecd3ffe6158de1322e05a044ed43749bee12b1dccb7e1a7859bc6ac4b2a1c516
     working_dir: /app
     volumes:
       - .:/app:ro
@@ -423,7 +423,7 @@ services:
   # SBOM of the built zip (CycloneDX): `make sbom`. Writes to build/.
   syft:
     profiles: [security]
-    image: anchore/syft:v1.56.0@sha256:697ae864af1299cfa43c54b161cea3dd65c6d54de82e3dba66ea3dccb3acc313
+    image: anchore/syft:v1.57.0@sha256:3c70e6d5979364cefdc22b51617a78fd264574d3bd6b4f84a351204147025e2a
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /build
     volumes:
@@ -438,7 +438,7 @@ services:
   # Static analysis with the plugin's own rules in .semgrep/: `make sast`. No network needed.
   semgrep:
     profiles: [security]
-    image: semgrep/semgrep:1.183.0@sha256:2e45517a85e13a9cca14a2a00df6bb48affd66b8ebfae1b0991cd57578362fb0
+    image: semgrep/semgrep:1.184.0@sha256:cc1b68266f267878b39739373ea9985b9a78e5d64497dd875c8de100b22695ed
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /src
     volumes:
@@ -499,7 +499,7 @@ services:
   # Root, as the cache volume and (for the image scan, added by the make target) the Docker socket need it.
   trivy:
     profiles: [security]
-    image: aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
+    image: aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
     working_dir: /app
     volumes:
       - .:/app:ro
