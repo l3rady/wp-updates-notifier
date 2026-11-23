@@ -6,7 +6,7 @@
 # archive. The repository is bind-mounted at /app when it runs (see the assets service in docker-compose.yml).
 ARG OXIPNG_VERSION=10.2.1
 
-FROM debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f AS oxipng
+FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2 AS oxipng
 ARG OXIPNG_VERSION
 ARG TARGETARCH
 RUN apt-get update \
@@ -24,7 +24,7 @@ RUN set -eu; \
     tar -xzf "${name}.tar.gz"; \
     install -m 0755 "${name}/oxipng" /usr/local/bin/oxipng
 
-FROM debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f
+FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 RUN apt-get update \
     && apt-get install -y --no-install-recommends fontconfig fonts-liberation2 librsvg2-bin \
     && rm -rf /var/lib/apt/lists/*
