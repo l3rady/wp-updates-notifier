@@ -73,7 +73,7 @@ class Test_Hardening_Settings_Titles extends WPUN_Security_Test_Case {
 		}
 		$groups = new WPUN\Settings_Groups( sc_wpun()->config(), sc_wpun()->channels(), sc_wpun()->settings(), sc_wpun()->network_context() );
 		$this->set_plugin_property( 'settings_groups', $groups );
-		$this->set_plugin_property( 'config_report', new WPUN\Config_Report( sc_wpun()->config(), sc_wpun()->settings(), $this->plugin_property( 'channel_store' ), sc_wpun()->network_context(), $groups ) );
+		$this->set_plugin_property( 'config_report', new WPUN\Config_Report( sc_wpun()->config(), sc_wpun()->settings(), $this->plugin_property( 'channel_store' ), $groups, sc_wpun()->network_context() ) );
 		$this->set_plugin_property( 'settings_group_form', null );
 		$this->set_plugin_property( 'settings_page', null );
 		$this->save_settings();

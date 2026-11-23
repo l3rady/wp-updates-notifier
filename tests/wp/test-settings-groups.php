@@ -1181,7 +1181,7 @@ class Test_Settings_Groups extends WPUN_Test_Case {
 	public function test_site_health_reports_an_unusable_value_without_it() {
 		define( 'SC_WPUN_SETTING_REPG__LIMIT', 'many-LEAK' );
 		$this->register( 'repg', array( 'limit' => array( 'type' => 'number' ) ) );
-		$report = new Config_Report( sc_wpun()->config(), sc_wpun()->settings(), sc_wpun()->channel_store() );
+		$report = new Config_Report( sc_wpun()->config(), sc_wpun()->settings(), sc_wpun()->channel_store(), sc_wpun()->settings_groups() );
 
 		$tests = $report->add_site_health_test( array() );
 		$this->assertArrayHasKey( 'sc_wpun_config', $tests['direct'] );
@@ -1204,7 +1204,7 @@ class Test_Settings_Groups extends WPUN_Test_Case {
 		sc_wpun()->settings_groups()->save( 'infog', array( 'token' => self::SECRET ) );
 
 		$plugin = sc_wpun();
-		$health = new Site_Health( $plugin->settings(), $plugin->state(), $plugin->channel_store(), new Config_Report( $plugin->config(), $plugin->settings(), $plugin->channel_store() ), $plugin->status_report() );
+		$health = new Site_Health( $plugin->settings(), $plugin->state(), $plugin->channel_store(), new Config_Report( $plugin->config(), $plugin->settings(), $plugin->channel_store(), $plugin->settings_groups() ), $plugin->status_report(), $plugin->settings_groups() );
 		$info   = $health->add_debug_info( array() );
 
 		$section = $info[ Site_Health::SECTION . '-infog' ];

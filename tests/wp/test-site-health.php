@@ -59,7 +59,7 @@ class Test_Site_Health extends WPUN_Test_Case {
 	private function site_health( $disabled ) {
 		$plugin = sc_wpun();
 
-		return new class( $plugin->settings(), $plugin->state(), $plugin->channel_store(), new WPUN\Config_Report( $plugin->config(), $plugin->settings(), $plugin->channel_store() ), $plugin->status_report(), $disabled ) extends Site_Health {
+		return new class( $plugin->settings(), $plugin->state(), $plugin->channel_store(), new WPUN\Config_Report( $plugin->config(), $plugin->settings(), $plugin->channel_store(), $plugin->settings_groups() ), $plugin->status_report(), $plugin->settings_groups(), $disabled ) extends Site_Health {
 			/**
 			 * Whether DISABLE_WP_CRON is set.
 			 *
@@ -70,15 +70,16 @@ class Test_Site_Health extends WPUN_Test_Case {
 			/**
 			 * Constructor.
 			 *
-			 * @param WPUN\Settings      $settings Settings.
-			 * @param WPUN\State         $state    State.
-			 * @param WPUN\Channel_Store $store    Instances.
-			 * @param WPUN\Config_Report $config   Configuration report.
-			 * @param WPUN\Status_Report $report   Report.
-			 * @param bool               $disabled Whether DISABLE_WP_CRON is set.
+			 * @param WPUN\Settings        $settings Settings.
+			 * @param WPUN\State           $state    State.
+			 * @param WPUN\Channel_Store   $store    Instances.
+			 * @param WPUN\Config_Report   $config   Configuration report.
+			 * @param WPUN\Status_Report   $report   Report.
+			 * @param WPUN\Settings_Groups $groups  Settings groups.
+			 * @param bool                 $disabled Whether DISABLE_WP_CRON is set.
 			 */
-			public function __construct( $settings, $state, $store, $config, $report, $disabled ) {
-				parent::__construct( $settings, $state, $store, $config, $report );
+			public function __construct( $settings, $state, $store, $config, $report, $groups, $disabled ) {
+				parent::__construct( $settings, $state, $store, $config, $report, $groups );
 				$this->disabled = $disabled;
 			}
 

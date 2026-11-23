@@ -81,9 +81,9 @@ class Site_Health {
 	private $network_context;
 
 	/**
-	 * Settings groups of add-ons; the plugin's own when null.
+	 * Settings groups of add-ons.
 	 *
-	 * @var Settings_Groups|null
+	 * @var Settings_Groups
 	 */
 	private $groups;
 
@@ -95,10 +95,10 @@ class Site_Health {
 	 * @param Channel_Store        $store    Channel instances.
 	 * @param Config_Report        $config_report Configuration report.
 	 * @param Status_Report        $report   Report of settings, schedule and channels.
+	 * @param Settings_Groups      $groups   Settings groups of add-ons.
 	 * @param Network_Context|null $network_context Where the plugin runs.
-	 * @param Settings_Groups|null $groups  Settings groups of add-ons.
 	 */
-	public function __construct( Settings $settings, State $state, Channel_Store $store, Config_Report $config_report, Status_Report $report, ?Network_Context $network_context = null, ?Settings_Groups $groups = null ) {
+	public function __construct( Settings $settings, State $state, Channel_Store $store, Config_Report $config_report, Status_Report $report, Settings_Groups $groups, ?Network_Context $network_context = null ) {
 		$this->settings      = $settings;
 		$this->state         = $state;
 		$this->store         = $store;
@@ -360,11 +360,10 @@ class Site_Health {
 	 * @return array<mixed>
 	 */
 	private function add_group_sections( array $info ): array {
-		$groups = $this->groups ?? sc_wpun()->settings_groups();
-		foreach ( $groups->all() as $id => $group ) {
+		foreach ( $this->groups->all() as $id => $group ) {
 			$fields = array();
 			foreach ( $group['fields'] as $name => $schema ) {
-				$entry = $groups->entry( $id, (string) $name, __METHOD__ );
+				$entry = $this->groups->entry( $id, (string) $name, __METHOD__ );
 				if ( null === $entry ) {
 					continue;
 				}

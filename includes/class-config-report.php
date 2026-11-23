@@ -47,9 +47,9 @@ final class Config_Report {
 	private $network_context;
 
 	/**
-	 * Settings groups of add-ons; the plugin's own when null.
+	 * Settings groups of add-ons.
 	 *
-	 * @var Settings_Groups|null
+	 * @var Settings_Groups
 	 */
 	private $groups;
 
@@ -59,10 +59,10 @@ final class Config_Report {
 	 * @param Config               $config   Resolver.
 	 * @param Settings             $settings Settings.
 	 * @param Channel_Store        $store    Channel instances.
+	 * @param Settings_Groups      $groups   Settings groups of add-ons.
 	 * @param Network_Context|null $network_context Where the plugin runs.
-	 * @param Settings_Groups|null $groups   Settings groups of add-ons.
 	 */
-	public function __construct( Config $config, Settings $settings, Channel_Store $store, ?Network_Context $network_context = null, ?Settings_Groups $groups = null ) {
+	public function __construct( Config $config, Settings $settings, Channel_Store $store, Settings_Groups $groups, ?Network_Context $network_context = null ) {
 		$this->config   = $config;
 		$this->settings = $settings;
 		$this->store    = $store;
@@ -81,7 +81,7 @@ final class Config_Report {
 		$this->settings->get();
 		$this->settings->show_about();
 		$this->store->all();
-		( $this->groups ?? sc_wpun()->settings_groups() )->resolve_all();
+		$this->groups->resolve_all();
 
 		return $this->config->problems();
 	}
