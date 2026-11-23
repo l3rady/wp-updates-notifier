@@ -833,6 +833,22 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertArrayHasKey( 'enabled', get_user_meta( self::$admin_id, 'sc_wpun_channel_form', true )['errors'] );
 	}
 
+	/**
+	 * A bad label is an error on the label alone, and the switch comes back as it was posted.
+	 */
+	public function test_a_bad_label_keeps_the_switch_as_posted() {
+		$this->post_email(
+			array(
+				'label'   => '  ',
+				'enabled' => '1',
+			)
+		);
+		sc_wpun()->channel_form()->process_save();
+		$meta = get_user_meta( self::$admin_id, 'sc_wpun_channel_form', true );
+		$this->assertSame( array( 'label' ), array_keys( $meta['errors'] ) );
+		$this->assertTrue( $meta['values']['enabled'] );
+	}
+
 	// Errors.
 
 	/**

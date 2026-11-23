@@ -631,10 +631,11 @@ class Channels_Tab {
 			return false;
 		}
 
-		$instance = $this->changeable( $id );
-		if ( null === $instance ) {
+		$changeable = $this->changeable( $id );
+		if ( null === $changeable ) {
 			return true;
 		}
+		[$instance, $stored] = $changeable;
 
 		$source = $this->store->external_source( $id, 'enabled' );
 		if ( null !== $source ) {
@@ -644,12 +645,6 @@ class Channels_Tab {
 		}
 
 		// From the stored instance: the effective one has outside values, secrets included, laid over it.
-		$stored = $this->store->stored_all()[ $id ] ?? null;
-		if ( null === $stored ) {
-			$this->notices->add( false, Channel_Form::no_such_channel() );
-			return true;
-		}
-
 		$enabled = ! $instance->is_enabled();
 		$this->store->save( $stored->with_enabled( $enabled ) );
 		$this->notices->add(
@@ -675,20 +670,14 @@ class Channels_Tab {
 			return false;
 		}
 
-		$instance = $this->changeable( $id );
-		if ( null === $instance ) {
+		$changeable = $this->changeable( $id );
+		if ( null === $changeable ) {
 			return true;
 		}
 
 		// From the stored instance: saving the effective one under a new id would write outside values, such as wp-config secrets, to the database.
-		$stored = $this->store->stored_all()[ $id ] ?? null;
-		if ( null === $stored ) {
-			$this->notices->add( false, Channel_Form::no_such_channel() );
-			return true;
-		}
-
-		$taken  = array_merge( array_keys( $this->store->stored_all() ), array_keys( $this->store->all() ) );
-		$new_id = Channel_Form::generate_id( $id . '_copy', $stored->get_type(), array_map( 'strval', $taken ) );
+		$stored = $changeable[1];
+		$new_id = Channel_Form::generate_id( $id . '_copy', $stored->get_type(), $this->form->taken_ids() );
 
 		$copy = new Channel_Instance(
 			$new_id,
@@ -717,10 +706,11 @@ class Channels_Tab {
 			return false;
 		}
 
-		$instance = $this->changeable( $id );
-		if ( null === $instance ) {
+		$changeable = $this->changeable( $id );
+		if ( null === $changeable ) {
 			return true;
 		}
+		$instance = $changeable[0];
 
 		if ( $this->store->delete( $id ) ) { // Fires sc_wpun_channel_deleted, which makes State forget it.
 			// translators: %s: Label of the channel.
@@ -737,16 +727,16 @@ class Channels_Tab {
 	 *
 	 * @param string $id Instance id.
 	 *
-	 * @return Channel_Instance|null Null if it is not listed, or defined in code.
+	 * @return array{0: Channel_Instance, 1: Channel_Instance}|null The effective and the stored instance; null if it is not listed, or defined in code.
 	 */
-	private function changeable( string $id ): ?Channel_Instance {
+	private function changeable( string $id ): ?array {
 		$editable = $this->form->editable( $id );
 		if ( is_string( $editable ) ) {
 			$this->notices->add( false, $editable );
 			return null;
 		}
 
-		return $editable[0];
+		return array( $editable[0], $editable[2] );
 	}
 
 	/**

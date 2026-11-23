@@ -1,7 +1,7 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Cognitive complexity for "WPUN\\Admin\\Channel_Form\:\:process_save\(\)" is 46, keep it under 20$#'
+			message: '#^Cognitive complexity for "WPUN\\Admin\\Channel_Form\:\:process_save\(\)" is 43, keep it under 20$#'
 			identifier: complexity.functionLike
 			count: 1
 			path: ../../includes/admin/class-channel-form.php

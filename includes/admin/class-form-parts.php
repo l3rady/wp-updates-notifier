@@ -402,7 +402,7 @@ final class Form_Parts {
 	 *
 	 * @param array<string, string>               $errors Messages by field key, added to.
 	 * @param mixed                               $result The result of the validation.
-	 * @param string                              $area   `label`, `enabled`, `routing` or `settings`; empty to key the errors by the field name alone.
+	 * @param string                              $area   `routing` or `settings`; empty to key the errors by the field name alone.
 	 * @param array<string, array<string, mixed>> $known  The fields of the area that can have an error; an error that names another has no field.
 	 *
 	 * @return void
@@ -413,13 +413,9 @@ final class Form_Parts {
 		}
 
 		foreach ( $result->get_error_codes() as $code ) {
-			$data  = $result->get_error_data( $code );
-			$field = is_array( $data ) && isset( $data['field'] ) && is_string( $data['field'] ) ? $data['field'] : '';
-			if ( 'label' === $area || 'enabled' === $area ) {
-				$key = $area;
-			} else {
-				$key = '' !== $field && isset( $known[ $field ] ) ? ( '' === $area ? $field : $area . '.' . $field ) : '';
-			}
+			$data             = $result->get_error_data( $code );
+			$field            = is_array( $data ) && isset( $data['field'] ) && is_string( $data['field'] ) ? $data['field'] : '';
+			$key              = '' !== $field && isset( $known[ $field ] ) ? ( '' === $area ? $field : $area . '.' . $field ) : '';
 			$errors[ $key ] ??= $result->get_error_message( $code );
 		}
 	}

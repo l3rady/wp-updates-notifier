@@ -170,7 +170,7 @@ class Channel_Form {
 	 *
 	 * @param string $id Instance id.
 	 *
-	 * @return array{0: Channel_Instance, 1: Channel}|string The instance and its module; else why not, as text for a notice.
+	 * @return array{0: Channel_Instance, 1: Channel, 2: Channel_Instance}|string The effective instance, its module and the stored instance; else why not, as text for a notice.
 	 */
 	public function editable( string $id ) {
 		$instance = $this->listed()[ $id ] ?? null;
@@ -186,7 +186,37 @@ class Channel_Form {
 			return self::no_such_channel();
 		}
 
-		return array( $instance, $channel );
+		// The stored instance: the effective one has outside values, secrets included, laid over it. It is gone if another request deleted it.
+		$stored = $this->store->stored_all()[ $id ] ?? null;
+		if ( null === $stored ) {
+			return self::no_such_channel();
+		}
+
+		return array( $instance, $channel, $stored );
+	}
+
+	/**
+	 * The key of a form, under which a failed save is remembered.
+	 *
+	 * @param string $mode `new` or `edit`.
+	 * @param string $key  Channel type for `new`, instance id for `edit`.
+	 *
+	 * @return string `new:<type>` or `edit:<id>`.
+	 */
+	private function form_key( string $mode, string $key ): string {
+		return 'new' === $mode ? 'new:' . $key : 'edit:' . $key;
+	}
+
+	/**
+	 * The action of the security token of the save form.
+	 *
+	 * @param string $mode `new` or `edit`.
+	 * @param string $key  Channel type for `new`, instance id for `edit`.
+	 *
+	 * @return string
+	 */
+	private function token_action( string $mode, string $key ): string {
+		return self::SAVE_ACTION . '_' . $mode . '_' . $key;
 	}
 
 	/**
@@ -258,7 +288,7 @@ class Channel_Form {
 
 			return array(
 				'name'   => $this->heading( $channel, null ),
-				'errors' => $this->has_errors( 'new:' . $key ),
+				'errors' => $this->has_errors( $this->form_key( 'new', $key ) ),
 			);
 		}
 
@@ -270,7 +300,7 @@ class Channel_Form {
 
 		return array(
 			'name'   => $this->heading( $channel, $instance ),
-			'errors' => $this->has_errors( 'edit:' . $key ),
+			'errors' => $this->has_errors( $this->form_key( 'edit', $key ) ),
 		);
 	}
 
@@ -364,7 +394,7 @@ class Channel_Form {
 		$is_new   = 'new' === $mode;
 		$id       = $instance->get_id();
 		$type     = $instance->get_type();
-		$form_key = $is_new ? 'new:' . $type : 'edit:' . $id;
+		$form_key = $this->form_key( $mode, $is_new ? $type : $id );
 		$fields   = $channel->get_form_fields();
 		$round    = Form_Parts::round_trip( self::META_KEY, $form_key, true );
 		$errors   = null === $round ? array() : $round['errors'];
@@ -410,7 +440,7 @@ class Channel_Form {
 				<input type="hidden" name="action" value="<?php echo esc_attr( self::SAVE_ACTION ); ?>" />
 				<input type="hidden" name="mode" value="<?php echo esc_attr( $mode ); ?>" />
 				<input type="hidden" name="<?php echo esc_attr( $is_new ? 'type' : 'id' ); ?>" value="<?php echo esc_attr( $is_new ? $type : $id ); ?>" />
-				<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( self::SAVE_ACTION . '_' . $mode . '_' . ( $is_new ? $type : $id ) ) ); ?>" />
+				<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( wp_create_nonce( $this->token_action( $mode, $is_new ? $type : $id ) ) ); ?>" />
 				<?php
 				/**
 				 * Fires inside the add and edit form of a channel, before its first section.
@@ -734,11 +764,29 @@ class Channel_Form {
 	}
 
 	/**
+	 * The fields of the head of the form: the label, and the enabled switch unless it is supplied from outside the database.
+	 *
+	 * @param bool $with_enabled Whether the switch can be posted.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function head_fields( bool $with_enabled ): array {
+		$head = array( 'label' => $this->label_schema() );
+		if ( $with_enabled ) {
+			$head['enabled'] = Channel::enabled_field();
+		}
+
+		return $head;
+	}
+
+	/**
 	 * The ids no new instance may take: every stored or code-defined one, and `new`, which is the word of the add route.
+	 *
+	 * @internal
 	 *
 	 * @return string[]
 	 */
-	private function taken_ids(): array {
+	public function taken_ids(): array {
 		return array_map( 'strval', array_merge( array_keys( $this->store->stored_all() ), array_keys( $this->store->all() ), array( 'new' ) ) );
 	}
 
@@ -801,7 +849,7 @@ class Channel_Form {
 			return null;
 		}
 		$key = Form_Parts::posted_key( 'new' === $mode ? 'type' : 'id' );
-		if ( ! Settings_Page::posted_token_valid( self::SAVE_ACTION . '_' . $mode . '_' . $key ) ) {
+		if ( ! Settings_Page::posted_token_valid( $this->token_action( $mode, $key ) ) ) {
 			return null;
 		}
 
@@ -819,37 +867,30 @@ class Channel_Form {
 				$this->notices->add( false, $editable );
 				return $this->tab_url();
 			}
-			[$effective, $channel] = $editable;
-			$stored                = $this->store->stored_all()[ $key ] ?? null;
-			if ( null === $stored ) {
-				$this->notices->add( false, self::no_such_channel() );
-				return $this->tab_url();
-			}
+			[$effective, $channel, $stored] = $editable;
 		}
 
 		$fields          = $channel->get_form_fields();
 		$errors          = array();
 		$posted_settings = Form_Parts::posted_list( 'settings' );
 
-		// Label.
-		$label_schema = $this->label_schema();
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce checked above; the text field type cleans it.
-		$posted_label = isset( $_POST['label'] ) ? wp_unslash( $_POST['label'] ) : '';
-		$checked      = Field_Types::validate( array( 'label' => $label_schema ), array( 'label' => $posted_label ), array() );
-		$label        = is_array( $checked ) && isset( $checked['label'] ) && is_string( $checked['label'] ) ? $checked['label'] : '';
-		Form_Parts::collect_errors( $errors, $checked, 'label', array() );
-
-		// Enabled: a missing value is off; one supplied from outside the database wins.
-		$enabled = false;
-		if ( null !== $effective && null !== $this->store->external_source( $key, 'enabled' ) ) {
-			$enabled = $effective->is_enabled();
-		} else {
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce checked above; the boolean field type cleans it.
-			$posted_enabled = isset( $_POST['enabled'] ) ? wp_unslash( $_POST['enabled'] ) : '0';
-			$checked        = Field_Types::validate( array( 'enabled' => Channel::enabled_field() ), array( 'enabled' => $posted_enabled ), array() );
-			$enabled        = is_array( $checked ) && true === ( $checked['enabled'] ?? false );
-			Form_Parts::collect_errors( $errors, $checked, 'enabled', array() );
+		// Label and enabled, each checked on its own, as a check stops at its first error: a missing enabled is off; one supplied from outside the database wins.
+		$external_enabled = null !== $effective && null !== $this->store->external_source( $key, 'enabled' );
+		// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce checked above; the field types clean them.
+		$posted_head = array(
+			'label'   => isset( $_POST['label'] ) ? wp_unslash( $_POST['label'] ) : '',
+			'enabled' => isset( $_POST['enabled'] ) ? wp_unslash( $_POST['enabled'] ) : '0',
+		);
+		// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$head = array();
+		foreach ( $this->head_fields( ! $external_enabled ) as $name => $schema ) {
+			$checked       = Field_Types::validate( array( $name => $schema ), array( $name => $posted_head[ $name ] ), array() );
+			$head[ $name ] = is_array( $checked ) ? ( $checked[ $name ] ?? null ) : null;
+			Form_Parts::collect_errors( $errors, $checked, '', array( $name => $schema ) );
 		}
+		$posted_label = $posted_head['label'];
+		$label        = isset( $head['label'] ) && is_string( $head['label'] ) ? $head['label'] : '';
+		$enabled      = null !== $effective && $external_enabled ? $effective->is_enabled() : true === ( $head['enabled'] ?? false );
 
 		// Routing: unknown keys of the stored routing are kept.
 		$posted_routing = Form_Parts::posted_list( 'routing' );
@@ -880,7 +921,7 @@ class Channel_Form {
 		if ( array() !== $errors ) {
 			Form_Parts::remember(
 				self::META_KEY,
-				'new' === $mode ? 'new:' . $key : 'edit:' . $key,
+				$this->form_key( $mode, $key ),
 				array(
 					'label'        => is_string( $posted_label ) ? $posted_label : '',
 					'enabled'      => $enabled,
