@@ -34,6 +34,7 @@ services:
       interval: 3s
       timeout: 5s
       retries: 20
+      start_period: 60s
 
   # Catches every email; the specs read and empty it through its API.
   mailpit:

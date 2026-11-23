@@ -27,6 +27,7 @@ services:
       interval: 3s
       timeout: 5s
       retries: 20
+      start_period: 60s
 
   wordpress:
     <<: *site

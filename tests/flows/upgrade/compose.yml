@@ -37,6 +37,7 @@ services:
       interval: 3s
       timeout: 5s
       retries: 20
+      start_period: 60s
 
   mailpit:
     image: axllent/mailpit:v1.33.1@sha256:aef2aacc11f075ec0fb6874275ee4a421e688e11a96ebb296134d1735c7761ce

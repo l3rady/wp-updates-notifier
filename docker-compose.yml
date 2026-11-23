@@ -91,6 +91,7 @@ services:
       interval: 3s
       timeout: 5s
       retries: 20
+      start_period: 60s
 
   # The plugin's PHPUnit suite on a pinned wordpress-develop checkout, with the
   # plugin mounted read-only in the checkout's plugins directory.
@@ -150,6 +151,7 @@ services:
       interval: 3s
       timeout: 5s
       retries: 20
+      start_period: 60s
 
   wordpress:
     profiles: [site]
