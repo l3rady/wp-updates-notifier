@@ -20,6 +20,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Channels_Command {
 	/**
+	 * Every column of a channel row, in the order `status` shows them.
+	 */
+	const FIELDS = array( 'id', 'label', 'module', 'availability', 'enabled', 'code_defined', 'last_result', 'last_failure', 'retry_at', 'held_until' );
+
+	/**
+	 * The columns `channels list` shows without --fields.
+	 */
+	const LIST_FIELDS = array( 'id', 'label', 'module', 'availability', 'enabled', 'code_defined', 'last_result', 'held_until' );
+
+	/**
 	 * Lists the channel instances.
 	 *
 	 * ## OPTIONS
@@ -33,10 +43,11 @@ class Channels_Command {
 	 *   - json
 	 *   - csv
 	 *   - yaml
+	 *   - count
 	 * ---
 	 *
 	 * [--fields=<fields>]
-	 * : Limit the output to these fields: id, label, module, availability, enabled, code_defined, last_result, held_until.
+	 * : Limit the output to these fields: id, label, module, availability, enabled, code_defined, last_result, last_failure, retry_at, held_until. Without --fields the list shows id, label, module, availability, enabled, code_defined, last_result, held_until.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -55,7 +66,7 @@ class Channels_Command {
 		\WP_CLI\Utils\format_items(
 			(string) \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' ),
 			self::rows( sc_wpun()->status_report()->channels() ),
-			(string) \WP_CLI\Utils\get_flag_value( $assoc_args, 'fields', 'id,label,module,availability,enabled,code_defined,last_result,held_until' )
+			(string) \WP_CLI\Utils\get_flag_value( $assoc_args, 'fields', implode( ',', self::LIST_FIELDS ) )
 		);
 	}
 

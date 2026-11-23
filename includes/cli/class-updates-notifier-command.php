@@ -204,7 +204,7 @@ class Updates_Notifier_Command {
 		\WP_CLI\Utils\format_items( 'table', array( $data['schedule'] ), array( 'frequency', 'next_run', 'last_check' ) );
 
 		\WP_CLI::line( __( 'Channels', 'wp-updates-notifier' ) );
-		\WP_CLI\Utils\format_items( 'table', Channels_Command::rows( $data['channels'] ), array( 'id', 'label', 'module', 'availability', 'enabled', 'code_defined', 'last_result', 'last_failure', 'retry_at', 'held_until' ) );
+		\WP_CLI\Utils\format_items( 'table', Channels_Command::rows( $data['channels'] ), Channels_Command::FIELDS );
 
 		foreach ( $data['channels'] as $channel ) {
 			if ( array() !== $channel['fields'] ) {

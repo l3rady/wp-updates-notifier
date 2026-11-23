@@ -172,10 +172,10 @@ plugin  Hello Dolly  hello.php            version 1.7.3                         
 Lists the channel instances.
 
 ```
-wp updates-notifier channels list [--format=<table|json|csv|yaml>] [--fields=<fields>]
+wp updates-notifier channels list [--format=<table|json|csv|yaml|count>] [--fields=<fields>]
 ```
 
-The fields are `id`, `label`, `module`, `availability`, `enabled`, `code_defined` (`yes` when the instance is defined in code, so it can not be changed on the settings screen) and `last_result`. `wp updates-notifier status` shows where each setting of an instance comes from.
+The fields are `id`, `label`, `module`, `availability`, `enabled`, `code_defined` (`yes` when the instance is defined in code, so it can not be changed on the settings screen), `last_result`, `last_failure`, `retry_at` and `held_until`. The list shows `id`, `label`, `module`, `availability`, `enabled`, `code_defined`, `last_result` and `held_until` unless you pass `--fields`. `--format=count` prints only the number of instances. `wp updates-notifier status` shows where each setting of an instance comes from.
 
 ```
 id      label   module  availability  enabled  code_defined  last_result

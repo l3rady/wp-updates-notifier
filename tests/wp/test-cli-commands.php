@@ -617,6 +617,27 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The extra columns work, count prints the number, and the docblock names the same fields as the constants.
+	 */
+	public function test_channels_list_fields_count_and_docblock() {
+		$this->add( 'a' );
+		$this->add( 'off', false );
+
+		( new Channels_Command() )->list_( array(), array( 'fields' => 'id,retry_at,last_failure' ) );
+		$this->assertStringContainsString( "id\tretry_at\tlast_failure", WP_CLI::text() );
+
+		WP_CLI::reset();
+		( new Channels_Command() )->list_( array(), array( 'format' => 'count' ) );
+		$this->assertSame( '2', trim( WP_CLI::text() ) );
+
+		$doc = (string) ( new ReflectionMethod( Channels_Command::class, 'list_' ) )->getDocComment();
+		$this->assertSame( 1, preg_match( '/Limit the output to these fields: ([a-z_, ]+)\. Without --fields the list shows ([a-z_, ]+)\./', $doc, $m ) );
+		$this->assertSame( Channels_Command::FIELDS, explode( ', ', $m[1] ) );
+		$this->assertSame( Channels_Command::LIST_FIELDS, explode( ', ', $m[2] ) );
+		$this->assertStringContainsString( '*   - count', $doc );
+	}
+
+	/**
 	 * A last result shows in the list.
 	 */
 	public function test_channels_list_shows_the_last_result() {
