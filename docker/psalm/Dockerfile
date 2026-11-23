@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Psalm taint analysis: `make taint`. Psalm 6 needs PHP 8.1+, so it cannot live in the root composer.json (PHP 7.4).
+# Psalm taint analysis: `make taint`. Psalm 7 needs PHP 8.2+, so it cannot live in the root composer.json (PHP 7.4).
 # Psalm and the WordPress stubs come from composer.lock in this directory; the base images are pinned by digest.
 # The repository is mounted at /app when it runs (see the psalm service in docker-compose.yml).
 

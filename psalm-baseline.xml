@@ -14,4 +14,19 @@
       <code><![CDATA[$url]]></code>
     </TaintedSSRF>
   </file>
+  <!--
+	Psalm 7 follows the address through Channel_Instance settings, which Psalm 6 did not. The Slack and webhook
+	addresses are settings an administrator types in, as in the example channel above, and both are sent with
+	wp_safe_remote_post(), which refuses addresses on the server's own network. Slack also allows only its own hosts.
+  -->
+  <file src="modules/slack/class-slack-channel.php">
+    <TaintedSSRF>
+      <code><![CDATA[trim( $url )]]></code>
+    </TaintedSSRF>
+  </file>
+  <file src="modules/webhook/class-webhook-channel.php">
+    <TaintedSSRF>
+      <code><![CDATA[$url]]></code>
+    </TaintedSSRF>
+  </file>
 </files>

@@ -107,7 +107,7 @@ updates:
         patterns: ["*"]
         update-types: [minor, patch]
 
-  # Psalm for `make taint`: its own image and Composer project, as Psalm 6 needs PHP 8.1+. Keep the WordPress stubs
+  # Psalm for `make taint`: its own image and Composer project, as Psalm 7 needs PHP 8.2+. Keep the WordPress stubs
   # there at the version in the root composer.lock.
   - package-ecosystem: docker
     directory: /docker/psalm

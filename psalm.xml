@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 	Psalm, for taint analysis only: `make taint` (taint analysis reports nothing but Tainted* issues; PHPStan
-	does the type checks). Runs in docker/psalm, because Psalm 6 needs PHP 8.1+ and the plugin supports 7.4.
+	does the type checks). Runs in docker/psalm, because Psalm 7 needs PHP 8.2+ and the plugin supports 7.4.
 	The paths are the ones Semgrep scans (`make sast`). The repository is mounted at /app and Psalm lives in /opt/psalm.
 -->
 <psalm
@@ -23,6 +23,20 @@
 		<directory name="modules" />
 		<directory name="examples" />
 	</projectFiles>
+
+	<!--
+		Psalm 7 type-checks in the same run as the taint analysis. PHPStan does the type checks, so the type issues
+		Psalm reports on this code are suppressed here. Taint issues cannot be suppressed this way.
+	-->
+	<issueHandlers>
+		<InvalidGlobal errorLevel="suppress" />
+		<MissingOverrideAttribute errorLevel="suppress" />
+		<ParadoxicalCondition errorLevel="suppress" />
+		<TooFewArguments errorLevel="suppress" />
+		<UndefinedClass errorLevel="suppress" />
+		<UndefinedConstant errorLevel="suppress" />
+		<UndefinedFunction errorLevel="suppress" />
+	</issueHandlers>
 
 	<stubs>
 		<file name="/opt/psalm/vendor/php-stubs/wordpress-stubs/wordpress-stubs.php" />

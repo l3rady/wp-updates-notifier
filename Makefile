@@ -52,7 +52,7 @@ SEMGREP_ARGS := --metrics=off --disable-version-check
 SAST_PATHS := wp-updates-notifier.php uninstall.php includes modules examples
 
 # Psalm taint analysis: TAINT_SARIF=1 also writes security-reports/psalm.sarif for code scanning. Taint findings only;
-# PHPStan does the type checks. Runs from its own image (docker/psalm), as Psalm 6 needs PHP 8.1+.
+# PHPStan does the type checks. Runs from its own image (docker/psalm), as Psalm 7 needs PHP 8.2+.
 TAINT_SARIF ?=
 PSALM       := $(COMPOSE) --profile security run --build --rm -T psalm
 

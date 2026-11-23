@@ -1,10 +1,10 @@
 {
 	"name": "l3rady/wp-updates-notifier-psalm",
-	"description": "Psalm taint analysis for WP Updates Notifier. Psalm 6 needs PHP 8.1+, so it lives here, not in the root composer.json (PHP 7.4). The WordPress stubs must stay at the version in the root composer.lock.",
+	"description": "Psalm taint analysis for WP Updates Notifier. Psalm 7 needs PHP 8.2+, so it lives here, not in the root composer.json (PHP 7.4). The WordPress stubs must stay at the version in the root composer.lock.",
 	"type": "project",
 	"license": "GPL-2.0-or-later",
 	"require": {
-		"php": ">=8.1",
+		"php": ">=8.2",
 		"vimeo/psalm": "7.0.1",
 		"php-stubs/wordpress-stubs": "7.1.2"
 	},

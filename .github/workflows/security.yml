@@ -215,7 +215,7 @@ jobs:
 
   # Psalm taint analysis: data from WordPress sources (plugin headers, options, transients) that reaches an unsafe
   # sink (output, mail body, outbound URL, SQL) without an escape. Taint findings only; PHPStan does the type checks.
-  # Runs from docker/psalm, as Psalm 6 needs PHP 8.1+. psalm-baseline.xml may only shrink.
+  # Runs from docker/psalm, as Psalm 7 needs PHP 8.2+. psalm-baseline.xml may only shrink.
   taint:
     needs: changes
     if: contains(fromJSON(needs.changes.outputs.jobs), 'taint')

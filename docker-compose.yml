@@ -450,7 +450,7 @@ services:
       SEMGREP_ENABLE_VERSION_CHECK: "0"
 
   # Taint analysis with Psalm and the WordPress sources, escapes and sinks in docker/psalm/wordpress-taint.phpstub:
-  # `make taint`. Its own image, as Psalm 6 needs PHP 8.1+ and the plugin supports 7.4. No network needed.
+  # `make taint`. Its own image, as Psalm 7 needs PHP 8.2+ and the plugin supports 7.4. No network needed.
   psalm:
     profiles: [security]
     build: docker/psalm
