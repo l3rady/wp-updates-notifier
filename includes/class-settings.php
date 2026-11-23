@@ -328,10 +328,17 @@ class Settings {
 	 * @return SettingsData
 	 */
 	public function get(): array {
-		$schemas  = $this->schemas();
+		$schemas  = null;
 		$supplied = array();
 		foreach ( array_keys( self::GLOBAL_SETTINGS ) as $key ) {
-			$field = $this->config->resolve_typed( Config_Context::setting( $key ), $schemas[ $key ] );
+			$context = Config_Context::setting( $key );
+			if ( null === $this->config->resolve( $context ) ) {
+				// Nothing supplies it: the schemas translate their labels, so they are built only when a value needs one.
+				continue;
+			}
+
+			$schemas ??= $this->schemas();
+			$field     = $this->config->resolve_typed( $context, $schemas[ $key ] );
 			if ( null !== $field ) {
 				$supplied[ $key ] = $field->get_value();
 			}
