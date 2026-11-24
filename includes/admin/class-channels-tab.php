@@ -631,29 +631,25 @@ class Channels_Tab {
 			return false;
 		}
 
-		$changeable = $this->changeable( $id );
-		if ( null === $changeable ) {
-			return true;
-		}
-		[$instance, $stored] = $changeable;
-
-		$source = $this->store->external_source( $id, 'enabled' );
-		if ( null !== $source ) {
-			// translators: 1: Label of the channel. 2: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
-			$this->notices->add( false, sprintf( __( '%1$s cannot be switched here: set by %2$s.', 'wp-updates-notifier' ), $instance->get_label(), $source ) );
+		$editable = $this->form->editable( $id );
+		if ( is_string( $editable ) ) {
+			$this->notices->add( false, $editable );
 			return true;
 		}
 
-		// From the stored instance: the effective one has outside values, secrets included, laid over it.
-		$enabled = ! $instance->is_enabled();
-		$this->store->save( $stored->with_enabled( $enabled ) );
+		$result = $this->form->switch_enabled( $id, ! $editable[0]->is_enabled() );
+		if ( is_string( $result ) ) {
+			$this->notices->add( false, $result );
+			return true;
+		}
+
 		$this->notices->add(
 			true,
-			$enabled
+			$result->is_enabled()
 				// translators: %s: Label of the channel.
-				? sprintf( __( '%s enabled.', 'wp-updates-notifier' ), $instance->get_label() )
+				? sprintf( __( '%s enabled.', 'wp-updates-notifier' ), $result->get_label() )
 				// translators: %s: Label of the channel.
-				: sprintf( __( '%s disabled.', 'wp-updates-notifier' ), $instance->get_label() )
+				: sprintf( __( '%s disabled.', 'wp-updates-notifier' ), $result->get_label() )
 		);
 
 		return true;

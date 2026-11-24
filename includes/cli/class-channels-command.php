@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Lists the channel instances.
+ * Lists, switches on and switches off the channel instances.
  *
  * @internal
  */
@@ -68,6 +68,94 @@ class Channels_Command {
 			self::rows( sc_wpun()->status_report()->channels() ),
 			(string) \WP_CLI\Utils\get_flag_value( $assoc_args, 'fields', implode( ',', self::LIST_FIELDS ) )
 		);
+	}
+
+	/**
+	 * Switches channel instances on.
+	 *
+	 * Instances defined in code, or with `enabled` set by a constant or environment variable, are refused. The
+	 * rest are still switched. Exits with a non-zero status if any id could not be changed.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>...
+	 * : One or more channel instance ids, as `channels list` shows them.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp updates-notifier channels enable email
+	 *     wp updates-notifier channels enable email slack_ops
+	 *
+	 * @param string[]             $args       Positional arguments.
+	 * @param array<string, mixed> $assoc_args Flags.
+	 *
+	 * @return void
+	 */
+	public function enable( $args, $assoc_args ) {
+		unset( $assoc_args );
+		$this->switch_each( $args, true );
+	}
+
+	/**
+	 * Switches channel instances off.
+	 *
+	 * Instances defined in code, or with `enabled` set by a constant or environment variable, are refused. The
+	 * rest are still switched. Exits with a non-zero status if any id could not be changed.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>...
+	 * : One or more channel instance ids, as `channels list` shows them.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp updates-notifier channels disable email
+	 *     wp updates-notifier channels disable email slack_ops
+	 *
+	 * @param string[]             $args       Positional arguments.
+	 * @param array<string, mixed> $assoc_args Flags.
+	 *
+	 * @return void
+	 */
+	public function disable( $args, $assoc_args ) {
+		unset( $assoc_args );
+		$this->switch_each( $args, false );
+	}
+
+	/**
+	 * Switch each instance, report each, then fail if any failed.
+	 *
+	 * @param string[] $ids     Instance ids.
+	 * @param bool     $enabled Whether to switch them on.
+	 *
+	 * @return void
+	 */
+	private function switch_each( array $ids, bool $enabled ): void {
+		if ( array() === $ids ) {
+			\WP_CLI::error( __( 'Give one or more channel ids.', 'wp-updates-notifier' ) );
+		}
+
+		$form   = sc_wpun()->channel_form();
+		$failed = 0;
+		foreach ( $ids as $id ) {
+			$id     = (string) $id;
+			$result = $form->switch_enabled( $id, $enabled );
+			if ( is_string( $result ) ) {
+				++$failed;
+				\WP_CLI::error( $id . ': ' . $result, false );
+			} elseif ( $enabled ) {
+				// translators: %s: Label of the channel.
+				\WP_CLI::success( sprintf( __( '%s enabled.', 'wp-updates-notifier' ), $result->get_label() ) );
+			} else {
+				// translators: %s: Label of the channel.
+				\WP_CLI::success( sprintf( __( '%s disabled.', 'wp-updates-notifier' ), $result->get_label() ) );
+			}
+		}
+
+		if ( $failed > 0 ) {
+			// translators: 1: Number of names that failed. 2: Number of names.
+			\WP_CLI::error( sprintf( __( '%1$d of %2$d could not be changed.', 'wp-updates-notifier' ), $failed, count( $ids ) ) );
+		}
 	}
 
 	/**

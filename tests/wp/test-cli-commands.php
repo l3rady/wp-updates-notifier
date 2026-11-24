@@ -652,6 +652,141 @@ class Test_Cli_Commands extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Run channels enable or disable and return the message of the error it ended with, or null.
+	 *
+	 * @param string   $method Method of the command.
+	 * @param string[] $ids    Ids.
+	 *
+	 * @return string|null
+	 */
+	private function switch_fails_with( $method, array $ids ) {
+		try {
+			( new Channels_Command() )->$method( $ids, array() );
+		} catch ( Test_Cli_Error $e ) {
+			return $e->getMessage();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Whether the stored instance is on.
+	 *
+	 * @param string $id Id.
+	 *
+	 * @return bool
+	 */
+	private function stored_enabled( $id ) {
+		return (bool) sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )[ $id ]['enabled'];
+	}
+
+	/**
+	 * Disable, then enable: the stored option and the list follow, and each change is reported.
+	 */
+	public function test_channels_disable_then_enable() {
+		$this->add( 'a' );
+
+		$this->assertNull( $this->switch_fails_with( 'disable', array( 'a' ) ) );
+		$this->assertSame( 'Success: A label disabled.', WP_CLI::text() );
+		$this->assertFalse( $this->stored_enabled( 'a' ) );
+		WP_CLI::reset();
+		( new Channels_Command() )->list_( array(), array() );
+		$this->assertStringContainsString( "a\tA label\tclicmd\tavailable\tno\tno\t", WP_CLI::text() );
+
+		WP_CLI::reset();
+		$this->assertNull( $this->switch_fails_with( 'enable', array( 'a' ) ) );
+		$this->assertSame( 'Success: A label enabled.', WP_CLI::text() );
+		$this->assertTrue( $this->stored_enabled( 'a' ) );
+		WP_CLI::reset();
+		( new Channels_Command() )->list_( array(), array() );
+		$this->assertStringContainsString( "a\tA label\tclicmd\tavailable\tyes\tno\t", WP_CLI::text() );
+	}
+
+	/**
+	 * An instance already in the requested state is a success.
+	 */
+	public function test_channels_disable_an_instance_that_is_off() {
+		$this->add( 'off', false );
+
+		$this->assertNull( $this->switch_fails_with( 'disable', array( 'off' ) ) );
+		$this->assertSame( 'Success: Off label disabled.', WP_CLI::text() );
+		$this->assertFalse( $this->stored_enabled( 'off' ) );
+	}
+
+	/**
+	 * An instance defined in code is refused and nothing is stored.
+	 */
+	public function test_channels_disable_refuses_a_code_defined_instance() {
+		add_filter(
+			'sc_wpun_channels',
+			static function ( $channels ) {
+				$channels[] = array(
+					'id'       => 'codey',
+					'type'     => 'clicmd',
+					'label'    => 'Codey',
+					'enabled'  => true,
+					'settings' => array(),
+				);
+				return $channels;
+			}
+		);
+		sc_wpun()->config()->flush();
+		$before = sc_wpun()->network_context()->get_option( 'sc_wpun_channels' );
+
+		$this->assertSame( '1 of 1 could not be changed.', $this->switch_fails_with( 'disable', array( 'codey' ) ) );
+		$this->assertStringContainsString( 'Error: codey: Codey is defined in code and cannot be changed here.', WP_CLI::text() );
+		$this->assertSame( $before, sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
+	}
+
+	/**
+	 * An `enabled` value from outside is refused and the message names its source.
+	 */
+	public function test_channels_disable_refuses_an_external_enabled() {
+		$this->add( 'a' );
+		$source = new Test_Config_Source( array( 'SC_WPUN_CHANNEL_A__ENABLED' => 'true' ) );
+		add_filter(
+			'sc_wpun_config_sources',
+			static function ( $sources ) use ( $source ) {
+				$sources[] = $source;
+				return $sources;
+			}
+		);
+		sc_wpun()->config()->flush();
+
+		$this->assertSame( '1 of 1 could not be changed.', $this->switch_fails_with( 'disable', array( 'a' ) ) );
+		$this->assertStringContainsString( 'Error: a: A label cannot be switched here: set by Test vault.', WP_CLI::text() );
+		$this->assertTrue( $this->stored_enabled( 'a' ) );
+	}
+
+	/**
+	 * An unknown id is refused, and the line says which id.
+	 */
+	public function test_channels_enable_refuses_an_unknown_id() {
+		$this->assertSame( '1 of 1 could not be changed.', $this->switch_fails_with( 'enable', array( 'nope' ) ) );
+		$this->assertStringContainsString( 'Error: nope: There is no such channel.', WP_CLI::text() );
+	}
+
+	/**
+	 * A refused id does not stop the others, and the command still fails.
+	 */
+	public function test_channels_disable_changes_the_good_ids_and_fails() {
+		$this->add( 'good' );
+
+		$this->assertSame( '1 of 2 could not be changed.', $this->switch_fails_with( 'disable', array( 'good', 'unknown' ) ) );
+		$this->assertFalse( $this->stored_enabled( 'good' ) );
+		$this->assertStringContainsString( 'Success: Good label disabled.', WP_CLI::text() );
+		$this->assertStringContainsString( 'Error: unknown: There is no such channel.', WP_CLI::text() );
+	}
+
+	/**
+	 * Without ids the commands fail.
+	 */
+	public function test_channels_enable_and_disable_need_an_id() {
+		$this->assertSame( 'Give one or more channel ids.', $this->switch_fails_with( 'enable', array() ) );
+		$this->assertSame( 'Give one or more channel ids.', $this->switch_fails_with( 'disable', array() ) );
+	}
+
+	/**
 	 * Run mute, unmute or muted with arguments and return the message of the error it ended with, or null.
 	 *
 	 * @param string $method Method of the command.

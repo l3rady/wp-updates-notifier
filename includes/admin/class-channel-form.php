@@ -196,6 +196,35 @@ class Channel_Form {
 	}
 
 	/**
+	 * Switch an instance on or off, or say why not. The Channels tab and the CLI share this rule.
+	 *
+	 * @internal
+	 *
+	 * @param string $id      Instance id.
+	 * @param bool   $enabled Whether the instance should be on.
+	 *
+	 * @return Channel_Instance|string The effective instance after saving; else why it was refused, as translated text.
+	 */
+	public function switch_enabled( string $id, bool $enabled ) {
+		$editable = $this->editable( $id );
+		if ( is_string( $editable ) ) {
+			return $editable;
+		}
+		[$instance, , $stored] = $editable;
+
+		$source = $this->store->external_source( $id, 'enabled' );
+		if ( null !== $source ) {
+			// translators: 1: Label of the channel. 2: Where the value comes from, for example "constant SC_WPUN_CHANNEL_EMAIL__ENABLED".
+			return sprintf( __( '%1$s cannot be switched here: set by %2$s.', 'wp-updates-notifier' ), $instance->get_label(), $source );
+		}
+
+		// From the stored instance: the effective one has outside values, secrets included, laid over it.
+		$this->store->save( $stored->with_enabled( $enabled ) );
+
+		return $this->store->get( $id ) ?? $instance;
+	}
+
+	/**
 	 * The key of a form, under which a failed save is remembered.
 	 *
 	 * @param string $mode `new` or `edit`.

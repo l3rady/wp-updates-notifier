@@ -8,9 +8,11 @@
 use WPUN\Admin\Channel_Form;
 use WPUN\Admin\Channels_Tab;
 use WPUN\Admin\Check_Now;
+use WPUN\CLI\Channels_Command;
 use WPUN\Channel_Instance;
 
 require_once __DIR__ . '/class-wpun-security-test-case.php';
+require_once dirname( __DIR__ ) . '/fixtures/wp-cli.php';
 
 /**
  * A secret field set through the form, a `SC_WPUN_CHANNEL_<ID>__<FIELD>` constant and an environment variable
@@ -427,6 +429,24 @@ class Test_Security_Secrets extends WPUN_Security_Test_Case {
 
 		$this->assertStringNotContainsString( 'SECRETTOKEN', (string) wp_json_encode( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) ) );
 		$this->assertStringNotContainsString( 'SECRETPATH', (string) wp_json_encode( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) ) );
+	}
+
+	/**
+	 * A secret supplied from outside is never written to the database by `channels disable` and `channels enable`.
+	 */
+	public function test_cli_disable_and_enable_do_not_store_an_outside_secret() {
+		$constant = $this->provide( 'constant' );
+		$id       = $constant[0];
+
+		WP_CLI::reset();
+		foreach ( array( 'disable', 'enable' ) as $method ) {
+			( new Channels_Command() )->$method( array( $id ), array() );
+		}
+
+		$stored = (string) wp_json_encode( sc_wpun()->network_context()->get_option( 'sc_wpun_channels' ) );
+		$this->assertStringNotContainsString( 'SECRETTOKEN', $stored );
+		$this->assertStringNotContainsString( 'SECRETPATH', $stored );
+		$this->assertStringNotContainsString( 'SECRETTOKEN', WP_CLI::text() );
 	}
 
 	/**

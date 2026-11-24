@@ -1,6 +1,6 @@
 # WP-CLI
 
-The plugin adds commands to [WP-CLI](https://wp-cli.org/) under `wp updates-notifier`. Use them to run the check from a system cron, to see what a check would do, to test your channels, to mute plugins and themes and to see the state of the plugin.
+The plugin adds commands to [WP-CLI](https://wp-cli.org/) under `wp updates-notifier`. Use them to run the check from a system cron, to see what a check would do, to test your channels, to switch channel instances on and off, to mute plugins and themes and to see the state of the plugin.
 
 Run them from the site's directory, or add `--path=/path/to/site`.
 
@@ -183,6 +183,27 @@ office  Office  email   available     yes      no            success, 2026-01-01
 ```
 
 `availability` is `available`, `rejected: <reason>` when the module needs a newer version of the plugin, or `unknown module` when the module is not installed or not active.
+
+## channels enable and channels disable
+
+Switches channel instances on or off, as the switch on the Channels tab does.
+
+```
+wp updates-notifier channels enable <id>...
+wp updates-notifier channels disable <id>...
+```
+
+Find the ids with `wp updates-notifier channels list`. Each id gets a line. An instance that is already in the requested state is saved again and reported as a success.
+
+```
+Success: Office disabled.
+Error: slack_ops: Slack Ops is defined in code and cannot be changed here.
+Error: 1 of 2 could not be changed.
+```
+
+An id is refused, with the reason, when it is unknown, when the instance is defined in code, or when its `enabled` setting comes from a constant or environment variable. The other ids are still changed.
+
+**Exit codes.** 0 when every instance was changed. 1 when no id is given, or when any id was refused.
 
 ## Run the check from a system cron
 
