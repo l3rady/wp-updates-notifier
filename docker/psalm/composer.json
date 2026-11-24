@@ -5,7 +5,7 @@
 	"license": "GPL-2.0-or-later",
 	"require": {
 		"php": ">=8.2",
-		"vimeo/psalm": "7.1.0",
+		"vimeo/psalm": "7.2.1",
 		"php-stubs/wordpress-stubs": "7.1.2"
 	},
 	"config": {
