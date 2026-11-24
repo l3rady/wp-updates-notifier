@@ -38,6 +38,74 @@ class Test_Contract extends WPUN_Test_Case {
 	}
 
 	/**
+	 * Add-ons call these as soon as the main file is included, before plugins_loaded.
+	 */
+	public function test_the_class_and_every_function_exist_once_the_main_file_is_loaded() {
+		$expected = array(
+			'sc_wpun',
+			'sc_wpun_register_channel',
+			'sc_wpun_channel',
+			'sc_wpun_channels',
+			'sc_wpun_mutes',
+			'sc_wpun_instance_data',
+			'sc_wpun_register_settings_group',
+			'sc_wpun_setting',
+			'sc_wpun_setting_source',
+			'sc_wpun_channel_field_source',
+			'sc_wpun_settings_groups',
+			'sc_wpun_delete_settings_group',
+			'sc_wpun_capability',
+			'sc_wpun_mute_capability',
+			'sc_wpun_instance_waiting_until',
+			'sc_wpun_instance_problems',
+			'sc_wpun_is_network',
+			'sc_wpun_settings_url',
+			'sc_wpun_mute_url',
+			'sc_wpun_version',
+			'sc_wpun_api_version',
+			'sc_wpun_api_satisfies',
+			'sc_wpun_api_supports',
+		);
+
+		$source = (string) file_get_contents( dirname( __DIR__, 2 ) . '/includes/functions.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+		preg_match_all( '/^if \( ! function_exists\( \'(sc_wpun\w*)\' \) \) \{$/m', $source, $matches );
+		$declared = $matches[1];
+
+		$this->assertTrue( class_exists( 'SC_WP_Updates_Notifier', false ) );
+		$this->assertCount( 23, $declared );
+		foreach ( $declared as $name ) {
+			$this->assertTrue( function_exists( $name ), $name . '() is not defined.' );
+		}
+		foreach ( $expected as $name ) {
+			$this->assertContains( $name, $declared, $name . '() is gone from includes/functions.php.' );
+		}
+	}
+
+	/**
+	 * The main file stays a pure entry point: the class and the functions live in includes/.
+	 */
+	public function test_the_main_file_declares_no_class_and_no_function() {
+		$tokens = token_get_all( (string) file_get_contents( dirname( __DIR__, 2 ) . '/wp-updates-notifier.php' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+		$found  = array();
+		$prev   = null;
+		foreach ( $tokens as $token ) {
+			if ( ! is_array( $token ) ) {
+				$prev = $token;
+				continue;
+			}
+			if ( in_array( $token[0], array( T_WHITESPACE, T_COMMENT, T_DOC_COMMENT ), true ) ) {
+				continue;
+			}
+			if ( in_array( $token[0], array( T_FUNCTION, T_CLASS, T_INTERFACE, T_TRAIT ), true ) && T_DOUBLE_COLON !== ( is_array( $prev ) ? $prev[0] : null ) && T_NEW !== ( is_array( $prev ) ? $prev[0] : null ) ) {
+				$found[] = $token[1] . ' on line ' . $token[2];
+			}
+			$prev = $token;
+		}
+
+		$this->assertSame( array(), $found );
+	}
+
+	/**
 	 * The readme.txt that bin/readme.php generates into the zip. It is not committed.
 	 *
 	 * @return string

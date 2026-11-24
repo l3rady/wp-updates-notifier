@@ -5,8 +5,8 @@
  * Marks as used what the plugin's own code does not call, but WordPress, WP-CLI or an add-on does:
  *  - the public API: a public method, property or constant of a class in includes/ unless it, or its class,
  *    has an `@internal` tag. This is how bin/check-public-api.php defines the API, so the two agree.
- *  - the legacy SC_WP_Updates_Notifier facade in wp-updates-notifier.php: not API for add-ons, but kept for
- *    backwards compatibility (and its hooks are registered by name in the old settings code).
+ *  - the legacy SC_WP_Updates_Notifier facade (includes/class-sc-wp-updates-notifier.php): not API for add-ons, but
+ *    kept for backwards compatibility (and its hooks are registered by name in the old settings code).
  *  - hook callbacks and other callables written as an array: array( $this, 'method' ), array( self::class, 'method' ),
  *    array( __CLASS__, 'method' ), array( Some_Class::class, 'method' ).
  *  - WP-CLI commands: every public method of a class in includes/cli/.
@@ -114,7 +114,7 @@ final class PublicApiUsageProvider extends ReflectionBasedMemberUsageProvider {
 
 	private function isPublicApi( \ReflectionClass $class, string $member_doc ): ?VirtualUsageData {
 		$file = (string) $class->getFileName();
-		if ( ! str_contains( $file, '/app/includes/' ) && '/app/wp-updates-notifier.php' !== $file ) {
+		if ( ! str_contains( $file, '/app/includes/' ) ) {
 			return null;
 		}
 		if ( str_contains( $member_doc, '@internal' ) || str_contains( (string) $class->getDocComment(), '@internal' ) ) {

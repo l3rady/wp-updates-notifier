@@ -82,7 +82,8 @@ class Test_Autoloader extends WPUN_Test_Case {
 		$count = 0;
 
 		foreach ( $files as $file ) {
-			if ( 'php' !== $file->getExtension() ) {
+			// The global compatibility class and the sc_wpun functions are loaded by the main file, not the autoloader.
+			if ( 'php' !== $file->getExtension() || in_array( $file->getFilename(), array( 'class-sc-wp-updates-notifier.php', 'functions.php' ), true ) ) {
 				continue;
 			}
 

@@ -46,5 +46,6 @@ return array(
 	),
 	\Rector\TypeDeclaration\Rector\StmtsAwareInterface\SafeDeclareStrictTypesRector::class => array(
 		dirname( __DIR__, 2 ) . '/includes/interface-config-source.php',
+		dirname( __DIR__, 2 ) . '/wp-updates-notifier.php',
 	),
 );
