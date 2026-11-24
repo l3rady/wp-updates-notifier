@@ -693,6 +693,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#channels-enable-and-channels-disable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        channels enable and channels disable
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#run-the-check-from-a-system-cron" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2661,6 +2672,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#channels-enable-and-channels-disable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        channels enable and channels disable
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#run-the-check-from-a-system-cron" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2689,7 +2711,7 @@
 
 
 <h1 id="wp-cli">WP-CLI<a class="headerlink" href="#wp-cli" title="Permanent link">&para;</a></h1>
-<p>The plugin adds commands to <a href="https://wp-cli.org/">WP-CLI</a> under <code>wp updates-notifier</code>. Use them to run the check from a system cron, to see what a check would do, to test your channels, to mute plugins and themes and to see the state of the plugin.</p>
+<p>The plugin adds commands to <a href="https://wp-cli.org/">WP-CLI</a> under <code>wp updates-notifier</code>. Use them to run the check from a system cron, to see what a check would do, to test your channels, to switch channel instances on and off, to mute plugins and themes and to see the state of the plugin.</p>
 <p>Run them from the site's directory, or add <code>--path=/path/to/site</code>.</p>
 <h2 id="check">check<a class="headerlink" href="#check" title="Permanent link">&para;</a></h2>
 <p>Runs the update check now, as the schedule does. Each channel instance gets the updates it has not been told about yet, and each line says what happened.</p>
@@ -2840,6 +2862,18 @@ plugin  Hello Dolly  hello.php            version 1.7.3                         
 office  Office  email   available     yes      no            success, 2026-01-01 08:00:01 UTC:
 </code></pre></div>
 <p><code>availability</code> is <code>available</code>, <code>rejected: &lt;reason&gt;</code> when the module needs a newer version of the plugin, or <code>unknown module</code> when the module is not installed or not active.</p>
+<h2 id="channels-enable-and-channels-disable">channels enable and channels disable<a class="headerlink" href="#channels-enable-and-channels-disable" title="Permanent link">&para;</a></h2>
+<p>Switches channel instances on or off, as the switch on the Channels tab does.</p>
+<div class="highlight"><pre><span></span><code>wp updates-notifier channels enable &lt;id&gt;...
+wp updates-notifier channels disable &lt;id&gt;...
+</code></pre></div>
+<p>Find the ids with <code>wp updates-notifier channels list</code>. Each id gets a line. An instance that is already in the requested state is saved again and reported as a success.</p>
+<div class="highlight"><pre><span></span><code>Success: Office disabled.
+Error: slack_ops: Slack Ops is defined in code and cannot be changed here.
+Error: 1 of 2 could not be changed.
+</code></pre></div>
+<p>An id is refused, with the reason, when it is unknown, when the instance is defined in code, or when its <code>enabled</code> setting comes from a constant or environment variable. The other ids are still changed.</p>
+<p><strong>Exit codes.</strong> 0 when every instance was changed. 1 when no id is given, or when any id was refused.</p>
 <h2 id="run-the-check-from-a-system-cron">Run the check from a system cron<a class="headerlink" href="#run-the-check-from-a-system-cron" title="Permanent link">&para;</a></h2>
 <p>Stop WordPress starting WP-Cron on page loads, in <code>wp-config.php</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="x">define( 'DISABLE_WP_CRON', true );</span>
