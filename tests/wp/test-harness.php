@@ -67,6 +67,26 @@ class Test_Harness extends WPUN_Test_Case {
 	}
 
 	/**
+	 * PHP has a memory limit inside a test, so a runaway test stops. Core's test bootstrap lifts it (#607).
+	 */
+	public function test_php_has_a_memory_limit() {
+		$this->assertSame( WPUN_TESTS_MEMORY_LIMIT, ini_get( 'memory_limit' ) );
+		$this->assertSame( '1G', WPUN_TESTS_MEMORY_LIMIT );
+	}
+
+	/**
+	 * When WordPress lifts the limit, the next test has it back.
+	 */
+	public function test_a_lifted_memory_limit_is_put_back() {
+		wp_raise_memory_limit( 'admin' );
+		$this->assertSame( '-1', ini_get( 'memory_limit' ), 'WordPress lifts the limit in the tests.' );
+
+		$this->restore_memory_limit();
+
+		$this->assertSame( WPUN_TESTS_MEMORY_LIMIT, ini_get( 'memory_limit' ) );
+	}
+
+	/**
 	 * An item is the core update unless overridden.
 	 */
 	public function test_make_item_has_defaults_and_overrides() {

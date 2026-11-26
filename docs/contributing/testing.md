@@ -73,6 +73,8 @@ With `FILE` and `FILTER` together, `FILTER` narrows the class, so it is a patter
 
 Each checkout (and each git worktree) has its own table prefix, made from its path, and the single site and multisite runs have one each, so runs in different checkouts do not clash and `make test` can run both suites at once. Two runs of the same suite in one checkout still share tables, so do not start them together. `make mutation` sets its own prefixes and is not tied to the checkout.
 
+**Memory.** A test that never stops cannot take the machine down. Core's test bootstrap lifts PHP's memory limit (it sets `WP_MEMORY_LIMIT` to `-1`), so `tests/bootstrap.php` sets it back to 1G (`WPUN_TESTS_MEMORY_LIMIT`) and `WPUN_Test_Case` puts it back before each test, because `wp_raise_memory_limit()` lifts it again: a runaway test stops with "Allowed memory size exhausted". The suite peaks at about 100 MB. The `wp-tests` container is capped at 2g and the `wp-tests-coverage` container at 4g, with no swap, and the kernel kills a process that passes the cap (exit 137). `WPUN_TEST_MEMORY` and `WPUN_COVERAGE_MEMORY` change the caps, for example `WPUN_TEST_MEMORY=3g make test-wp`.
+
 **Shared helpers.** `WPUN_Test_Case` has helpers to build items, notifications and instances, parse and check markup, and write fixture plugins. `tests/README.md` lists them.
 
 **Multisite.** The multisite run has the plugin network-activated, as a network has it. A test class that needs the plugin as one site's copy (the dormant mode, or per-site settings) sets `protected $network_activated = false;` in `WPUN_Test_Case`. `set_network_activated()` switches it inside a test.

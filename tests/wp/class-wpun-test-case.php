@@ -58,6 +58,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	 */
 	public function set_up() {
 		parent::set_up();
+		$this->restore_memory_limit();
 
 		// The plugin is one object for the whole run: put it back to what it was after boot.
 		sc_wpun()->reset_for_tests( $GLOBALS['wpun_channels_snapshot'] );
@@ -99,6 +100,13 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 			unset( $active[ $key ] );
 		}
 		update_site_option( 'active_sitewide_plugins', $active );
+	}
+
+	/**
+	 * Put PHP's memory limit back, in case WordPress lifted it (wp_raise_memory_limit() sets -1 in the tests).
+	 */
+	protected function restore_memory_limit(): void {
+		ini_set( 'memory_limit', WPUN_TESTS_MEMORY_LIMIT ); // phpcs:ignore WordPress.PHP.IniSet.memory_limit_Disallowed -- wp_raise_memory_limit() only raises it.
 	}
 
 	/**

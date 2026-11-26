@@ -43,6 +43,9 @@ their own throwaway sites and are safe.
   same tables and break each other. The same goes for two runs of one browser suite. All checkouts share one
   database container: if it is not running, start one run first, or `docker compose up -d --wait db`, as two runs
   that start it together clash.
+- The test containers are capped at 2g (4g for coverage) and PHP at 1G inside a test, so a runaway test stops
+  instead of taking the machine down. Exit 137 means the container hit its cap: look for a test that never stops
+  before raising the cap (`WPUN_TEST_MEMORY`).
 - The git targets (`make commits`, `ci-changes`, `dist`, `dist-repro`, `secrets-history`) work in a worktree:
   the Makefile mounts the shared git directory into the container, read-only (`bin/git-mount.sh`). It needs git
   on the host, and a path without spaces. `make secrets-history` fails when gitleaks scans no commits.

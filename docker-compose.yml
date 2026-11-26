@@ -112,6 +112,9 @@ services:
     environment:
       WP_DB_HOST: db
       WP_MULTISITE: ${WP_MULTISITE:-0}
+    # A runaway test is killed inside its container instead of taking all the host's memory. No swap on top.
+    mem_limit: ${WPUN_TEST_MEMORY:-2g}
+    memswap_limit: ${WPUN_TEST_MEMORY:-2g}
 
   # The same suite with pcov, for `make coverage`. The report goes to build/coverage on the host; the container runs
   # as root, so docker/coverage.sh gives the files back to HOST_UID:HOST_GID.
@@ -130,6 +133,9 @@ services:
     environment:
       HOST_UID: ${HOST_UID:-0}
       HOST_GID: ${HOST_GID:-0}
+    # pcov and the coverage merge (php -d memory_limit=2G) need more than the plain suite.
+    mem_limit: ${WPUN_COVERAGE_MEMORY:-4g}
+    memswap_limit: ${WPUN_COVERAGE_MEMORY:-4g}
 
   # ----- Local site for manual testing (`make up`), profile "site" -----
 

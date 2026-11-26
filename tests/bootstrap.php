@@ -35,6 +35,13 @@ tests_add_filter(
 
 require $wpun_tests_dir . '/includes/bootstrap.php';
 
+// Core's test bootstrap sets WP_MEMORY_LIMIT and WP_MAX_MEMORY_LIMIT to -1, so WordPress lifts PHP's memory limit
+// while it loads. Put a limit back: a runaway test then stops with a fatal error instead of using all the memory
+// the machine has. wp_raise_memory_limit() can still lift it (it uses WP_MAX_MEMORY_LIMIT, with no filter), so
+// WPUN_Test_Case puts it back before each test, and the test container's memory cap catches the rest.
+define( 'WPUN_TESTS_MEMORY_LIMIT', '1G' );
+ini_set( 'memory_limit', WPUN_TESTS_MEMORY_LIMIT ); // phpcs:ignore WordPress.PHP.IniSet.memory_limit_Disallowed -- wp_raise_memory_limit() only raises it.
+
 // The channel registry as the plugin's own boot leaves it: WPUN_Test_Case puts it back before each test.
 $GLOBALS['wpun_channels_snapshot'] = sc_wpun()->channels()->snapshot();
 
