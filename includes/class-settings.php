@@ -188,8 +188,9 @@ class Settings {
 			return false;
 		}
 
-		// Reads straight from storage: a filter must not be able to hide that the network has its options.
-		if ( false !== get_site_option( self::OPT_VERSION_FIELD ) || false !== get_site_option( self::OPT_FIELD ) ) { // nosemgrep: wpun-own-options-through-context -- One-time copy from the main site; a filter must not hide the network options.
+		// Reads straight from storage, not through read(): a filter must not be able to hide that the network has its
+		// options.
+		if ( false !== $this->context->get_option( self::OPT_VERSION_FIELD ) || false !== $this->context->get_option( self::OPT_FIELD ) ) {
 			return false;
 		}
 
