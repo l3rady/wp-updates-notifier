@@ -36,9 +36,7 @@ services:
   # Installs the built zip into a fresh WordPress (`make test-dist`).
   dist:
     <<: *dev
-    depends_on:
-      db:
-        condition: service_healthy
+    networks: [testdb]
     environment:
       WP_VERSION: ${WP_VERSION:-7.1.3}
       WP_DB_HOST: db
@@ -80,21 +78,6 @@ services:
       - .:/app
       - composer-cache:/home/dev/.composer/cache
 
-  db:
-    image: mariadb:12@sha256:d46e102fa8b9b72bfcdeb56f9dd538742092119dc8b11f31fe662605cd234cd9
-    environment:
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_DATABASE: wordpress_test
-    # Throwaway test data: keep it in memory.
-    tmpfs:
-      - /var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 3s
-      timeout: 5s
-      retries: 20
-      start_period: 60s
-
   # The plugin's PHPUnit suite on a pinned wordpress-develop checkout, with the
   # plugin mounted read-only in the checkout's plugins directory.
   wp-tests:
@@ -105,9 +88,8 @@ services:
         PHP_VERSION: ${PHP_VERSION:-8.3}
         WP_VERSION: ${WP_VERSION:-7.1.3}
     image: wp-updates-notifier:php${PHP_VERSION:-8.3}-wp${WP_VERSION:-7.1.3}${WPUN_TOKEN:+-$WPUN_TOKEN}
-    depends_on:
-      db:
-        condition: service_healthy
+    # The test database is its own project (docker/compose.testdb.yml); `make testdb` starts it.
+    networks: [testdb]
     volumes:
       - .:/opt/wp-updates-notifier:ro
       - .:/opt/wordpress-develop/src/wp-content/plugins/wp-updates-notifier:ro
@@ -522,3 +504,9 @@ volumes:
   site-wp:
   site-wp-ms:
   site-cache:
+
+networks:
+  # The network of the test database project, created by `make testdb` (docker/compose.testdb.yml).
+  testdb:
+    name: wpun-testdb
+    external: true
