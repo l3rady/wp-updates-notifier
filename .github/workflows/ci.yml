@@ -103,6 +103,8 @@ jobs:
         run: make test-commit-msg
       - name: Test the git mount of a worktree and the history scan check
         run: make test-git-mount
+      - name: Test the rules that keep test runs apart
+        run: make test-isolation
 
   # The plugin zip as users get it: runtime files only, and it installs,
   # activates, deactivates and uninstalls cleanly in a fresh WordPress.

@@ -40,6 +40,10 @@ composer.json             ALL
 composer.lock             ALL
 docker-compose.yml        ALL
 docker/compose.ci-cache.yml ALL
+docker/compose.testdb.yml ALL
+# The table prefix and the drop of a run's tables, used by every PHPUnit run and by test-dist (make test-isolation).
+docker/wp-tests-prefix.php ALL
+docker/wp-tests-drop.php  ALL
 bin/ci-changes.sh         ALL
 tests/bin/test-ci-changes.sh ALL
 tests/bin/ci-changes/*    ALL
@@ -178,6 +182,8 @@ tests/bin/test-agent-stop-check.sh release-scripts
 bin/git-mount.sh         release-scripts
 bin/secrets-history.sh   release-scripts
 tests/bin/test-git-mount.sh release-scripts
+# Tests the rules that keep test runs apart (make test-isolation).
+tests/bin/test-test-prefix.sh release-scripts
 release-please-config.json release-scripts
 .release-please-manifest.json release-scripts
 .github/release-signers   release-scripts

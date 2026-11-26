@@ -84,7 +84,7 @@ QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
 QUALITY_BASELINE_SED := -e 's\#^\t\t\tpath: /app/\(.*\)$$\#\t\t\tpath: ../../\1\n\t\t\treportUnmatched: true\#'
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs test-slowest coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-commit-msg hooks test-git-mount check check-full
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs test-slowest coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-commit-msg hooks test-git-mount test-isolation testdb check check-full
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
@@ -104,10 +104,10 @@ vendor/autoload.php: composer.json composer.lock
 
 deps: vendor/autoload.php ## Install Composer dependencies
 
-# The checkout token: 8 digits from the checkout's path. It gives each checkout its own table prefix per suite
-# (TEST_TOKEN, see docker/wp-tests-entrypoint.sh), so runs in different checkouts, and the two suites of one checkout,
-# do not drop each other's tables. It is exported, so the compose files put it in the test image tags: a worktree that
-# changes docker/ never runs on an image another worktree built.
+# The checkout token: 8 digits from the checkout's path. Each target adds a suite letter (WPUN_RUN_TOKEN, the base of
+# the run token) and docker/wp-tests-entrypoint.sh a random part, so every run has table prefixes of its own, in any
+# checkout (decision 0032). TEST_TOKEN stays Infection's worker number. The token is exported, so the compose files
+# put it in the test image tags: a worktree that changes docker/ never runs on an image another worktree built.
 WPUN_TOKEN := $(shell printf '%s' "$(CURDIR)" | cksum | tr -d ' ' | cut -c1-8)
 export WPUN_TOKEN
 
@@ -116,46 +116,51 @@ export WPUN_TOKEN
 # the class: it is then a pattern for the method, for example FILE=tests/wp/test-routing.php FILTER=test_name.
 WP_FILTER = WPUN_FILTER="$$(sh bin/test-filter.sh)" && export WPUN_FILTER &&
 
-test-wp: deps ## Run the WordPress test suite (single site): FILTER=Test_Routing, FILE=tests/wp/test-routing.php, ARGS=--stop-on-failure
-	$(WP_FILTER) $(COMPOSE) run --build --rm -e WPUN_FILTER -e TEST_TOKEN=$(WPUN_TOKEN)s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+# The test database is its own compose project (docker/compose.testdb.yml), started before each target that needs it.
+# Two first runs at once can race on the container and network name: the second try finds them there.
+TESTDB := docker compose --progress quiet -f docker/compose.testdb.yml
+testdb: ## Start the shared test database (its own compose project, wpun-testdb; make down and make clean leave it running)
+	@$(TESTDB) up -d --wait db || { sleep 3; $(TESTDB) up -d --wait db; }
 
-test-wp-ms: deps ## Run the WordPress test suite as multisite (FILTER, FILE and ARGS as for test-wp)
-	$(WP_FILTER) $(COMPOSE) run --build --rm -e WPUN_FILTER -e WP_MULTISITE=1 -e TEST_TOKEN=$(WPUN_TOKEN)m wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+test-wp: deps testdb ## Run the WordPress test suite (single site): FILTER=Test_Routing, FILE=tests/wp/test-routing.php, ARGS=--stop-on-failure
+	$(WP_FILTER) $(COMPOSE) run --build --rm -e WPUN_FILTER -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
+
+test-wp-ms: deps testdb ## Run the WordPress test suite as multisite (FILTER, FILE and ARGS as for test-wp)
+	$(WP_FILTER) $(COMPOSE) run --build --rm -e WPUN_FILTER -e WP_MULTISITE=1 -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)m wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh $(ARGS)
 
 # The WordPress suite with pcov (the wp-tests-coverage image, which only this target builds, so make test-wp stays
 # fast), as a single site and as a multisite, counted together. COVERAGE_MIN is a floor in whole percent that only goes
 # up (see CONTRIBUTING.md); the aim is 90 or more, and it was 97.12 when set. The text summary is printed;
 # build/coverage/ gets clover.xml and html/.
 COVERAGE_MIN ?= 97
-coverage: deps ## Line coverage of the plugin by the WordPress suite (pcov, single site and multisite together); fails below COVERAGE_MIN; report in build/coverage/
+coverage: deps testdb ## Line coverage of the plugin by the WordPress suite (pcov, single site and multisite together); fails below COVERAGE_MIN; report in build/coverage/
 	@mkdir -p build/coverage
-	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) -e TEST_TOKEN=$(WPUN_TOKEN)c wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
+	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)c wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
 
 # Mutation testing with Infection (slow, so it is run by hand before a release, not in CI): it changes the
-# code and checks that a test fails. THREADS PHPUnit processes run at once, each on tables of its own (TEST_TOKEN).
+# code and checks that a test fails. THREADS PHPUnit processes run at once, each on tables of its own (the run token and TEST_TOKEN, the worker).
 # ARGS goes to Infection, e.g. make mutation ARGS="--filter=includes/class-state.php". The floors are in
 # infection.json5; see CONTRIBUTING.md.
 THREADS ?= 4
-mutation: deps ## Mutation testing of the plugin with Infection (pcov, slow); fails below the minimums in infection.json5; logs in build/infection/
+mutation: deps testdb ## Mutation testing of the plugin with Infection (pcov, slow); fails below the minimums in infection.json5; logs in build/infection/
 	@mkdir -p build/infection
-	$(COMPOSE) run --build --rm -v $(CURDIR)/build/infection:/infection wp-tests-coverage sh /opt/wp-updates-notifier/docker/mutation.sh --threads=$(THREADS) $(ARGS)
+	$(COMPOSE) run --build --rm -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)u -v $(CURDIR)/build/infection:/infection wp-tests-coverage sh /opt/wp-updates-notifier/docker/mutation.sh --threads=$(THREADS) $(ARGS)
 
-test-known-bugs: deps ## Run the tests that document open bugs (they are expected to fail)
+test-known-bugs: deps testdb ## Run the tests that document open bugs (they are expected to fail)
 	@if ! grep -rqE '^[[:space:]]*\*[[:space:]]*@group[[:space:]]+known-bug' tests/wp; then echo 'No known bugs are recorded.'; exit 0; fi; \
-	$(COMPOSE) run --build --rm -e TEST_TOKEN=$(WPUN_TOKEN)s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
+	$(COMPOSE) run --build --rm -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh --exclude-group none --group known-bug $(ARGS)
 
 # The plugin is mounted read-only in the test container, so the JUnit log goes to a mount of its own.
-test-slowest: deps ## Run the single-site suite and print the 15 slowest tests (JUnit log: build/junit/junit.xml)
+test-slowest: deps testdb ## Run the single-site suite and print the 15 slowest tests (JUnit log: build/junit/junit.xml)
 	@mkdir -p build/junit
-	$(COMPOSE) run --build --rm -e HOST_UID -e HOST_GID -e TEST_TOKEN=$(WPUN_TOKEN)s -v $(CURDIR)/build/junit:/junit wp-tests sh /opt/wp-updates-notifier/docker/slowest.sh $(ARGS)
+	$(COMPOSE) run --build --rm -e HOST_UID -e HOST_GID -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)s -v $(CURDIR)/build/junit:/junit wp-tests sh /opt/wp-updates-notifier/docker/slowest.sh $(ARGS)
 
-# The two WordPress suites run side by side (their tables differ by TEST_TOKEN); --output-sync keeps each one's output
-# together. The database and the image come first: two runs that start the database together race on its container name.
+# The two WordPress suites run side by side (their tables differ by run token); --output-sync keeps each one's output
+# together. The image comes first: two builds of it at once would do the work twice.
 test: deps ## Run every test layer (the two WordPress suites side by side)
-	@$(COMPOSE) up -d --wait db
 	@$(COMPOSE) build wp-tests
 	@$(MAKE) --no-print-directory -j2 --output-sync=target test-wp test-wp-ms
-	@$(MAKE) --no-print-directory test-release test-check test-readme test-blueprint test-wporg-assets
+	@$(MAKE) --no-print-directory test-release test-check test-isolation test-readme test-blueprint test-wporg-assets
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), the plugin, the example add-on and the field showcase
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcs && vendor/bin/phpcs --standard=examples/wpun-example-channel/phpcs.xml.dist && vendor/bin/phpcs --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist'
@@ -188,6 +193,9 @@ rector-fix: deps ## Apply Rector's upgrades, then run make fix and make lint
 test-release: ## Rehearse the scripts the release workflow runs (copyright year, signed commit request)
 	$(COMPOSE) run --build --rm php sh tests/bin/test-release-scripts.sh
 
+test-isolation: ## Test the rules that keep test runs of several checkouts apart (table prefixes, the pattern that drops a run's tables)
+	$(COMPOSE) run --build --rm php sh tests/bin/test-test-prefix.sh
+
 test-git-mount: ## Test bin/git-mount.sh (the git directory of a worktree) and bin/secrets-history.sh (0 commits scanned fails) with throwaway repositories
 	$(COMPOSE) run --build --rm php sh tests/bin/test-git-mount.sh
 
@@ -219,11 +227,11 @@ sbom: dist ## Write a CycloneDX SBOM of the built zip to build/wp-updates-notifi
 	@v=$$(sed -n 's/^ \* Version: //p' wp-updates-notifier.php | head -n 1); \
 	$(COMPOSE) --profile security run --rm -T syft dir:/build/wp-updates-notifier --source-name wp-updates-notifier --source-version "$$v" -o cyclonedx-json=/build/wp-updates-notifier-$$v.cdx.json
 
-test-dist: ## Install the zip into a fresh WordPress, activate, deactivate and uninstall it
-	$(COMPOSE) run --build --rm dist sh bin/test-dist.sh
+test-dist: testdb ## Install the zip into a fresh WordPress, activate, deactivate and uninstall it
+	$(COMPOSE) run --build --rm -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)d dist sh bin/test-dist.sh
 
-plugin-check: ## Run WordPress.org's Plugin Check on the zip (fails on errors)
-	$(COMPOSE) run --build --rm dist sh bin/plugin-check.sh
+plugin-check: testdb ## Run WordPress.org's Plugin Check on the zip (fails on errors)
+	$(COMPOSE) run --build --rm -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)p dist sh bin/plugin-check.sh
 
 check-headers: ## Generate readme.txt and check it agrees with the plugin header and follows WordPress.org's rules
 	$(COMPOSE) run --build --rm php sh bin/check-headers.sh

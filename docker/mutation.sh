@@ -6,7 +6,8 @@
 #
 # Like docker/coverage.sh it works from the plugin directory of the WordPress checkout, the path WordPress loads the
 # plugin from, so the paths pcov reports are the ones Infection maps its mutations to. Each PHPUnit process Infection
-# starts gets its own TEST_TOKEN, which docker/wp-tests-entrypoint.sh turns into a table prefix of its own.
+# starts gets its own TEST_TOKEN (the worker number); with the run token that docker/wp-tests-entrypoint.sh makes, it is a
+# table prefix of its own. The entrypoint drops the tables of the run when this script ends.
 set -eu
 
 plugin=/opt/wordpress-develop/src/wp-content/plugins/wp-updates-notifier
