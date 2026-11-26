@@ -24,6 +24,10 @@ mkdir -p "$logs"
 # and MAKEFLAGS (PHP_VERSION=7.4 must not reuse a pass of the default version). Empty when git cannot tell (no
 # checkout, no HEAD): then no step is skipped and no stamp is written. Computed once, before the first step: the steps
 # run here (lint, checks) do not rewrite tracked files; a step that did would be stamped with the key from before.
+# The input is gathered in a file of this run's own (mktemp), so two runs in one checkout (the Stop hook and a
+# make check) never read each other's.
+key_file="$(mktemp "$logs/key.XXXXXX")"
+trap 'rm -f "$key_file"' EXIT
 tree_key() {
 	{
 		git rev-parse --verify -q HEAD &&
@@ -31,10 +35,10 @@ tree_key() {
 			git ls-files -o --exclude-standard &&
 			git ls-files -o --exclude-standard | git hash-object --stdin-paths &&
 			printf '%s\n' "${MAKEFLAGS:-}"
-	} > "$logs/key.tmp" 2>/dev/null && git hash-object --stdin < "$logs/key.tmp" 2>/dev/null || true
-	rm -f "$logs/key.tmp"
+	} > "$key_file" 2>/dev/null && git hash-object --stdin < "$key_file" 2>/dev/null || true
 }
 key="$(tree_key)"
+rm -f "$key_file"
 
 # The hint for a step that has a known fix.
 fixer() {

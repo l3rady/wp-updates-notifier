@@ -102,6 +102,16 @@ MAKEFLAGS=' -- PHP_VERSION=7.4' CHECK_SKIP_PASSED=1 run lint > "$work/out" 2>&1
 [ "$(cat "$work/ran")" = lint ] || fail "other MAKEFLAGS reused a stamp"
 rm -f "$work/untracked.txt"
 
+# The key is read from a file of the run's own, not a fixed name that another run in the checkout may hold: a
+# build/check/key.tmp that cannot be written does not stop the stamp, and is left alone. No key file is left behind.
+rm -f "$work/build/check/lint.ok"
+mkdir -p "$work/build/check/key.tmp"
+run lint > "$work/out" 2>&1 || fail "a run beside another run's key file failed"
+[ -s "$work/build/check/lint.ok" ] || fail "a run beside another run's key file wrote no stamp"
+[ -d "$work/build/check/key.tmp" ] || fail "the run touched another run's key file"
+rmdir "$work/build/check/key.tmp"
+[ -z "$(find "$work/build/check" -name 'key.*')" ] || fail "a key file was left behind: $(ls "$work/build/check")"
+
 # No step is a usage error.
 status=0
 run > "$work/out" 2>&1 || status=$?
