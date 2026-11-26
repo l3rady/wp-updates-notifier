@@ -99,6 +99,8 @@ jobs:
         run: make test-ci-changes
       - name: Test the runner of make check
         run: make test-check
+      - name: Test the lock and project name of the browser suites
+        run: make test-browser-suite
       - name: Test the commit message hook against commitlint
         run: make test-commit-msg
       - name: Test the git mount of a worktree and the history scan check

@@ -1,10 +1,13 @@
 # `make blueprint-smoke`: runs the generated Playground blueprint (build/blueprint-smoke/blueprint.json, with the plugin
 # taken from the zip of `make dist`) in WordPress Playground CLI, and checks the demo in a browser. Always run as its own
-# project (`docker compose -p wpun-playground -f tests/blueprint-smoke/compose.yml`): its containers and network are
+# project (`docker compose -p wpun-playground-<token> -f tests/blueprint-smoke/compose.yml`): its containers and network are
 # named after the project, so nothing here can touch the local site from `make up`. No port is published: the browser
 # shares the network namespace of the Playground container and reaches it at http://127.0.0.1:9400.
 #
 # Playground downloads WordPress, and its other files, from the network on every run.
+#
+# The run scripts add the checkout token to the project name (see tests/lib/suite.sh), so each worktree has its
+# own site. The name below is the base; -p overrides it.
 name: wpun-playground
 
 services:

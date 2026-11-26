@@ -84,7 +84,7 @@ QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
 QUALITY_BASELINE_SED := -e 's\#^\t\t\tpath: /app/\(.*\)$$\#\t\t\tpath: ../../\1\n\t\t\treportUnmatched: true\#'
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs test-slowest coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-commit-msg hooks test-git-mount test-isolation testdb check check-full
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs test-slowest coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-browser-suite test-commit-msg hooks test-git-mount test-isolation testdb check check-full
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
@@ -160,7 +160,7 @@ test-slowest: deps testdb ## Run the single-site suite and print the 15 slowest 
 test: deps ## Run every test layer (the two WordPress suites side by side)
 	@$(COMPOSE) build wp-tests
 	@$(MAKE) --no-print-directory -j2 --output-sync=target test-wp test-wp-ms
-	@$(MAKE) --no-print-directory test-release test-check test-isolation test-readme test-blueprint test-wporg-assets
+	@$(MAKE) --no-print-directory test-release test-check test-isolation test-browser-suite test-readme test-blueprint test-wporg-assets
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), the plugin, the example add-on and the field showcase
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcs && vendor/bin/phpcs --standard=examples/wpun-example-channel/phpcs.xml.dist && vendor/bin/phpcs --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist'
@@ -293,6 +293,9 @@ check-workflows: ## Audit .github/ with actionlint (and shellcheck) and zizmor (
 ci-changes: ## Show which CI jobs a pull request would run: the changes since BASE (default origin/main) up to HEAD (default HEAD)
 	$(COMPOSE) run --build --rm $(GIT_MOUNT) php sh -c 'sh bin/ci-changes.sh "$$(git merge-base $(BASE) $(HEAD))" $(HEAD)'
 
+test-browser-suite: ## Test tests/lib/suite.sh, the project name and the lock of the browser suites (run.sh), with a stub docker
+	$(COMPOSE) run --build --rm php sh tests/bin/test-browser-suite.sh
+
 test-ci-changes: ## Test the map of changed files to CI jobs, and that it agrees with the workflows and their gate jobs
 	$(COMPOSE) run --build --rm php sh tests/bin/test-ci-changes.sh
 
@@ -414,7 +417,7 @@ a11y: ## axe and keyboard checks of the settings screen on a throwaway site (own
 e2e: ## End-to-end flows in a browser on a throwaway site with fake updates and Mailpit: settings, channels, a real update check (own compose project wpun-flows, never touches make up)
 	@./tests/flows/run.sh
 
-e2e-ms: ## The core path of make e2e on a multisite with the plugin network-activated: the Network Admin settings, one check, one email (own compose project wpun-flows-ms, can run beside make e2e)
+e2e-ms: ## The core path of make e2e on a multisite with the plugin network-activated: the Network Admin settings, one check, one email (own compose project wpun-flows-ms, never beside make e2e or make a11y in one checkout)
 	@FLOWS_MULTISITE=1 ./tests/flows/run.sh
 
 e2e-upgrade: dist ## Update the real 1.6.0 from WordPress.org to the zip of make dist three ways (WP-CLI, Plugins screen, auto-update); needs the network, local only (own compose project wpun-upgrade, never touches make up)

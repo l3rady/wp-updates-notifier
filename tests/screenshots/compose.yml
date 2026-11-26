@@ -1,8 +1,11 @@
 # The throwaway site `make screenshots` photographs (tests/screenshots/screenshots.spec.js). Always run as its own
-# project (`docker compose -p wpun-shots -f tests/screenshots/compose.yml`): its containers, network and volumes are
+# project (`docker compose -p wpun-shots-<token> -f tests/screenshots/compose.yml`): its containers, network and volumes are
 # named after the project, so nothing here can touch the local site from `make up` or the `make a11y` site. No port is
 # published. The browser joins the network and reaches WordPress at http://example.com:8080 (a network alias, so the
 # screens show a plain example.com and not the container's name) and Mailpit at http://mailpit:8025.
+#
+# The run scripts add the checkout token to the project name (see tests/lib/suite.sh), so each worktree has its
+# own site. The name below is the base; -p overrides it.
 name: wpun-shots
 
 x-site: &site

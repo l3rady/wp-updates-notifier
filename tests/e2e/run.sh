@@ -3,25 +3,32 @@
 # `make a11y`: build an isolated copy of the site, run the Playwright checks (axe and keyboard) against the settings
 # screen and throw it away.
 #
-# Runs as its own compose project (wpun-e2e) with no published ports and no shared volumes or container names, so a
-# running `make up` site is never touched. The project is removed, volumes included, when the script ends, whatever
-# the outcome. Reports go to tests/e2e/reports/ (html/index.html, and the violations on the terminal).
+# Runs as its own compose project (wpun-e2e plus the checkout token, so each worktree has its own) with no published
+# ports and no shared volumes or container names, so a running `make up` site is never touched. The project is removed,
+# volumes included, when the script ends, whatever the outcome. Reports go to tests/e2e/reports/ (html/index.html, and
+# the violations on the terminal).
 #
-# Run from the repository root, by the Makefile. E2E_KEEP=1 leaves the site up afterwards, to look at it (remove it with
-# `docker compose -p wpun-e2e down -v`). COMPOSE_EXTRA adds compose options (tests only).
+# One run of the tests/e2e group per checkout (tests/lib/suite.sh): a second one fails at once.
+#
+# Run from the repository root, by the Makefile. E2E_KEEP=1 leaves the site up afterwards, to look at it (the script
+# prints the `docker compose down -v` command that removes it). COMPOSE_EXTRA adds compose options (tests only).
 
 set -eu
+
+# shellcheck source=tests/lib/suite.sh
+. tests/lib/suite.sh
 
 compose() {
 	# COMPOSE_EXTRA is a list of options, so it must be split.
 	# shellcheck disable=SC2086
-	docker compose --progress quiet -p wpun-e2e -f tests/e2e/compose.yml ${COMPOSE_EXTRA:-} "$@"
+	docker compose --progress quiet -p "$SUITE_PROJECT" -f tests/e2e/compose.yml ${COMPOSE_EXTRA:-} "$@"
 }
 
 teardown() {
 	compose down --volumes --remove-orphans >/dev/null 2>&1 || true
 }
-[ -n "${E2E_KEEP:-}" ] || trap teardown EXIT INT TERM
+SUITE_FILES='-f tests/e2e/compose.yml'
+suite_start e2e 'make a11y' wpun-e2e "${E2E_KEEP:-}"
 
 # The host user owns the reports: the container runs as that user, and a directory made by Docker would be root's.
 rm -rf tests/e2e/reports

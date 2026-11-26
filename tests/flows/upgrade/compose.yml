@@ -1,11 +1,14 @@
 # The throwaway site `make e2e-upgrade` updates from the real 1.6.0 (tests/flows/upgrade/specs). Always run as its own
-# project (`docker compose -p wpun-upgrade -f tests/flows/upgrade/compose.yml`): its containers, network and volumes are
+# project (`docker compose -p wpun-upgrade-<token> -f tests/flows/upgrade/compose.yml`): its containers, network and volumes are
 # named after the project, so nothing here can touch the local site from `make up` or the other throwaway sites. No port
 # is published.
 #
 # Unlike tests/flows/compose.yml this site does NOT mount the repository as the plugin: 1.6.0 is installed from
 # WordPress.org (setup.sh) and the tests update it to the zip of `make dist` (mounted read-only at /build) the ways a
 # site can be updated.
+#
+# The run scripts add the checkout token to the project name (see tests/lib/suite.sh), so each worktree has its
+# own site. The name below is the base; -p overrides it.
 name: wpun-upgrade
 
 x-site: &site

@@ -1,7 +1,10 @@
 # The throwaway site `make a11y` checks (tests/e2e/specs). Always run as its own project
-# (`docker compose -p wpun-e2e -f tests/e2e/compose.yml`): its containers, network and volumes are named after the
+# (`docker compose -p wpun-e2e-<token> -f tests/e2e/compose.yml`): its containers, network and volumes are named after the
 # project, so nothing here can touch the local site from `make up`. No port is published; the browser joins the
 # network and reaches WordPress at http://wordpress:8080.
+#
+# The run scripts add the checkout token to the project name (see tests/lib/suite.sh), so each worktree has its
+# own site. The name below is the base; -p overrides it.
 name: wpun-e2e
 
 x-site: &site

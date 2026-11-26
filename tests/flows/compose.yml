@@ -1,8 +1,11 @@
 # The throwaway site `make e2e` drives (tests/flows/specs). Always run as its own project
-# (`docker compose -p wpun-flows -f tests/flows/compose.yml`): its containers, network and volumes are named after the
+# (`docker compose -p wpun-flows-<token> -f tests/flows/compose.yml`): its containers, network and volumes are named after the
 # project, so nothing here can touch the local site from `make up`, `make a11y` or `make screenshots`. No port is
 # published. The browser joins the network and reaches WordPress at http://wordpress:8080, Mailpit at
 # http://mailpit:8025 and WP-CLI (tests/flows/control.php) at http://wpcli:9000.
+#
+# The run scripts add the checkout token to the project name (see tests/lib/suite.sh), so each worktree has its
+# own site. The name below is the base; -p overrides it.
 name: wpun-flows
 
 x-site: &site

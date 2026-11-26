@@ -5,25 +5,32 @@
 # browser that the demo works: the settings screen with the demo notice, both channels sent, and the update email under
 # Tools, Demo emails.
 #
-# Runs as its own compose project (wpun-playground) with no published ports, so a running `make up` site is not touched.
-# The project is removed when the script ends, whatever the outcome. Playground downloads WordPress from the network.
+# Runs as its own compose project (wpun-playground plus the checkout token, so each worktree has its own) with no
+# published ports, so a running `make up` site is not touched. The project is removed when the script ends, whatever
+# the outcome. Playground downloads WordPress from the network.
 #
-# Run from the repository root, by the Makefile (which builds the zip first). E2E_KEEP=1 leaves it up afterwards (remove
-# it with `docker compose -p wpun-playground -f tests/blueprint-smoke/compose.yml down -v`). COMPOSE_EXTRA adds compose
-# options (tests only).
+# It mounts tests/e2e, so it shares one lock with `make a11y` and the other suites that do (tests/lib/suite.sh): one
+# of them per checkout at a time, and a second fails at once.
+#
+# Run from the repository root, by the Makefile (which builds the zip first). E2E_KEEP=1 leaves it up afterwards (the
+# script prints the `docker compose down -v` command that removes it). COMPOSE_EXTRA adds compose options (tests only).
 
 set -eu
+
+# shellcheck source=tests/lib/suite.sh
+. tests/lib/suite.sh
 
 compose() {
 	# COMPOSE_EXTRA is a list of options, so it must be split.
 	# shellcheck disable=SC2086
-	docker compose --progress quiet -p wpun-playground -f tests/blueprint-smoke/compose.yml ${COMPOSE_EXTRA:-} "$@"
+	docker compose --progress quiet -p "$SUITE_PROJECT" -f tests/blueprint-smoke/compose.yml ${COMPOSE_EXTRA:-} "$@"
 }
 
 teardown() {
 	compose down --volumes --remove-orphans >/dev/null 2>&1 || true
 }
-[ -n "${E2E_KEEP:-}" ] || trap teardown EXIT INT TERM
+SUITE_FILES='-f tests/blueprint-smoke/compose.yml'
+suite_start e2e 'make blueprint-smoke' wpun-playground "${E2E_KEEP:-}"
 
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"

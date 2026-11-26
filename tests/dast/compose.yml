@@ -1,7 +1,10 @@
 # The throwaway site `make dast` scans (tests/dast/zap-plan.yaml). Always run as its own project
-# (`docker compose -p wpun-dast -f tests/dast/compose.yml`): its containers, network and volumes are named after the
+# (`docker compose -p wpun-dast-<token> -f tests/dast/compose.yml`): its containers, network and volumes are named after the
 # project, so nothing here can touch the local site from `make up`. No port is published; the scanner joins the
 # network and reaches WordPress at http://wordpress:8080.
+#
+# The run scripts add the checkout token to the project name (see tests/lib/suite.sh), so each worktree has its
+# own site. The name below is the base; -p overrides it.
 name: wpun-dast
 
 x-site: &site

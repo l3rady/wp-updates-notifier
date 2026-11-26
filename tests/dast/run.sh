@@ -2,24 +2,31 @@
 #
 # `make dast`: build an isolated copy of the site, scan it with OWASP ZAP and throw it away.
 #
-# Runs as its own compose project (wpun-dast) with no published ports and no shared volumes or container names, so a
-# running `make up` site is never touched. The project is removed, volumes included, when the script ends, whatever
-# the outcome. Reports go to security-reports/ (zap-report.html, zap.sarif).
+# Runs as its own compose project (wpun-dast plus the checkout token, so each worktree has its own) with no published
+# ports and no shared volumes or container names, so a running `make up` site is never touched. The project is removed,
+# volumes included, when the script ends, whatever the outcome. Reports go to security-reports/ (zap-report.html,
+# zap.sarif).
 #
-# Run from the repository root, by the Makefile. COMPOSE_EXTRA adds compose options (tests only).
+# One run per checkout (tests/lib/suite.sh): a second one fails at once.
+#
+# Run from the repository root, by the Makefile. DAST_KEEP=1 leaves the site up afterwards (the script prints the
+# `docker compose down -v` command that removes it). COMPOSE_EXTRA adds compose options (tests only).
 
 set -eu
 
+# shellcheck source=tests/lib/suite.sh
+. tests/lib/suite.sh
+
 compose() {
 	# shellcheck disable=SC2086 -- COMPOSE_EXTRA is a list of options.
-	docker compose --progress quiet -p wpun-dast -f tests/dast/compose.yml ${COMPOSE_EXTRA:-} "$@"
+	docker compose --progress quiet -p "$SUITE_PROJECT" -f tests/dast/compose.yml ${COMPOSE_EXTRA:-} "$@"
 }
 
 teardown() {
 	compose down --volumes --remove-orphans >/dev/null 2>&1 || true
 }
-# DAST_KEEP=1 leaves the site up afterwards, to look at it (remove it with `docker compose -p wpun-dast down -v`).
-[ -n "${DAST_KEEP:-}" ] || trap teardown EXIT INT TERM
+SUITE_FILES='-f tests/dast/compose.yml'
+suite_start dast 'make dast' wpun-dast "${DAST_KEEP:-}"
 
 mkdir -p security-reports
 rm -f security-reports/zap-report.html security-reports/zap.sarif.json

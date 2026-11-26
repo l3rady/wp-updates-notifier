@@ -178,6 +178,9 @@ bin/test-filter.sh        wordpress
 tests/bin/test-check.sh   release-scripts
 bin/agent-stop-check.sh   release-scripts
 tests/bin/test-agent-stop-check.sh release-scripts
+# The lock and project name of the browser suites, tested by make test-browser-suite.
+tests/lib/suite.sh        a11y docs e2e release-scripts
+tests/bin/test-browser-suite.sh release-scripts
 # The git directory mount of a worktree, tested by make test-git-mount.
 bin/git-mount.sh         release-scripts
 bin/secrets-history.sh   release-scripts

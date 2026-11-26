@@ -1,5 +1,7 @@
 # Added to compose.yml by `make e2e-ms` (run.sh, FLOWS_MULTISITE=1): the same throwaway site as a subdirectory
-# multisite with the plugin network-activated. Its own compose project (wpun-flows-ms), so it can run beside `make e2e`.
+# multisite with the plugin network-activated.
+# Its own compose project (wpun-flows-ms plus the checkout token). It shares the tests/e2e lock with `make e2e`, so the
+# two do not run at the same time in one checkout.
 services:
   wordpress:
     volumes:
