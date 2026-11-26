@@ -102,3 +102,59 @@ add_action( 'admin_post_nopriv_thing', 'handler' );
 add_action( 'admin_post_thing', 'handler' );
 // ok: wpun-no-nopriv-hooks
 add_action( 'wp_ajax_thing', 'handler' );
+
+// wpun-own-options-through-context
+// ruleid: wpun-own-options-through-context
+$a = get_option( 'sc_wpun_state' );
+// ruleid: wpun-own-options-through-context
+update_option( 'sc_wpun_settings', $settings );
+// ruleid: wpun-own-options-through-context
+add_option( 'sc_wpun_muted', array() );
+// ruleid: wpun-own-options-through-context
+delete_option( 'sc_wpun_channels' );
+// ruleid: wpun-own-options-through-context
+$a = get_site_option( Settings::OPT_FIELD );
+// ruleid: wpun-own-options-through-context
+update_site_option( self::OPT_VERSION_FIELD, $version );
+// ruleid: wpun-own-options-through-context
+delete_site_option( self::OPT_PREFIX . $group );
+// ruleid: wpun-own-options-through-context
+$a = \get_option( 'sc_wpun_data_' . $id );
+// ruleid: wpun-own-options-through-context
+$a = get_option( "sc_wpun_settings_{$group}" );
+// ruleid: wpun-own-options-through-context
+add_site_option( Instance_Data::PREFIX . $key, $value );
+// ruleid: wpun-own-options-through-context
+$a = get_blog_option( $site_id, State::OPT_FIELD );
+// ruleid: wpun-own-options-through-context
+update_network_option( null, 'sc_wpun_state', $state );
+// ok: wpun-own-options-through-context
+$a = $this->context->get_option( self::OPT_FIELD );
+// ok: wpun-own-options-through-context
+$this->network->delete_option( $this->value_name( $key ) );
+// ok: wpun-own-options-through-context
+$a = get_option( 'date_format' );
+// ok: wpun-own-options-through-context
+$a = get_site_option( 'active_sitewide_plugins', array() );
+// ok: wpun-own-options-through-context
+$a = get_site_option( "auto_update_{$type}s", array() );
+// ok: wpun-own-options-through-context
+update_option( 'my_addon_option', self::OPT_FIELD );
+
+// wpun-no-admin-script
+// ruleid: wpun-no-admin-script
+wp_enqueue_script( 'wpun-settings', $url, array(), '1.0', true );
+// ruleid: wpun-no-admin-script
+wp_register_script( 'wpun-settings', $url );
+// ruleid: wpun-no-admin-script
+wp_add_inline_script( 'wpun-settings', 'go();' );
+// ruleid: wpun-no-admin-script
+wp_print_inline_script_tag( 'go();' );
+// ruleid: wpun-no-admin-script
+echo '<script>go();</script>';
+// ruleid: wpun-no-admin-script
+echo '<SCRIPT src="x.js"></SCRIPT>';
+// ok: wpun-no-admin-script
+wp_enqueue_style( 'wpun-settings', $url );
+// ok: wpun-no-admin-script
+echo '<p>No scripting needed.</p>';

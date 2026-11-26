@@ -88,7 +88,7 @@ changing what is stored, and adding a channel module.
 ## Stored data
 
 - The plugin's options are read and written through `Network_Context` only (`includes/class-network-context.php`),
-  so they land in site options on a network.
+  so they land in site options on a network. `make sast` fails on a direct option call for them.
 - A change to the shape of stored settings bumps `Settings::OPT_VERSION` (`includes/class-settings.php`), adds
   an upgrade step in `maybe_upgrade()`, a fixture of the old shape in `tests/fixtures/settings.php` and a test.
 - WordPress stores `false` as `''`, and `update_option( $name, false )` on a missing option creates nothing. A
@@ -103,7 +103,8 @@ there.
 
 ## Admin screens
 
-No JavaScript on the settings screens (decisions 0011 and 0026 in `docs/decisions/`). They meet WCAG 2.2 AA,
+No JavaScript on the settings screens (decisions 0011 and 0026 in `docs/decisions/`); `make sast` fails on a script
+in `includes/` or `modules/`. They meet WCAG 2.2 AA,
 and `make a11y` must pass after a change to them.
 
 ## Tests

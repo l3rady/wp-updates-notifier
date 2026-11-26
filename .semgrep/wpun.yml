@@ -95,3 +95,53 @@ rules:
     message: >-
       The plugin has no public endpoints. A wp_ajax_nopriv_ or admin_post_nopriv_ hook needs a deliberate review.
     pattern-regex: (?:wp_ajax|admin_post)_nopriv_
+
+  - id: wpun-own-options-through-context
+    languages: [php]
+    severity: ERROR
+    message: >-
+      Read and write the plugin's own options through Network_Context, so they land in the site options on a
+      network (decision 0021). Only Network_Context and uninstall.php call the option functions for them.
+    paths:
+      exclude:
+        - /includes/class-network-context.php
+        - /uninstall.php
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern: $FN($NAME, ...)
+              - metavariable-regex:
+                  metavariable: $FN
+                  regex: ^\\?(get|update|add|delete)(_site)?_option$
+          - patterns:
+              - pattern: $FN($ID, $NAME, ...)
+              - metavariable-regex:
+                  metavariable: $FN
+                  regex: ^\\?(get|update|add|delete)_(network|blog)_option$
+      - metavariable-pattern:
+          metavariable: $NAME
+          pattern-either:
+            - pattern: <... "=~/^sc_wpun/" ...>
+            - patterns:
+                - pattern: <... $C::$K ...>
+                - metavariable-regex:
+                    metavariable: $K
+                    regex: ^(OPT_\w*FIELD|OPT_PREFIX|PREFIX)$
+
+  - id: wpun-no-admin-script
+    languages: [php]
+    severity: ERROR
+    message: >-
+      The settings screens work without JavaScript (decisions 0011 and 0026). Do not enqueue, register or print
+      a script in the plugin or its modules.
+    paths:
+      include:
+        - /includes/
+        - /modules/
+    pattern-either:
+      - pattern: wp_enqueue_script(...)
+      - pattern: wp_register_script(...)
+      - pattern: wp_add_inline_script(...)
+      - pattern: wp_print_script_tag(...)
+      - pattern: wp_print_inline_script_tag(...)
+      - pattern-regex: (?i)<script\b

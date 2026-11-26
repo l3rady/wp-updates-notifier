@@ -502,7 +502,7 @@ Return a `WP_Error` from the filter to test a failed connection.
 You can run the plugin's own checks on your add-on:
 
 - **Coding standards.** Copy [`examples/wpun-example-channel/phpcs.xml.dist`](https://github.com/l3rady/wp-updates-notifier/blob/main/examples/wpun-example-channel/phpcs.xml.dist) and change the text domain and prefixes. It is the WordPress ruleset, including the escaping, security token and sanitising sniffs, with the same PHP and WordPress versions as the plugin.
-- **Semgrep.** Run Semgrep CE with the plugin's rules on your code: `semgrep scan --config path/to/wp-updates-notifier/.semgrep/ --metrics=off your-addon/`. The rules ban `eval`, `unserialize`, `$_REQUEST` and unprepared `$wpdb` queries, and they require `wp_safe_remote_*` for HTTP. Your fixed API address may use `wp_remote_post()` with `// nosemgrep: wpun-outbound-http-safe-only -- <reason>`. The rules are GPL, like the plugin.
+- **Semgrep.** Run Semgrep CE with the plugin's rules on your code: `semgrep scan --config path/to/wp-updates-notifier/.semgrep/ --metrics=off your-addon/`. The rules ban `eval`, `unserialize`, `$_REQUEST`, unprepared `$wpdb` queries and direct option calls for the plugin's own `sc_wpun_*` options, and they require `wp_safe_remote_*` for HTTP. The rule against scripts applies to the plugin's `includes/` and `modules/` only. Your fixed API address may use `wp_remote_post()` with `// nosemgrep: wpun-outbound-http-safe-only -- <reason>`. The rules are GPL, like the plugin.
 
 ## Accessibility
 
