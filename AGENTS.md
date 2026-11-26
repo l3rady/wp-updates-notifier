@@ -43,6 +43,9 @@ their own throwaway sites and are safe.
   same tables and break each other. The same goes for two runs of one browser suite. All checkouts share one
   database container: if it is not running, start one run first, or `docker compose up -d --wait db`, as two runs
   that start it together clash.
+- The test images are tagged with the checkout token (`wp-updates-notifier:php8.3-wp7.1.3-<token>`, and the
+  browser suites' `site-php8.3-<token>`), so a worktree that changes `docker/` runs on its own image. `make up` keeps
+  the untagged names. `make clean` removes them all.
 - The test containers are capped at 2g (4g for coverage) and PHP at 1G inside a test, so a runaway test stops
   instead of taking the machine down. Exit 137 means the container hit its cap: look for a test that never stops
   before raising the cap (`WPUN_TEST_MEMORY`).

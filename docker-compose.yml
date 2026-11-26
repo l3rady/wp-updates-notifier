@@ -9,7 +9,9 @@ x-dev: &dev
       PHP_VERSION: ${PHP_VERSION:-8.3}
       HOST_UID: ${HOST_UID:-1000}
       HOST_GID: ${HOST_GID:-1000}
-  image: wp-updates-notifier:php${PHP_VERSION:-8.3}
+  # The test images carry the checkout token (WPUN_TOKEN, from the Makefile), so a worktree that changes docker/ never
+  # runs on an image another worktree built. Images with the same content share their layers.
+  image: wp-updates-notifier:php${PHP_VERSION:-8.3}${WPUN_TOKEN:+-$WPUN_TOKEN}
   working_dir: /app
   volumes:
     - .:/app
@@ -72,7 +74,7 @@ services:
     build:
       <<: *dev-build
       target: coverage
-    image: wp-updates-notifier:php${PHP_VERSION:-8.3}-coverage
+    image: wp-updates-notifier:php${PHP_VERSION:-8.3}-coverage${WPUN_TOKEN:+-$WPUN_TOKEN}
     working_dir: /app
     volumes:
       - .:/app
@@ -102,7 +104,7 @@ services:
       args:
         PHP_VERSION: ${PHP_VERSION:-8.3}
         WP_VERSION: ${WP_VERSION:-7.1.3}
-    image: wp-updates-notifier:php${PHP_VERSION:-8.3}-wp${WP_VERSION:-7.1.3}
+    image: wp-updates-notifier:php${PHP_VERSION:-8.3}-wp${WP_VERSION:-7.1.3}${WPUN_TOKEN:+-$WPUN_TOKEN}
     depends_on:
       db:
         condition: service_healthy
@@ -127,7 +129,7 @@ services:
       args:
         PHP_VERSION: ${PHP_VERSION:-8.3}
         WP_VERSION: ${WP_VERSION:-7.1.3}
-    image: wp-updates-notifier:php${PHP_VERSION:-8.3}-wp${WP_VERSION:-7.1.3}-coverage
+    image: wp-updates-notifier:php${PHP_VERSION:-8.3}-wp${WP_VERSION:-7.1.3}-coverage${WPUN_TOKEN:+-$WPUN_TOKEN}
     volumes:
       - ./build/coverage:/coverage
     environment:

@@ -104,9 +104,12 @@ vendor/autoload.php: composer.json composer.lock
 
 deps: vendor/autoload.php ## Install Composer dependencies
 
-# One table prefix per checkout and per suite (TEST_TOKEN, see docker/wp-tests-entrypoint.sh), so runs in different
-# checkouts, and the two suites of one checkout, do not drop each other's tables. Digits and letters only.
+# The checkout token: 8 digits from the checkout's path. It gives each checkout its own table prefix per suite
+# (TEST_TOKEN, see docker/wp-tests-entrypoint.sh), so runs in different checkouts, and the two suites of one checkout,
+# do not drop each other's tables. It is exported, so the compose files put it in the test image tags: a worktree that
+# changes docker/ never runs on an image another worktree built.
 WPUN_TOKEN := $(shell printf '%s' "$(CURDIR)" | cksum | tr -d ' ' | cut -c1-8)
+export WPUN_TOKEN
 
 # FILTER is a PHPUnit --filter regex. It goes to the container as an environment variable, so no shell reads it.
 # FILE is a test file; bin/test-filter.sh turns it into an exact filter for its test class. With both, FILTER narrows
@@ -320,7 +323,7 @@ audit-osv: ## OSV-Scanner over the repository's lockfiles
 
 audit-images: build ## Trivy over docker/ and the built image (HIGH and CRITICAL, fixable only). Reports, never fails
 	$(COMPOSE) --profile security run --rm -T trivy config --skip-version-check --severity HIGH,CRITICAL --exit-code 0 docker/
-	$(COMPOSE) --profile security run --rm -T -v /var/run/docker.sock:/var/run/docker.sock:ro trivy image --skip-version-check --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 wp-updates-notifier:php$(PHP_VERSION)
+	$(COMPOSE) --profile security run --rm -T -v /var/run/docker.sock:/var/run/docker.sock:ro trivy image --skip-version-check --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 wp-updates-notifier:php$(PHP_VERSION)-$(WPUN_TOKEN)
 
 sast: sast-scan sast-test sast-ignores ## Static analysis of the shipped code with the rules in .semgrep/, their tests, and the suppression checks (make -k runs all)
 

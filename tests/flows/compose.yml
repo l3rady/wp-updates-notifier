@@ -12,8 +12,9 @@ x-site: &site
     target: site
     args:
       PHP_VERSION: ${PHP_VERSION:-8.3}
-  # The same image as the local site and the other throwaway sites, so it is built once and shared.
-  image: wp-updates-notifier:site-php${PHP_VERSION:-8.3}
+  # Shared by the throwaway sites of this checkout. The checkout token (WPUN_TOKEN, from the Makefile) keeps it
+  # apart from the local site's image and from other worktrees'.
+  image: wp-updates-notifier:site-php${PHP_VERSION:-8.3}${WPUN_TOKEN:+-$WPUN_TOKEN}
 
 x-db: &db
   WORDPRESS_DB_HOST: db
