@@ -84,6 +84,7 @@ nav:
       - 0029 Partial delivery recorded from the result: decisions/0029-partial-delivery-recorded-from-the-result.md
       - 0030 Replace a channel type explicitly: decisions/0030-replace-a-channel-type-explicitly.md
       - 0031 Add-on settings share the configuration path: decisions/0031-add-on-settings-share-the-configuration-path.md
+      - 0032 Isolate test runs by run token: decisions/0032-isolate-test-runs-by-run-token.md
   - Roadmap: roadmap.md
   - Security:
       - Threat model: security/threat-model.md

@@ -38,11 +38,13 @@ their own throwaway sites and are safe.
 ## Worktrees and parallel work
 
 - Run `make deps` first in a new worktree: `vendor/` is not shared.
-- Each checkout and worktree has its own test table prefix, so `make test-wp` and `make test-wp-ms` may run at
-  the same time in different checkouts. Never run the same suite twice at once in one checkout: both runs use the
-  same tables and break each other. The same goes for two runs of one browser suite. All checkouts share one
-  database container: if it is not running, start one run first, or `docker compose up -d --wait db`, as two runs
-  that start it together clash.
+- Every PHPUnit run has table prefixes of its own (checkout token, suite letter and a random part), so any two
+  runs may go at the same time, in one checkout or in several: `make test-wp`, `make test-wp-ms`, `make coverage`,
+  `make mutation`. A run drops its tables when it ends. Never run the same browser suite twice at once in one
+  checkout: both runs use the same sites and break each other.
+- All checkouts share one test database container, in its own compose project, `wpun-testdb`
+  (`docker/compose.testdb.yml`). Each target that needs it starts it (`make testdb`), so no run has to go first.
+  `make down` and `make clean` do not stop it. A killed run leaves its tables until the container restarts.
 - The test images are tagged with the checkout token (`wp-updates-notifier:php8.3-wp7.1.3-<token>`, and the
   browser suites' `site-php8.3-<token>`), so a worktree that changes `docker/` runs on its own image. `make up` keeps
   the untagged names. `make clean` removes them all.
