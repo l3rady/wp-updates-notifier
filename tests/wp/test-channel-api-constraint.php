@@ -8,8 +8,6 @@
 use WPUN\Admin\Channels_Tab;
 use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
-use WPUN\Notification;
-use WPUN\Notification_Item;
 
 /**
  * A test channel that needs a given API version.
@@ -107,25 +105,6 @@ class Test_Channel_Api_Constraint extends WPUN_Test_Case {
 		sc_wpun()->channels()->register( new Test_Channel( $type ) );
 		sc_wpun_channels()->save( new Channel_Instance( $id, $type, $id . ' label', true, array() ) );
 		sc_wpun()->channels()->unregister( $type );
-	}
-
-	/**
-	 * A notification.
-	 *
-	 * @return Notification
-	 */
-	private function notification() {
-		$item = new Notification_Item(
-			array(
-				'type'            => 'core',
-				'key'             => 'core',
-				'name'            => 'WordPress',
-				'current_version' => '6.0',
-				'new_version'     => '6.1',
-			)
-		);
-
-		return new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $item ) );
 	}
 
 	/**
@@ -245,7 +224,7 @@ class Test_Channel_Api_Constraint extends WPUN_Test_Case {
 		$this->assertFalse( $dispatcher->is_available( $instance ) );
 		$this->assertSame( array(), $channel->received );
 
-		$result = $dispatcher->send_one( $this->notification(), $instance );
+		$result = $dispatcher->send_one( $this->make_notification(), $instance );
 		$this->assertFalse( $result->is_success() );
 		$this->assertSame( 'unavailable', $result->get_code() );
 		$this->assertSame( 'The "gated" channel is not available: Needs WP Updates Notifier API ^99.0; this site has ' . sc_wpun_api_version() . '. Update WP Updates Notifier.', $result->get_message() );
@@ -258,7 +237,7 @@ class Test_Channel_Api_Constraint extends WPUN_Test_Case {
 	public function test_a_module_that_is_not_installed_keeps_the_generic_message() {
 		$this->store_instance( 'gone_1', 'gated' );
 
-		$result = sc_wpun()->dispatcher()->send_one( $this->notification(), sc_wpun_channels()->get( 'gone_1' ) );
+		$result = sc_wpun()->dispatcher()->send_one( $this->make_notification(), sc_wpun_channels()->get( 'gone_1' ) );
 
 		$this->assertSame( 'The "gated" channel is not available.', $result->get_message() );
 	}

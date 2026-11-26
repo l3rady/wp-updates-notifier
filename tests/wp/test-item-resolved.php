@@ -25,7 +25,7 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 		$this->save_settings( array( 'download_links' => 1 ) );
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_muted' );
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
-		$this->write_plugin( '1.0' );
+		$this->fixture_plugin( self::PLUGIN, '1.0', 'Resolved Fixture' );
 		$this->write_theme( '1.0' );
 	}
 
@@ -33,23 +33,11 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 	 * Remove the fixture files.
 	 */
 	public function tear_down() {
-		$this->remove_dir( WP_PLUGIN_DIR . '/wpun-resolved-fixture' );
 		$this->remove_dir( get_theme_root() . '/' . self::THEME );
 		wp_clean_plugins_cache();
 		wp_clean_themes_cache();
 
 		parent::tear_down();
-	}
-
-	/**
-	 * Write the fixture plugin with a version.
-	 *
-	 * @param string $version Version header.
-	 */
-	private function write_plugin( $version ) {
-		wp_mkdir_p( WP_PLUGIN_DIR . '/wpun-resolved-fixture' );
-		file_put_contents( WP_PLUGIN_DIR . '/' . self::PLUGIN, "<?php\n/*\nPlugin Name: Resolved Fixture\nVersion: $version\n*/\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
-		wp_clean_plugins_cache();
 	}
 
 	/**
@@ -62,20 +50,6 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 		file_put_contents( get_theme_root() . '/' . self::THEME . '/style.css', "/*\nTheme Name: Resolved Theme\nVersion: $version\n*/\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
 		file_put_contents( get_theme_root() . '/' . self::THEME . '/index.php', "<?php\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
 		wp_clean_themes_cache();
-	}
-
-	/**
-	 * Delete a fixture directory.
-	 *
-	 * @param string $dir Directory.
-	 */
-	private function remove_dir( $dir ) {
-		foreach ( (array) glob( $dir . '/*' ) as $file ) {
-			unlink( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Test fixture.
-		}
-		if ( is_dir( $dir ) ) {
-			rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rmdir_rmdir,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture.
-		}
 	}
 
 	/**
@@ -143,7 +117,7 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 		$this->notify_plugin( '2.0', 'https://example.com/pkg.zip?token=secret' );
 		$this->assertCount( 0, $calls );
 
-		$this->write_plugin( '2.0' );
+		$this->fixture_plugin( self::PLUGIN, '2.0', 'Resolved Fixture' );
 		$this->check_nothing_pending();
 
 		$this->assertCount( 1, $calls );
@@ -176,7 +150,7 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 		$calls = &$this->record();
 		$this->notify_plugin( '2.0' );
 
-		$this->write_plugin( '2.5' );
+		$this->fixture_plugin( self::PLUGIN, '2.5', 'Resolved Fixture' );
 		$this->check_nothing_pending();
 
 		$this->assertCount( 1, $calls );
@@ -278,7 +252,7 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 	 */
 	public function test_an_entry_without_details_fires() {
 		$calls = &$this->record();
-		$this->write_plugin( '2.0' );
+		$this->fixture_plugin( self::PLUGIN, '2.0', 'Resolved Fixture' );
 		$this->save_channel_state( 'email', array( 'plugin' => array( self::PLUGIN => '2.0' ) ) );
 
 		$this->check_nothing_pending();
@@ -313,7 +287,7 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 		$this->add_email( 'other' );
 		$this->save_channel_state( 'off', array( 'plugin' => array( self::PLUGIN => '2.0' ) ) );
 		$this->save_channel_state( 'other', array() );
-		$this->write_plugin( '2.0' );
+		$this->fixture_plugin( self::PLUGIN, '2.0', 'Resolved Fixture' );
 		$calls = &$this->record();
 
 		$this->check_nothing_pending();
@@ -382,7 +356,7 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 		$this->notify_plugin( '2.0' );
 		$this->assertCount( 0, $calls );
 
-		$this->write_plugin( '2.0' );
+		$this->fixture_plugin( self::PLUGIN, '2.0', 'Resolved Fixture' );
 		$this->check_nothing_pending();
 
 		$this->assertCount( 1, $calls );
@@ -401,7 +375,7 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 		$this->notify_plugin( '2.0' );
 		$this->assertTrue( $this->stored_state()['channels']['email']['notified_meta']['plugin'][ self::PLUGIN ]['snoozed'] );
 
-		$this->write_plugin( '2.0' );
+		$this->fixture_plugin( self::PLUGIN, '2.0', 'Resolved Fixture' );
 		$this->check_nothing_pending();
 
 		$this->assertCount( 1, $calls );
@@ -432,7 +406,7 @@ class Test_Item_Resolved extends WPUN_Test_Case {
 	public function test_a_dry_run_does_not_fire() {
 		$calls = &$this->record();
 		$this->notify_plugin( '2.0' );
-		$this->write_plugin( '2.0' );
+		$this->fixture_plugin( self::PLUGIN, '2.0', 'Resolved Fixture' );
 		$this->set_updates();
 
 		sc_wpun()->update_checker()->run_check( 'cli', true );

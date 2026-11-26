@@ -57,12 +57,7 @@ abstract class WPUN_Security_Test_Case extends WPUN_Test_Case {
 	 * @return DOMXPath
 	 */
 	protected function parse( string $html ): DOMXPath {
-		$doc = new DOMDocument();
-		libxml_use_internal_errors( true );
-		$doc->loadHTML( '<html><body>' . $html . '</body></html>' );
-		libxml_clear_errors();
-
-		return new DOMXPath( $doc );
+		return $this->dom( $html );
 	}
 
 	/**
@@ -110,22 +105,7 @@ abstract class WPUN_Security_Test_Case extends WPUN_Test_Case {
 	 * @return string
 	 */
 	protected function capture( callable $render ): string {
-		ob_start();
-		$render();
-
-		return (string) ob_get_clean();
-	}
-
-	/**
-	 * A plain administrator who is not a super admin, with the user set as the current user.
-	 *
-	 * @return int User id.
-	 */
-	protected function become_administrator(): int {
-		$id = self::factory()->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $id );
-
-		return $id;
+		return $this->render( $render );
 	}
 
 	/**

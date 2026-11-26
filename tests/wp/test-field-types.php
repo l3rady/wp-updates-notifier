@@ -14,19 +14,6 @@ use WPUN\Field_Types;
 class Test_Field_Types extends WPUN_Test_Case {
 
 	/**
-	 * The markup parsed.
-	 *
-	 * @param string $html Markup.
-	 * @return DOMXPath
-	 */
-	private function xpath( $html ) {
-		$doc = new DOMDocument();
-		$doc->loadHTML( '<html><body>' . $html . '</body></html>' );
-
-		return new DOMXPath( $doc );
-	}
-
-	/**
 	 * A channel with these fields.
 	 *
 	 * @param array $fields Fields.
@@ -359,7 +346,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 		);
 		foreach ( $cases as $type => $expect ) {
 			$html = Field_Renderer::field( array( 'type' => $type ), 'opt[x]', 'opt-x', $value, true, 'opt-x-desc' );
-			$xp   = $this->xpath( $html );
+			$xp   = $this->dom( $html );
 			$node = $xp->query( '//input[@id="opt-x"]' );
 			$this->assertSame( 1, $node->length, $type );
 			$input = $node->item( 0 );
@@ -383,7 +370,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 	 * Number bounds are attributes.
 	 */
 	public function test_render_number_bounds() {
-		$input = $this->xpath(
+		$input = $this->dom(
 			Field_Renderer::field(
 				array(
 					'type' => 'number',
@@ -399,7 +386,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 		$this->assertSame( '10', $input->getAttribute( 'max' ) );
 		$this->assertSame( '3', $input->getAttribute( 'value' ) );
 
-		$input = $this->xpath( Field_Renderer::field( array( 'type' => 'number' ), 'n', 'i', '' ) )->query( '//input' )->item( 0 );
+		$input = $this->dom( Field_Renderer::field( array( 'type' => 'number' ), 'n', 'i', '' ) )->query( '//input' )->item( 0 );
 		$this->assertFalse( $input->hasAttribute( 'min' ) );
 		$this->assertFalse( $input->hasAttribute( 'max' ) );
 	}
@@ -409,11 +396,11 @@ class Test_Field_Types extends WPUN_Test_Case {
 	 */
 	public function test_render_textarea() {
 		$html = Field_Renderer::field( array( 'type' => 'textarea' ), 'n', 'i', "</textarea><b>x</b>\nline" );
-		$area = $this->xpath( $html )->query( '//textarea[@id="i"]' )->item( 0 );
+		$area = $this->dom( $html )->query( '//textarea[@id="i"]' )->item( 0 );
 		$this->assertSame( 'large-text', $area->getAttribute( 'class' ) );
 		$this->assertSame( '5', $area->getAttribute( 'rows' ) );
 		$this->assertSame( "</textarea><b>x</b>\nline", $area->textContent ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-		$this->assertSame( 0, $this->xpath( $html )->query( '//b' )->length );
+		$this->assertSame( 0, $this->dom( $html )->query( '//b' )->length );
 	}
 
 	/**
@@ -446,12 +433,12 @@ class Test_Field_Types extends WPUN_Test_Case {
 				$this->assertStringNotContainsString( 'S3cr3t', $html );
 				if ( 'textarea' === $field['type'] ) {
 					// A list of secrets needs several lines, so it is an empty textarea.
-					$area = $this->xpath( $html )->query( '//textarea[@id="i"]' )->item( 0 );
+					$area = $this->dom( $html )->query( '//textarea[@id="i"]' )->item( 0 );
 					$this->assertSame( 'large-text', $area->getAttribute( 'class' ) );
-					$this->assertSame( '', $this->xpath( $html )->evaluate( 'string(//textarea[@id="i"])' ) );
+					$this->assertSame( '', $this->dom( $html )->evaluate( 'string(//textarea[@id="i"])' ) );
 					continue;
 				}
-				$input = $this->xpath( $html )->query( '//input[@id="i"]' )->item( 0 );
+				$input = $this->dom( $html )->query( '//input[@id="i"]' )->item( 0 );
 				$this->assertSame( 'password', $input->getAttribute( 'type' ) );
 				$this->assertSame( 'new-password', $input->getAttribute( 'autocomplete' ) );
 				$this->assertSame( 'regular-text', $input->getAttribute( 'class' ) );
@@ -466,16 +453,16 @@ class Test_Field_Types extends WPUN_Test_Case {
 	public function test_render_secret_clear_checkbox() {
 		$field = array( 'type' => 'secret' );
 
-		$xp = $this->xpath( Field_Renderer::field( $field, 'token', 'tok', 'saved' ) );
+		$xp = $this->dom( Field_Renderer::field( $field, 'token', 'tok', 'saved' ) );
 		$this->assertSame( 1, $xp->query( '//input[@type="checkbox"][@name="token__clear"][@id="tok__clear"][@value="1"]' )->length );
 		$this->assertSame( 1, $xp->query( '//label[@for="tok__clear"]' )->length );
 
-		$xp = $this->xpath( Field_Renderer::field( $field, 'opt[token]', 'tok', 'saved' ) );
+		$xp = $this->dom( Field_Renderer::field( $field, 'opt[token]', 'tok', 'saved' ) );
 		$this->assertSame( 1, $xp->query( '//input[@type="checkbox"][@name="opt[token__clear]"]' )->length );
 
-		$this->assertSame( 0, $this->xpath( Field_Renderer::field( $field, 'token', 'tok', '' ) )->query( '//input[@type="checkbox"]' )->length, 'Nothing saved.' );
-		$this->assertSame( 0, $this->xpath( Field_Renderer::field( $field, 'token', 'tok', null ) )->query( '//input[@type="checkbox"]' )->length );
-		$this->assertSame( 0, $this->xpath( Field_Renderer::field( $field, 'token', 'tok', 'saved', true ) )->query( '//input[@type="checkbox"]' )->length, 'Disabled.' );
+		$this->assertSame( 0, $this->dom( Field_Renderer::field( $field, 'token', 'tok', '' ) )->query( '//input[@type="checkbox"]' )->length, 'Nothing saved.' );
+		$this->assertSame( 0, $this->dom( Field_Renderer::field( $field, 'token', 'tok', null ) )->query( '//input[@type="checkbox"]' )->length );
+		$this->assertSame( 0, $this->dom( Field_Renderer::field( $field, 'token', 'tok', 'saved', true ) )->query( '//input[@type="checkbox"]' )->length, 'Disabled.' );
 	}
 
 	/**
@@ -503,8 +490,8 @@ class Test_Field_Types extends WPUN_Test_Case {
 				),
 			) as $name => $case
 		) {
-			$optional = $this->xpath( Field_Renderer::field( $case[0], 'n', 'i', '' ) );
-			$required = $this->xpath( Field_Renderer::field( $case[0] + array( 'required' => true ), 'n', 'i', '' ) );
+			$optional = $this->dom( Field_Renderer::field( $case[0], 'n', 'i', '' ) );
+			$required = $this->dom( Field_Renderer::field( $case[0] + array( 'required' => true ), 'n', 'i', '' ) );
 			$this->assertSame( 'true', $required->query( $case[1] )->item( 0 )->getAttribute( 'aria-required' ), $name );
 			$this->assertFalse( $optional->query( $case[1] )->item( 0 )->hasAttribute( 'aria-required' ), $name );
 			$this->assertSame( 0, $required->query( '//*[@required]' )->length, $name . ': no HTML required attribute.' );
@@ -517,13 +504,13 @@ class Test_Field_Types extends WPUN_Test_Case {
 			'display'  => 'radio',
 			'required' => true,
 		);
-		$xp    = $this->xpath( Field_Renderer::field( $radio, 'n', 'i', 'a' ) );
+		$xp    = $this->dom( Field_Renderer::field( $radio, 'n', 'i', 'a' ) );
 		$group = $xp->query( '//fieldset[@id="i"]' )->item( 0 );
 		$this->assertSame( 'radiogroup', $group->getAttribute( 'role' ) );
 		$this->assertSame( 'true', $group->getAttribute( 'aria-required' ) );
 		$this->assertSame( 'Pick (required)', trim( $xp->query( '//legend' )->item( 0 )->textContent ) );
 		$this->assertSame( 1, $xp->query( '//legend//span[@class="description"][.="(required)"]' )->length );
-		$xp = $this->xpath( Field_Renderer::field( array_diff_key( $radio, array( 'required' => 1 ) ), 'n', 'i', 'a' ) );
+		$xp = $this->dom( Field_Renderer::field( array_diff_key( $radio, array( 'required' => 1 ) ), 'n', 'i', 'a' ) );
 		$this->assertFalse( $xp->query( '//fieldset' )->item( 0 )->hasAttribute( 'role' ) );
 		$this->assertFalse( $xp->query( '//fieldset' )->item( 0 )->hasAttribute( 'aria-required' ) );
 		$this->assertSame( 'Pick', trim( $xp->query( '//legend' )->item( 0 )->textContent ) );
@@ -532,7 +519,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 			'multiple' => true,
 			'display'  => 'checkboxes',
 		) + $radio;
-		$xp     = $this->xpath( Field_Renderer::field( $checks, 'n', 'i', array( 'a' ) ) );
+		$xp     = $this->dom( Field_Renderer::field( $checks, 'n', 'i', array( 'a' ) ) );
 		$group  = $xp->query( '//fieldset[@id="i"]' )->item( 0 );
 		$this->assertFalse( $group->hasAttribute( 'aria-required' ), 'No role supports it on a checkbox group.' );
 		$this->assertFalse( $group->hasAttribute( 'role' ) );
@@ -563,8 +550,8 @@ class Test_Field_Types extends WPUN_Test_Case {
 			'required' => true,
 		);
 
-		$this->assertSame( 'true', $this->xpath( Field_Renderer::field( $field, 'n', 'i', '' ) )->query( '//input[@type="password"]' )->item( 0 )->getAttribute( 'aria-required' ) );
-		$this->assertFalse( $this->xpath( Field_Renderer::field( $field, 'n', 'i', 'saved' ) )->query( '//input[@type="password"]' )->item( 0 )->hasAttribute( 'aria-required' ) );
+		$this->assertSame( 'true', $this->dom( Field_Renderer::field( $field, 'n', 'i', '' ) )->query( '//input[@type="password"]' )->item( 0 )->getAttribute( 'aria-required' ) );
+		$this->assertFalse( $this->dom( Field_Renderer::field( $field, 'n', 'i', 'saved' ) )->query( '//input[@type="password"]' )->item( 0 )->hasAttribute( 'aria-required' ) );
 		$this->assertTrue( Field_Renderer::is_required( $field ) );
 	}
 
@@ -599,7 +586,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 		);
 		foreach ( $types as $case ) {
 			$html = Field_Renderer::field( $case[0], 'n', 'i', 'a', false, 'i-desc', array(), 'Needs <b>fixing</b>' );
-			$xp   = $this->xpath( $html );
+			$xp   = $this->dom( $html );
 			$node = $xp->query( $case[1] )->item( 0 );
 			$this->assertNotNull( $node, $html );
 			$this->assertSame( 'true', $node->getAttribute( 'aria-invalid' ), $html );
@@ -612,7 +599,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 		}
 
 		$html = Field_Renderer::field( array( 'type' => 'text' ), 'n', 'i', 'a', false, '', array(), 'Bad' );
-		$this->assertSame( 'i-error', $this->xpath( $html )->query( '//input' )->item( 0 )->getAttribute( 'aria-describedby' ) );
+		$this->assertSame( 'i-error', $this->dom( $html )->query( '//input' )->item( 0 )->getAttribute( 'aria-describedby' ) );
 
 		$html = Field_Renderer::field( array( 'type' => 'text' ), 'n', 'i', 'a' );
 		$this->assertStringNotContainsString( 'sc-wpun-field-error', $html );
@@ -683,7 +670,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 			}
 		);
 
-		$input = $this->xpath( Field_Renderer::field( array( 'type' => 'colour' ), 'n', 'i', '#fff', false, 'd', array(), 'E' ) )->query( '//input' )->item( 0 );
+		$input = $this->dom( Field_Renderer::field( array( 'type' => 'colour' ), 'n', 'i', '#fff', false, 'd', array(), 'E' ) )->query( '//input' )->item( 0 );
 		$this->assertSame( 'color', $input->getAttribute( 'type' ) );
 		$this->assertSame( '#fff', $input->getAttribute( 'value' ) );
 		$this->assertSame( 'd i-error', $input->getAttribute( 'data-by' ) );
@@ -757,7 +744,7 @@ class Test_Field_Types extends WPUN_Test_Case {
 			'i',
 			'a'
 		);
-		$this->assertSame( 1, $this->xpath( $html )->query( '//select[@id="i"]' )->length );
+		$this->assertSame( 1, $this->dom( $html )->query( '//select[@id="i"]' )->length );
 
 		$this->assertSame( 'boolean', Field_Types::canonical( 'checkbox' ) );
 		$this->assertSame( 'enum', Field_Types::canonical( 'select' ) );

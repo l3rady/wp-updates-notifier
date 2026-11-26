@@ -79,21 +79,6 @@ class Test_Field_Showcase extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Parse markup.
-	 *
-	 * @param string $html Markup.
-	 * @return DOMXPath
-	 */
-	private function parse( string $html ): DOMXPath {
-		$doc = new DOMDocument();
-		libxml_use_internal_errors( true );
-		$doc->loadHTML( '<html><body>' . $html . '</body></html>' );
-		libxml_clear_errors();
-
-		return new DOMXPath( $doc );
-	}
-
-	/**
 	 * Save a new instance with these settings, and return the errors by field.
 	 *
 	 * @param string $type     Module type.
@@ -135,7 +120,7 @@ class Test_Field_Showcase extends WPUN_Test_Case {
 	 * The add form draws a control for every field. A notice, or an unknown field type, fails the test.
 	 */
 	public function test_the_add_form_renders_every_field() {
-		$xpath  = $this->parse( $this->add_form( 'field_showcase' ) );
+		$xpath  = $this->dom( $this->add_form( 'field_showcase' ) );
 		$fields = ( new Showcase_Channel() )->get_fields();
 
 		$this->assertGreaterThan( 30, count( $fields ) );
@@ -150,7 +135,7 @@ class Test_Field_Showcase extends WPUN_Test_Case {
 	 * The custom render module draws its own markup.
 	 */
 	public function test_the_custom_render_form_renders() {
-		$xpath = $this->parse( $this->add_form( 'field_showcase_custom' ) );
+		$xpath = $this->dom( $this->add_form( 'field_showcase_custom' ) );
 
 		$this->assertSame( 1, $xpath->query( '//div[@class="wpun-field-showcase-custom"]//input[@name="settings[greeting]"]' )->length );
 	}

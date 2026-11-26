@@ -51,15 +51,6 @@ class Test_Network_Activation extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Skip on a single site.
-	 */
-	private function require_multisite() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Needs a multisite.' );
-		}
-	}
-
-	/**
 	 * The options a 2.x site had on the main site, with a channel instance of a chosen id.
 	 *
 	 * @return array The stored values by option name.

@@ -40,15 +40,6 @@ class Test_Network_Context extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Skip on a single site.
-	 */
-	private function require_multisite() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Needs a multisite.' );
-		}
-	}
-
-	/**
 	 * Start without the plugin's options.
 	 */
 	public function set_up() {
@@ -284,7 +275,7 @@ class Test_Network_Context extends WPUN_Test_Case {
 	public function test_a_network_frequency_change_reschedules_the_check() {
 		$this->require_multisite();
 		$this->network_activate();
-		$this->save_network_settings( 'daily' );
+		$this->save_network_frequency( 'daily' );
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 
 		$plugin = new Plugin();
@@ -303,7 +294,7 @@ class Test_Network_Context extends WPUN_Test_Case {
 	 *
 	 * @param string $frequency Frequency.
 	 */
-	private function save_network_settings( $frequency ) {
+	private function save_network_frequency( $frequency ) {
 		$settings              = sc_wpun()->settings()->default_settings();
 		$settings['frequency'] = $frequency;
 		update_site_option( 'sc_wpun_settings', $settings );

@@ -10,8 +10,6 @@ use WPUN\Admin\Channels_Tab;
 use WPUN\Channel_Instance;
 use WPUN\Channel_Registry;
 use WPUN\Dispatcher;
-use WPUN\Notification;
-use WPUN\Notification_Item;
 
 /**
  * A channel that takes over a type.
@@ -92,25 +90,6 @@ class Test_Channel_Replace extends WPUN_Test_Case {
 		$_POST = array();
 		unset( $_GET['tab'], $_GET['action'], $_GET['id'], $_GET['type'] );
 		parent::tear_down();
-	}
-
-	/**
-	 * A notification.
-	 *
-	 * @return Notification
-	 */
-	private function notification() {
-		$item = new Notification_Item(
-			array(
-				'type'            => 'core',
-				'key'             => 'core',
-				'name'            => 'WordPress',
-				'current_version' => '6.0',
-				'new_version'     => '6.1',
-			)
-		);
-
-		return new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $item ) );
 	}
 
 	/**
@@ -328,7 +307,7 @@ class Test_Channel_Replace extends WPUN_Test_Case {
 		$with = new Channel_Registry();
 		$with->register( $original );
 		$with->replace( $replacement );
-		$result = ( new Dispatcher( $with ) )->send_one( $this->notification(), $instance );
+		$result = ( new Dispatcher( $with ) )->send_one( $this->make_notification(), $instance );
 
 		$this->assertTrue( $result->is_success() );
 		$this->assertCount( 1, $replacement->received['swap_1'] );
@@ -336,7 +315,7 @@ class Test_Channel_Replace extends WPUN_Test_Case {
 
 		$without = new Channel_Registry();
 		$without->register( $original );
-		$result = ( new Dispatcher( $without ) )->send_one( $this->notification(), $instance );
+		$result = ( new Dispatcher( $without ) )->send_one( $this->make_notification(), $instance );
 
 		$this->assertTrue( $result->is_success() );
 		$this->assertCount( 1, $original->received['swap_1'] );

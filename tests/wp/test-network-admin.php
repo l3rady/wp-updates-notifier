@@ -99,15 +99,6 @@ class Test_Network_Admin extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Network settings and the email instance, as a network would store them.
-	 */
-	private function save_network_settings() {
-		update_site_option( 'sc_wpun_settings', $this->global_settings() );
-		update_site_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
-		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'email', 'email', 'Email', true, array( 'to' => 'ops@example.org' ) ) );
-	}
-
-	/**
 	 * The settings screen of the network admin.
 	 *
 	 * @param string $tab Tab slug, if any.

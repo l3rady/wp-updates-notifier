@@ -14,19 +14,6 @@ use WPUN\Boolean_Field;
 class Test_Boolean_Field extends WPUN_Test_Case {
 
 	/**
-	 * The markup parsed.
-	 *
-	 * @param string $html Markup.
-	 * @return DOMXPath
-	 */
-	private function xpath( $html ) {
-		$doc = new DOMDocument();
-		$doc->loadHTML( '<html><body>' . $html . '</body></html>' );
-
-		return new DOMXPath( $doc );
-	}
-
-	/**
 	 * Defaults for display and labels.
 	 */
 	public function test_normalise_defaults() {
@@ -217,7 +204,7 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 		);
 
 		$html   = Field_Renderer::boolean( $field, 'opt[hide]', 'opt_hide', 1, false, 'opt_note' );
-		$xpath  = $this->xpath( $html );
+		$xpath  = $this->dom( $html );
 		$inputs = $xpath->query( '//input' );
 		$this->assertSame( 2, $inputs->length );
 		$this->assertSame( 'hidden', $inputs->item( 0 )->getAttribute( 'type' ) );
@@ -235,10 +222,10 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 		$this->assertStringNotContainsString( '<now>', $html );
 
 		foreach ( array( true, '1' ) as $on ) {
-			$this->assertSame( 1, $this->xpath( Field_Renderer::boolean( $field, 'n', 'i', $on ) )->query( '//input[@type="checkbox"][@checked]' )->length );
+			$this->assertSame( 1, $this->dom( Field_Renderer::boolean( $field, 'n', 'i', $on ) )->query( '//input[@type="checkbox"][@checked]' )->length );
 		}
 		foreach ( array( false, 0, '0', '', null, 'bogus' ) as $off ) {
-			$this->assertSame( 0, $this->xpath( Field_Renderer::boolean( $field, 'n', 'i', $off ) )->query( '//input[@type="checkbox"][@checked]' )->length, var_export( $off, true ) );
+			$this->assertSame( 0, $this->dom( Field_Renderer::boolean( $field, 'n', 'i', $off ) )->query( '//input[@type="checkbox"][@checked]' )->length, var_export( $off, true ) );
 		}
 
 		$plain = Field_Renderer::boolean(
@@ -250,7 +237,7 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 			'i',
 			false
 		);
-		$this->assertSame( ' Notify', $this->xpath( $plain )->query( '//label' )->item( 0 )->textContent, 'The label is the default text.' );
+		$this->assertSame( ' Notify', $this->dom( $plain )->query( '//label' )->item( 0 )->textContent, 'The label is the default text.' );
 	}
 
 	/**
@@ -265,7 +252,7 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 
 		foreach ( array( true, false ) as $on ) {
 			$html   = Field_Renderer::boolean( $field, 'opt[notify]', 'opt_notify', $on, false, 'help' );
-			$xpath  = $this->xpath( $html );
+			$xpath  = $this->dom( $html );
 			$radios = $xpath->query( '//fieldset[@id="opt_notify"][@aria-describedby="help"]//input[@type="radio"][@name="opt[notify]"]' );
 			$this->assertSame( 1, $xpath->query( '//fieldset/legend[contains(@class,"screen-reader-text")]' )->length );
 			$this->assertSame( 'Notify <me>', $xpath->query( '//fieldset/legend' )->item( 0 )->textContent );
@@ -294,7 +281,7 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 			),
 		);
 
-		$xpath   = $this->xpath( Field_Renderer::boolean( $field, 'opt[hide]', 'opt_hide', '1', false, 'help' ) );
+		$xpath   = $this->dom( Field_Renderer::boolean( $field, 'opt[hide]', 'opt_hide', '1', false, 'help' ) );
 		$options = $xpath->query( '//select[@id="opt_hide"][@name="opt[hide]"][@aria-describedby="help"]/option' );
 		$this->assertSame( 2, $options->length );
 		$this->assertSame( array( '1', '0' ), array( $options->item( 0 )->getAttribute( 'value' ), $options->item( 1 )->getAttribute( 'value' ) ) );
@@ -302,7 +289,7 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 		$this->assertSame( array( true, false ), array( $options->item( 0 )->hasAttribute( 'selected' ), $options->item( 1 )->hasAttribute( 'selected' ) ) );
 		$this->assertSame( 0, $xpath->query( '//input|//fieldset' )->length );
 
-		$xpath   = $this->xpath( Field_Renderer::boolean( $field, 'n', 'i', false ) );
+		$xpath   = $this->dom( Field_Renderer::boolean( $field, 'n', 'i', false ) );
 		$options = $xpath->query( '//option' );
 		$this->assertSame( array( false, true ), array( $options->item( 0 )->hasAttribute( 'selected' ), $options->item( 1 )->hasAttribute( 'selected' ) ) );
 	}
@@ -312,12 +299,12 @@ class Test_Boolean_Field extends WPUN_Test_Case {
 	 */
 	public function test_render_disabled() {
 		foreach ( array( 'checkbox' => 2, 'radio' => 2 ) as $display => $count ) { // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
-			$xpath = $this->xpath( Field_Renderer::boolean( array( 'type' => 'boolean', 'display' => $display ), 'n', 'i', true, true ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+			$xpath = $this->dom( Field_Renderer::boolean( array( 'type' => 'boolean', 'display' => $display ), 'n', 'i', true, true ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 			$this->assertSame( 0, $xpath->query( '//input[not(@disabled)]' )->length, $display );
 			$this->assertSame( $count, $xpath->query( '//input[@disabled]' )->length, $display );
 		}
 
-		$xpath = $this->xpath( Field_Renderer::boolean( array( 'type' => 'boolean', 'display' => 'select' ), 'n', 'i', true, true ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		$xpath = $this->dom( Field_Renderer::boolean( array( 'type' => 'boolean', 'display' => 'select' ), 'n', 'i', true, true ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$this->assertSame( 1, $xpath->query( '//select[@disabled]' )->length );
 	}
 

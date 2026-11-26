@@ -54,7 +54,7 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 	 * @param int          $max_items    Item limit.
 	 * @return string
 	 */
-	private function render( $format, Notification $notification, $max_length = 0, $max_items = 0 ) {
+	private function render_message( $format, Notification $notification, $max_length = 0, $max_items = 0 ) {
 		return call_user_func( array( Notification_Renderer::class, $format ), $notification, $max_length, $max_items );
 	}
 
@@ -74,12 +74,12 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 	public function test_under_the_limits_the_output_is_the_same() {
 		foreach ( $this->formats as $format ) {
 			$notification = $this->notification( 5 );
-			$plain        = $this->render( $format, $notification );
+			$plain        = $this->render_message( $format, $notification );
 
-			$this->assertSame( $plain, $this->render( $format, $notification, 10000, 50 ), $format );
-			$this->assertSame( $plain, $this->render( $format, $notification, 0, 5 ), $format . ': exactly the item limit' );
-			$this->assertSame( $plain, $this->render( $format, $notification, mb_strlen( $plain ), 0 ), $format . ': exactly the length limit' );
-			$this->assertSame( $plain, $this->render( $format, $notification, -1, -1 ), $format . ': negative is no limit' );
+			$this->assertSame( $plain, $this->render_message( $format, $notification, 10000, 50 ), $format );
+			$this->assertSame( $plain, $this->render_message( $format, $notification, 0, 5 ), $format . ': exactly the item limit' );
+			$this->assertSame( $plain, $this->render_message( $format, $notification, mb_strlen( $plain ), 0 ), $format . ': exactly the length limit' );
+			$this->assertSame( $plain, $this->render_message( $format, $notification, -1, -1 ), $format . ': negative is no limit' );
 			$this->assertStringNotContainsString( '…and', $plain, $format );
 		}
 	}
@@ -89,7 +89,7 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 	 */
 	public function test_the_item_limit_summarises_the_rest() {
 		foreach ( $this->formats as $format ) {
-			$text = $this->render( $format, $this->notification( 10 ), 0, 3 );
+			$text = $this->render_message( $format, $this->notification( 10 ), 0, 3 );
 
 			$this->assertSame( 3, $this->shown( $text ), $format );
 			$this->assertStringContainsString( 'Plugin 3', $text, $format );
@@ -97,14 +97,14 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 			$this->assertStringContainsString( '…and 7 more', $text, $format );
 		}
 
-		$plain = $this->render( 'plain_text', $this->notification( 10 ), 0, 3 );
+		$plain = $this->render_message( 'plain_text', $this->notification( 10 ), 0, 3 );
 		$this->assertStringContainsString( "\n\n…and 7 more\n\nPlease visit ", $plain );
 
-		$markdown = $this->render( 'markdown', $this->notification( 10 ), 0, 3 );
+		$markdown = $this->render_message( 'markdown', $this->notification( 10 ), 0, 3 );
 		$this->assertStringContainsString( "\n\n…and 7 more\n\nPlease visit ", $markdown );
 		$this->assertStringNotContainsString( "\n…and 7 more", str_replace( "\n\n…and", '', $markdown ), 'Not directly under the list.' );
 
-		$html = $this->render( 'html', $this->notification( 10 ), 0, 3 );
+		$html = $this->render_message( 'html', $this->notification( 10 ), 0, 3 );
 		$this->assertStringContainsString( "</ul>\n<p>…and 7 more</p>\n<p><a href=\"https://example.org/wp-admin/update-core.php\">Go to the Updates screen to update.</a></p>", $html );
 	}
 
@@ -114,14 +114,14 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 	public function test_the_length_limit_keeps_the_most_items_that_fit() {
 		foreach ( $this->formats as $format ) {
 			$notification = $this->notification( 9 );
-			$limit        = mb_strlen( $this->render( $format, $notification, 0, 4 ) );
+			$limit        = mb_strlen( $this->render_message( $format, $notification, 0, 4 ) );
 
-			$text = $this->render( $format, $notification, $limit );
+			$text = $this->render_message( $format, $notification, $limit );
 
 			$this->assertLessThanOrEqual( $limit, mb_strlen( $text ), $format );
 			$this->assertSame( 4, $this->shown( $text ), $format );
 			$this->assertStringContainsString( '…and 5 more', $text, $format );
-			$this->assertGreaterThan( $limit, mb_strlen( $this->render( $format, $notification, 0, 5 ) ), $format . ': one more would not fit' );
+			$this->assertGreaterThan( $limit, mb_strlen( $this->render_message( $format, $notification, 0, 5 ) ), $format . ': one more would not fit' );
 		}
 	}
 
@@ -131,18 +131,18 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 	public function test_every_length_limit_gives_the_largest_count_that_fits() {
 		$notification = $this->notification( 12 );
 		foreach ( $this->formats as $format ) {
-			$full = mb_strlen( $this->render( $format, $notification ) );
-			$base = mb_strlen( $this->render( $format, $this->notification( 0 ) ) );
+			$full = mb_strlen( $this->render_message( $format, $notification ) );
+			$base = mb_strlen( $this->render_message( $format, $this->notification( 0 ) ) );
 
 			for ( $limit = $base; $limit <= $full; $limit += 7 ) {
-				$text  = $this->render( $format, $notification, $limit );
+				$text  = $this->render_message( $format, $notification, $limit );
 				$shown = $this->shown( $text );
 
 				if ( $shown > 0 || mb_strlen( $text ) <= $limit ) {
 					$this->assertLessThanOrEqual( $limit, mb_strlen( $text ), "$format $limit" );
 				}
 				if ( $shown < 12 && $shown > 0 ) {
-					$this->assertGreaterThan( $limit, mb_strlen( $this->render( $format, $notification, 0, $shown + 1 ) ), "$format $limit: one more would not fit" );
+					$this->assertGreaterThan( $limit, mb_strlen( $this->render_message( $format, $notification, 0, $shown + 1 ) ), "$format $limit: one more would not fit" );
 				}
 			}
 		}
@@ -153,7 +153,7 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 	 */
 	public function test_a_tiny_limit_returns_the_message_without_items() {
 		foreach ( $this->formats as $format ) {
-			$text = $this->render( $format, $this->notification( 4 ), 1 );
+			$text = $this->render_message( $format, $this->notification( 4 ), 1 );
 
 			$this->assertNotSame( '', $text, $format );
 			$this->assertSame( 0, $this->shown( $text ), $format );
@@ -170,9 +170,9 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 		foreach ( $this->formats as $format ) {
 			$empty = $this->notification( 0 );
 
-			$this->assertStringNotContainsString( 'more', $this->render( $format, $empty, 10, 1 ), $format );
-			$this->assertSame( $this->render( $format, $empty ), $this->render( $format, $empty, 10, 1 ), $format );
-			$this->assertStringNotContainsString( '…and 0 more', $this->render( $format, $this->notification( 2 ), 0, 5 ), $format );
+			$this->assertStringNotContainsString( 'more', $this->render_message( $format, $empty, 10, 1 ), $format );
+			$this->assertSame( $this->render_message( $format, $empty ), $this->render_message( $format, $empty, 10, 1 ), $format );
+			$this->assertStringNotContainsString( '…and 0 more', $this->render_message( $format, $this->notification( 2 ), 0, 5 ), $format );
 		}
 	}
 
@@ -182,9 +182,9 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 	public function test_length_is_counted_in_characters() {
 		foreach ( $this->formats as $format ) {
 			$notification = $this->notification( 9, 'Ünïcödé 插件 🚀 ' );
-			$limit        = mb_strlen( $this->render( $format, $notification, 0, 4 ) );
+			$limit        = mb_strlen( $this->render_message( $format, $notification, 0, 4 ) );
 
-			$text = $this->render( $format, $notification, $limit );
+			$text = $this->render_message( $format, $notification, $limit );
 
 			$this->assertLessThanOrEqual( $limit, mb_strlen( $text ), $format );
 			$this->assertGreaterThan( $limit, strlen( $text ), $format . ': more bytes than the limit, so bytes were not counted' );
@@ -210,8 +210,8 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 			5
 		);
 
-		$this->render( 'plain_text', $this->notification( 5 ), 0, 4 );
-		$this->render( 'plain_text', $this->notification( 5 ), 0, 2 );
+		$this->render_message( 'plain_text', $this->notification( 5 ), 0, 4 );
+		$this->render_message( 'plain_text', $this->notification( 5 ), 0, 2 );
 
 		$this->assertSame(
 			array(
@@ -238,9 +238,9 @@ class Test_Renderer_Limits extends WPUN_Test_Case {
 		);
 		$notification = $this->notification( 6 );
 
-		$this->assertStringContainsString( "\n\n*<b>4 hidden\n\nPlease visit", $this->render( 'plain_text', $notification, 0, 2 ) );
-		$this->assertStringContainsString( "\n\n\\*\\<b\\>4 hidden\n\nPlease visit", $this->render( 'markdown', $notification, 0, 2 ) );
-		$this->assertStringContainsString( '<p>*&lt;b&gt;4 hidden</p>', $this->render( 'html', $notification, 0, 2 ) );
+		$this->assertStringContainsString( "\n\n*<b>4 hidden\n\nPlease visit", $this->render_message( 'plain_text', $notification, 0, 2 ) );
+		$this->assertStringContainsString( "\n\n\\*\\<b\\>4 hidden\n\nPlease visit", $this->render_message( 'markdown', $notification, 0, 2 ) );
+		$this->assertStringContainsString( '<p>*&lt;b&gt;4 hidden</p>', $this->render_message( 'html', $notification, 0, 2 ) );
 		$this->assertSame( array( '…and 4 more', 4, 6 ), $args[0], 'Gets the default text, the count and the whole notification.' );
 	}
 

@@ -73,6 +73,8 @@ With `FILE` and `FILTER` together, `FILTER` narrows the class, so it is a patter
 
 Each checkout (and each git worktree) has its own table prefix, made from its path, and the single site and multisite runs have one each, so runs in different checkouts do not clash and `make test` can run both suites at once. Two runs of the same suite in one checkout still share tables, so do not start them together. `make mutation` sets its own prefixes and is not tied to the checkout.
 
+**Shared helpers.** `WPUN_Test_Case` has helpers to build items, notifications and instances, parse and check markup, and write fixture plugins. `tests/README.md` lists them.
+
 **Multisite.** The multisite run has the plugin network-activated, as a network has it. A test class that needs the plugin as one site's copy (the dormant mode, or per-site settings) sets `protected $network_activated = false;` in `WPUN_Test_Case`. `set_network_activated()` switches it inside a test.
 
 **CI.** The `wordpress` job in `ci.yml` runs PHP 7.4 to 8.5 on WordPress 7.1.3, single site and multisite, and PHP 7.4 and 8.3 on WordPress 6.7.9, the oldest supported. On a pull request that cannot affect everything it runs fewer legs (PHP 7.4 and 8.5, single site only). The `wordpress-trunk` job runs the suite against WordPress trunk every night, on PHP 7.4 and 8.5. The `random-order` job runs the single-site suite in random order every week and prints the seed.

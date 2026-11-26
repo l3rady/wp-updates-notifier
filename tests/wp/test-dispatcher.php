@@ -9,8 +9,6 @@ use WPUN\Channel_Instance;
 use WPUN\Channel_Store;
 use WPUN\Delivery_Result;
 use WPUN\Dispatcher;
-use WPUN\Notification;
-use WPUN\Notification_Item;
 
 /**
  * The dispatcher.
@@ -59,25 +57,6 @@ class Test_Dispatcher extends WPUN_Test_Case {
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$this->dispatcher = new Dispatcher( $this->registry );
-	}
-
-	/**
-	 * A notification.
-	 *
-	 * @return Notification
-	 */
-	private function notification() {
-		$item = new Notification_Item(
-			array(
-				'type'            => 'core',
-				'key'             => 'core',
-				'name'            => 'WordPress',
-				'current_version' => '6.0',
-				'new_version'     => '6.1',
-			)
-		);
-
-		return new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $item ) );
 	}
 
 	/**
@@ -274,9 +253,9 @@ class Test_Dispatcher extends WPUN_Test_Case {
 
 		$results = $this->capturing_notices(
 			fn() => array(
-				'before' => $dispatcher->send_one( $this->notification(), $before ),
-				'broken' => $dispatcher->send_one( $this->notification(), $this->instance( 'broken' ) ),
-				'after'  => $dispatcher->send_one( $this->notification(), $after ),
+				'before' => $dispatcher->send_one( $this->make_notification(), $before ),
+				'broken' => $dispatcher->send_one( $this->make_notification(), $this->instance( 'broken' ) ),
+				'after'  => $dispatcher->send_one( $this->make_notification(), $after ),
 			)
 		);
 
@@ -339,7 +318,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 		);
 		$dispatcher = $this->dispatcher_with_throwing_store();
 
-		$this->capturing_notices( fn() => $dispatcher->send_one( $this->notification(), $this->instance( 'broken' ) ) );
+		$this->capturing_notices( fn() => $dispatcher->send_one( $this->make_notification(), $this->instance( 'broken' ) ) );
 
 		$this->assertSame( array( array( 'broken', 'exception' ) ), $heard );
 	}
@@ -350,7 +329,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	public function test_send_one_reports_a_store_that_throws() {
 		$dispatcher = $this->dispatcher_with_throwing_store();
 
-		$result = $this->capturing_notices( fn() => $dispatcher->send_one( $this->notification(), $this->instance( 'broken' ) ) );
+		$result = $this->capturing_notices( fn() => $dispatcher->send_one( $this->make_notification(), $this->instance( 'broken' ) ) );
 
 		$this->assert_exception_result( $result, RuntimeException::class );
 	}
@@ -359,7 +338,7 @@ class Test_Dispatcher extends WPUN_Test_Case {
 	 * A channel that throws is still reported once by send_one(), as before.
 	 */
 	public function test_send_one_reports_a_channel_that_throws() {
-		$result = $this->capturing_notices( fn() => $this->dispatcher->send_one( $this->notification(), $this->instance( 'throws', 'throw' ) ) );
+		$result = $this->capturing_notices( fn() => $this->dispatcher->send_one( $this->make_notification(), $this->instance( 'throws', 'throw' ) ) );
 
 		$this->assertSame( 'exception', $result->get_code() );
 		$this->assertSame( array( 'exception' => RuntimeException::class ), $result->get_context() );

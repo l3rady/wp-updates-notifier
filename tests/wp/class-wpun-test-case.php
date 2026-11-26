@@ -13,6 +13,10 @@
  */
 abstract class WPUN_Test_Case extends WP_UnitTestCase {
 
+	use WPUN_Builders;
+	use WPUN_Markup;
+	use WPUN_Environment;
+
 	/**
 	 * Every HTTP request attempted during the test: array of [ 'url' => string, 'args' => array ].
 	 *
@@ -101,6 +105,8 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	 * Leave the network as the suite found it.
 	 */
 	public function tear_down() {
+		$this->remove_fixture_plugins();
+
 		if ( is_multisite() ) {
 			$this->set_network_activated( true );
 		}

@@ -92,19 +92,6 @@ class Test_Enum_Field extends WPUN_Test_Case {
 	}
 
 	/**
-	 * The markup parsed.
-	 *
-	 * @param string $html Markup.
-	 * @return DOMXPath
-	 */
-	private function xpath( $html ) {
-		$doc = new DOMDocument();
-		$doc->loadHTML( '<html><body>' . $html . '</body></html>' );
-
-		return new DOMXPath( $doc );
-	}
-
-	/**
 	 * The select alias is a single enum shown as a select; other fields get the documented defaults.
 	 */
 	public function test_normalise_defaults() {
@@ -332,7 +319,7 @@ class Test_Enum_Field extends WPUN_Test_Case {
 			),
 		);
 		$html  = Field_Renderer::enum( $field, 'opt[mode]', 'opt_mode', 'all', false, 'opt_note' );
-		$xpath = $this->xpath( $html );
+		$xpath = $this->dom( $html );
 
 		$this->assertSame( 1, $xpath->query( '//fieldset[@id="opt_mode"][@aria-describedby="opt_note"]/legend[contains(@class,"screen-reader-text")]' )->length );
 		$this->assertSame( 'Plugin <updates>', $xpath->query( '//fieldset/legend' )->item( 0 )->textContent );
@@ -357,7 +344,7 @@ class Test_Enum_Field extends WPUN_Test_Case {
 			'multiple' => true,
 			'options'  => $this->options( 2 ),
 		);
-		$xpath = $this->xpath( Field_Renderer::enum( $field, 'opt[types]', 'opt_types', array( 'k1' ), true ) );
+		$xpath = $this->dom( Field_Renderer::enum( $field, 'opt[types]', 'opt_types', array( 'k1' ), true ) );
 
 		$this->assertSame( 0, $xpath->query( '//input[not(@disabled)]' )->length );
 		$this->assertSame( 3, $xpath->query( '//input[@disabled]' )->length, 'Two checkboxes and the empty value.' );
@@ -373,7 +360,7 @@ class Test_Enum_Field extends WPUN_Test_Case {
 			'multiple' => true,
 			'options'  => $this->options( 3 ),
 		);
-		$xpath = $this->xpath( Field_Renderer::enum( $field, 'opt[types]', 'opt_types', array( 'k1', 'k3' ) ) );
+		$xpath = $this->dom( Field_Renderer::enum( $field, 'opt[types]', 'opt_types', array( 'k1', 'k3' ) ) );
 
 		$this->assertSame( 1, $xpath->query( '//fieldset/legend' )->length );
 		$inputs = $xpath->query( '//input' );
@@ -395,7 +382,7 @@ class Test_Enum_Field extends WPUN_Test_Case {
 			'type'    => 'select',
 			'options' => $this->options( 3 ),
 		);
-		$xpath  = $this->xpath( Field_Renderer::enum( $single, 'opt[mode]', 'opt_mode', 'k2' ) );
+		$xpath  = $this->dom( Field_Renderer::enum( $single, 'opt[mode]', 'opt_mode', 'k2' ) );
 		$this->assertSame( 1, $xpath->query( '//select[@id="opt_mode"][@name="opt[mode]"][not(@multiple)]' )->length );
 		$options = $xpath->query( '//select/option' );
 		$this->assertSame( 3, $options->length );
@@ -408,7 +395,7 @@ class Test_Enum_Field extends WPUN_Test_Case {
 			'display'  => 'select',
 			'options'  => $this->options( 3 ),
 		);
-		$xpath    = $this->xpath( Field_Renderer::enum( $multiple, 'opt[types]', 'opt_types', array( 'k1', 'k2' ), false, 'help' ) );
+		$xpath    = $this->dom( Field_Renderer::enum( $multiple, 'opt[types]', 'opt_types', array( 'k1', 'k2' ), false, 'help' ) );
 		$this->assertSame( 1, $xpath->query( '//select[@id="opt_types"][@name="opt[types][]"][@multiple][@aria-describedby="help"]' )->length );
 		$this->assertSame( 1, $xpath->query( '//input[@type="hidden"][@name="opt[types]"][@value=""]' )->length );
 		$this->assertSame( 2, $xpath->query( '//option[@selected]' )->length );
@@ -428,14 +415,14 @@ class Test_Enum_Field extends WPUN_Test_Case {
 			'type'    => 'select',
 			'options' => $options,
 		);
-		$xpath  = $this->xpath( Field_Renderer::enum( $select, 'opt[n]', 'opt_n', '7' ) );
+		$xpath  = $this->dom( Field_Renderer::enum( $select, 'opt[n]', 'opt_n', '7' ) );
 		$this->assertSame( array( '7' ), array_map( static fn( $option ) => $option->getAttribute( 'value' ), iterator_to_array( $xpath->query( '//option[@selected]' ) ) ) );
 
 		$radio = array(
 			'type'    => 'radio',
 			'options' => $options,
 		);
-		$xpath = $this->xpath( Field_Renderer::enum( $radio, 'opt[n]', 'opt_n', 0 ) );
+		$xpath = $this->dom( Field_Renderer::enum( $radio, 'opt[n]', 'opt_n', 0 ) );
 		$this->assertSame( array( '0' ), array_map( static fn( $input ) => $input->getAttribute( 'value' ), iterator_to_array( $xpath->query( '//input[@checked]' ) ) ) );
 	}
 

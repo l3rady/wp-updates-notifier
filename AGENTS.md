@@ -110,6 +110,8 @@ and `make a11y` must pass after a change to them.
 ## Tests
 
 - Test classes extend `WPUN_Test_Case` (`tests/wp/class-wpun-test-case.php`). No real HTTP: use `fake_http()`.
+- Shared helpers (builders, markup, fixture plugins, site guards) are in `tests/README.md`. Use them instead
+  of writing a local copy.
 - A bug fix starts with a test that fails without the fix. A test for a bug that stays open carries
   `@group known-bug` (`tests/wp/test-known-bugs.php`).
 - Security tests go in `tests/wp/security/`.

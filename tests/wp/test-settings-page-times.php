@@ -15,15 +15,13 @@ class Test_Settings_Page_Times extends WPUN_Test_Case {
 	 *
 	 * @return string
 	 */
-	private function render() {
+	private function settings_page_html() {
 		require_once ABSPATH . 'wp-admin/includes/template.php';
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->become_admin();
 		$plugin = sc_wpun()->settings_page();
 		$plugin->admin_settings_init();
 
-		ob_start();
-		$plugin->settings_page();
-		return ob_get_clean();
+		return $this->render( array( $plugin, 'settings_page' ) );
 	}
 
 	/**
@@ -45,7 +43,7 @@ class Test_Settings_Page_Times extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->save_state( $timestamp );
 
-		$html = $this->render();
+		$html = $this->settings_page_html();
 
 		$this->assertStringContainsString( 'Last checked: ' . esc_html( $this->site_time( $timestamp ) ), $html );
 		// Only the "Last checked" line: other times on the page are now-based and can match the UTC time by chance (#286).
@@ -60,7 +58,7 @@ class Test_Settings_Page_Times extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->save_state();
 
-		$this->assertStringContainsString( 'Last checked: never', $this->render() );
+		$this->assertStringContainsString( 'Last checked: never', $this->settings_page_html() );
 	}
 
 	/**
@@ -72,7 +70,7 @@ class Test_Settings_Page_Times extends WPUN_Test_Case {
 		$next = time() + 3 * HOUR_IN_SECONDS;
 		wp_schedule_event( $next, 'hourly', 'sc_wpun_update_check' );
 
-		$this->assertStringContainsString( 'Next check: ' . esc_html( $this->site_time( $next ) ), $this->render() );
+		$this->assertStringContainsString( 'Next check: ' . esc_html( $this->site_time( $next ) ), $this->settings_page_html() );
 	}
 
 	/**
@@ -82,6 +80,6 @@ class Test_Settings_Page_Times extends WPUN_Test_Case {
 		$this->save_settings();
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 
-		$this->assertStringContainsString( 'Next check: not scheduled', $this->render() );
+		$this->assertStringContainsString( 'Next check: not scheduled', $this->settings_page_html() );
 	}
 }

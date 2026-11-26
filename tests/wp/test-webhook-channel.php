@@ -60,7 +60,7 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 		sc_wpun()->config()->flush();
 		$this->save_settings( array( 'email_notifications' => 0 ) );
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
-		$this->write_plugin( '1.0' );
+		$this->fixture_plugin( self::PLUGIN, '1.0', 'Webhook Fixture' );
 	}
 
 	/**
@@ -71,8 +71,6 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 			putenv( $name ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Unset the variable a test set.
 		}
 		$this->env = array();
-		$this->remove_dir( WP_PLUGIN_DIR . '/wpun-webhook-fixture' );
-		wp_clean_plugins_cache();
 
 		parent::tear_down();
 	}
@@ -248,31 +246,6 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Write the fixture plugin with a version.
-	 *
-	 * @param string $version Version header.
-	 */
-	private function write_plugin( $version ) {
-		wp_mkdir_p( WP_PLUGIN_DIR . '/wpun-webhook-fixture' );
-		file_put_contents( WP_PLUGIN_DIR . '/' . self::PLUGIN, "<?php\n/*\nPlugin Name: Webhook Fixture\nVersion: $version\n*/\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
-		wp_clean_plugins_cache();
-	}
-
-	/**
-	 * Delete a fixture directory.
-	 *
-	 * @param string $dir Directory.
-	 */
-	private function remove_dir( $dir ) {
-		foreach ( (array) glob( $dir . '/*' ) as $file ) {
-			unlink( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Test fixture.
-		}
-		if ( is_dir( $dir ) ) {
-			rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rmdir_rmdir,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture.
-		}
-	}
-
-	/**
 	 * Run an update check with the fixture plugin waiting.
 	 */
 	private function check_with_update() {
@@ -300,7 +273,7 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 		$this->assertCount( 1, $this->received(), 'The update was reported.' );
 		$this->reset_http();
 		$this->receiver_answers( 200 );
-		$this->write_plugin( '2.0' );
+		$this->fixture_plugin( self::PLUGIN, '2.0', 'Webhook Fixture' );
 	}
 
 	/**
@@ -1591,7 +1564,7 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 		$this->check_nothing_pending();
 		$this->assertCount( 0, $this->received(), 'Switched off.' );
 
-		$this->write_plugin( '1.0' );
+		$this->fixture_plugin( self::PLUGIN, '1.0', 'Webhook Fixture' );
 		$this->instance();
 		$this->reset_http();
 		$this->report_then_install( sc_wpun_channels()->get( 'hook' ) );
@@ -1618,7 +1591,7 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 		putenv( 'SC_WPUN_CHANNEL_HOOK__URL' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Unset the variable a test set.
 		sc_wpun()->config()->flush();
 
-		$this->write_plugin( '1.0' );
+		$this->fixture_plugin( self::PLUGIN, '1.0', 'Webhook Fixture' );
 		$this->instance();
 		$this->reset_http();
 		$this->report_then_install( sc_wpun_channels()->get( 'hook' ) );
@@ -1644,7 +1617,7 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 		sc_wpun_channels()->save( new Channel_Instance( 'mail', 'email', 'Mail', true, array( 'to' => 'ops@example.org' ) ) );
 		$this->receiver_answers( 200 );
 		$this->check_with_update();
-		$this->write_plugin( '2.0' );
+		$this->fixture_plugin( self::PLUGIN, '2.0', 'Webhook Fixture' );
 		reset_phpmailer_instance();
 
 		$this->check_nothing_pending();
@@ -1663,7 +1636,7 @@ class Test_Webhook_Channel extends WPUN_Test_Case {
 		$this->assertCount( 2, $this->received() );
 		$this->reset_http();
 		$this->receiver_answers( 200 );
-		$this->write_plugin( '2.0' );
+		$this->fixture_plugin( self::PLUGIN, '2.0', 'Webhook Fixture' );
 
 		$this->check_nothing_pending();
 

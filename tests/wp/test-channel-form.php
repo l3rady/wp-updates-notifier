@@ -94,28 +94,13 @@ class Test_Channel_Form extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Parse markup.
-	 *
-	 * @param string $html Markup.
-	 * @return DOMXPath
-	 */
-	private function parse( string $html ): DOMXPath {
-		$doc = new DOMDocument();
-		libxml_use_internal_errors( true );
-		$doc->loadHTML( '<html><body>' . $html . '</body></html>' );
-		libxml_clear_errors();
-
-		return new DOMXPath( $doc );
-	}
-
-	/**
 	 * The tab for a request, parsed.
 	 *
 	 * @param array $get Query arguments.
 	 * @return DOMXPath
 	 */
 	private function page( array $get = array() ): DOMXPath {
-		return $this->parse( $this->html( $get ) );
+		return $this->dom( $this->html( $get ) );
 	}
 
 	/**
@@ -388,7 +373,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 				'id'     => 'email',
 			)
 		);
-		$xpath = $this->parse( $html );
+		$xpath = $this->dom( $html );
 
 		$form = $xpath->query( '//form[@class="sc-wpun-channel-form"]' );
 		$this->assertSame( 1, $form->length );
@@ -518,7 +503,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 				'id'     => 'custom_one',
 			)
 		);
-		$xpath = $this->parse( $html );
+		$xpath = $this->dom( $html );
 
 		$this->assertSame( 1, $xpath->query( '//p[@class="test-custom-render"]/input[@name="settings[name]"]' )->length );
 		$this->assertSame( 'Custom <b>name', $xpath->query( '//p[@class="test-custom-render"]/input' )->item( 0 )->getAttribute( 'value' ) );
@@ -1019,7 +1004,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 				'id'     => 'fixture',
 			)
 		);
-		$xpath = $this->parse( $html );
+		$xpath = $this->dom( $html );
 		$this->assertStringNotContainsString( self::SECRET, $html );
 		$this->assertSame( '', $xpath->query( '//input[@name="settings[token]"]' )->item( 0 )->getAttribute( 'value' ) );
 		$this->assertSame( 1, $xpath->query( '//input[@type="checkbox"][@name="settings[token__clear]"]' )->length );
@@ -1076,7 +1061,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 				'id'     => 'fixture',
 			)
 		);
-		$xpath = $this->parse( $html );
+		$xpath = $this->dom( $html );
 		$this->assertStringNotContainsString( self::TYPED, $html );
 		$this->assertStringNotContainsString( self::SECRET, $html );
 		$this->assertSame( 'true', $xpath->query( '//input[@name="settings[name]"]' )->item( 0 )->getAttribute( 'aria-invalid' ) );
@@ -1099,7 +1084,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 				'type'   => 'fixture',
 			)
 		);
-		$xpath = $this->parse( $html );
+		$xpath = $this->dom( $html );
 		$this->assertStringNotContainsString( self::TYPED, $html );
 		$this->assertSame( 0, $xpath->query( '//input[@name="settings[token__clear]"]' )->length );
 		$this->assertSame( 1, $xpath->query( '//div[contains(@class,"sc-wpun-form-errors")]' )->length );
@@ -1347,7 +1332,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		);
 		$this->store_fixture( 'fixture', array( 'signing' => 'signing-SECRET-333' ) );
 
-		$xpath = $this->parse(
+		$xpath = $this->dom(
 			$this->html(
 				array(
 					'action' => 'edit',
@@ -1381,7 +1366,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 				'id'     => 'fixture',
 			)
 		);
-		$xpath = $this->parse( $html );
+		$xpath = $this->dom( $html );
 		$this->assertStringNotContainsString( 'vault-SECRET-999', $html );
 		$this->assertStringNotContainsString( self::SECRET, $html );
 		$token = $xpath->query( '//input[@name="settings[token]"]' )->item( 0 );
@@ -1619,7 +1604,7 @@ class Test_Channel_Form extends WPUN_Test_Case {
 		$this->assertStringNotContainsString( 'vault-HOOK-777', $html );
 		$this->assertStringNotContainsString( 'vault-NOTE-888', $html );
 		$this->assertStringContainsString( 'Set by Test vault', $html );
-		$xpath = $this->parse( $html );
+		$xpath = $this->dom( $html );
 		$this->assertSame( 'disabled', $xpath->query( '//input[@name="settings[hook]"]' )->item( 0 )->getAttribute( 'disabled' ) );
 
 		$show = true;

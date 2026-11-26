@@ -53,17 +53,6 @@ class Test_Network_Actives extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Network settings and the email instance, as a network would store them.
-	 *
-	 * @param array $overrides Settings to override.
-	 */
-	private function save_network_settings( array $overrides = array() ) {
-		update_site_option( 'sc_wpun_settings', $this->global_settings( $overrides ) );
-		update_site_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
-		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'email', 'email', 'Email', true, array( 'to' => 'ops@example.org' ) ) );
-	}
-
-	/**
 	 * Every site's plugins and themes, plus the network-activated plugins, without switching to any site.
 	 */
 	public function test_it_reads_every_site_without_switching() {
