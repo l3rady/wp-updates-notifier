@@ -51,7 +51,7 @@ The security tests (`tests/wp/security/`, `@group security`) run with the rest o
 make dast                        # OWASP ZAP against a throwaway copy of the site (about 11 minutes)
 ```
 
-`make dast` builds an isolated site as its own compose project (`wpun-dast`, from `tests/dast/compose.yml`) with the plugin active, an email channel, the field showcase and outdated plugins, scans it with OWASP ZAP and removes it again, volumes included, even when the scan fails. It publishes no ports and shares no container, volume or network with `make up`, so it never touches your local site.
+`make dast` builds an isolated site as its own compose project (`wpun-dast-<token>`, named with the checkout token so each worktree has its own, from `tests/dast/compose.yml`) with the plugin active, an email channel, the field showcase and outdated plugins, scans it with OWASP ZAP and removes it again, volumes included, even when the scan fails. It publishes no ports and shares no container, volume or network with `make up`, so it never touches your local site.
 
 The scan is defined by `tests/dast/zap-plan.yaml`. It logs in as an administrator, spiders and actively scans only the plugin's settings screens and `admin-post.php` handlers, and then checks that a visitor who is not logged in is turned away from the same URLs. Any Medium or High alert fails the run. The HTML and SARIF reports are written to `security-reports/` (the HTML one is `security-reports/zap-report.html`).
 

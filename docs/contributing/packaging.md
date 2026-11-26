@@ -62,7 +62,7 @@ The demo is:
 
 `make check-blueprint` validates the output against the schema of the Playground version it is tested with (`tests/bin/blueprint/README.md` says which; the schema check uses Ajv in a pinned node image). It also checks that the landing page is the settings screen and no `@file:` placeholder is left. `make test-blueprint` tests the generator (deterministic, missing and unused files) and that the schema check rejects broken blueprints.
 
-`make blueprint-smoke` is the real test: it runs the blueprint in Playground CLI (own compose project `wpun-playground`, never touches `make up`), installing the plugin from the zip of `make dist` because WordPress.org does not have the release yet, and opens the demo in Playwright. See [Tests and checks](testing.md#live-preview-blueprint).
+`make blueprint-smoke` is the real test: it runs the blueprint in Playground CLI (own compose project `wpun-playground-<token>`, named with the checkout token, never touches `make up`), installing the plugin from the zip of `make dist` because WordPress.org does not have the release yet, and opens the demo in Playwright. See [Tests and checks](testing.md#live-preview-blueprint).
 
 ## WordPress.org assets
 

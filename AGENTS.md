@@ -33,18 +33,23 @@ running or `vendor/` is missing (run `make deps`).
 
 Never run `make up`, `make down`, `make clean` or `make site-setup` unless asked: they act on the one local
 development site, whichever directory they are run from. The browser suites (`make a11y`, `make e2e`) use
-their own throwaway sites and are safe.
+their own throwaway sites, named with the checkout token, so they are safe, and they can run in several worktrees at
+once.
 
 ## Worktrees and parallel work
 
 - Run `make deps` first in a new worktree: `vendor/` is not shared.
 - Every PHPUnit run has table prefixes of its own (checkout token, suite letter and a random part), so any two
   runs may go at the same time, in one checkout or in several: `make test-wp`, `make test-wp-ms`, `make coverage`,
-  `make mutation`. A run drops its tables when it ends. Never run the same browser suite twice at once in one
-  checkout: both runs use the same sites and break each other.
+  `make mutation`. A run drops its tables when it ends.
 - All checkouts share one test database container, in its own compose project, `wpun-testdb`
   (`docker/compose.testdb.yml`). Each target that needs it starts it (`make testdb`), so no run has to go first.
   `make down` and `make clean` do not stop it. A killed run leaves its tables until the container restarts.
+- The browser suites run as compose projects named with the checkout token (`wpun-e2e-<token>`), so different
+  worktrees can run them at once. In one checkout, one run of the `tests/e2e` group (`make a11y`, `e2e`, `e2e-ms`,
+  `e2e-upgrade`, `screenshots`, `blueprint-smoke`, `docs-a11y`: they share `tests/e2e/node_modules` and its
+  reports) and one `make dast` at a time. A second run fails at once and names the one that holds the lock
+  (`build/locks/`); a lock left by a killed run is taken over.
 - The test images are tagged with the checkout token (`wp-updates-notifier:php8.3-wp7.1.3-<token>`, and the
   browser suites' `site-php8.3-<token>`), so a worktree that changes `docker/` runs on its own image. `make up` keeps
   the untagged names. `make clean` removes them all.
