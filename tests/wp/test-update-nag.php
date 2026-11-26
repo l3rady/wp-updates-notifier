@@ -43,7 +43,7 @@ class Test_Update_Nag extends WPUN_Test_Case {
 			grant_super_admin( get_current_user_id() ); // On multisite only super admins can update core.
 		}
 
-		$this->plugin()->remove_update_nag_for_nonadmins();
+		sc_wpun()->update_nag()->remove_update_nag_for_nonadmins();
 
 		$this->assertSame( 3, has_action( 'admin_notices', 'update_nag' ) );
 	}
@@ -55,7 +55,7 @@ class Test_Update_Nag extends WPUN_Test_Case {
 		$this->save_settings( array( 'hide_updates' => true ) );
 		$this->log_in( 'editor', 'update_plugins' );
 
-		$this->plugin()->remove_update_nag_for_nonadmins();
+		sc_wpun()->update_nag()->remove_update_nag_for_nonadmins();
 
 		$this->assertFalse( has_action( 'admin_notices', 'update_nag' ) );
 		$this->assertFalse( has_action( 'network_admin_notices', 'update_nag' ) );
@@ -71,7 +71,7 @@ class Test_Update_Nag extends WPUN_Test_Case {
 			grant_super_admin( get_current_user_id() );
 		}
 
-		$this->plugin()->remove_update_nag_for_nonadmins();
+		sc_wpun()->update_nag()->remove_update_nag_for_nonadmins();
 
 		$this->assertSame( 3, has_action( 'admin_notices', 'update_nag' ) );
 	}
@@ -83,7 +83,7 @@ class Test_Update_Nag extends WPUN_Test_Case {
 		$this->save_settings( array( 'hide_updates' => false ) );
 		$this->log_in( 'subscriber' );
 
-		$this->plugin()->remove_update_nag_for_nonadmins();
+		sc_wpun()->update_nag()->remove_update_nag_for_nonadmins();
 
 		$this->assertSame( 3, has_action( 'admin_notices', 'update_nag' ) );
 	}

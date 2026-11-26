@@ -25,7 +25,7 @@ class Test_Email_Legacy extends WPUN_Test_Case {
 			}
 		);
 
-		$this->assertTrue( $this->plugin()->send_email_message( 'Hello' ) );
+		$this->assertTrue( $this->legacy_facade()->send_email_message( 'Hello' ) );
 
 		$this->assertSame( 2, $this->sent_mail_count() );
 		$this->assertStringStartsWith( 'WP Updates Notifier: updates available for', $this->sent_mail()->subject );
@@ -39,7 +39,7 @@ class Test_Email_Legacy extends WPUN_Test_Case {
 		$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::send_email_message' );
 		$this->save_settings( array( 'email_notifications' => 0 ) );
 
-		$this->assertFalse( $this->plugin()->send_email_message( 'Hello' ) );
+		$this->assertFalse( $this->legacy_facade()->send_email_message( 'Hello' ) );
 	}
 
 	/**
@@ -59,7 +59,7 @@ class Test_Email_Legacy extends WPUN_Test_Case {
 		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'blank', 'email', 'Blank', true, array( 'to' => '   ' ) ) );
 		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'client', 'email', 'Client', true, array( 'to' => 'client@example.org' ) ) );
 
-		$this->assertTrue( $this->plugin()->send_email_message( 'Hello' ) );
+		$this->assertTrue( $this->legacy_facade()->send_email_message( 'Hello' ) );
 
 		$this->assertSame( array( 'client@example.org' ), $attempts, 'No mail is attempted for a blank recipient.' );
 		$this->assertSame( 1, $this->sent_mail_count() );
@@ -74,7 +74,7 @@ class Test_Email_Legacy extends WPUN_Test_Case {
 		$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::sc_wpun_wp_mail_from_name' );
 		$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::sc_wpun_wp_mail_content_type' );
 		$this->save_settings( array( 'notify_from' => 'ops@example.org' ) );
-		$plugin = $this->plugin();
+		$plugin = $this->legacy_facade();
 
 		$this->assertSame( '', $plugin->sc_wpun_wp_mail_from() );
 		$this->assertSame( '', $plugin->sc_wpun_wp_mail_from_name() );
@@ -97,10 +97,10 @@ class Test_Email_Legacy extends WPUN_Test_Case {
 
 		$this->assertFalse( has_filter( 'auto_core_update_email' ) );
 		$this->assertSame( $email, apply_filters( 'auto_core_update_email', $email, 'success', new stdClass(), null ) );
-		$this->assertSame( $email, $this->plugin()->filter_auto_core_update_email( $email ) );
+		$this->assertSame( $email, $this->legacy_facade()->filter_auto_core_update_email( $email ) );
 
 		ob_start();
-		$this->plugin()->sc_wpun_settings_main_field_notify_automatic();
+		$this->legacy_facade()->sc_wpun_settings_main_field_notify_automatic();
 		$this->assertSame( '', ob_get_clean() );
 	}
 }

@@ -18,7 +18,7 @@ class Test_Settings_Page_Times extends WPUN_Test_Case {
 	private function render() {
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
-		$plugin = $this->plugin();
+		$plugin = sc_wpun()->settings_page();
 		$plugin->admin_settings_init();
 
 		ob_start();

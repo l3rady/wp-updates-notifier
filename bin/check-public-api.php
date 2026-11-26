@@ -22,7 +22,7 @@
  * The internal paths are also checked for the other half of the rule: every class, interface, trait and enum, every
  * public method (no visibility counts as public) and every function that is not `@internal` needs a doc block with an
  * `@since` tag. Methods of an `@internal` class, private and protected methods, closures and anonymous classes are
- * left out, and so is the legacy SC_WP_Updates_Notifier facade: it stays for backwards compatibility until 4.0.0 and
+ * left out, and so is the legacy SC_WP_Updates_Notifier facade: it is deprecated in 3.0.0 and removed in 4.0.0, and
  * is not part of the API version. A doc block counts only when nothing but modifiers sits between it and the
  * declaration. This runs once, whatever files are given.
  *

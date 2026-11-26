@@ -76,7 +76,7 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 	 */
 	private function render_settings_page() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
-		$plugin = $this->plugin();
+		$plugin = sc_wpun()->settings_page();
 		$plugin->admin_settings_init();
 
 		ob_start();
@@ -93,7 +93,7 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$body = $this->sent_mail()->body;
 		$this->assertStringContainsString( 'Bob & Sons', $body );
@@ -111,7 +111,7 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$_POST['option_page']     = 'sc_wpun_settings';
 		$_POST['submitwithemail'] = 'Save settings with test email';
 
-		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
+		sc_wpun()->settings_page()->sc_wpun_settings_validate( $this->settings() );
 
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ) );
 		$this->assertStringNotContainsString( 'submitwithemail', $this->render_settings_page() );
@@ -131,7 +131,7 @@ class Test_Known_Bugs extends WPUN_Test_Case {
 		$this->save_settings( array( 'notify_from' => '' ) );
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertStringStartsWith( 'wordpress@', tests_retrieve_phpmailer_instance()->From );
 	}

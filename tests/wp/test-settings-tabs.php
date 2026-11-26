@@ -353,9 +353,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		);
 		sc_wpun()->config()->flush();
 
-		ob_start();
-		$this->plugin()->sc_wpun_settings_main_field_frequency();
-		$html = (string) ob_get_clean();
+		$html = sc_wpun()->settings_page()->main_control( 'frequency' );
 
 		$this->assertMatchesRegularExpression( '#<span class="description sc-wpun-external" id="sc_wpun_settings_main_frequency-external">Set by [^<]+</span>#', $html );
 		sc_wpun()->config()->flush();
@@ -367,9 +365,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	public function test_an_unavailable_frequency_is_explained() {
 		$this->save_settings( array( 'frequency' => 'schedule_from_a_removed_plugin' ) );
 
-		ob_start();
-		$this->plugin()->sc_wpun_settings_main_field_frequency();
-		$html = (string) ob_get_clean();
+		$html = sc_wpun()->settings_page()->main_control( 'frequency' );
 
 		$this->assertStringContainsString( 'checks run at the interval they were last scheduled with', $html );
 	}
@@ -381,9 +377,7 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 		$page = sc_wpun()->settings_page();
 
 		foreach ( array( 'notify_plugins', 'notify_themes', 'hide_updates' ) as $name ) {
-			ob_start();
-			$this->plugin()->{'sc_wpun_settings_main_field_' . $name}();
-			$this->assertStringContainsString( 'name="sc_wpun_settings[' . $name . ']', (string) ob_get_clean(), $name );
+			$this->assertStringContainsString( 'name="sc_wpun_settings[' . $name . ']', $page->main_control( $name ), $name );
 		}
 
 		ob_start();
@@ -408,9 +402,10 @@ class Test_Settings_Tabs extends WPUN_Test_Case {
 	 * The test email goes to the email instances.
 	 */
 	public function test_the_test_email() {
+		$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::send_test_email' );
 		$this->save_settings();
 
-		$this->plugin()->send_test_email();
+		$this->legacy_facade()->send_test_email();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertStringContainsString( 'This is a test message from WP Updates Notifier.', $this->sent_mail()->body );

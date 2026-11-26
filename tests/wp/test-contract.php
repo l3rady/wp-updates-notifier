@@ -204,7 +204,7 @@ class Test_Contract extends WPUN_Test_Case {
 		global $submenu;
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
-		$this->plugin()->admin_settings_menu();
+		sc_wpun()->settings_page()->admin_settings_menu();
 
 		$slugs = wp_list_pluck( $submenu['options-general.php'], 2 );
 		$this->assertContains( 'wp-updates-notifier', $slugs );
@@ -275,7 +275,7 @@ class Test_Contract extends WPUN_Test_Case {
 			2
 		);
 		$this->set_updates();
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertContains( 'sc_wpun_state', $put, 'Saving the run state must run the put filter.' );
 
 		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', '7.0' );
@@ -303,7 +303,7 @@ class Test_Contract extends WPUN_Test_Case {
 			}
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$mail = $this->sent_mail();
 		$this->assertSame( 'Custom subject', $mail->subject );

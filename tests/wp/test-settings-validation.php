@@ -21,7 +21,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		$this->save_settings();
-		$this->plugin()->admin_settings_init();
+		sc_wpun()->settings_page()->admin_settings_init();
 		$GLOBALS['wp_settings_errors'] = array();
 	}
 
@@ -52,14 +52,14 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * Each notify setting accepts only its own keys: major for core, active for plugins and themes.
 	 */
 	public function test_notify_settings_accept_only_their_own_keys() {
-		$valid = $this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_core' => 'major' ) ) );
+		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate( $this->settings( array( 'notify_core' => 'major' ) ) );
 		$this->assertSame( 'major', $valid['notify_core'] );
 		$this->assertSame( array(), $this->errors() );
 
-		$valid = $this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_core' => 'none' ) ) );
+		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate( $this->settings( array( 'notify_core' => 'none' ) ) );
 		$this->assertSame( 'none', $valid['notify_core'] );
 
-		$valid  = $this->plugin()->sc_wpun_settings_validate(
+		$valid  = sc_wpun()->settings_page()->sc_wpun_settings_validate(
 			$this->settings(
 				array(
 					'notify_core'    => 'active',
@@ -90,7 +90,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * A key that is not one of the choices is refused with a settings error; valid keys are saved.
 	 */
 	public function test_an_unknown_notify_key_is_refused() {
-		$valid = $this->plugin()->sc_wpun_settings_validate(
+		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate(
 			$this->settings(
 				array(
 					'notify_plugins' => 'everything',
@@ -105,7 +105,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$this->assertSame( 'all', $valid['notify_plugins'], 'The stored value is kept.' );
 		$this->assertSame( 'active', $valid['notify_themes'] );
 
-		$this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'notify_themes' => 2 ) ) );
+		sc_wpun()->settings_page()->sc_wpun_settings_validate( $this->settings( array( 'notify_themes' => 2 ) ) );
 		$this->assertArrayHasKey( 'sc_wpun_settings_main_notify_themes', $this->errors(), 'Numbers are not keys.' );
 	}
 
@@ -116,7 +116,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$this->save_settings( array( 'notify_plugins' => 'active' ) );
 
 		ob_start();
-		$this->plugin()->settings_page();
+		sc_wpun()->settings_page()->settings_page();
 		$html = ob_get_clean();
 
 		$doc = new DOMDocument();
@@ -168,10 +168,10 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		);
 		sc_wpun_channels()->save( $slack );
 
-		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
+		sc_wpun()->settings_page()->sc_wpun_settings_validate( $this->settings() );
 		$this->assertEquals( $slack, $this->stored_instance( 'slack' ), 'A form with no Slack fields.' );
 
-		$this->plugin()->sc_wpun_settings_validate(
+		sc_wpun()->settings_page()->sc_wpun_settings_validate(
 			$this->settings(
 				array(
 					'slack_notifications'    => 0,
@@ -191,7 +191,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	public function test_validation_creates_no_slack_instance() {
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_channels' );
 
-		$this->plugin()->sc_wpun_settings_validate(
+		sc_wpun()->settings_page()->sc_wpun_settings_validate(
 			$this->settings(
 				array(
 					'slack_notifications' => 1,
@@ -208,7 +208,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * Missing fields raise no notices.
 	 */
 	public function test_partial_input_does_not_raise_notices() {
-		$result = $this->plugin()->sc_wpun_settings_validate( array() );
+		$result = sc_wpun()->settings_page()->sc_wpun_settings_validate( array() );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 'hourly', $result['frequency'], 'A missing frequency keeps the saved one.' );
@@ -218,7 +218,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * Input that is not an array leaves the stored settings as they are.
 	 */
 	public function test_non_array_input_keeps_the_stored_settings() {
-		$this->assertSame( $this->stored_settings(), $this->plugin()->sc_wpun_settings_validate( 'nonsense' ) );
+		$this->assertSame( $this->stored_settings(), sc_wpun()->settings_page()->sc_wpun_settings_validate( 'nonsense' ) );
 	}
 
 	/**
@@ -269,7 +269,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * An unknown frequency is refused with an error on the frequency field.
 	 */
 	public function test_an_unknown_frequency_is_refused() {
-		$result = $this->plugin()->sc_wpun_settings_validate( $this->settings( array( 'frequency' => 'every_second' ) ) );
+		$result = sc_wpun()->settings_page()->sc_wpun_settings_validate( $this->settings( array( 'frequency' => 'every_second' ) ) );
 
 		$this->assertSame( 'hourly', $result['frequency'] );
 		$this->assertArrayHasKey( 'sc_wpun_settings_main_frequency', $this->errors() );
@@ -283,7 +283,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$_POST['_wpnonce']        = wp_create_nonce( 'sc_wpun_settings-options' );
 		$_POST['submitwithemail'] = 'Save settings with test email';
 
-		$this->plugin()->sc_wpun_settings_validate( $this->settings() );
+		sc_wpun()->settings_page()->sc_wpun_settings_validate( $this->settings() );
 		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'notify_plugins' => 'active' ) ) );
 
 		$this->assertFalse( get_transient( 'sc_wpun_send_test_email' ) );
@@ -293,7 +293,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * Unticking a box submits 0, which stores false (before, a missing value meant off).
 	 */
 	public function test_a_submitted_zero_stores_false() {
-		$valid = $this->plugin()->sc_wpun_settings_validate(
+		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate(
 			array(
 				'hide_updates' => '0',
 			)
@@ -302,7 +302,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$this->assertFalse( $valid['hide_updates'] );
 		$this->assertSame( array(), $this->errors() );
 
-		$valid = $this->plugin()->sc_wpun_settings_validate(
+		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate(
 			array(
 				'hide_updates' => '1',
 			)
@@ -323,7 +323,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 			)
 		);
 
-		$valid = $this->plugin()->sc_wpun_settings_validate( array() );
+		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate( array() );
 
 		$this->assertSame(
 			$this->global_settings(
@@ -343,7 +343,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * An invalid on or off value is refused with the existing error and keeps the stored value.
 	 */
 	public function test_an_invalid_boolean_is_refused() {
-		$valid = $this->plugin()->sc_wpun_settings_validate(
+		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate(
 			array(
 				'hide_updates' => 'yes',
 			)
@@ -358,7 +358,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 * A frequency that is not offered is refused with the existing error and keeps the stored one.
 	 */
 	public function test_an_invalid_frequency_is_refused() {
-		$valid = $this->plugin()->sc_wpun_settings_validate( array( 'frequency' => 'every_second' ) );
+		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate( array( 'frequency' => 'every_second' ) );
 
 		$this->assertSame( 'sc_wpun_settings_main_frequency_error', $this->errors()['sc_wpun_settings_main_frequency'] );
 		$this->assertSame( 'hourly', $valid['frequency'] );
@@ -425,7 +425,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$email = $this->stored_instance( 'email' );
 		$state = $this->snapshot_channels();
 
-		$valid = $this->plugin()->sc_wpun_settings_validate(
+		$valid = sc_wpun()->settings_page()->sc_wpun_settings_validate(
 			array(
 				'frequency'           => 'daily',
 				'email_notifications' => '0',
@@ -444,7 +444,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		$this->assertSame( $state, $this->snapshot_channels(), 'The channels option is not touched.' );
 		$this->assertSame( array(), $this->errors(), 'Bad values raise no errors either.' );
 
-		$this->plugin()->sc_wpun_settings_validate( array( 'notify_to' => 'not an address', 'email_notifications' => 'maybe' ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		sc_wpun()->settings_page()->sc_wpun_settings_validate( array( 'notify_to' => 'not an address', 'email_notifications' => 'maybe' ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 		$this->assertSame( array(), $this->errors() );
 
 		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', array_merge( $this->global_settings(), array( 'notify_to' => 'x@example.org' ) ) );
@@ -456,7 +456,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 	 */
 	public function test_the_general_tab_has_no_email_section() {
 		ob_start();
-		$this->plugin()->settings_page();
+		sc_wpun()->settings_page()->settings_page();
 		$html = (string) ob_get_clean();
 
 		$this->assertStringNotContainsString( 'Email Notifications', $html );
@@ -481,7 +481,7 @@ class Test_Settings_Validation extends WPUN_Test_Case {
 		);
 		foreach ( $removed as $method ) {
 			$this->assertFalse( method_exists( sc_wpun()->settings_page(), $method ), $method );
-			$this->assertFalse( method_exists( $this->plugin(), $method ), 'The facade: ' . $method );
+			$this->assertFalse( method_exists( $this->legacy_facade(), $method ), 'The facade: ' . $method );
 		}
 	}
 

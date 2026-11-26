@@ -58,7 +58,7 @@ class Test_Active_Only extends WPUN_Test_Case {
 		);
 		$this->set_updates( null, array(), array( $child => array( 'new_version' => '99.3' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
@@ -76,7 +76,7 @@ class Test_Active_Only extends WPUN_Test_Case {
 		);
 		$this->set_updates( null, array(), array( $parent => array( 'new_version' => '99.3' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
@@ -97,7 +97,7 @@ class Test_Active_Only extends WPUN_Test_Case {
 		);
 		$this->set_updates( null, array(), array( $slugs[2] => array( 'new_version' => '99.3' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
@@ -115,7 +115,7 @@ class Test_Active_Only extends WPUN_Test_Case {
 		$this->save_settings( array( 'notify_plugins' => 'active' ) );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
@@ -131,7 +131,7 @@ class Test_Active_Only extends WPUN_Test_Case {
 		$this->save_settings( array( 'notify_plugins' => 'active' ) );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
@@ -153,7 +153,7 @@ class Test_Active_Only extends WPUN_Test_Case {
 		};
 		add_filter( 'option_active_plugins', $count );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		remove_filter( 'option_active_plugins', $count );
 		$this->assertSame( 1, $reads );

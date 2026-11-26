@@ -83,7 +83,7 @@ class Test_Slack_Upgrade extends WPUN_Slack_Test_Case {
 		$this->slack_answers( 200 );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '9.9.9' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$requests = $this->requests_to( 'hooks.slack.com' );
 		$this->assertCount( 1, $requests, 'Slack was posted to.' );
@@ -99,7 +99,7 @@ class Test_Slack_Upgrade extends WPUN_Slack_Test_Case {
 		$this->assertTrue( $sent[0]->is_success() );
 
 		// Delivered: not sent again by the next check.
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertCount( 1, $this->requests_to( 'hooks.slack.com' ) );
 	}
 
@@ -119,7 +119,7 @@ class Test_Slack_Upgrade extends WPUN_Slack_Test_Case {
 		$this->assertFalse( $instance->is_enabled() );
 
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '9.9.9' ) ) );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( array(), $this->http_requests );
 		$this->assertFalse( sc_wpun_channels()->get( 'slack' )->is_enabled() );
@@ -138,7 +138,7 @@ class Test_Slack_Upgrade extends WPUN_Slack_Test_Case {
 
 		$failed = $this->results_of( 'sc_wpun_notification_failed' );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '9.9.9' ) ) );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( array(), $this->http_requests );
 		$this->assertCount( 1, $failed );
@@ -160,7 +160,7 @@ class Test_Slack_Upgrade extends WPUN_Slack_Test_Case {
 		$failed = $this->results_of( 'sc_wpun_notification_failed' );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '9.9.9' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertCount( 1, $failed );
 		$this->assertSame( 'no_service', $failed[0]->get_code() );

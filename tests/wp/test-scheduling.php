@@ -89,7 +89,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 	public function test_a_missing_event_is_restored() {
 		$this->save_settings( array( 'frequency' => 'twicedaily' ) );
 
-		$this->plugin()->maybe_schedule();
+		sc_wpun()->scheduler()->maybe_schedule();
 
 		$this->assertSame( 'twicedaily', wp_get_schedule( 'sc_wpun_update_check' ) );
 	}
@@ -120,7 +120,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 		$next = time() + 5000;
 		wp_schedule_event( $next, 'daily', 'sc_wpun_update_check' );
 
-		$this->plugin()->maybe_schedule();
+		sc_wpun()->scheduler()->maybe_schedule();
 
 		$this->assertSame( $next, wp_next_scheduled( 'sc_wpun_update_check' ) );
 	}
@@ -131,7 +131,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 	public function test_manual_frequency_is_respected() {
 		$this->save_settings( array( 'frequency' => 'manual' ) );
 
-		$this->plugin()->maybe_schedule();
+		sc_wpun()->scheduler()->maybe_schedule();
 
 		$this->assertFalse( wp_next_scheduled( 'sc_wpun_update_check' ) );
 	}
@@ -170,7 +170,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 		$this->save_settings( array( 'frequency' => 'twicedaily' ) );
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 
-		$this->plugin()->maybe_schedule();
+		sc_wpun()->scheduler()->maybe_schedule();
 
 		$this->assertSame( 'twicedaily', wp_get_schedule( 'sc_wpun_update_check' ) );
 	}
@@ -196,7 +196,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 		$next = time() + 5000;
 		wp_schedule_event( $next, 'daily', 'sc_wpun_update_check' );
 
-		$this->plugin()->enable_cron();
+		sc_wpun()->scheduler()->enable_cron();
 
 		$this->assertSame( $next, wp_next_scheduled( 'sc_wpun_update_check' ) );
 		$this->assertSame( 1, $this->event_count() );
@@ -210,7 +210,7 @@ class Test_Scheduling extends WPUN_Test_Case {
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
 		wp_schedule_event( time() + 5000, 'hourly', 'sc_wpun_update_check' );
 
-		$this->plugin()->enable_cron( 'weekly' );
+		sc_wpun()->scheduler()->enable_cron( 'weekly' );
 
 		$this->assertSame( 'weekly', wp_get_schedule( 'sc_wpun_update_check' ) );
 		$this->assertSame( 1, $this->event_count() );
@@ -230,8 +230,11 @@ class Test_Scheduling extends WPUN_Test_Case {
 	 * The 1.x methods of the main class still schedule, unschedule and reschedule.
 	 */
 	public function test_the_old_methods_still_drive_the_schedule() {
+		foreach ( array( 'run_init', 'activate', 'deactivate', 'enable_cron', 'disable_cron', 'maybe_schedule', 'settings_updated', 'plugin_action_links', 'sc_wpun_settings_main_text', 'sc_wpun_settings_main_field_notify_plugins', 'sc_wpun_settings_main_field_notify_themes', 'sc_wpun_settings_main_field_hide_updates' ) as $method ) {
+			$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::' . $method );
+		}
 		$this->save_settings( array( 'frequency' => 'daily' ) );
-		$plugin = $this->plugin();
+		$plugin = $this->legacy_facade();
 
 		$plugin->run_init();
 		wp_clear_scheduled_hook( 'sc_wpun_update_check' );
@@ -269,9 +272,10 @@ class Test_Scheduling extends WPUN_Test_Case {
 	 * The 1.x test email method sends a message.
 	 */
 	public function test_the_old_test_email_method_sends() {
+		$this->setExpectedDeprecated( 'SC_WP_Updates_Notifier::send_test_email' );
 		$this->save_settings();
 
-		$this->plugin()->send_test_email();
+		$this->legacy_facade()->send_test_email();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}

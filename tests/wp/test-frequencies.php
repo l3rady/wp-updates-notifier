@@ -24,9 +24,7 @@ class Test_Frequencies extends WPUN_Test_Case {
 	 * @return string
 	 */
 	private function render_frequency_field() {
-		ob_start();
-		$this->plugin()->sc_wpun_settings_main_field_frequency();
-		return ob_get_clean();
+		return sc_wpun()->settings_page()->main_control( 'frequency' );
 	}
 
 	/**
@@ -150,7 +148,7 @@ class Test_Frequencies extends WPUN_Test_Case {
 	public function test_an_unknown_saved_frequency_still_leaves_a_schedule() {
 		$this->save_settings( array( 'frequency' => 'schedule_from_a_removed_plugin' ) );
 
-		$this->plugin()->enable_cron();
+		sc_wpun()->scheduler()->enable_cron();
 
 		$this->assertSame( 'hourly', wp_get_schedule( 'sc_wpun_update_check' ) );
 	}
@@ -164,7 +162,7 @@ class Test_Frequencies extends WPUN_Test_Case {
 		wp_schedule_event( $next, 'fortnightly', 'sc_wpun_update_check' );
 		$this->save_settings( array( 'frequency' => 'fortnightly' ) );
 
-		$this->plugin()->enable_cron();
+		sc_wpun()->scheduler()->enable_cron();
 
 		$this->assertSame( $next, wp_next_scheduled( 'sc_wpun_update_check' ) );
 		$this->assertSame( 'fortnightly', wp_get_schedule( 'sc_wpun_update_check' ) );
@@ -177,7 +175,7 @@ class Test_Frequencies extends WPUN_Test_Case {
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 		$this->save_settings( array( 'frequency' => 'daily' ) );
 		$this->register_schedule( 'every_minute', MINUTE_IN_SECONDS );
-		$plugin = $this->plugin();
+		$plugin = sc_wpun()->settings_page();
 
 		foreach ( array( 'manual', 'every_minute', 'nonsense' ) as $frequency ) {
 			$result = $plugin->sc_wpun_settings_validate( $this->settings( array( 'frequency' => $frequency ) ) );
@@ -195,7 +193,7 @@ class Test_Frequencies extends WPUN_Test_Case {
 		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', '8.0' );
 
 		sc_wpun()->settings()->maybe_upgrade();
-		$this->plugin()->maybe_schedule();
+		sc_wpun()->scheduler()->maybe_schedule();
 
 		$this->assertSame( 'daily', $this->stored_settings()['frequency'] );
 		$this->assertSame( 'daily', wp_get_schedule( 'sc_wpun_update_check' ) );

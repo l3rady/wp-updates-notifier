@@ -63,7 +63,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->set_updates();
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 		$this->assertGreaterThan( 0, $this->stored_state()['last_check_time'] );
@@ -76,7 +76,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$mail = $this->sent_mail();
 		$this->assertSame( 1, $this->sent_mail_count() );
@@ -93,8 +93,8 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
@@ -106,10 +106,10 @@ class Test_Update_Check extends WPUN_Test_Case {
 	public function test_a_newer_core_version_is_reported_again() {
 		$this->save_settings();
 		$this->set_updates( '99.0.0' );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->set_updates( '99.1.0' );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 2, $this->sent_mail_count() );
 	}
@@ -122,7 +122,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_channel_state( 'email', array( 'core' => array( 'core' => '99.0.0' ) ) );
 		$this->set_updates();
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 	}
@@ -134,7 +134,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_settings( array( 'notify_plugins' => 'all' ) );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$body = $this->sent_mail()->body;
@@ -150,8 +150,8 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->plugin()->do_update_check();
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
@@ -163,7 +163,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_settings( array( 'notify_plugins' => 'none' ) );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
@@ -176,11 +176,11 @@ class Test_Update_Check extends WPUN_Test_Case {
 		update_option( 'active_plugins', array() );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( 0, $this->sent_mail_count() );
 
 		update_option( 'active_plugins', array( 'hello.php' ) );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
 
@@ -192,7 +192,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 		add_filter( 'sc_wpun_plugins_need_update', '__return_empty_array', 20 );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
@@ -205,8 +205,8 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->set_updates( null, array(), array( $theme => array( 'new_version' => '99.3' ) ) );
 
-		$this->plugin()->do_update_check();
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertStringContainsString( '99.3', $this->sent_mail()->body );
@@ -222,11 +222,11 @@ class Test_Update_Check extends WPUN_Test_Case {
 		update_option( 'template', $active );
 		$this->set_updates( null, array(), array( $other => array( 'new_version' => '99.3' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( 0, $this->sent_mail_count() );
 
 		$this->set_updates( null, array(), array( $active => array( 'new_version' => '99.3' ) ) );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
 
@@ -237,7 +237,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_settings( array( 'email_notifications' => 0 ) );
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
@@ -256,7 +256,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) );
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$requests = $this->requests_to( 'hooks.slack.com' );
 		$this->assertCount( 1, $requests );
@@ -276,7 +276,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		sc_wpun_channels()->save( new WPUN\Channel_Instance( 'off', 'email', 'Off', false, array( 'to' => 'off@example.org' ) ) );
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 2, $this->sent_mail_count() );
 		$recipients = array(
@@ -297,12 +297,12 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->set_updates( '99.0.0' );
 		add_filter( 'pre_wp_mail', '__return_false' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 
 		remove_filter( 'pre_wp_mail', '__return_false' );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
@@ -315,7 +315,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ), array( $theme => array( 'new_version' => '99.3' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$body = $this->sent_mail()->body;
@@ -338,7 +338,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 				return $notification;
 			}
 		);
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		return $items;
 	}
@@ -497,7 +497,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 			}
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $asked );
 	}
@@ -559,7 +559,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 			}
 		);
 		try {
-			$this->plugin()->do_update_check();
+			sc_wpun()->update_checker()->do_update_check();
 		} finally {
 			restore_error_handler();
 		}
@@ -649,7 +649,7 @@ class Test_Update_Check extends WPUN_Test_Case {
 			);
 		}
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( array( 'wp_update_plugins', 'wp_update_themes' ), $asked );
 	}

@@ -46,7 +46,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		sc_wpun()->settings()->maybe_upgrade();
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
@@ -83,7 +83,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		sc_wpun()->network_context()->update_option( 'sc_wpun_settings_ver', self::SETTINGS_VERSION );
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		// Without an email instance nothing is sent, and no notice is raised on the way.
 		$this->assertSame( 0, $this->sent_mail_count() );
@@ -97,11 +97,11 @@ class Test_Settings_State extends WPUN_Test_Case {
 		$this->set_updates( '99.0.0' );
 		add_filter( 'pre_wp_mail', '__return_false' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 
 		remove_filter( 'pre_wp_mail', '__return_false' );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
 	}
@@ -118,7 +118,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		);
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 	}
@@ -137,7 +137,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) );
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core', 'slack' ) );
 		$this->assertSame( '', $this->notified_version( 'core', 'core' ), 'Email is off and records nothing.' );
@@ -153,7 +153,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertArrayNotHasKey( 'notified', $this->stored_settings() );
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
@@ -175,7 +175,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 			20
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 'weekly', $this->stored_settings()['frequency'] );
 	}
@@ -194,7 +194,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 			20
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
@@ -215,7 +215,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		);
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( array( 'hello.php' => '2.0.0' ), $this->channel_notified()['plugin'] );
 	}
@@ -228,7 +228,7 @@ class Test_Settings_State extends WPUN_Test_Case {
 		$this->save_channel_state( 'email', array( 'plugin' => array( 'hello.php' => '2.0.0' ) ) );
 		$this->set_updates();
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( array(), $this->channel_notified()['plugin'] );
 	}

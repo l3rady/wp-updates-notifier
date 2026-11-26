@@ -355,11 +355,11 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 		update_option( 'active_plugins', array() );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( 0, $this->sent_mail_count() );
 
 		update_option( 'active_plugins', array( 'hello.php' ) );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
 
@@ -474,7 +474,7 @@ class Test_Settings_Upgrade extends WPUN_Test_Case {
 
 		add_action( 'admin_notices', 'update_nag', 3 );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
-		$this->plugin()->remove_update_nag_for_nonadmins();
+		sc_wpun()->update_nag()->remove_update_nag_for_nonadmins();
 		$this->assertSame( $expect_hide ? false : 3, has_action( 'admin_notices', 'update_nag' ) );
 		remove_action( 'admin_notices', 'update_nag', 3 );
 	}

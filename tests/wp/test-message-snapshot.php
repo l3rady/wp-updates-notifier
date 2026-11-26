@@ -99,7 +99,7 @@ class Test_Message_Snapshot extends WPUN_Test_Case {
 		);
 		set_site_transient( 'update_plugins', $updates );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		// The mailer ends lines with CRLF and the body with a line break; the snapshot uses LF.
 		$this->assertSame( 'WP Updates Notifier: updates available for Bob & Sons', $this->sent_mail()->subject );

@@ -61,7 +61,7 @@ class Test_Plugin_Details extends WPUN_Test_Case {
 			)
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$body = $this->sent_mail()->body;
 		$this->assertStringContainsString( 'Details: https://wordpress.org/plugins/hello-dolly/', $body );
@@ -84,7 +84,7 @@ class Test_Plugin_Details extends WPUN_Test_Case {
 			)
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$body = $this->sent_mail()->body;
 		$this->assertStringContainsString( 'Details: https://example.com/premium-plugin/', $body );
@@ -106,7 +106,7 @@ class Test_Plugin_Details extends WPUN_Test_Case {
 			)
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertStringNotContainsString( 'Details:', $this->sent_mail()->body );
@@ -125,8 +125,8 @@ class Test_Plugin_Details extends WPUN_Test_Case {
 			)
 		);
 
-		$this->plugin()->do_update_check();
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertSame( '2.0.0', $this->notified_version( 'plugin', 'hello.php' ) );
@@ -151,7 +151,7 @@ class Test_Plugin_Details extends WPUN_Test_Case {
 		);
 		$this->assertSame( array(), $entries, 'An empty version or a scalar is not an entry.' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
@@ -163,7 +163,7 @@ class Test_Plugin_Details extends WPUN_Test_Case {
 		$theme = array_keys( wp_get_themes() )[0];
 		$this->set_updates( null, array(), array( $theme => array( 'new_version' => '99.3' ) ) );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertStringContainsString( 'Details: https://wordpress.org/themes/' . $theme . '/', $this->sent_mail()->body );
 	}

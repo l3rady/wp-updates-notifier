@@ -35,7 +35,7 @@ class Test_Plugin_Compatibility extends WPUN_Test_Case {
 	 */
 	private function body_for_update( array $fields ) {
 		$this->set_updates( null, array( 'hello.php' => array_merge( array( 'new_version' => '2.0.0' ), $fields ) ) );
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		return $this->sent_mail()->body;
 	}

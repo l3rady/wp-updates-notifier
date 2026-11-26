@@ -500,7 +500,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 			'other.php' => (object) array( 'new_version' => '1.0.0' ),
 		);
 		$themes  = array( 't' => array( 'new_version' => '3' ) );
-		$plugin  = $this->plugin();
+		$plugin  = $this->legacy_facade();
 
 		$this->assertSame( $plugins, $plugin->check_plugins_against_notified( $plugins ), 'No state: unchanged.' );
 

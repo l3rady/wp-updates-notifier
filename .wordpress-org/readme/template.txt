@@ -105,7 +105,7 @@ Please don't post it in the support forum or in a public GitHub issue. Report it
 == Upgrade Notice ==
 
 = 3.0.0 =
-Slack is back as a channel. If you had Slack switched on in 1.x, the first check after the update posts everything that is still waiting to your Slack webhook; a Slack setup that was switched off stays off. The notice about Slack no longer being supported is gone.
+Slack is back as a channel. If you had Slack switched on in 1.x, the first check after the update posts what is still waiting to your Slack webhook; if it was off, it stays off. The old SC_WP_Updates_Notifier class is deprecated and goes in 4.0.0; code using it shows notices with WP_DEBUG.
 
 = 2.0.0 =
 From 1.5 or 1.6: activate the plugin again after updating (main file renamed, settings kept). Slack is no longer supported; its settings are kept. WordPress's auto-update emails now go to the admin email. Emails have a new subject, the default From unless set, and no HTML entities.

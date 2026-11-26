@@ -493,11 +493,15 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A plugin instance for calling its public methods. Its hooks are already registered by the bootstrap.
+	 * The deprecated SC_WP_Updates_Notifier class, for the tests of that class only.
+	 *
+	 * Every method raises a deprecation notice, so a test that calls one must expect it with
+	 * setExpectedDeprecated(). Other tests call the component that does the work, as
+	 * sc_wpun()->update_checker()->do_update_check().
 	 *
 	 * @return SC_WP_Updates_Notifier
 	 */
-	protected function plugin() {
+	protected function legacy_facade() {
 		return new SC_WP_Updates_Notifier();
 	}
 

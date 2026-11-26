@@ -42,7 +42,7 @@ class Test_Hardening_Slug_Newline extends WPUN_Security_Test_Case {
 					),
 				)
 			);
-			$this->plugin()->do_update_check();
+			sc_wpun()->update_checker()->do_update_check();
 
 			$this->assertContainsOnlyInstancesOf( Notification_Item::class, $items );
 			$this->assertNotEmpty( $items );

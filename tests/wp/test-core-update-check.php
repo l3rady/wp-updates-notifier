@@ -48,7 +48,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 			)
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ), 'Without data, what was notified is kept.' );
@@ -75,7 +75,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 			)
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
@@ -96,7 +96,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 			)
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 	}
@@ -119,7 +119,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 			)
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertStringContainsString( '99.0.0', $this->sent_mail()->body );
@@ -144,7 +144,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 			)
 		);
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 		$this->assertSame( '', $this->notified_version( 'core', 'core' ), 'Up to date: the record is cleared for the next release.' );
@@ -162,7 +162,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 		$wp_version = '1.0-tampered'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
 		try {
-			$this->plugin()->do_update_check();
+			sc_wpun()->update_checker()->do_update_check();
 		} finally {
 			$wp_version = $real; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 		}
@@ -182,7 +182,7 @@ class Test_Core_Update_Check extends WPUN_Test_Case {
 		$this->save_settings();
 		$this->set_updates( '99.0.0' );
 
-		$this->plugin()->do_update_check();
+		sc_wpun()->update_checker()->do_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
