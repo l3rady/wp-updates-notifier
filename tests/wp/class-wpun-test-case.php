@@ -16,6 +16,7 @@ abstract class WPUN_Test_Case extends WP_UnitTestCase {
 	use WPUN_Builders;
 	use WPUN_Markup;
 	use WPUN_Environment;
+	use WPUN_Checks;
 
 	/**
 	 * Every HTTP request attempted during the test: array of [ 'url' => string, 'args' => array ].

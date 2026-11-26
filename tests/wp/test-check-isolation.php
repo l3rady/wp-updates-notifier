@@ -39,10 +39,12 @@ class Test_Check_Isolation extends WPUN_Test_Case {
 
 	/**
 	 * Run the check, capturing the notices WP_DEBUG makes the plugin raise.
+	 *
+	 * It stays local, with its own name: it runs the base `run_update_check()` inside capture(), which collects
+	 * notices (the base `render()` collects output).
 	 */
-	private function run_check() {
-		reset_phpmailer_instance();
-		$this->capture( static fn() => sc_wpun()->update_checker()->do_update_check() );
+	private function run_check_capturing_notices() {
+		$this->capture( fn() => $this->run_update_check() );
 	}
 
 	/**
@@ -98,7 +100,7 @@ class Test_Check_Isolation extends WPUN_Test_Case {
 		$this->assertCount( 1, $this->notices, 'Reported once.' );
 		$this->assertStringContainsString( 'RuntimeException', $this->notices[0] );
 
-		$this->run_check();
+		$this->run_check_capturing_notices();
 
 		$this->assertContains( 'good@example.org', $this->recipients() );
 		$results = sc_wpun()->update_checker()->last_results();
@@ -166,7 +168,7 @@ class Test_Check_Isolation extends WPUN_Test_Case {
 	 * The owner of a broken add-on can switch its channel off from the Channels tab.
 	 */
 	public function test_an_instance_whose_fields_throw_can_be_switched_off() {
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->become_admin();
 		if ( is_multisite() ) {
 			grant_super_admin( get_current_user_id() );
 		}
@@ -203,7 +205,7 @@ class Test_Check_Isolation extends WPUN_Test_Case {
 			3
 		);
 
-		$this->run_check();
+		$this->run_check_capturing_notices();
 
 		$results = sc_wpun()->update_checker()->last_results();
 		$this->assertSame( 'exception', $results['bad']->get_code() );

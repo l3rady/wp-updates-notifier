@@ -37,6 +37,14 @@ are loaded by `tests/bootstrap.php`. Every helper is `protected`. The tests for 
 - `require_multisite()` and `require_single_site()` skip the test on the wrong kind of site.
 - `save_network_settings( array $overrides = [] )` stores network settings and the email instance.
 
+## Checks (`WPUN_Checks`)
+
+- `run_check( ?string $core = '99.0.0', array $plugins = [], bool $reset_mail = true ): array` sets the updates
+  with `set_updates()` (null core means no core update), runs the update check and returns `last_results()`.
+- `run_update_check( bool $reset_mail = true ): array` runs the check on the updates the test already set.
+- Both empty the captured mail first. Pass `$reset_mail = false` to keep the mail of earlier checks, for a test
+  that counts mail across checks.
+
 ## Add a helper or keep a local one
 
 Add a helper to a trait when two test files need the same thing in the same shape. Put it in the trait that

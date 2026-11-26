@@ -55,11 +55,12 @@ class Test_Routing extends WPUN_Test_Case {
 	/**
 	 * Run the check; returns the mail bodies by recipient.
 	 *
+	 * It stays local: the base `run_update_check()` returns the delivery results, and these tests read the mail.
+	 *
 	 * @return string[]
 	 */
-	private function run_check() {
-		reset_phpmailer_instance();
-		sc_wpun()->update_checker()->do_update_check();
+	private function mail_by_recipient() {
+		$this->run_update_check();
 
 		$out = array();
 		foreach ( tests_retrieve_phpmailer_instance()->mock_sent as $i => $mail ) {
@@ -70,7 +71,7 @@ class Test_Routing extends WPUN_Test_Case {
 	}
 
 	/**
-	 * An item.
+	 * An item. A short-hand for make_item() with this argument shape.
 	 *
 	 * @param string $type    Type.
 	 * @param array  $flags   Flags.
@@ -79,7 +80,7 @@ class Test_Routing extends WPUN_Test_Case {
 	 * @return Notification_Item
 	 */
 	private function item( $type, array $flags = array(), $current = '1.0', $available = '2.0' ) {
-		return new Notification_Item(
+		return $this->make_item(
 			array(
 				'type'            => $type,
 				'key'             => $type . '-key',
@@ -164,7 +165,7 @@ class Test_Routing extends WPUN_Test_Case {
 		$this->add_routed( 'rest', array( 'types' => array( 'plugin', 'theme' ) ) );
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ), array( get_stylesheet() => array( 'new_version' => '99.3' ) ) );
 
-		$bodies = $this->run_check();
+		$bodies = $this->mail_by_recipient();
 
 		$this->assertSame( array( 'core@example.org', 'rest@example.org' ), array_keys( $bodies ) );
 		$this->assertStringContainsString( '99.0.0', $bodies['core@example.org'] );
@@ -175,7 +176,7 @@ class Test_Routing extends WPUN_Test_Case {
 		$this->assertSame( array( 'core' ), array_keys( $this->channel_notified( 'core' ) ) );
 		$this->assertSame( array( 'plugin', 'theme' ), array_keys( $this->channel_notified( 'rest' ) ) );
 
-		$this->assertSame( array(), $this->run_check() );
+		$this->assertSame( array(), $this->mail_by_recipient() );
 	}
 
 	/**
@@ -196,7 +197,7 @@ class Test_Routing extends WPUN_Test_Case {
 			)
 		);
 
-		$bodies = $this->run_check();
+		$bodies = $this->mail_by_recipient();
 
 		$this->assertStringContainsString( 'WP Updates Notifier from version ', $bodies['everything@example.org'] );
 		$this->assertStringContainsString( 'Hello Dolly', $bodies['everything@example.org'] );
@@ -208,9 +209,7 @@ class Test_Routing extends WPUN_Test_Case {
 	 * A network-activated plugin is active on multisite.
 	 */
 	public function test_network_activated_plugins_are_active() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Needs multisite (make test-wp-ms).' );
-		}
+		$this->require_multisite();
 		$this->save_settings( array( 'email_notifications' => 0 ) );
 		$this->add_routed( 'active', array( 'scope' => 'active' ) );
 		$active                     = (array) get_site_option( 'active_sitewide_plugins', array() );
@@ -218,7 +217,7 @@ class Test_Routing extends WPUN_Test_Case {
 		update_site_option( 'active_sitewide_plugins', $active ); // Keeps the suite's own network activation.
 		$this->set_updates( null, array( self::OWN_PLUGIN => array( 'new_version' => '4.5.6' ) ) );
 
-		$bodies = $this->run_check();
+		$bodies = $this->mail_by_recipient();
 
 		$this->assertStringContainsString( 'WP Updates Notifier from version ', $bodies['active@example.org'] );
 	}
@@ -242,7 +241,7 @@ class Test_Routing extends WPUN_Test_Case {
 			)
 		);
 
-		$bodies = $this->run_check();
+		$bodies = $this->mail_by_recipient();
 
 		$this->assertStringContainsString( '90.1', $bodies['active@example.org'] );
 		$this->assertStringContainsString( '91.1', $bodies['active@example.org'] );
@@ -259,11 +258,11 @@ class Test_Routing extends WPUN_Test_Case {
 		$minor = Routing::major_minor( wp_get_wp_version() ) . '.99';
 		$this->set_updates( $minor );
 
-		$bodies = $this->run_check();
+		$bodies = $this->mail_by_recipient();
 		$this->assertSame( array( 'everything@example.org' ), array_keys( $bodies ) );
 
 		$this->set_updates( '99.0.0' );
-		$bodies = $this->run_check();
+		$bodies = $this->mail_by_recipient();
 		$this->assertSame( array( 'everything@example.org', 'major@example.org' ), array_keys( $bodies ), 'The new release is a different version for the first instance and a major one for the second.' );
 	}
 
@@ -276,7 +275,7 @@ class Test_Routing extends WPUN_Test_Case {
 		$this->add_routed( 'major', array( 'core' => 'major' ) );
 		$this->set_updates( '99.0.0' );
 
-		$this->assertSame( array( 'everything@example.org', 'major@example.org' ), array_keys( $this->run_check() ) );
+		$this->assertSame( array( 'everything@example.org', 'major@example.org' ), array_keys( $this->mail_by_recipient() ) );
 	}
 
 	/**
@@ -371,11 +370,11 @@ class Test_Routing extends WPUN_Test_Case {
 		$this->save_settings( array( 'email_notifications' => 0 ) );
 		$this->add_routed( 'one', array( 'types' => array( 'core' ) ) );
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
-		$this->run_check();
+		$this->mail_by_recipient();
 		$this->assertSame( array( 'core' ), array_keys( $this->channel_notified( 'one' ) ) );
 
 		$this->add_routed( 'one', array() );
-		$bodies = $this->run_check();
+		$bodies = $this->mail_by_recipient();
 
 		$this->assertStringContainsString( 'Hello Dolly', $bodies['one@example.org'] );
 		$this->assertStringNotContainsString( '99.0.0', $bodies['one@example.org'] );
@@ -390,7 +389,7 @@ class Test_Routing extends WPUN_Test_Case {
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 		sc_wpun()->state()->skip_pending( 'one' );
 
-		$this->assertSame( array(), $this->run_check() );
+		$this->assertSame( array(), $this->mail_by_recipient() );
 		$this->assertSame( array( 'core' => array( 'core' => '99.0.0' ) ), $this->channel_notified( 'one' ) );
 	}
 

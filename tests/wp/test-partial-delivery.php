@@ -79,11 +79,14 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	/**
 	 * Run a check with core and these plugins waiting.
 	 *
+	 * It stays local, with its own name: it goes through `Update_Checker::run_check()` with the source `cli`
+	 * and a force flag, and returns its plan, where the base `run_check()` calls `do_update_check()`.
+	 *
 	 * @param string[] $plugins Plugin files waiting, at version 2.0.
 	 * @param bool     $force   Whether to force.
 	 * @return array The plan.
 	 */
-	private function run_check( array $plugins = array( 'hello.php', self::OTHER ), $force = false ) {
+	private function run_cli_check( array $plugins = array( 'hello.php', self::OTHER ), $force = false ) {
 		$updates = array();
 		foreach ( $plugins as $file ) {
 			$updates[ $file ] = array( 'new_version' => '2.0' );
@@ -280,7 +283,7 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 		$this->add();
 		$this->then( $this->fail_after( array( 'core', 'hello.php' ), 60 ) );
 
-		$plan = $this->run_check();
+		$plan = $this->run_cli_check();
 
 		$this->assertSame( Update_Checker::STATUS_FAILED, $plan['a']['status'] );
 		$this->assertCount( 1, $this->received() );
@@ -294,7 +297,7 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 
 		$this->assertNotNull( $this->entry( 'retry_at' ) );
 		$this->end_wait();
-		$this->run_check();
+		$this->run_cli_check();
 
 		$this->assertCount( 2, $this->received() );
 		$this->assertSame( array( self::OTHER ), $this->keys( $this->last() ), 'Only the rest is sent.' );
@@ -335,19 +338,19 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 		$this->add();
 		$this->then( $this->defer_after( array( 'hello.php' ) ) );
 
-		$plan = $this->run_check();
+		$plan = $this->run_cli_check();
 
 		$this->assertSame( Update_Checker::STATUS_WAITING, $plan['a']['status'] );
 		$this->assertGreaterThan( time(), $this->entry( 'held_until' ) );
 		$this->assertSame( '2.0', $this->notified_version( 'plugin', 'hello.php', 'a' ) );
 		$this->assertSame( '', $this->notified_version( 'core', 'core', 'a' ) );
 
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertCount( 1, $this->received(), 'Held: nothing is sent.' );
 		$this->assertGreaterThan( time(), $this->entry( 'held_until' ) );
 
 		$this->end_wait();
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertSame( array( 'core', self::OTHER ), $this->keys( $this->last() ) );
 	}
 
@@ -378,7 +381,7 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_cli_check();
 
 		$this->assertSame( array(), $this->entry( 'notified' ) );
 		$this->assertNull( $this->entry( 'notified_meta' ) );
@@ -395,7 +398,7 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 			}
 		);
 
-		$plan = $this->run_check();
+		$plan = $this->run_cli_check();
 
 		$this->assertSame( Update_Checker::STATUS_SEND, $plan['a']['status'] );
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core', 'a' ) );
@@ -417,7 +420,7 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 			2
 		);
 
-		$this->run_check();
+		$this->run_cli_check();
 
 		$this->assertCount( 0, $this->received(), 'The channel was not called.' );
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core', 'a' ) );
@@ -429,7 +432,7 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	 */
 	public function test_a_test_send_ignores_delivered_items() {
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->run_cli_check();
 		$before = $this->stored_state()['channels']['a'];
 		$this->then( $this->fail_after( array( 'core' ) ) );
 
@@ -452,7 +455,7 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 			sc_wpun()->state()->skip_pending( 'a' );
 			$this->then( $step );
 
-			$this->run_check( array( 'hello.php' ), true );
+			$this->run_cli_check( array( 'hello.php' ), true );
 
 			$this->assertTrue( $this->entry( 'skip_pending' ) );
 			$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core', 'a' ) );
@@ -469,16 +472,16 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 		};
 
 		$this->add();
-		$this->run_check();
+		$this->run_cli_check();
 
 		$this->snooze( time() + HOUR_IN_SECONDS );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertTrue( $flag( 'hello.php' ) );
 		$this->assertTrue( $flag( self::OTHER ) );
 
 		$this->snooze( time() - 1 );
 		$this->then( $this->fail_after( array( 'hello.php' ) ) );
-		$this->run_check();
+		$this->run_cli_check();
 
 		$this->assertFalse( $flag( 'hello.php' ), 'Delivered: cleared as a success would.' );
 		$this->assertTrue( $flag( self::OTHER ), 'Not delivered: still flagged.' );
@@ -491,12 +494,12 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	 */
 	public function test_a_reminder_resumes_without_the_delivered_items() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertCount( 1, $this->received() );
 		$this->assertFalse( $this->last()->is_reminder() );
 
 		$this->then( $this->fail_after( array( 'core', 'hello.php' ) ) );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertCount( 2, $this->received() );
 		$this->assertTrue( $this->last()->is_reminder() );
 		$this->assertSame( array( 'core', 'hello.php', self::OTHER ), $this->keys( $this->last() ) );
@@ -513,14 +516,14 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 		$this->assertSame( array( self::OTHER ), $this->keys( $plan['a']['items'] ), 'A dry run shows what would really be sent.' );
 		$this->assertCount( 2, $this->received(), 'A dry run sends nothing.' );
 
-		$plan = $this->run_check();
+		$plan = $this->run_cli_check();
 		$this->assertCount( 3, $this->received() );
 		$this->assertTrue( $this->last()->is_reminder() );
 		$this->assertSame( array( self::OTHER ), $this->keys( $this->last() ) );
 		$this->assertSame( array( self::OTHER ), $this->keys( $plan['a']['items'] ), 'The plan lists the remaining items.' );
 		$this->assertNull( $this->entry( 'reminder_sent' ), 'A completed reminder clears the progress.' );
 
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertCount( 4, $this->received() );
 		$this->assertSame( array( 'core', 'hello.php', self::OTHER ), $this->keys( $this->last() ), 'A new round sends everything.' );
 	}
@@ -530,18 +533,18 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	 */
 	public function test_a_forced_send_clears_the_progress() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check();
+		$this->run_cli_check();
 
 		$this->then( $this->fail_after( array( 'core' ) ) );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertNotNull( $this->entry( 'reminder_sent' ) );
 
 		$this->end_wait();
-		$this->run_check( array( 'hello.php', self::OTHER ), true );
+		$this->run_cli_check( array( 'hello.php', self::OTHER ), true );
 		$this->assertFalse( $this->last()->is_reminder() );
 		$this->assertNull( $this->entry( 'reminder_sent' ), 'A forced message with everything pending ends the stopped reminder.' );
 
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertTrue( $this->last()->is_reminder() );
 		$this->assertSame( array( 'core', 'hello.php', self::OTHER ), $this->keys( $this->last() ), 'The next reminder lists everything again.' );
 	}
@@ -551,15 +554,15 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	 */
 	public function test_a_deferred_reminder_resumes() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check();
+		$this->run_cli_check();
 
 		$this->then( $this->defer_after( array( 'core' ) ) );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertSame( array( 'core' => array( 'core' => '99.0.0' ) ), $this->entry( 'reminder_sent' ) );
 		$this->assertNotNull( $this->entry( 'held_until' ) );
 
 		$this->end_wait();
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertSame( array( 'hello.php', self::OTHER ), $this->keys( $this->last() ) );
 	}
 
@@ -568,15 +571,15 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	 */
 	public function test_a_reminder_with_nothing_left_is_complete() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check();
+		$this->run_cli_check();
 
 		$this->then( $this->fail_after( array( 'core', 'hello.php' ) ) );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertCount( 2, $this->received() );
 		$this->assertNotNull( $this->entry( 'reminder_sent' ) );
 
 		$this->backdate( 100 );
-		$plan = $this->run_check( array( 'hello.php' ) ); // Akismet was updated.
+		$plan = $this->run_cli_check( array( 'hello.php' ) ); // Akismet was updated.
 
 		$this->assertCount( 2, $this->received(), 'Nothing is sent.' );
 		$this->assertSame( Update_Checker::STATUS_NOTHING, $plan['a']['status'] );
@@ -589,9 +592,9 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	 */
 	public function test_progress_is_pruned_when_an_item_changes_version() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->then( $this->fail_after( array( 'core', 'hello.php' ) ) );
-		$this->run_check();
+		$this->run_cli_check();
 
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '3.0' ) ) );
 		$plan = sc_wpun()->update_checker()->run_check( 'cli', true );
@@ -604,10 +607,10 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	 */
 	public function test_a_new_item_delivered_in_a_reminder_is_notified() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check( array( 'hello.php' ) );
+		$this->run_cli_check( array( 'hello.php' ) );
 
 		$this->then( $this->fail_after( array( self::OTHER ) ) );
-		$this->run_check( array( 'hello.php', self::OTHER ) );
+		$this->run_cli_check( array( 'hello.php', self::OTHER ) );
 
 		$this->assertTrue( $this->last()->is_reminder() );
 		$this->assertSame( '2.0', $this->notified_version( 'plugin', self::OTHER, 'a' ), 'Recorded, so it is not sent as new after the round.' );
@@ -621,12 +624,12 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 		foreach ( array( $this->fail_after( array( 'core' ) ), $this->defer_after( array( 'core' ) ) ) as $step ) {
 			$this->add( 'a', 'daily' );
 			sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
-			$this->run_check();
+			$this->run_cli_check();
 			$this->backdate( DAY_IN_SECONDS + 60 );
 			$clock = $this->entry( 'last_reminder' );
 
 			$this->then( $step );
-			$this->run_check();
+			$this->run_cli_check();
 
 			$this->assertTrue( $this->last()->is_reminder() );
 			$this->assertSame( $clock, $this->entry( 'last_reminder' ) );
@@ -639,9 +642,9 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 	 */
 	public function test_progress_is_cleared_by_a_skip_and_a_clock_stop() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->then( $this->fail_after( array( 'core' ) ) );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertNotNull( $this->entry( 'reminder_sent' ) );
 
 		sc_wpun()->state()->skip_pending( 'a' );
@@ -649,21 +652,21 @@ class Test_Partial_Delivery extends WPUN_Test_Case {
 
 		// A clock stop: reminders switched off.
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->then( $this->fail_after( array( 'core' ) ) );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertNotNull( $this->entry( 'reminder_sent' ) );
 		$this->add( 'a', 'never' );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertNull( $this->entry( 'reminder_sent' ) );
 		$this->assertNull( $this->entry( 'last_reminder' ) );
 
 		// A clock stop: nothing pending.
 		$this->add( 'a', 'every_check' );
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->then( $this->fail_after( array( 'core' ) ) );
-		$this->run_check();
+		$this->run_cli_check();
 		$this->assertNotNull( $this->entry( 'reminder_sent' ) );
 		$this->set_updates( null );
 		sc_wpun()->update_checker()->run_check( 'cli' );

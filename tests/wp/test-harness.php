@@ -290,6 +290,50 @@ class Test_Harness extends WPUN_Test_Case {
 	}
 
 	/**
+	 * The shared check sets the updates, sends the mail and returns the results of the check.
+	 */
+	public function test_run_check_sets_the_updates_sends_mail_and_returns_the_results() {
+		$this->save_settings();
+
+		$results = $this->run_check( '99.0.0' );
+
+		$this->assertSame( sc_wpun()->update_checker()->last_results(), $results );
+		$this->assertArrayHasKey( 'email', $results );
+		$this->assertSame( 1, $this->sent_mail_count() );
+		$this->assertSame( array( '99.0.0' ), array_map( static fn( $item ) => $item->get_new_version(), sc_wpun()->update_checker()->last_notification()->get_items_of_type( 'core' ) ) );
+	}
+
+	/**
+	 * The update check on its own runs on the updates the test set, and sets none of its own.
+	 */
+	public function test_run_update_check_keeps_the_updates_the_test_set() {
+		$this->save_settings();
+		$this->set_updates( '98.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
+
+		$this->run_update_check();
+
+		$items = sc_wpun()->update_checker()->last_notification()->get_items();
+		$this->assertEqualsCanonicalizing( array( 'core:core', 'plugin:hello.php' ), array_map( static fn( $item ) => $item->get_type() . ':' . $item->get_key(), $items ) );
+		$this->assertSame( 1, $this->sent_mail_count() );
+	}
+
+	/**
+	 * The mail of earlier checks goes with a reset, and stays with reset_mail false.
+	 */
+	public function test_the_mail_of_earlier_checks_stays_only_without_a_reset() {
+		$this->save_settings();
+
+		$this->run_check( '99.0.0' );
+		$this->assertSame( 1, $this->sent_mail_count() );
+
+		$this->run_check( '99.1.0', array(), false );
+		$this->assertSame( 2, $this->sent_mail_count(), 'The earlier mail is kept.' );
+
+		$this->run_check( '99.2.0' );
+		$this->assertSame( 1, $this->sent_mail_count(), 'The default empties the mail first.' );
+	}
+
+	/**
 	 * The markup assertions pass for a match, with XPath and with text.
 	 */
 	public function test_markup_assertions_pass_for_both_kinds_of_needle() {

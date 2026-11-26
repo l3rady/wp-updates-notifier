@@ -49,13 +49,15 @@ class Test_Reminders extends WPUN_Test_Case {
 	/**
 	 * Run a check with core 99.0.0 and a plugin at the given version waiting.
 	 *
+	 * A short-hand for the base `run_check()` with hello.php updates. It keeps the mail of earlier checks, as
+	 * these tests always did.
+	 *
 	 * @param string|null $plugin_version Plugin version waiting, or null for none.
 	 * @param string|null $core_version   Core version waiting, or null for none.
 	 */
-	private function run_check( $plugin_version = '2.0.0', $core_version = '99.0.0' ) {
+	private function check_with_plugin( $plugin_version = '2.0.0', $core_version = '99.0.0' ) {
 		$plugins = null === $plugin_version ? array() : array( 'hello.php' => array( 'new_version' => $plugin_version ) );
-		$this->set_updates( $core_version, $plugins );
-		sc_wpun()->update_checker()->do_update_check();
+		$this->run_check( $core_version, $plugins, false );
 	}
 
 	/**
@@ -111,13 +113,13 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_never_is_the_default() {
 		$this->add( 'a', null );
 
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 
 		$state                                   = sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 		$state['channels']['a']['last_reminder'] = time() - 10 * WEEK_IN_SECONDS;
 		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 1, $this->received(), 'Nothing is repeated.' );
 		$this->assertNull( $this->clock(), 'A stale clock is cleared.' );
@@ -129,7 +131,7 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_the_clock_starts_on_the_first_check() {
 		$this->add( 'a', 'daily' );
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 1, $this->received() );
 		$this->assertFalse( $this->received()[0]->is_reminder() );
@@ -137,7 +139,7 @@ class Test_Reminders extends WPUN_Test_Case {
 
 		// Items were sent: a second check at once is quiet, and the clock stays.
 		$clock = $this->clock();
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 		$this->assertSame( $clock, $this->clock() );
 	}
@@ -147,14 +149,14 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_reminder_lists_everything_waiting_once_due() {
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->backdate( 'a', 6 * HOUR_IN_SECONDS );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received(), 'Not due yet.' );
 
 		$this->backdate( 'a', DAY_IN_SECONDS + 60 );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 2, $this->received() );
 		$reminder = $this->received()[1];
@@ -169,17 +171,17 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_weekly_and_daily_intervals() {
 		$this->add( 'weekly', 'weekly' );
 		$this->add( 'daily', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->backdate( 'weekly', 2 * DAY_IN_SECONDS );
 		$this->backdate( 'daily', 2 * DAY_IN_SECONDS );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 1, $this->received( 'weekly' ) );
 		$this->assertCount( 2, $this->received( 'daily' ) );
 
 		$this->backdate( 'weekly', WEEK_IN_SECONDS + 60 );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 2, $this->received( 'weekly' ) );
 		$this->assertTrue( $this->received( 'weekly' )[1]->is_reminder() );
 	}
@@ -189,14 +191,14 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_the_tolerance_is_half_the_check_interval() {
 		$this->add( 'a', 'daily' ); // The check frequency is daily: 12 hours of tolerance.
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->backdate( 'a', DAY_IN_SECONDS - 12 * HOUR_IN_SECONDS - 60 );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received(), 'Just short of interval minus tolerance.' );
 
 		$this->backdate( 'a', DAY_IN_SECONDS - 12 * HOUR_IN_SECONDS + 60 );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 2, $this->received() );
 		$this->assertTrue( $this->received()[1]->is_reminder() );
 	}
@@ -207,14 +209,14 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_the_tolerance_follows_the_check_frequency() {
 		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'hourly' ) ) );
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->backdate( 'a', DAY_IN_SECONDS - HOUR_IN_SECONDS );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 
 		$this->backdate( 'a', DAY_IN_SECONDS - 20 * MINUTE_IN_SECONDS );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 2, $this->received() );
 	}
 
@@ -224,14 +226,14 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_the_tolerance_is_at_most_half_the_reminder_interval() {
 		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'weekly' ) ) );
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->backdate( 'a', HOUR_IN_SECONDS ); // A "Check now" soon after: 3.5 days of tolerance would make it due.
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 
 		$this->backdate( 'a', WEEK_IN_SECONDS ); // The next weekly check.
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 2, $this->received() );
 	}
 
@@ -240,11 +242,11 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_new_version_is_notified_at_once() {
 		$this->add( 'a', 'daily' );
-		$this->run_check( '2.0.0' );
+		$this->check_with_plugin( '2.0.0' );
 		$this->backdate( 'a', 3 * HOUR_IN_SECONDS );
 		$clock = $this->clock();
 
-		$this->run_check( '3.0.0' );
+		$this->check_with_plugin( '3.0.0' );
 
 		$this->assertCount( 2, $this->received() );
 		$message = $this->received()[1];
@@ -258,10 +260,10 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_new_item_in_a_due_run_is_folded_into_the_reminder() {
 		$this->add( 'a', 'daily' );
-		$this->run_check( null );
+		$this->check_with_plugin( null );
 		$this->backdate( 'a', DAY_IN_SECONDS + 60 );
 
-		$this->run_check( '2.0.0' );
+		$this->check_with_plugin( '2.0.0' );
 
 		$this->assertCount( 2, $this->received(), 'The first check and the reminder, no second message.' );
 		$reminder = $this->received()[1];
@@ -269,7 +271,7 @@ class Test_Reminders extends WPUN_Test_Case {
 		$this->assertSame( array( 'core', 'hello.php' ), $this->keys( $reminder ) );
 		$this->assertSame( '2.0.0', $this->notified_version( 'plugin', 'hello.php', 'a' ) );
 
-		$this->run_check( '2.0.0' );
+		$this->check_with_plugin( '2.0.0' );
 		$this->assertCount( 2, $this->received(), 'The new item is not sent again.' );
 	}
 
@@ -278,13 +280,13 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_nothing_pending_clears_the_clock() {
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertNotNull( $this->clock() );
 
-		$this->run_check( null, null );
+		$this->check_with_plugin( null, null );
 		$this->assertNull( $this->clock() );
 
-		$this->run_check( null, '100.0.0' );
+		$this->check_with_plugin( null, '100.0.0' );
 		$this->assertCount( 2, $this->received() );
 		$this->assertNotNull( $this->clock() );
 	}
@@ -294,14 +296,14 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_deferred_instance_gets_no_reminder() {
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->backdate( 'a', 2 * DAY_IN_SECONDS );
 		$state                              = sc_wpun()->network_context()->get_option( 'sc_wpun_state' );
 		$state['channels']['a']['retry_at'] = time() + HOUR_IN_SECONDS;
 		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 		$clock = $this->clock();
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 1, $this->received() );
 		$this->assertSame( $clock, $this->clock() );
@@ -313,7 +315,7 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_a_disabled_instance_gets_no_reminder() {
 		$this->add( 'a', 'daily', 'succeed', false );
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 0, $this->received() );
 		$this->assertNull( $this->clock() );
@@ -326,13 +328,13 @@ class Test_Reminders extends WPUN_Test_Case {
 		$this->add( 'a', 'daily' );
 		sc_wpun()->state()->skip_pending( 'a' );
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 0, $this->received() );
 		$this->assertEqualsWithDelta( time(), $this->clock(), 5 );
 
 		$this->backdate( 'a', DAY_IN_SECONDS + 60 );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 		$this->assertTrue( $this->received()[0]->is_reminder() );
 	}
@@ -342,16 +344,16 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_skip_restarts_an_old_clock() {
 		$this->add( 'a', 'weekly' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 
 		$this->backdate( 'a', 2 * WEEK_IN_SECONDS ); // Switched off for a while, with the clock left behind.
 		sc_wpun()->state()->skip_pending( 'a' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 		$this->assertEqualsWithDelta( time(), $this->clock(), 5 );
 
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 	}
 
@@ -365,7 +367,7 @@ class Test_Reminders extends WPUN_Test_Case {
 		$state['channels']['a']['last_reminder'] = time() - 3 * DAY_IN_SECONDS;
 		sc_wpun()->network_context()->update_option( 'sc_wpun_state', $state );
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 0, $this->received() );
 	}
@@ -375,12 +377,12 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_failed_reminder_is_retried() {
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->backdate( 'a', DAY_IN_SECONDS + 60 );
 		$clock = $this->clock();
 		$this->add( 'a', 'daily', 'fail' );
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 2, $this->received() );
 		$this->assertTrue( $this->received()[1]->is_reminder() );
@@ -388,7 +390,7 @@ class Test_Reminders extends WPUN_Test_Case {
 		$this->assertFalse( $this->stored_state()['channels']['a']['last_result']['success'] );
 
 		$this->add( 'a', 'daily', 'succeed' );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 3, $this->received() );
 		$this->assertTrue( $this->received()[2]->is_reminder() );
@@ -402,10 +404,10 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_the_setting_is_per_instance() {
 		$this->add( 'weekly', 'weekly' );
 		$this->add( 'never', 'never' );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->backdate( 'weekly', WEEK_IN_SECONDS + 60 );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 2, $this->received( 'weekly' ) );
 		$this->assertCount( 1, $this->received( 'never' ) );
@@ -417,7 +419,7 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_test_send_does_not_touch_the_clock() {
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->backdate( 'a', 3 * HOUR_IN_SECONDS );
 		$clock = $this->clock();
 
@@ -432,17 +434,17 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_every_check_reminds_on_the_next_check() {
 		$this->add( 'a', 'every_check' );
 
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 		$this->assertFalse( $this->received()[0]->is_reminder() );
 		$this->assertEqualsWithDelta( time(), $this->clock(), 5 );
 
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 2, $this->received(), 'No interval: due at once.' );
 		$this->assertTrue( $this->received()[1]->is_reminder() );
 		$this->assertSame( array( 'core', 'hello.php' ), $this->keys( $this->received()[1] ) );
 
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 3, $this->received() );
 		$this->assertTrue( $this->received()[2]->is_reminder() );
 	}
@@ -452,9 +454,9 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_every_check_folds_new_items_into_the_reminder() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check( null );
+		$this->check_with_plugin( null );
 
-		$this->run_check( '2.0.0' );
+		$this->check_with_plugin( '2.0.0' );
 
 		$this->assertCount( 2, $this->received(), 'The first check and one reminder.' );
 		$this->assertTrue( $this->received()[1]->is_reminder() );
@@ -467,7 +469,7 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_every_check_force_is_a_normal_message() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$clock = $this->clock();
 
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
@@ -485,11 +487,11 @@ class Test_Reminders extends WPUN_Test_Case {
 		$this->add( 'a', 'every_check' );
 		sc_wpun()->state()->skip_pending( 'a' );
 
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 0, $this->received() );
 		$this->assertEqualsWithDelta( time(), $this->clock(), 5 );
 
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 1, $this->received() );
 		$this->assertTrue( $this->received()[0]->is_reminder() );
 	}
@@ -499,18 +501,18 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_every_check_failed_reminder_is_retried() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->backdate( 'a', HOUR_IN_SECONDS );
 		$clock = $this->clock();
 		$this->add( 'a', 'every_check', 'fail' );
 
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 2, $this->received() );
 		$this->assertTrue( $this->received()[1]->is_reminder() );
 		$this->assertSame( $clock, $this->clock() );
 
 		$this->add( 'a', 'every_check', 'succeed' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertCount( 3, $this->received() );
 		$this->assertTrue( $this->received()[2]->is_reminder() );
 		$this->assertGreaterThan( $clock, $this->clock() );
@@ -521,14 +523,14 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_every_check_nothing_pending_clears_the_clock() {
 		$this->add( 'a', 'every_check' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->assertNotNull( $this->clock() );
 
-		$this->run_check( null, null );
+		$this->check_with_plugin( null, null );
 		$this->assertNull( $this->clock() );
 		$this->assertCount( 1, $this->received() );
 
-		$this->run_check( null, '100.0.0' );
+		$this->check_with_plugin( null, '100.0.0' );
 		$this->assertCount( 2, $this->received() );
 		$this->assertFalse( $this->received()[1]->is_reminder() );
 	}
@@ -641,11 +643,11 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_reminder_is_due_exactly_at_the_interval_less_the_tolerance() {
 		$this->add( 'a', 'daily' ); // The check frequency is daily: 12 hours of tolerance.
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->start_of_a_second();
 		$this->backdate( 'a', DAY_IN_SECONDS - 12 * HOUR_IN_SECONDS );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 2, $this->received() );
 		$this->assertTrue( $this->received()[1]->is_reminder() );
@@ -657,10 +659,10 @@ class Test_Reminders extends WPUN_Test_Case {
 	public function test_an_unknown_check_frequency_has_no_tolerance() {
 		sc_wpun()->network_context()->update_option( 'sc_wpun_settings', $this->global_settings( array( 'frequency' => 'schedule_from_a_removed_plugin' ) ) );
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->backdate( 'a', DAY_IN_SECONDS - 60 );
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 1, $this->received() );
 	}
@@ -670,7 +672,7 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_reminder_keeps_the_source_of_the_check() {
 		$this->add( 'a', 'daily' );
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->backdate( 'a', DAY_IN_SECONDS + 60 );
 
 		sc_wpun()->update_checker()->run_manual_check();
@@ -684,10 +686,10 @@ class Test_Reminders extends WPUN_Test_Case {
 	 */
 	public function test_a_reminder_of_routed_items_is_a_list() {
 		sc_wpun_channels()->save( new Channel_Instance( 'a', 'remtest', 'A', true, array(), array( 'types' => array( 'plugin' ), 'remind' => 'daily' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
-		$this->run_check();
+		$this->check_with_plugin();
 		$this->backdate( 'a', DAY_IN_SECONDS + 60 );
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertTrue( $this->received()[1]->is_reminder() );
 		$this->assertSame( array( 0 ), array_keys( $this->received()[1]->get_items() ) );
@@ -702,7 +704,7 @@ class Test_Reminders extends WPUN_Test_Case {
 		sc_wpun()->state()->skip_pending( 'gone' );
 		$this->add( 'b', 'never' );
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 1, $this->received( 'b' ) );
 		$this->assertTrue( $this->stored_state()['channels']['gone']['skip_pending'], 'The skip waits for the channel.' );
@@ -729,7 +731,7 @@ class Test_Reminders extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertSame( array( 0 ), $kept );
 	}
@@ -746,7 +748,7 @@ class Test_Reminders extends WPUN_Test_Case {
 		);
 		$this->add( 'a', 'never' );
 
-		$this->run_check();
+		$this->check_with_plugin();
 
 		$this->assertCount( 1, $this->received() );
 	}

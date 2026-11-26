@@ -133,23 +133,7 @@ class Test_Extension_Api extends WPUN_Test_Case {
 		sc_wpun()->channels_tab()->render();
 		$html = (string) ob_get_clean();
 
-		$doc = new DOMDocument();
-		libxml_use_internal_errors( true );
-		$doc->loadHTML( '<html><body>' . $html . '</body></html>' );
-		libxml_clear_errors();
-
-		return new DOMXPath( $doc );
-	}
-
-	/**
-	 * Run an update check with the given updates pending.
-	 *
-	 * @param string|null $core    Core version offered.
-	 * @param array       $plugins Plugin updates.
-	 */
-	private function run_check( $core = null, array $plugins = array() ) {
-		$this->set_updates( $core, $plugins );
-		sc_wpun()->update_checker()->do_update_check();
+		return $this->dom( $html );
 	}
 
 	/**
@@ -224,7 +208,7 @@ class Test_Extension_Api extends WPUN_Test_Case {
 
 		$this->assertFalse( ( new Channel_Registry() )->has( Addon_Channel::TYPE ) );
 		$this->assertArrayNotHasKey( Addon::ITEM_TYPE, WPUN\Item_Types::all() );
-		$this->run_check();
+		$this->run_check( null );
 		$this->assertSame( array(), sc_wpun()->update_checker()->last_notification()->get_items() );
 	}
 
@@ -525,7 +509,7 @@ class Test_Extension_Api extends WPUN_Test_Case {
 		$this->assertArrayNotHasKey( 'failed', $seen );
 
 		$seen['fail'] = true;
-		$this->run_check( '99.1.0' );
+		$this->run_check( '99.1.0', array(), false );
 		$this->assertSame( array( 'No.', true, 'email' ), $seen['failed'] );
 		$this->assertSame( 'no', sc_wpun()->update_checker()->last_results()['email']->get_code() );
 		$this->assertSame( 0, $this->sent_mail_count() );

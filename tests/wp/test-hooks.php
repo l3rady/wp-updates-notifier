@@ -66,14 +66,6 @@ class Test_Hooks extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Run the update check with a clean mailer.
-	 */
-	private function run_check() {
-		reset_phpmailer_instance();
-		sc_wpun()->update_checker()->do_update_check();
-	}
-
-	/**
 	 * Run a callback while E_USER_NOTICE (what WP_DEBUG logging raises) is captured.
 	 *
 	 * @param callable $callback What to run.
@@ -96,7 +88,7 @@ class Test_Hooks extends WPUN_Test_Case {
 	}
 
 	/**
-	 * An item.
+	 * An item. A short-hand for make_item() with this argument shape.
 	 *
 	 * @param string $type Type.
 	 * @param string $key  Key.
@@ -104,7 +96,7 @@ class Test_Hooks extends WPUN_Test_Case {
 	 * @return Notification_Item
 	 */
 	private function item( $type, $key, $available = '2.0' ) {
-		return new Notification_Item(
+		return $this->make_item(
 			array(
 				'type'            => $type,
 				'key'             => $key,
@@ -129,12 +121,12 @@ class Test_Hooks extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A notification with one item.
+	 * A notification with one item. A short-hand for make_notification().
 	 *
 	 * @return Notification
 	 */
 	private function notification() {
-		return new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array( $this->item( 'core', 'core' ) ) );
+		return $this->make_notification( array( $this->item( 'core', 'core' ) ) );
 	}
 
 	/**
@@ -242,7 +234,7 @@ class Test_Hooks extends WPUN_Test_Case {
 			3
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertSame( array( true, '99.0.0', wp_get_wp_version() ), $args );
 		$this->assertCount( 0, sc_wpun()->update_checker()->last_notification()->get_items_of_type( 'core' ) );
@@ -298,16 +290,16 @@ class Test_Hooks extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertStringContainsString( 'Item php', $this->sent_mail()->body );
 		$this->assertSame( '8.4', $this->notified_version( 'php', 'php' ) );
 
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( 0, $this->sent_mail_count() );
 
 		$add = false;
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( array(), $this->channel_notified()['php'] );
 	}
 
@@ -328,15 +320,15 @@ class Test_Hooks extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
 
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( 0, $this->sent_mail_count(), 'Not sent again while it is still reported.' );
 		$this->assertSame( '2.0', $this->notified_version( 'plugin', 'premium/premium.php' ) );
 
 		$add = false;
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertArrayNotHasKey( 'premium/premium.php', $this->channel_notified()['plugin'] ?? array(), 'Forgotten once no longer reported.' );
 	}
 
@@ -357,11 +349,11 @@ class Test_Hooks extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( '3', $this->notified_version( 'ghost', 'g' ) );
 
 		$add = false;
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( '3', $this->notified_version( 'ghost', 'g' ) );
 	}
 
@@ -389,7 +381,7 @@ class Test_Hooks extends WPUN_Test_Case {
 			2
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertContains( array( true, 'hello.php' ), $seen );
 		$this->assertStringNotContainsString( 'Hello Dolly', $this->sent_mail()->body );
@@ -414,7 +406,7 @@ class Test_Hooks extends WPUN_Test_Case {
 		);
 		add_filter( 'sc_wpun_should_notify_item', '__return_false' );
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 		$this->assertSame( '8.3', $this->notified_version( 'php', 'php' ) );
@@ -433,7 +425,7 @@ class Test_Hooks extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertStringNotContainsString( '99.0.0', $this->sent_mail()->body );
 		$this->assertStringContainsString( 'Hello Dolly', $this->sent_mail()->body );
@@ -444,7 +436,7 @@ class Test_Hooks extends WPUN_Test_Case {
 		add_filter( 'sc_wpun_notification', '__return_false' );
 		$this->setExpectedIncorrectUsage( 'sc_wpun_notification' );
 		$this->save_settings();
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertCount( 2, sc_wpun()->update_checker()->last_notification()->get_items() );
 	}
 
@@ -477,7 +469,7 @@ class Test_Hooks extends WPUN_Test_Case {
 			2
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertSame( array( 'before', 'items', array( Notification::class, array( 'email' ), true ) ), $log );
 	}
@@ -498,7 +490,7 @@ class Test_Hooks extends WPUN_Test_Case {
 			2
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertSame( array(), $results );
 	}
@@ -541,7 +533,7 @@ class Test_Hooks extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertSame( 0, $this->sent_mail_count() );
 		$this->assertSame( 1, $sent );
@@ -562,11 +554,11 @@ class Test_Hooks extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( '', $this->notified_version( 'core', 'core' ) );
 
 		remove_all_filters( 'sc_wpun_pre_send' );
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
 
@@ -625,7 +617,7 @@ class Test_Hooks extends WPUN_Test_Case {
 			sc_wpun_channels()->save( $instance );
 		}
 		$this->set_updates( '99.0.0' );
-		$this->run_check();
+		$this->run_update_check();
 		sc_wpun()->dispatcher()->send_one( $this->notification(), $off );
 
 		$this->assertSame(
@@ -680,11 +672,11 @@ class Test_Hooks extends WPUN_Test_Case {
 		);
 		$this->save_settings();
 		$this->set_updates();
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( array(), $calls, 'Nothing was sent.' );
 
 		$this->set_updates( '99.0.0' );
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( array( array( array( 'email' ), Notification::class ) ), $calls );
 	}
 
@@ -712,7 +704,7 @@ class Test_Hooks extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$mail = $this->sent_mail();
 		$this->assertSame( 'Changed subject', $mail->subject );

@@ -49,6 +49,7 @@ $GLOBALS['wpun_channels_snapshot'] = sc_wpun()->channels()->snapshot();
 require_once __DIR__ . '/wp/traits/trait-wpun-builders.php';
 require_once __DIR__ . '/wp/traits/trait-wpun-markup.php';
 require_once __DIR__ . '/wp/traits/trait-wpun-environment.php';
+require_once __DIR__ . '/wp/traits/trait-wpun-checks.php';
 
 // Needs WP_UnitTestCase, so it loads after core's bootstrap.
 require_once __DIR__ . '/wp/class-wpun-test-case.php';

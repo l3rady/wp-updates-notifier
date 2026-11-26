@@ -53,9 +53,12 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 	/**
 	 * Run an update check with an update pending.
 	 *
+	 * It stays local, with its own name: it goes through `Update_Checker::run_check()` with a source and returns
+	 * its plan, where the base `run_check()` calls `do_update_check()` and returns the results.
+	 *
 	 * @return array The plan.
 	 */
-	private function run_check() {
+	private function run_test_check() {
 		$this->set_updates( '99.0.0' );
 		return sc_wpun()->update_checker()->run_check( 'test' );
 	}
@@ -92,14 +95,14 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 	}
 
 	/**
-	 * A real notification with one item.
+	 * A real notification with one item. A short-hand for make_notification().
 	 *
 	 * @param bool $test Whether it is a test.
 	 * @return Notification
 	 */
 	private function notification( $test = false ) {
 		$items = $test ? array() : array(
-			new Notification_Item(
+			$this->make_item(
 				array(
 					'type'            => 'plugin',
 					'key'             => 'hello.php',
@@ -110,7 +113,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 			),
 		);
 
-		return new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', $items, array( 'is_test' => $test ) );
+		return $this->make_notification( $items, array( 'is_test' => $test ) );
 	}
 
 	/**
@@ -160,7 +163,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 	public function test_a_hold_skips_the_instance_until_the_time_and_then_delivers() {
 		$this->add();
 
-		$plan = $this->run_check();
+		$plan = $this->run_test_check();
 
 		$this->assertSame( 1, $this->calls() );
 		$this->assertEqualsWithDelta( time() + 3600, $this->held_until(), 5 );
@@ -168,7 +171,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 		$this->assertSame( Update_Checker::STATUS_WAITING, $plan['a']['status'] );
 		$this->assertSame( $this->held_until(), $plan['a']['retry_at'] );
 
-		$plan = $this->run_check();
+		$plan = $this->run_test_check();
 
 		$this->assertSame( 1, $this->calls(), 'Not asked again while held.' );
 		$this->assertSame( Update_Checker::STATUS_WAITING, $plan['a']['status'] );
@@ -177,7 +180,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 		$this->channel->defer_offset = 0;
 		$this->add( 'a', 'succeed' );
 		$this->end_hold();
-		$this->run_check();
+		$this->run_test_check();
 
 		$this->assertSame( 2, $this->calls() );
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core', 'a' ) );
@@ -191,7 +194,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 		$this->add();
 		$this->add( 'b', 'succeed' );
 
-		$this->run_check();
+		$this->run_test_check();
 
 		$this->assertNotNull( $this->held_until() );
 		$this->assertNull( $this->held_until( 'b' ) );
@@ -203,7 +206,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 	 */
 	public function test_a_hold_is_not_a_failure() {
 		$this->add( 'a', 'succeed', array( 'remind' => 'every_check' ) );
-		$this->run_check();
+		$this->run_test_check();
 		$before = $this->stored_state()['channels']['a'];
 		$this->assertTrue( $before['last_result']['success'] );
 
@@ -303,11 +306,11 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 	 */
 	public function test_force_and_reminders_respect_the_hold() {
 		$this->add( 'a', 'defer', array( 'remind' => 'every_check' ) );
-		$this->run_check();
+		$this->run_test_check();
 
 		$plan = sc_wpun()->update_checker()->run_check( 'cli', false, true );
 		$this->assertSame( Update_Checker::STATUS_WAITING, $plan['a']['status'] );
-		$plan = $this->run_check();
+		$plan = $this->run_test_check();
 		$this->assertSame( Update_Checker::STATUS_WAITING, $plan['a']['status'] );
 
 		$this->assertSame( 1, $this->calls() );
@@ -319,15 +322,15 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 	public function test_cap_and_past_time() {
 		$this->add();
 		$this->channel->defer_offset = 10 * YEAR_IN_SECONDS;
-		$this->run_check();
+		$this->run_test_check();
 		$this->assertEqualsWithDelta( time() + State::MAX_RETRY_AFTER, $this->held_until(), 5 );
 
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$this->channel->received     = array();
 		$this->channel->defer_offset = -5;
-		$this->run_check();
+		$this->run_test_check();
 		$this->assertNull( $this->held_until() );
-		$this->run_check();
+		$this->run_test_check();
 		$this->assertSame( 2, $this->calls(), 'Nothing held it.' );
 		$this->assertSame( '', $this->notified_version( 'core', 'core', 'a' ) );
 	}
@@ -339,8 +342,8 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 		$this->add();
 		$this->add( 'b', 'succeed' );
 
-		$this->run_check();
-		$this->run_check();
+		$this->run_test_check();
+		$this->run_test_check();
 
 		$this->assertSame( 1, $this->calls( 'a' ) );
 		$this->assertSame( 1, $this->calls( 'b' ) );
@@ -355,7 +358,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 		$this->assertNull( sc_wpun_instance_waiting_until( 'a' ), 'Nothing yet.' );
 		$this->assertNull( sc_wpun_instance_waiting_until( 'unknown' ) );
 
-		$this->run_check();
+		$this->run_test_check();
 		$held = $this->held_until();
 		$this->assertSame( $held, sc_wpun_instance_waiting_until( 'a' ), 'A hold.' );
 
@@ -386,7 +389,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 		foreach ( array( 'succeed', 'fail' ) as $behaviour ) {
 			sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 			$this->add();
-			$this->run_check();
+			$this->run_test_check();
 			$this->assertNotNull( $this->held_until() );
 
 			$this->add( 'a', $behaviour );
@@ -403,7 +406,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 	 */
 	public function test_a_new_hold_replaces_the_old() {
 		$this->add();
-		$this->run_check();
+		$this->run_test_check();
 		$this->channel->defer_offset = 7200;
 		sc_wpun()->dispatcher()->send_one( $this->notification(), sc_wpun_channels()->get( 'a' ) );
 
@@ -472,7 +475,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_test_check();
 
 		$this->assertSame( 0, $this->calls() );
 		$this->assertSame( $until, $this->held_until() );
@@ -548,7 +551,7 @@ class Test_Deferred_Result extends WPUN_Test_Case {
 	 */
 	public function test_status_report_cli_and_debug_info_show_the_hold() {
 		$this->add();
-		$this->run_check();
+		$this->run_test_check();
 
 		$channel = sc_wpun()->status_report()->channels()[0];
 		$this->assertSame( WPUN\Status_Report::format_time( $this->held_until() ), $channel['held_until'] );

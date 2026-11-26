@@ -62,14 +62,6 @@ class Test_Retry_After extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Run an update check with an update pending.
-	 */
-	private function run_check() {
-		$this->set_updates( '99.0.0' );
-		sc_wpun()->update_checker()->do_update_check();
-	}
-
-	/**
 	 * How many times an instance was asked to send.
 	 *
 	 * @param string $id Id.

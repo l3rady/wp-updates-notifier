@@ -13,13 +13,13 @@ use WPUN\Notification;
 class Test_Last_Result extends WPUN_Test_Case {
 
 	/**
-	 * A notification.
+	 * A notification without items. A short-hand for make_notification().
 	 *
 	 * @param bool $is_test Whether it is a test.
 	 * @return Notification
 	 */
 	private function notification( $is_test = false ) {
-		return new Notification( 'Site', 'http://example.org', 'http://example.org/wp-admin/update-core.php', array(), array( 'is_test' => $is_test ) );
+		return $this->make_notification( array(), array( 'is_test' => $is_test ) );
 	}
 
 	/**
@@ -48,14 +48,6 @@ class Test_Last_Result extends WPUN_Test_Case {
 	 */
 	private function last_result() {
 		return $this->stored_state()['channels']['email']['last_result'] ?? null;
-	}
-
-	/**
-	 * Run an update check with an update pending.
-	 */
-	private function run_check() {
-		$this->set_updates( '99.0.0' );
-		sc_wpun()->update_checker()->do_update_check();
 	}
 
 	/**

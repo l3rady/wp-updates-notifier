@@ -77,19 +77,6 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Run the update check with a core update pending.
-	 *
-	 * @return array Results by instance id.
-	 */
-	private function run_check() {
-		reset_phpmailer_instance();
-		$this->set_updates( '99.0.0' );
-		sc_wpun()->update_checker()->do_update_check();
-
-		return sc_wpun()->update_checker()->last_results();
-	}
-
-	/**
 	 * The raw stored option, as text.
 	 *
 	 * @return string
@@ -381,7 +368,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	 */
 	public function test_a_test_send_uses_the_external_recipient() {
 		$this->add_source( array( 'SC_WPUN_CHANNEL_EMAIL__TO' => 'vault@example.org' ) );
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->become_admin();
 		$_POST['_wpnonce'] = wp_create_nonce( 'sc_wpun_send_test_email' );
 		$_POST['id']       = 'email';
 		reset_phpmailer_instance();
@@ -411,7 +398,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 		$this->assertSame( 'changed', sc_wpun()->network_context()->get_option( 'sc_wpun_channels' )['vault']['settings']['label'] );
 
 		// The edit form shows no value for a secret field.
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->become_admin();
 		$_GET['action'] = 'edit';
 		$_GET['id']     = 'vault';
 		ob_start();
@@ -423,7 +410,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 
 		// Problems, the settings page notice and Site Health.
 		$this->assertStringNotContainsString( self::SECRET, wp_json_encode( sc_wpun()->config()->problems() ) );
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->become_admin();
 		sc_wpun()->settings_page()->admin_settings_init();
 		ob_start();
 		sc_wpun()->settings_page()->settings_page();
@@ -489,9 +476,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 	 * The context carries the site, so a filter can answer differently per site.
 	 */
 	public function test_values_can_differ_per_site() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Needs multisite (make test-wp-ms).' );
-		}
+		$this->require_multisite();
 		$this->set_network_activated( false ); // Network-activated, every site reads the main site's values.
 		add_filter(
 			'sc_wpun_config_value',
@@ -606,7 +591,7 @@ class Test_Config_Channels extends WPUN_Test_Case {
 		$this->assertStringContainsString( 'RuntimeException', $problems );
 		$this->assertStringNotContainsString( 'SECRET', $problems );
 
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->become_admin();
 		sc_wpun()->settings_page()->admin_settings_init();
 		ob_start();
 		sc_wpun()->settings_page()->settings_page();

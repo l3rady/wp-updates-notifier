@@ -50,14 +50,6 @@ class Test_Delivery_State extends WPUN_Test_Case {
 	}
 
 	/**
-	 * Run the check.
-	 */
-	private function run_check() {
-		reset_phpmailer_instance();
-		sc_wpun()->update_checker()->do_update_check();
-	}
-
-	/**
 	 * Addresses mail went to in the last run.
 	 *
 	 * @return string[]
@@ -80,7 +72,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		sc_wpun()->network_context()->delete_option( 'sc_wpun_state' );
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertSame( '99.0.0', $this->notified_version( 'core', 'core' ) );
@@ -105,7 +97,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$results = sc_wpun()->update_checker()->last_results();
 		$this->assertTrue( $results['email']->is_success() );
@@ -114,7 +106,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		$this->assertSame( array(), $this->channel_notified( 'flaky' ) );
 
 		remove_all_filters( 'wp_mail' );
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertSame( array( 'flaky@example.org' ), $this->recipients() );
 		$this->assertStringContainsString( 'Hello Dolly', $this->sent_mail()->body );
@@ -147,7 +139,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 			)
 		);
 		$this->fake_http( 'hooks.slack.com', $this->fake_response( 200, 'ok' ) ); // The 1.6 fixture has Slack on.
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$body = $this->sent_mail()->body;
@@ -163,7 +155,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 
 		// Added after the run: starts clean and gets everything pending.
 		$this->add_email( 'later', 'later@example.org' );
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( array( 'later@example.org' ), $this->recipients() );
 		$this->assertStringContainsString( 'Hello Dolly', $this->sent_mail()->body );
 	}
@@ -180,7 +172,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		$this->assertArrayNotHasKey( 'email', $this->stored_state()['channels'] );
 
 		$this->add_email( 'email', 'new@example.org' );
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertSame( 1, $this->sent_mail_count() );
 	}
@@ -193,7 +185,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		$this->save_channel_state( 'ghost', array( 'core' => array( 'core' => '1.0' ) ) );
 		$this->set_updates();
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertArrayNotHasKey( 'ghost', $this->stored_state()['channels'] );
 	}
@@ -206,14 +198,14 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		$this->save_channel_state( 'email', array( 'plugin' => array( 'hello.php' => '2.0.0' ) ) );
 		$this->set_updates();
 
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( 0, $this->sent_mail_count() );
 		$this->assertSame( array(), $this->channel_notified()['plugin'] );
 
 		$this->save_settings( array( 'email_notifications' => 1 ) );
 		$this->save_channel_state( 'email', array() );
 		$this->set_updates( null, array( 'hello.php' => array( 'new_version' => '3.0.0' ) ) );
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertSame( '3.0.0', $this->notified_version( 'plugin', 'hello.php' ) );
 	}
@@ -248,7 +240,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 			)
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$notified = $this->channel_notified();
 		$this->assertSame( '99.0.0', $notified['core']['core'], 'No core data: untouched.' );
@@ -396,7 +388,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		$this->set_updates( '99.0.0', array( 'hello.php' => array( 'new_version' => '2.0.0' ) ) );
 		sc_wpun()->state()->skip_pending( 'email' );
 
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( 0, $this->sent_mail_count() );
 		$this->assertSame( '2.0.0', $this->notified_version( 'plugin', 'hello.php' ) );
 		$this->assertFalse( $this->stored_state()['channels']['email']['skip_pending'] );
@@ -408,13 +400,13 @@ class Test_Delivery_State extends WPUN_Test_Case {
 				self::OWN_PLUGIN => array( 'new_version' => '4.5.6' ),
 			)
 		);
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertSame( 1, $this->sent_mail_count() );
 		$this->assertStringNotContainsString( 'Hello Dolly', $this->sent_mail()->body );
 
 		$this->save_settings( array( 'email_notifications' => 0 ) );
 		sc_wpun()->state()->skip_pending( 'email' );
-		$this->run_check();
+		$this->run_update_check();
 		$this->assertTrue( $this->stored_state()['channels']['email']['skip_pending'] );
 		$this->assertSame( array(), $this->channel_notified() );
 	}
@@ -428,7 +420,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 		$this->set_updates( '99.0.0' );
 		sc_wpun()->state()->skip_pending( 'chat' );
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertTrue( $this->stored_state()['channels']['chat']['skip_pending'] );
 	}
@@ -480,7 +472,7 @@ class Test_Delivery_State extends WPUN_Test_Case {
 			}
 		);
 
-		$this->run_check();
+		$this->run_update_check();
 
 		$this->assertStringNotContainsString( 'Hello Dolly', $this->sent_mail()->body );
 		$this->assertStringContainsString( 'WP Updates Notifier from version ', $this->sent_mail()->body );
