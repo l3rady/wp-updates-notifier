@@ -123,6 +123,7 @@ class Test_Legacy_Facade extends WPUN_Test_Case {
 		set_current_screen( 'dashboard' );
 		remove_action( 'admin_init', 'send_frame_options_header' ); // Headers are already sent in a test.
 		remove_action( 'admin_init', 'wp_admin_headers' );
+		remove_action( 'admin_init', '_wp_admin_bar_init' ); // Loads core scripts that a WordPress 6.7 test checkout lacks.
 		do_action( 'admin_init' );
 		do_action( 'admin_menu' );
 		do_action( \WPUN\Scheduler::CRON_NAME );
