@@ -1,0 +1,104 @@
+<?php
+/**
+ * Public symbols that all have @since, or are left out of the rule. Nothing here may be reported.
+ */
+
+namespace Since_Fixture\Good;
+
+/**
+ * A public class.
+ *
+ * @since 1.0.0
+ */
+final class Documented {
+
+	/**
+	 * Public.
+	 *
+	 * @since 1.0.0
+	 */
+	public function shown() {}
+
+	/**
+	 * Public without a modifier.
+	 *
+	 * @since 1.0.0
+	 */
+	static function plain() {}
+
+	/**
+	 * Left out: internal.
+	 *
+	 * @internal
+	 */
+	public function plumbing() {}
+
+	// No doc block at all, but private.
+	private function hidden() {}
+
+	protected function inherited() {}
+
+	/**
+	 * Left out: a closure and an anonymous class inside a documented method.
+	 *
+	 * @since 1.0.0
+	 */
+	public function inner() {
+		$closure = function () {};
+		$arrow   = fn() => 1;
+		$object  = new class() {
+			public function nobody_sees_this() {}
+		};
+
+		return array( $closure, $arrow, $object );
+	}
+}
+
+/**
+ * Left out: every method of an internal class.
+ *
+ * @internal
+ */
+class Plumbing {
+
+	public function undocumented() {}
+}
+
+/**
+ * Modifiers may sit between the doc block and the declaration.
+ *
+ * @since 2.0.0
+ */
+abstract class Abstracted {
+
+	/**
+	 * Abstract.
+	 *
+	 * @since 2.0.0
+	 */
+	abstract public function required();
+}
+
+/**
+ * A function.
+ *
+ * @since 1.0.0
+ */
+function documented() {}
+
+/**
+ * Left out: internal.
+ *
+ * @internal
+ */
+function plumbing() {}
+
+$callback = function () {};
+
+/**
+ * Left out: the legacy facade, kept until 4.0.0 and not part of the API version.
+ */
+class SC_WP_Updates_Notifier {
+
+	public function run_init() {}
+}

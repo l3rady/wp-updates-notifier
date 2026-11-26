@@ -93,6 +93,8 @@ final class Config_Value {
 	/**
 	 * What var_dump() and print_r() show: the key and the source, never the value.
 	 *
+	 * @since 2.0.0
+	 *
 	 * @return array<string, string>
 	 */
 	public function __debugInfo(): array {
@@ -104,6 +106,8 @@ final class Config_Value {
 
 	/**
 	 * What serialize() keeps: the key and the source, never the value.
+	 *
+	 * @since 2.0.0
 	 *
 	 * @return array<string, string>
 	 */

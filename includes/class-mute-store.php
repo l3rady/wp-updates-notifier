@@ -39,6 +39,8 @@ final class Mute_Store {
 	/**
 	 * Constructor.
 	 *
+	 * @since 3.0.0
+	 *
 	 * @param Network_Context|null $context Where the options are stored; defaults to the current site setup.
 	 */
 	public function __construct( ?Network_Context $context = null ) {

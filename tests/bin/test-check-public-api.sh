@@ -49,4 +49,27 @@ if WPUN_INTERNAL_PATHS="$fixtures" php bin/check-public-api.php "$fixtures/good.
 	fail "the checker ran without finding any @internal"
 fi
 
+# Every public class, method and function needs @since. The fixtures are added to the internal paths next to
+# the plugin, so the scan still finds the plugin's own @internal symbols.
+since="$fixtures/since"
+export WPUN_INTERNAL_PATHS="wp-updates-notifier.php includes $since/good.txt"
+php bin/check-public-api.php "$fixtures/good.txt" > /dev/null || fail "a symbol with @since, or left out of the rule, was reported"
+
+WPUN_INTERNAL_PATHS="wp-updates-notifier.php includes $since/bad.txt"
+export WPUN_INTERNAL_PATHS
+if php bin/check-public-api.php "$fixtures/good.txt" 2> "$report" > /dev/null; then
+	fail "the since fixture passed"
+fi
+expected=0
+grep -n '// expect: ' "$since/bad.txt" | sed -E 's/^([0-9]+):.*\/\/ expect: (.*)$/\1 \2/' > "$work/expect"
+while IFS= read -r entry; do
+	line="${entry%% *}"
+	pattern="${entry#* }"
+	expected=$((expected + 1))
+	grep -q "since/bad.txt:$line: $pattern" "$report" || fail "line $line of the since fixture: expected \"$pattern\""
+done < "$work/expect"
+[ "$expected" -ge 5 ] || fail "the since fixture lost its expectations"
+[ "$(wc -l < "$report")" -eq "$expected" ] || fail "the since fixture: expected $expected problems, got: $(cat "$report")"
+unset WPUN_INTERNAL_PATHS
+
 echo "ok: public API checker"

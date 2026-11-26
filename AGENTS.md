@@ -64,6 +64,7 @@ their own throwaway sites and are safe.
 | A translatable string or translators comment was added, changed or removed | `make check-translations` | the "Changing a string" steps in `docs/contributing/translations.md`; never edit a `.l10n.php` file by hand |
 | A hook was added or changed: it has a doc block with `@since` | `make check-hooks` | `make hook-docs`; a new hook also gets its section in `wpun_hook_sections()` in `bin/hooks-scan.php` |
 | `modules/` and `examples/` use the public API only | `make check-public-api` | grow the public API; the module never reaches inside |
+| A public class, method or function has `@since` (or is tagged `@internal`) | `make check-public-api` | add the tag with the plugin release it ships in |
 | PHP 7.4 syntax, for example `[ $a, $b ] = …`, not `list()` | `make rector` | `make rector-fix` |
 | WordPress Coding Standards, warnings included | `make lint` | `make fix` |
 | PHPStan level 8; `phpstan-baseline.neon` only shrinks | `make stan` | fix the code |

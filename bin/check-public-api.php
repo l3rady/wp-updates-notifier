@@ -19,6 +19,13 @@
  *  - Reflection, Closure::bind(), ->bindTo() and ->call(), which reach past visibility. ->call() is any method
  *    of that name, so it can be a false positive too.
  *
+ * The internal paths are also checked for the other half of the rule: every class, interface, trait and enum, every
+ * public method (no visibility counts as public) and every function that is not `@internal` needs a doc block with an
+ * `@since` tag. Methods of an `@internal` class, private and protected methods, closures and anonymous classes are
+ * left out, and so is the legacy SC_WP_Updates_Notifier facade: it stays for backwards compatibility until 4.0.0 and
+ * is not part of the API version. A doc block counts only when nothing but modifiers sits between it and the
+ * declaration. This runs once, whatever files are given.
+ *
  * Set the paths of what to read internals from with the environment variable WPUN_INTERNAL_PATHS
  * (space separated); the default is the plugin's own.
  */
@@ -225,6 +232,104 @@ function wpun_api_internals( array $paths ): array {
 }
 
 /**
+ * Public symbols that have no @since tag.
+ *
+ * @param string[] $paths Where to read.
+ * @return string[] Problems as "file:line: message".
+ */
+function wpun_api_since_gaps( array $paths ): array {
+	$problems  = array();
+	$modifiers = array( T_PUBLIC, T_PROTECTED, T_PRIVATE, T_STATIC, T_ABSTRACT, T_FINAL, T_VAR, T_READONLY );
+
+	foreach ( wpun_api_files( $paths ) as $file ) {
+		$tokens   = wpun_api_tokens( (string) file_get_contents( $file ) );
+		$total    = count( $tokens );
+		$depth    = 0;
+		$doc      = null;        // The last doc block, if nothing but modifiers came since.
+		$mods     = array();     // Modifiers seen since then.
+		$classes  = array();     // Open classes: array( name, skip, body depth ), the innermost last.
+		$awaiting = null;        // Class declared whose "{" has not come yet: array( name, skip ).
+
+		for ( $i = 0; $i < $total; $i++ ) {
+			$token = $tokens[ $i ];
+
+			if ( T_DOC_COMMENT === $token[0] ) {
+				$doc  = array(
+					'internal' => 1 === preg_match( '/^\s*\*\s*@internal\b/m', $token[1] ),
+					'since'    => 1 === preg_match( '/^\s*\*\s*@since\b/m', $token[1] ),
+				);
+				$mods = array();
+				continue;
+			}
+			if ( in_array( $token[0], $modifiers, true ) ) {
+				$mods[] = $token[0];
+				continue;
+			}
+			if ( defined( 'T_ATTRIBUTE' ) && T_ATTRIBUTE === $token[0] ) {
+				// Skip an attribute, it may sit between the doc block and the declaration.
+				for ( $nest = 0; $i < $total; $i++ ) {
+					$nest += '[' === $tokens[ $i ][0] || T_ATTRIBUTE === $tokens[ $i ][0] ? 1 : 0;
+					$nest -= ']' === $tokens[ $i ][0] ? 1 : 0;
+					if ( 0 === $nest ) {
+						break;
+					}
+				}
+				continue;
+			}
+
+			$documented = null !== $doc && $doc['since'];
+			$internal   = null !== $doc && $doc['internal'];
+			$line       = $token[2];
+			$current    = array() === $classes ? null : $classes[ count( $classes ) - 1 ];
+
+			if ( '{' === $token[0] || T_CURLY_OPEN === $token[0] || T_DOLLAR_OPEN_CURLY_BRACES === $token[0] ) {
+				++$depth;
+				if ( '{' === $token[0] && null !== $awaiting ) {
+					$classes[] = array( $awaiting[0], $awaiting[1], $depth );
+					$awaiting  = null;
+				}
+			} elseif ( '}' === $token[0] ) {
+				if ( null !== $current && $depth === $current[2] ) {
+					array_pop( $classes );
+				}
+				--$depth;
+			}
+
+			if ( in_array( $token[0], array( T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM ), true ) && ! wpun_api_is( $tokens[ $i - 1 ] ?? null, T_DOUBLE_COLON ) ) {
+				if ( wpun_api_is( $tokens[ $i - 1 ] ?? null, T_NEW ) ) {
+					$awaiting = array( 'class@anonymous', true );
+				} elseif ( wpun_api_is( $tokens[ $i + 1 ] ?? null, 'NAME' ) ) {
+					$name     = $tokens[ $i + 1 ][1];
+					$legacy   = 'sc_wp_updates_notifier' === strtolower( $name );
+					$awaiting = array( $name, $internal || $legacy );
+					if ( ! $internal && ! $legacy && ! $documented ) {
+						$problems[] = $file . ':' . $line . ': ' . $name . ' has no @since tag.';
+					}
+				}
+			} elseif ( T_FUNCTION === $token[0] ) {
+				$at = $i + 1;
+				if ( wpun_api_is( $tokens[ $at ] ?? null, '&' ) ) {
+					++$at;
+				}
+				if ( wpun_api_is( $tokens[ $at ] ?? null, 'NAME' ) && ! $internal && ! $documented ) {
+					$name = $tokens[ $at ][1];
+					if ( null === $current ) {
+						$problems[] = $file . ':' . $line . ': ' . $name . '() has no @since tag.';
+					} elseif ( $depth === $current[2] && ! $current[1] && ! array_intersect( $mods, array( T_PRIVATE, T_PROTECTED ) ) ) {
+						$problems[] = $file . ':' . $line . ': ' . $current[0] . '::' . $name . '() has no @since tag.';
+					}
+				}
+			}
+
+			$doc  = null;
+			$mods = array();
+		}
+	}
+
+	return $problems;
+}
+
+/**
  * Resolve a class name through the namespace and the imports.
  *
  * @param string                $name      Name as written.
@@ -421,7 +526,7 @@ if ( count( $internals['classes'] ) < 5 || array() === $internals['methods'] || 
 	exit( 2 );
 }
 
-$problems = array();
+$problems = wpun_api_since_gaps( $internal_paths );
 $files    = wpun_api_files( $paths );
 foreach ( $files as $file ) {
 	$problems = array_merge( $problems, wpun_api_check_file( $file, $internals ) );

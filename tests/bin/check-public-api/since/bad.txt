@@ -1,0 +1,51 @@
+<?php
+/**
+ * Public symbols without @since. A line that ends in an expect marker must be reported, and no other line.
+ */
+
+namespace Since_Fixture\Bad;
+
+class NoTag { // expect: NoTag has no @since tag
+
+	public function bare() {} // expect: NoTag::bare() has no @since tag
+
+	/**
+	 * A doc block without the tag.
+	 */
+	public function no_tag() {} // expect: NoTag::no_tag() has no @since tag
+
+	/**
+	 * Documented.
+	 *
+	 * @since 1.0.0
+	 */
+	public function fine() {}
+
+	/**
+	 * This doc block is the property's, so it does not count for the method below.
+	 *
+	 * @since 1.0.0
+	 */
+	private $property;
+
+	function plain() {} // expect: NoTag::plain() has no @since tag
+
+	private function hidden() {}
+}
+
+/**
+ * Documented.
+ *
+ * @since 1.0.0
+ */
+interface Contract {
+
+	public function method(); // expect: Contract::method() has no @since tag
+}
+
+function loose() {} // expect: loose() has no @since tag
+
+/**
+ * A doc block without the tag.
+ */
+function untagged() {} // expect: untagged() has no @since tag

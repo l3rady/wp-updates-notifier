@@ -67,6 +67,8 @@ class Channel_Store {
 	/**
 	 * Constructor.
 	 *
+	 * @since 2.0.0
+	 *
 	 * @param Config               $config   Resolver of values supplied from outside the database.
 	 * @param Channel_Registry     $registry Registered channels.
 	 * @param Network_Context|null $context Where the options are stored; defaults to the current site setup.

@@ -134,6 +134,8 @@ final class Channel_Instance {
 	/**
 	 * What var_dump() and print_r() show: the settings keys, never the values, which can be resolved secrets.
 	 *
+	 * @since 2.0.0
+	 *
 	 * @return array<string, mixed>
 	 */
 	public function __debugInfo(): array {
@@ -149,6 +151,8 @@ final class Channel_Instance {
 
 	/**
 	 * What serialize() keeps: the settings keys, never the values, which can be resolved secrets.
+	 *
+	 * @since 2.0.0
 	 *
 	 * @return array<string, mixed>
 	 */
