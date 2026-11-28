@@ -1555,6 +1555,8 @@
       
         
       
+        
+      
     
     
     
@@ -2477,6 +2479,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/0032-isolate-test-runs-by-run-token/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0032 Isolate test runs by run token
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2953,7 +2983,8 @@
 </ul>
 <p>With <code>FILE</code> and <code>FILTER</code> together, <code>FILTER</code> narrows the class, so it is a pattern for the method name: <code>make test-wp FILE=tests/wp/test-routing.php FILTER=test_name</code>. The same variables work for <code>make test-wp-ms</code>. A passing run prints nothing on standard error; a failing one shows the full PHPUnit report.</p>
 <p><code>make test-slowest</code> runs the single-site suite once and prints the 15 slowest tests. Its JUnit log is <code>build/junit/junit.xml</code>. <code>PHP_VERSION</code> and <code>WP_VERSION</code> pick the versions.</p>
-<p>Each checkout (and each git worktree) has its own table prefix, made from its path, and the single site and multisite runs have one each, so runs in different checkouts do not clash and <code>make test</code> can run both suites at once. Two runs of the same suite in one checkout still share tables, so do not start them together. <code>make mutation</code> sets its own prefixes and is not tied to the checkout.</p>
+<p><strong>Runs side by side.</strong> Every run has a run token: the checkout token (8 digits from the checkout's path), a letter for the suite (<code>s</code> single site, <code>m</code> multisite, <code>c</code> coverage, <code>u</code> mutation, <code>d</code> test-dist, <code>p</code> plugin-check) and a random part made by <code>docker/wp-tests-entrypoint.sh</code>, for example <code>12345678s_a1b2c3</code>. The table prefix is <code>wptests_&lt;run token&gt;_</code>, and <code>wptests_&lt;run token&gt;_&lt;n&gt;_</code> for each of Infection's workers (<code>TEST_TOKEN</code> is the worker number, which may be <code>0</code>). The rules are in <code>docker/wp-tests-prefix.php</code>, tested by <code>make test-isolation</code>. So any two runs, of any suites in any checkouts, use different tables, and two runs of one suite in one checkout are fine too. A run drops its tables when it ends, also when it fails or is stopped with Ctrl-C (<code>docker/wp-tests-drop.php</code>). A run that is killed leaves them until the database container restarts, as its data is in memory. <code>make test-dist</code> and <code>make plugin-check</code> use a database of their own, <code>wordpress_dist_&lt;run token&gt;</code>, and drop it when they end. See <a href="../../decisions/0032-isolate-test-runs-by-run-token/">decision 0032</a>.</p>
+<p><strong>The test database.</strong> One MariaDB container serves all checkouts. It is a compose project of its own, <code>wpun-testdb</code> (<code>docker/compose.testdb.yml</code>), and every target that needs it starts it first (<code>make testdb</code>), so <code>make down</code> and <code>make clean</code> leave it running. Stop it by hand with <code>docker compose -f docker/compose.testdb.yml down</code>.</p>
 <p><strong>Memory.</strong> A test that never stops cannot take the machine down. Core's test bootstrap lifts PHP's memory limit (it sets <code>WP_MEMORY_LIMIT</code> to <code>-1</code>), so <code>tests/bootstrap.php</code> sets it back to 1G (<code>WPUN_TESTS_MEMORY_LIMIT</code>) and <code>WPUN_Test_Case</code> puts it back before each test, because <code>wp_raise_memory_limit()</code> lifts it again: a runaway test stops with "Allowed memory size exhausted". The suite peaks at about 100 MB. The <code>wp-tests</code> container is capped at 2g and the <code>wp-tests-coverage</code> container at 4g, with no swap, and the kernel kills a process that passes the cap (exit 137). <code>WPUN_TEST_MEMORY</code> and <code>WPUN_COVERAGE_MEMORY</code> change the caps, for example <code>WPUN_TEST_MEMORY=3g make test-wp</code>.</p>
 <p><strong>Shared helpers.</strong> <code>WPUN_Test_Case</code> has helpers to build items, notifications and instances, parse and check markup, and write fixture plugins. <code>tests/README.md</code> lists them.</p>
 <p><strong>Multisite.</strong> The multisite run has the plugin network-activated, as a network has it. A test class that needs the plugin as one site's copy (the dormant mode, or per-site settings) sets <code>protected $network_activated = false;</code> in <code>WPUN_Test_Case</code>. <code>set_network_activated()</code> switches it inside a test.</p>
@@ -2972,7 +3003,7 @@ make<span class="w"> </span>mutation<span class="w"> </span><span class="nv">THR
 make<span class="w"> </span>mutation<span class="w"> </span><span class="nv">ARGS</span><span class="o">=</span><span class="s2">"--filter=includes/class-state.php"</span><span class="w">   </span><span class="c1"># one file (--filter also takes a directory); a few minutes</span>
 make<span class="w"> </span>mutation<span class="w"> </span><span class="nv">ARGS</span><span class="o">=</span><span class="s2">"includes/class-state.php includes/class-routing.php"</span><span class="w">   </span><span class="c1"># several files</span>
 </code></pre></div>
-<p>The report is <code>build/infection/infection.log</code>: every surviving mutant with a diff (<code>summary.log</code> and <code>summary.json</code> count them). Each PHPUnit process Infection starts gets its own table prefix (<code>TEST_TOKEN</code>, see <code>docker/wp-tests-entrypoint.sh</code>), so the processes share one database without touching each other's tables. <code>make test-wp</code> is unchanged.</p>
+<p>The report is <code>build/infection/infection.log</code>: every surviving mutant with a diff (<code>summary.log</code> and <code>summary.json</code> count them). Each PHPUnit process Infection starts, and the initial test run, gets table prefixes of its own (the run token and the worker number, see <a href="#wordpress-tests">Runs side by side</a>), so the processes share one database without touching each other's tables, and so do two mutation runs in different checkouts. The tables are dropped when the run ends. <code>make test-wp</code> is unchanged.</p>
 <p><strong>The floors.</strong> <code>minMsi</code> and <code>minCoveredMsi</code> in <code>infection.json5</code>; <code>make mutation</code> fails below them. MSI counts the mutants of lines no test runs as missed, covered MSI only those the tests run. The scores were 92.98% (MSI) and 93.52% (covered MSI) when the floors were set, on 5322 mutants of which 150 are ignored. Two full runs of the same code differed by about a point (timing under load), so the floors sit a point below the score. Try a value without editing the file with <code>make mutation ARGS="--min-msi=95"</code>.</p>
 <p><strong>Baseline.</strong> 5322 mutants: 4792 killed, 5 timed out and 12 errored (these count as detected), 333 survived, 30 not covered by any test and 150 ignored; the 35 minutes were with 4 threads. The code that decides whether a notification is sent (what was notified, the active-only filter, routing, reminders, validation of settings, the cron schedule and its repair) scores about 99% when run alone, and no survivor is left there unless it is ignored with a reason. The survivors left are mostly in the channel form, channel store, field renderer and field type code.</p>
 <p><strong>Survivors.</strong> Read a survivor's diff in the log. What to do with it (write the test, or ignore it with a reason) and when to raise the floors are rules: they are in <a href="https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>, which also says never to change the plugin to make a mutant go away.</p>
