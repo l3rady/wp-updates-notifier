@@ -417,7 +417,7 @@ services:
   # SBOM of the built zip (CycloneDX): `make sbom`. Writes to build/.
   syft:
     profiles: [security]
-    image: anchore/syft:v1.57.0@sha256:3c70e6d5979364cefdc22b51617a78fd264574d3bd6b4f84a351204147025e2a
+    image: anchore/syft:v1.57.1@sha256:03215d0e98b661d0ecbc8575dbc14d65be1743b5de5df6410aecb7e80f95b060
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /build
     volumes:
@@ -432,7 +432,7 @@ services:
   # Static analysis with the plugin's own rules in .semgrep/: `make sast`. No network needed.
   semgrep:
     profiles: [security]
-    image: semgrep/semgrep:1.184.0@sha256:cc1b68266f267878b39739373ea9985b9a78e5d64497dd875c8de100b22695ed
+    image: semgrep/semgrep:1.185.0@sha256:67518c174185a2043fdbed16c70631b79209499b3671178e7194379b48295a0d
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /src
     volumes:
