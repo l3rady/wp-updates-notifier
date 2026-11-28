@@ -1,5 +1,6 @@
 #!/bin/sh
-# Tests bin/git-mount.sh (the docker option that mounts the git directory of a worktree) and bin/secrets-history.sh
+# Tests bin/git-mount.sh (the docker option that mounts the git directory of a worktree), bin/site-guard.sh (the local
+# site targets refuse to run in a worktree) and bin/secrets-history.sh
 # (a gitleaks scan of 0 commits in a range that has some is a failure) with throwaway repositories and a stub gitleaks.
 # Run by `make test-git-mount`.
 set -eu
@@ -37,6 +38,18 @@ want="-v $common:$common"
 mkdir "$work/plain"
 [ -z "$(cd "$work/plain" && GIT_CEILING_DIRECTORIES="$work" sh "$here/bin/git-mount.sh")" ] || fail "outside a repository prints something"
 echo "ok: git-mount.sh"
+
+guard() { (cd "$1" && sh "$here/bin/site-guard.sh" up >"$work/out" 2>&1); }
+
+guard "$main" || fail "site guard stops the main checkout"
+guard "$main/sub" || fail "site guard stops a subdirectory of the main checkout"
+if guard "$work/wt"; then fail "site guard lets a worktree run"; fi
+grep -q 'make up acts on the one local site' "$work/out" || fail "site guard does not say why: $(cat "$work/out")"
+grep -q 'ALLOW_WORKTREE_SITE=1' "$work/out" || fail "site guard does not name ALLOW_WORKTREE_SITE=1"
+ALLOW_WORKTREE_SITE=1 guard "$work/wt" || fail "ALLOW_WORKTREE_SITE=1 does not let a worktree run"
+if ALLOW_WORKTREE_SITE=0 guard "$work/wt"; then fail "ALLOW_WORKTREE_SITE=0 lets a worktree run"; fi
+(cd "$work/plain" && GIT_CEILING_DIRECTORIES="$work" sh "$here/bin/site-guard.sh" up) || fail "site guard stops a directory outside a repository"
+echo "ok: site-guard.sh"
 
 # secrets-history.sh with a stub that prints what gitleaks prints.
 stub() {

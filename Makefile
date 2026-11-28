@@ -20,6 +20,12 @@ COMPOSE := docker compose --progress quiet
 GIT_MOUNT    := $(shell sh bin/git-mount.sh)
 GIT_MOUNT_RW := $(shell sh bin/git-mount.sh rw)
 
+# The local site targets (up, site-setup, wp, wp-ms, down, clean) refuse to run in a git worktree, because there is one
+# local site whichever directory they run from (bin/site-guard.sh). ALLOW_WORKTREE_SITE=1 runs them anyway.
+ALLOW_WORKTREE_SITE ?=
+export ALLOW_WORKTREE_SITE
+SITE_GUARD = @sh bin/site-guard.sh $@
+
 # The commits `make commits` checks: everything on this branch that is not on main.
 COMMITS_FROM ?= origin/main
 COMMITS_TO   ?= HEAD
@@ -196,7 +202,7 @@ test-release: ## Rehearse the scripts the release workflow runs (copyright year,
 test-isolation: ## Test the rules that keep test runs of several checkouts apart (table prefixes, the pattern that drops a run's tables)
 	$(COMPOSE) run --build --rm php sh tests/bin/test-test-prefix.sh
 
-test-git-mount: ## Test bin/git-mount.sh (the git directory of a worktree) and bin/secrets-history.sh (0 commits scanned fails) with throwaway repositories
+test-git-mount: ## Test bin/git-mount.sh (the git directory of a worktree), bin/site-guard.sh (no local site targets in a worktree) and bin/secrets-history.sh (0 commits scanned fails) with throwaway repositories
 	$(COMPOSE) run --build --rm php sh tests/bin/test-git-mount.sh
 
 test-check: ## Test bin/check.sh (the runner of make check) and bin/agent-stop-check.sh (the Stop hook) with a stub make
@@ -476,10 +482,12 @@ docs-deploy: ## Commit one version to the local gh-pages branch with mike, witho
 security: check-workflows secrets audit sast taint ## Run every security check
 
 up: ## Start the local single site (http://localhost:8080) and multisite (http://localhost:8081) with Mailpit (:8025) and the webhook catcher (:8026), then set them up
+	$(SITE_GUARD)
 	$(COMPOSE) --profile site up -d --build wordpress wordpress-ms mailpit webhook
 	$(MAKE) --no-print-directory site-setup
 
 site-setup: ## Install and configure both local sites: debug settings and plugins (safe to run again)
+	$(SITE_GUARD)
 	$(COMPOSE) --profile site run --rm -T --entrypoint sh wp-cli /usr/local/bin/wpun-site-setup
 	$(COMPOSE) --profile site run --rm -T --entrypoint sh wp-cli-ms /usr/local/bin/wpun-site-setup
 
@@ -490,14 +498,18 @@ site-log-ms: ## Follow the local multisite's debug log (wp-content/debug.log)
 	$(COMPOSE) --profile site exec wordpress-ms sh -c 'touch wp-content/debug.log && tail -n 50 -f wp-content/debug.log'
 
 wp: ## Run WP-CLI on the local single site, e.g. make wp ARGS="plugin list"
+	$(SITE_GUARD)
 	$(COMPOSE) --profile site run --rm wp-cli $(ARGS)
 
 wp-ms: ## Run WP-CLI on the local multisite, e.g. make wp-ms ARGS="site list"
+	$(SITE_GUARD)
 	$(COMPOSE) --profile site run --rm wp-cli-ms $(ARGS)
 
 down: ## Stop the local sites
+	$(SITE_GUARD)
 	$(COMPOSE) --profile site down
 
 clean: ## Remove containers, volumes and built images
+	$(SITE_GUARD)
 	$(COMPOSE) --profile site down --volumes --remove-orphans
 	-docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '^wp-updates-notifier:' | xargs -r docker image rm

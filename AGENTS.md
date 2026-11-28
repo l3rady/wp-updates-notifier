@@ -32,7 +32,8 @@ running or `vendor/` is missing (run `make deps`).
 `PHP_VERSION` and `WP_VERSION` pick the versions, for example `make test-wp PHP_VERSION=7.4`.
 
 Never run `make up`, `make down`, `make clean` or `make site-setup` unless asked: they act on the one local
-development site, whichever directory they are run from. The browser suites (`make a11y`, `make e2e`) use
+development site, whichever directory they are run from. They refuse to run in a git worktree unless
+`ALLOW_WORKTREE_SITE=1` is set, and so do `make wp` and `make wp-ms`. The browser suites (`make a11y`, `make e2e`) use
 their own throwaway sites, named with the checkout token, so they are safe, and they can run in several worktrees at
 once.
 

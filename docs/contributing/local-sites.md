@@ -16,6 +16,8 @@ make down                        # stop them; make clean also deletes their data
 
 Mail goes to Mailpit on http://localhost:8025 and webhooks to the catcher on http://localhost:8026. All of this is set up by files in `docker/`, which never reach the plugin zip.
 
+There is one pair of local sites, whichever directory these commands run from. `make up` in a git worktree would re-create the containers with that worktree's files mounted, so the sites would quietly serve another branch, and `make down` or `make clean` there would stop or wipe them. So `make up`, `site-setup`, `wp`, `wp-ms`, `down` and `clean` refuse to run in a worktree and say why (`bin/site-guard.sh`). Run them in the main checkout, or set `ALLOW_WORKTREE_SITE=1` to point the sites at a worktree on purpose, for example `make up ALLOW_WORKTREE_SITE=1`. `make site-log` and `site-log-ms` only read, so they run anywhere.
+
 ## Checking a change by hand
 
 Check changes on both sites: log in as admin / admin. Debugging is on, with Query Monitor, so a change must not add PHP notices or `doing_it_wrong` messages. The sites also run with a persistent object cache. For changes that save or read options, transients or channels, check them with the cache on and with `make site-setup OBJECT_CACHE=off` (see [Persistent object cache](#persistent-object-cache)). The plugin starts network-activated on the multisite; see [Network or per-site copy](#network-or-per-site-copy) to test the dormant mode. The rules for pull requests are in [CONTRIBUTING.md](https://github.com/l3rady/wp-updates-notifier/blob/main/CONTRIBUTING.md).
