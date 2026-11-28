@@ -90,7 +90,7 @@ QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
 QUALITY_BASELINE_SED := -e 's\#^\t\t\tpath: /app/\(.*\)$$\#\t\t\tpath: ../../\1\n\t\t\treportUnmatched: true\#'
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs test-slowest coverage mutation matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-browser-suite test-commit-msg hooks test-git-mount test-isolation testdb check check-full
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs test-slowest coverage test-coverage-diff mutation mutation-changed matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-browser-suite test-commit-msg hooks test-git-mount test-isolation testdb check check-full
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
@@ -139,9 +139,23 @@ test-wp-ms: deps testdb ## Run the WordPress test suite as multisite (FILTER, FI
 # up (see CONTRIBUTING.md); the aim is 90 or more, and it was 97.12 when set. The text summary is printed;
 # build/coverage/ gets clover.xml and html/.
 COVERAGE_MIN ?= 97
-coverage: deps testdb ## Line coverage of the plugin by the WordPress suite (pcov, single site and multisite together); fails below COVERAGE_MIN; report in build/coverage/
+# With BASE given (make coverage BASE=origin/main), the lines this branch changed since it left BASE, committed or not
+# (a new file must be known to git: git add -N), are also checked:
+# the diff is taken here, with git on the host, and docker/coverage.sh lists the changed lines no test ran
+# (bin/coverage-diff.php). Without BASE the run is as it was. See docs/contributing/testing.md.
+COVERAGE_DIFF_ENV :=
+COVERAGE_DIFF_CMD := @:
+ifneq ($(filter-out file default,$(origin BASE)),)
+COVERAGE_DIFF_ENV := -e COVERAGE_DIFF=/coverage/changes.diff
+COVERAGE_DIFF_CMD = @from="$$(git merge-base $(BASE) HEAD)" && git diff -U0 --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$$from" -- includes modules wp-updates-notifier.php uninstall.php > build/coverage/changes.diff || { echo 'Cannot diff against $(BASE): is it a valid ref?' >&2; exit 1; }
+endif
+coverage: deps testdb ## Line coverage of the plugin by the WordPress suite (pcov, single site and multisite together); fails below COVERAGE_MIN; BASE=origin/main also lists changed lines no test ran; report in build/coverage/
 	@mkdir -p build/coverage
-	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)c wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
+	$(COVERAGE_DIFF_CMD)
+	$(COMPOSE) run --build --rm -e COVERAGE_MIN=$(COVERAGE_MIN) $(COVERAGE_DIFF_ENV) -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)c wp-tests-coverage sh /opt/wp-updates-notifier/docker/coverage.sh $(ARGS)
+
+test-coverage-diff: ## Test bin/coverage-diff.php (the changed lines no test ran) and bin/coverage-check.php with small Clover reports
+	$(COMPOSE) run --build --rm php sh -c 'sh tests/bin/test-coverage-check.sh && sh tests/bin/test-coverage-diff.sh'
 
 # Mutation testing with Infection (slow, so it is run by hand before a release, not in CI): it changes the
 # code and checks that a test fails. THREADS PHPUnit processes run at once, each on tables of its own (the run token and TEST_TOKEN, the worker).
@@ -151,6 +165,17 @@ THREADS ?= 4
 mutation: deps testdb ## Mutation testing of the plugin with Infection (pcov, slow); fails below the minimums in infection.json5; logs in build/infection/
 	@mkdir -p build/infection
 	$(COMPOSE) run --build --rm -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)u -v $(CURDIR)/build/infection:/infection wp-tests-coverage sh /opt/wp-updates-notifier/docker/mutation.sh --threads=$(THREADS) $(ARGS)
+
+# Mutation testing of the files this branch changed under includes/ and modules/ since BASE, committed or not (git on the host), with the
+# surviving mutants printed. The whole-project floors do not apply and a low score does not fail the run; see
+# docker/mutation-changed.sh. Run it before a pull request that changes what decides whether a notification is sent.
+mutation-changed: deps testdb ## Mutation testing of the PHP files changed under includes/ and modules/ since BASE (default origin/main); prints the surviving mutants, exits 0 when the run completes
+	@mkdir -p build/infection
+	@from="$$(git merge-base $(BASE) HEAD)" || { echo 'Cannot diff against $(BASE): is it a valid ref?' >&2; exit 1; }; \
+	files="$$(git diff --name-only --diff-filter=d "$$from" -- includes modules | grep '\.php$$' | paste -sd, -)"; \
+	if [ -z "$$files" ]; then echo 'No changed PHP files under includes/ or modules/ since $(BASE).'; exit 0; fi; \
+	echo "Mutating: $$files"; \
+	$(COMPOSE) run --build --rm -e WPUN_RUN_TOKEN=$(WPUN_TOKEN)u -v $(CURDIR)/build/infection:/infection wp-tests-coverage sh /opt/wp-updates-notifier/docker/mutation-changed.sh $(THREADS) "$$files"
 
 test-known-bugs: deps testdb ## Run the tests that document open bugs (they are expected to fail)
 	@if ! grep -rqE '^[[:space:]]*\*[[:space:]]*@group[[:space:]]+known-bug' tests/wp; then echo 'No known bugs are recorded.'; exit 0; fi; \

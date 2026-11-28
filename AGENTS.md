@@ -16,7 +16,8 @@ pull request.
 | One test | `make test-wp FILTER=Test_Routing::test_name` |
 | WordPress suite | `make test-wp` (single site), `make test-wp-ms` (multisite) |
 | Before a pull request | `make check`, plus `make quality-check` and, when code was added, `make coverage` (or `make check-full` for admin screens, channels or the check itself). One line per step; a failure shows the log tail and the fix, the full output is in `build/check/<step>.log` |
-| Coverage, when code was added | `make coverage` (fails below `COVERAGE_MIN` in the `Makefile`) |
+| Coverage, when code was added | `make coverage BASE=origin/main` (fails below `COVERAGE_MIN` in the `Makefile`, and lists changed lines no test ran; `// coverage-ignore -- reason` marks a line that cannot be tested) |
+| Mutation testing of a change | `make mutation-changed` (the changed files under `includes/` and `modules/`; prints the survivors, exits 0) |
 | Coding standards fixer | `make fix` |
 | PHP 7.4 syntax fixer | `make rector-fix` (it runs `make fix` and `make lint` after) |
 | Hook reference | `make hook-docs` |
@@ -42,7 +43,7 @@ once.
 - Run `make deps` first in a new worktree: `vendor/` is not shared.
 - Every PHPUnit run has table prefixes of its own (checkout token, suite letter and a random part), so any two
   runs may go at the same time, in one checkout or in several: `make test-wp`, `make test-wp-ms`, `make coverage`,
-  `make mutation`. A run drops its tables when it ends.
+  `make mutation`, `make mutation-changed`. A run drops its tables when it ends.
 - All checkouts share one test database container, in its own compose project, `wpun-testdb`
   (`docker/compose.testdb.yml`). Each target that needs it starts it (`make testdb`), so no run has to go first.
   `make down` and `make clean` do not stop it. A killed run leaves its tables until the container restarts.
