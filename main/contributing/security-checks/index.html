@@ -2693,7 +2693,7 @@ make<span class="w"> </span>test-wp<span class="w"> </span><span class="nv">ARGS
 <li><strong>Trivy</strong> over the images (<code>make audit-images</code>): on <code>main</code> and weekly, report only.</li>
 <li><strong>OpenSSF Scorecard</strong> (<code>scorecard.yml</code>) on <code>main</code>.</li>
 </ul>
-<p>The workflow runs weekly too, because new advisories appear without a change here.</p>
+<p>The workflow runs weekly too, because new advisories appear without a change here. A failed weekly run opens an issue labelled <code>ci-failure</code> (the <code>security-report</code> job, the only one in the workflow with <code>issues: write</code>) and the next passing run closes it. See <a href="../testing/#scheduled-runs">Scheduled runs</a>.</p>
 <h2 id="zizmor-and-online-audits">zizmor and online audits<a class="headerlink" href="#zizmor-and-online-audits" title="Permanent link">&para;</a></h2>
 <p><code>make check-workflows</code> runs actionlint and zizmor. <code>make zizmor</code> runs zizmor alone (<code>ZIZMOR_FORMAT=sarif ZIZMOR_OUT=file</code> writes a SARIF report). zizmor runs its online audits only when <code>GITHUB_PUBLIC_TOKEN</code> holds a GitHub token that can read public repositories. Without one it skips them.</p>
 <h2 id="security-tests">Security tests<a class="headerlink" href="#security-tests" title="Permanent link">&para;</a></h2>

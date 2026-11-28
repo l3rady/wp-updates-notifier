@@ -1314,6 +1314,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scheduled-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scheduled runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#security-tooling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2901,6 +2912,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scheduled-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scheduled runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#security-tooling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2974,6 +2996,7 @@
 </code></pre></div>
 <h2 id="wordpress-tests">WordPress tests<a class="headerlink" href="#wordpress-tests" title="Permanent link">&para;</a></h2>
 <p><strong>Covers.</strong> Behaviour of the plugin inside a real WordPress: the update check, scheduling, settings and validation, channels and routing, the email channel, the settings screen markup, upgrades from older versions and uninstall. WordPress, its test library and a database come from the Docker setup. There is no real network (every HTTP request must be faked or the test fails) and no real mail.</p>
+<p><strong>In CI.</strong> The <code>wordpress</code>, <code>wordpress-trunk</code> and <code>random-order</code> jobs of <code>ci.yml</code> keep PHPUnit's output in <code>build/phpunit.log</code>. When a run fails, <code>bin/phpunit-summary.sh</code> writes the failed tests (the <code>N) Class::test</code> entries and the first line of each message) to the job summary, so you find them without opening the log. <code>make test-ci-annotations</code> tests it on a log PHPUnit wrote.</p>
 <p><strong>Lives in.</strong> <code>tests/wp/</code>, one <code>test-*.php</code> file per area, on <code>tests/wp/class-wpun-test-case.php</code>. Add a file there and it runs: they are found by name.</p>
 <p><strong>Run it.</strong> <code>make test-wp</code> for a single site, <code>make test-wp-ms</code> for multisite. Three variables narrow the run:</p>
 <ul>
@@ -3032,8 +3055,8 @@ make<span class="w"> </span>mutation-changed<span class="w">                    
 <h2 id="static-analysis">Static analysis<a class="headerlink" href="#static-analysis" title="Permanent link">&para;</a></h2>
 <p><strong>Covers.</strong> Mistakes found without running the code.</p>
 <ul>
-<li><code>make lint</code> runs PHP_CodeSniffer with the WordPress Coding Standards on the plugin, the example add-on and the field showcase. Warnings fail it too. <code>make fix</code> fixes what phpcbf can.</li>
-<li><code>make stan</code> runs PHPStan at level 8 with the WordPress stubs. <code>phpstan-baseline.neon</code> lists the findings that are accepted for now. It may only shrink: fix a new finding, or annotate it with a reason.</li>
+<li><code>make lint</code> runs PHP_CodeSniffer with the WordPress Coding Standards on the plugin, the example add-on and the field showcase. Warnings fail it too. <code>make fix</code> fixes what phpcbf can. When <code>GITHUB_ACTIONS</code> is set (CI), <code>bin/lint.sh</code> runs all three standards, also writes a Checkstyle report to <code>build/phpcs/</code>, and <code>bin/checkstyle-annotations.php</code> turns it into GitHub annotations (<code>::error</code> and <code>::warning</code>) on the changed lines, after the normal report. The local output does not change. <code>make test-ci-annotations</code> tests the converter, including that a message cannot inject another workflow command.</li>
+<li><code>make stan</code> runs PHPStan at level 8 with the WordPress stubs. <code>phpstan-baseline.neon</code> lists the findings that are accepted for now. It may only shrink: fix a new finding, or annotate it with a reason. In CI <code>make stan</code> passes <code>GITHUB_ACTIONS</code> on to PHPStan, whose table format then prints annotations as well.</li>
 <li><code>make rector</code> is a dry run that shows any PHP 7.4 syntax upgrade Rector would make. It changes nothing. It fails when the code is behind.</li>
 <li><code>make taint</code> (Psalm) and <code>make sast</code> (Semgrep) are on <a href="../security-checks/">Security checks</a>.</li>
 </ul>
@@ -3083,8 +3106,11 @@ make<span class="w"> </span>mutation-changed<span class="w">                    
 <p><code>make blueprint-smoke</code> (about 2 minutes) runs the generated Playground blueprint in WordPress Playground CLI (compose project <code>wpun-playground-&lt;token&gt;</code>, files in <code>tests/blueprint-smoke/</code>; it never touches <code>make up</code>), with the plugin taken from the zip of <code>make dist</code> instead of WordPress.org. Playwright then checks that the settings screen shows the demo notice, the Channels tab shows two deliveries as sent, and Tools → Demo emails lists the update emails with the made-up plugins. Playground downloads WordPress on every run, so it needs the network. CI does not run it. See <a href="../packaging/">Packaging</a> for the blueprint itself.</p>
 <h3 id="the-documentation-site">The documentation site<a class="headerlink" href="#the-documentation-site" title="Permanent link">&para;</a></h3>
 <p><code>make docs-a11y</code> builds this documentation site and checks every page in the dark and the light scheme: axe, no request to a third party, visible keyboard focus, and that every Mermaid diagram parses. A syntax error in a diagram fails it, because Mermaid would otherwise draw an error image and the page would still load. Specs are in <code>tests/e2e/docs/specs/</code>. <code>make docs-links</code> checks the links in the built site and in <code>README.md</code>, the generated <code>readme.txt</code> and <code>CONTRIBUTING.md</code> with lychee, including links to other sites. Internal links and anchors are already checked by the strict <code>make docs</code> build. See <a href="../documentation-site/">Documentation site</a>.</p>
+<p>A pull request or a push fails on any broken link, a <code>5xx</code> answer included. The weekly scheduled run sets <code>LINKS_RETRY=1</code>: a site that is briefly down is not a broken link, so when every failed link answered <code>5xx</code>, <code>bin/docs-links.sh</code> waits <code>LINKS_RETRY_WAIT</code> seconds (60 by default) and runs lychee again on just those links. Only a link that fails twice fails the run. Any other failure (a <code>404</code>, a timeout) fails at once. The first run writes a JSON report to <code>build/links/</code>, which <code>bin/docs-links.php</code> reads, and the log lists each failed link. <code>make test-docs-links</code> tests this with lychee's own reports and a stub for Docker.</p>
 <p><strong>Several worktrees, several runs.</strong> Every browser suite runs as a compose project named with the checkout token (for example <code>wpun-e2e-12345678</code>; the token is the one in <code>WPUN_TOKEN</code>, 8 digits from the checkout's path, and a script run by hand computes it). Two worktrees can run the same suite at once without touching each other's site. In one checkout the suites share files, so <code>tests/lib/suite.sh</code> takes a lock in <code>build/locks/</code>: one run at a time of the suites that mount <code>tests/e2e</code> (<code>make a11y</code>, <code>e2e</code>, <code>e2e-ms</code>, <code>e2e-upgrade</code>, <code>screenshots</code>, <code>blueprint-smoke</code> and <code>docs-a11y</code>, which share its <code>node_modules</code>, and <code>make a11y</code> empties its <code>reports</code>), and one <code>make dast</code>. A second run fails at once, before it touches Docker, and the message names the run that holds the lock and its PID. A lock left by a killed run is taken over. With <code>E2E_KEEP=1</code> or <code>DAST_KEEP=1</code> the lock is released when the run ends, the site stays up, and the run prints the <code>docker compose down -v</code> command that removes it; the next run of that suite removes it too. <code>make test-browser-suite</code> tests the project name and the lock with a stub <code>docker</code>. The local sites of <code>make up</code> are the one thing worktrees still share: <code>make up</code>, <code>site-setup</code>, <code>wp</code>, <code>wp-ms</code>, <code>down</code> and <code>clean</code> refuse to run in a worktree unless <code>ALLOW_WORKTREE_SITE=1</code> is set (see <a href="../local-sites/">Local sites</a>). <code>make test-git-mount</code> tests that guard.</p>
 <p><strong>CI.</strong> The <code>a11y</code> and <code>e2e</code> jobs in <code>ci.yml</code> run <code>make a11y</code>, and <code>make e2e</code> with <code>make e2e-ms</code>. The <code>docs</code> and <code>links</code> jobs in <code>docs.yml</code> run the two documentation checks. The <code>links</code> job also runs every week, because links to other sites break without a change here.</p>
+<h2 id="scheduled-runs">Scheduled runs<a class="headerlink" href="#scheduled-runs" title="Permanent link">&para;</a></h2>
+<p>A scheduled run that fails tells nobody by itself, so <code>ci.yml</code>, <code>security.yml</code> and <code>docs.yml</code> each have a report job (<code>ci-report</code>, <code>security-report</code>, <code>docs-report</code>) that runs after the gate job, on <code>schedule</code> only. <code>bin/ci-failure-issue.sh</code> opens an issue labelled <code>ci-failure</code> when the gate failed, with the run link and the failed jobs, and comments on it at the next failure. When the gate passes it comments and closes the issue. There is one open issue for each workflow and schedule: <code>ci.yml</code> has two (the nightly trunk run and the weekly random-order run), and one passing never closes the other's. A cancelled or skipped run does nothing. These are the only jobs with <code>issues: write</code>. A schedule runs the workflow from the default branch, so a pull request, a push or a fork never opens an issue. <code>lint.yml</code> has no schedule, so it has no report job. <code>make test-ci-failure-issue</code> tests the script with a stub <code>gh</code>.</p>
 <h2 id="security-tooling">Security tooling<a class="headerlink" href="#security-tooling" title="Permanent link">&para;</a></h2>
 <p>The things the PHP tests cannot see (the workflows, committed secrets, vulnerable dependencies, unsafe code patterns and the running site) are checked by <code>make security</code> and <code>make dast</code>. Both are on <a href="../security-checks/">Security checks</a>, with the targets, the CI jobs and the reports.</p>
 
