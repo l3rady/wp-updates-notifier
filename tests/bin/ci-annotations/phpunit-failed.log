@@ -1,0 +1,36 @@
+WPUN_FILTER="$(sh bin/test-filter.sh)" && export WPUN_FILTER && docker compose --progress quiet run --build --rm -e WPUN_FILTER -e WPUN_RUN_TOKEN=41010033s wp-tests sh /opt/wp-updates-notifier/docker/wp-tests.sh 
+Installing...
+Running as single site... To run multisite, use -c tests/phpunit/multisite.xml
+Not running ajax tests. To execute these, use --group ajax.
+Not running ms-files tests. To execute these, use --group ms-files.
+Not running external-http tests. To execute these, use --group external-http.
+PHPUnit 9.6.39 by Sebastian Bergmann and contributors.
+
+FE.                                                                 3 / 3 (100%)
+
+Time: 00:00.031, Memory: 60.50 MB
+
+There was 1 error:
+
+1) Test_Zz_Temp::test_errors
+RuntimeException: Boom: it broke
+
+/opt/wp-updates-notifier/tests/wp/test-zz-temp.php:18
+
+--
+
+There was 1 failure:
+
+1) Test_Zz_Temp::test_fails
+Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'expected'
++'actual'
+
+/opt/wp-updates-notifier/tests/wp/test-zz-temp.php:14
+
+ERRORS!
+Tests: 3, Assertions: 2, Errors: 1, Failures: 1.
+make: *** [Makefile:132: test-wp] Error 2

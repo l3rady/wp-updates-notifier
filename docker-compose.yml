@@ -340,6 +340,8 @@ services:
     working_dir: /app
     volumes:
       - .:/app:ro
+      # The JSON report of a retried run (bin/docs-links.sh); the script creates the folder.
+      - ./build/links:/links
     environment:
       GITHUB_TOKEN:
 

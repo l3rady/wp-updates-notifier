@@ -95,6 +95,9 @@ jobs:
       - name: Check the links
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A scheduled run tries the links that answered 5xx once more after a pause (bin/docs-links.sh). Pull
+          # requests and pushes do not: a 5xx there fails the job.
+          LINKS_RETRY: ${{ github.event_name == 'schedule' && '1' || '' }}
         run: make docs-links
 
   # mike commits the version to a local gh-pages branch inside the docs container, which gets no token; the runner
@@ -171,15 +174,48 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
+    # The jobs that did not pass, for the report job.
+    outputs:
+      failed: ${{ steps.check.outputs.failed }}
     steps:
       - name: Check the results of the jobs
+        id: check
         env:
           NEEDS: ${{ toJSON(needs) }}
         run: |
           failed="$(printf '%s' "$NEEDS" | jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | "\(.key): \(.value.result)"')"
           if [ -n "$failed" ]; then
+            printf 'failed=%s\n' "$(printf '%s' "$failed" | paste -sd, - | sed 's/,/, /g')" >> "$GITHUB_OUTPUT"
             echo "These jobs did not pass:" >&2
             echo "$failed" >&2
             exit 1
           fi
           echo "Every job passed or was skipped."
+
+  # On a scheduled run only: opens an issue labelled ci-failure when the gate failed, comments on it at the next
+  # failure, and closes it when the gate passes (bin/ci-failure-issue.sh, tested by make test-ci-failure-issue). The
+  # only job here with `issues: write`. A schedule runs the workflow from the default branch, so a fork never gets here.
+  docs-report:
+    if: always() && github.event_name == 'schedule'
+    needs: [docs-gate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # Check out the script.
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: bin/ci-failure-issue.sh
+          sparse-checkout-cone-mode: false
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          GATE_RESULT: ${{ needs.docs-gate.result }}
+          FAILED: ${{ needs.docs-gate.outputs.failed }}
+          WORKFLOW: ${{ github.workflow }}
+          SCHEDULE: ${{ github.event.schedule }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: sh bin/ci-failure-issue.sh

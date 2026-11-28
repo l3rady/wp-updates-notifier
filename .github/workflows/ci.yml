@@ -107,6 +107,12 @@ jobs:
         run: make test-git-mount
       - name: Test the rules that keep test runs apart
         run: make test-isolation
+      - name: Test the issue a failed scheduled run opens
+        run: make test-ci-failure-issue
+      - name: Test the retry of the link check
+        run: make test-docs-links
+      - name: Test the annotations and the failed-test summary
+        run: make test-ci-annotations
 
   # The plugin zip as users get it: runtime files only, and it installs,
   # activates, deactivates and uninstalls cleanly in a fresh WordPress.
@@ -234,7 +240,14 @@ jobs:
         with:
           vendor: 'true'
       - name: Run the tests
-        run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
+        shell: bash # So that a failed make fails the pipe to tee.
+        run: |
+          mkdir -p build
+          make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }} 2>&1 | tee build/phpunit.log
+      # The failed tests go to the job summary, so they are found without opening the log.
+      - name: List the failed tests in the summary
+        if: failure() && hashFiles('build/phpunit.log') != ''
+        run: sh bin/phpunit-summary.sh build/phpunit.log >> "$GITHUB_STEP_SUMMARY"
 
   # Line coverage of the plugin's runtime PHP by the WordPress suite (pcov, single site and multisite, one PHP and WordPress
   # version). Fails below COVERAGE_MIN in the Makefile; the report is kept as an artifact. On a pull request it also
@@ -329,7 +342,14 @@ jobs:
         with:
           persist-credentials: false
       - name: Run the tests against trunk
-        run: make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }}
+        shell: bash # So that a failed make fails the pipe to tee.
+        run: |
+          mkdir -p build
+          make ${{ matrix.multisite == '1' && 'test-wp-ms' || 'test-wp' }} 2>&1 | tee build/phpunit.log
+      # The failed tests go to the job summary, so they are found without opening the log.
+      - name: List the failed tests in the summary
+        if: failure() && hashFiles('build/phpunit.log') != ''
+        run: sh bin/phpunit-summary.sh build/phpunit.log >> "$GITHUB_STEP_SUMMARY"
 
   # The single-site suite in random order every week. PHPUnit prints "Random Seed:" at the start of the run: repeat a
   # failure with `make test-wp ARGS="--order-by=random --random-order-seed=<seed>"`.
@@ -343,10 +363,16 @@ jobs:
         with:
           persist-credentials: false
       - name: Run the tests in random order
+        shell: bash # So that a failed make fails the pipe to tee.
         run: |
+          mkdir -p build
           SEED="$(date +%s)"
           echo "Seed: $SEED (repeat with: make test-wp ARGS=\"--order-by=random --random-order-seed=$SEED\")"
-          make test-wp ARGS="--order-by=random --random-order-seed=$SEED"
+          make test-wp ARGS="--order-by=random --random-order-seed=$SEED" 2>&1 | tee build/phpunit.log
+      # The failed tests go to the job summary, so they are found without opening the log.
+      - name: List the failed tests in the summary
+        if: failure() && hashFiles('build/phpunit.log') != ''
+        run: sh bin/phpunit-summary.sh build/phpunit.log >> "$GITHUB_STEP_SUMMARY"
 
   # The only check this workflow requires: it fails unless every job above passed or was skipped. A job the changes
   # job skipped counts as passed, which a required check on the job itself would not. Add every new job to `needs`
@@ -357,15 +383,48 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
+    # The jobs that did not pass, for the report job.
+    outputs:
+      failed: ${{ steps.check.outputs.failed }}
     steps:
       - name: Check the results of the jobs
+        id: check
         env:
           NEEDS: ${{ toJSON(needs) }}
         run: |
           failed="$(printf '%s' "$NEEDS" | jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | "\(.key): \(.value.result)"')"
           if [ -n "$failed" ]; then
+            printf 'failed=%s\n' "$(printf '%s' "$failed" | paste -sd, - | sed 's/,/, /g')" >> "$GITHUB_OUTPUT"
             echo "These jobs did not pass:" >&2
             echo "$failed" >&2
             exit 1
           fi
           echo "Every job passed or was skipped."
+
+  # On a scheduled run only: opens an issue labelled ci-failure when the gate failed, comments on it at the next
+  # failure, and closes it when the gate passes (bin/ci-failure-issue.sh, tested by make test-ci-failure-issue). The
+  # only job here with `issues: write`. A schedule runs the workflow from the default branch, so a fork never gets here.
+  ci-report:
+    if: always() && github.event_name == 'schedule'
+    needs: [ci-gate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # Check out the script.
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: bin/ci-failure-issue.sh
+          sparse-checkout-cone-mode: false
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          GATE_RESULT: ${{ needs.ci-gate.result }}
+          FAILED: ${{ needs.ci-gate.outputs.failed }}
+          WORKFLOW: ${{ github.workflow }}
+          SCHEDULE: ${{ github.event.schedule }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: sh bin/ci-failure-issue.sh

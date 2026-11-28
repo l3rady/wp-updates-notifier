@@ -90,7 +90,7 @@ QUALITY_STAN := --no-progress --no-ansi --memory-limit=1G --error-format=table
 QUALITY_BASELINE_SED := -e 's\#^\t\t\tpath: /app/\(.*\)$$\#\t\t\tpath: ../../\1\n\t\t\treportUnmatched: true\#'
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs test-slowest coverage test-coverage-diff mutation mutation-changed matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-browser-suite test-commit-msg hooks test-git-mount test-isolation testdb check check-full
+.PHONY: help build shell composer deps dist dist-check dist-repro sbom test-dist plugin-check check-headers readme test-readme blueprint check-blueprint test-blueprint blueprint-smoke check-hooks hook-docs translations-edit translations-todo translations check-translations check-public-api lint commits fix stan stan-baseline rector rector-fix smoke test test-wp test-wp-ms test-release test-known-bugs test-slowest coverage test-coverage-diff mutation mutation-changed matrix docs docs-serve docs-a11y docs-links docs-deploy assets wporg-assets wporg-assets-check test-wporg-assets up down clean site-setup site-log site-log-ms wp wp-ms check-workflows ci-changes test-ci-changes test-ci-failure-issue test-docs-links test-ci-annotations zizmor secrets secrets-history secrets-tree secrets-zip secrets-zip-scan audit audit-composer audit-osv audit-images sast sast-scan sast-test sast-ignores taint dast a11y e2e e2e-ms e2e-upgrade screenshots security quality quality-dupes quality-dead quality-complexity quality-rector quality-check quality-check-dupes quality-check-dead quality-check-complexity quality-check-rector quality-baseline quality-baseline-dead quality-baseline-complexity quality-baseline-rector test-check test-browser-suite test-commit-msg hooks test-git-mount test-isolation testdb check check-full
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-20s %s\n", $$1, $$2}'
@@ -194,7 +194,7 @@ test: deps ## Run every test layer (the two WordPress suites side by side)
 	@$(MAKE) --no-print-directory test-release test-check test-isolation test-browser-suite test-readme test-blueprint test-wporg-assets
 
 lint: deps ## Check WordPress Coding Standards (fails on errors and warnings), the plugin, the example add-on and the field showcase
-	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcs && vendor/bin/phpcs --standard=examples/wpun-example-channel/phpcs.xml.dist && vendor/bin/phpcs --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist'
+	$(COMPOSE) run --build --rm $(if $(GITHUB_ACTIONS),-e GITHUB_ACTIONS) php sh bin/lint.sh
 
 commits: ## Check that the commits on this branch follow Conventional Commits
 	$(COMPOSE) run --build --rm $(GIT_MOUNT) commitlint --from $(COMMITS_FROM) --to $(COMMITS_TO) --verbose
@@ -209,8 +209,9 @@ test-commit-msg: ## Test the commit-msg hook, and that it accepts only what comm
 fix: deps ## Auto-fix coding standard violations with phpcbf
 	$(COMPOSE) run --build --rm php sh -c 'vendor/bin/phpcbf; s=$$?; [ $$s -le 1 ] || exit $$s; vendor/bin/phpcbf --standard=examples/wpun-example-channel/phpcs.xml.dist; s=$$?; [ $$s -le 1 ] || exit $$s; vendor/bin/phpcbf --standard=docker/dev-plugins/wpun-field-showcase/phpcs.xml.dist; s=$$?; [ $$s -le 1 ]'
 
+# GITHUB_ACTIONS reaches PHPStan when it is set (CI): its table formatter then also prints GitHub annotations.
 stan: deps ## Static analysis with PHPStan (WordPress stubs)
-	$(COMPOSE) run --build --rm php vendor/bin/phpstan analyse --no-progress --memory-limit=1G $(ARGS)
+	$(COMPOSE) run --build --rm $(if $(GITHUB_ACTIONS),-e GITHUB_ACTIONS) php vendor/bin/phpstan analyse --no-progress --memory-limit=1G $(ARGS)
 
 stan-baseline: deps ## Regenerate phpstan-baseline.neon (it must shrink, never grow)
 	$(COMPOSE) run --build --rm php vendor/bin/phpstan analyse --no-progress --memory-limit=1G --generate-baseline phpstan-baseline.neon $(ARGS)
@@ -329,6 +330,15 @@ test-browser-suite: ## Test tests/lib/suite.sh, the project name and the lock of
 
 test-ci-changes: ## Test the map of changed files to CI jobs, and that it agrees with the workflows and their gate jobs
 	$(COMPOSE) run --build --rm php sh tests/bin/test-ci-changes.sh
+
+test-ci-failure-issue: ## Test bin/ci-failure-issue.sh (the issue a failed scheduled run opens, updates and closes) with a stub gh
+	$(COMPOSE) run --build --rm php sh tests/bin/test-ci-failure-issue.sh
+
+test-docs-links: ## Test the retry of the link check (bin/docs-links.sh and the report parser bin/docs-links.php) with lychee reports and a stub docker compose
+	$(COMPOSE) run --build --rm php sh tests/bin/test-docs-links.sh
+
+test-ci-annotations: ## Test the GitHub annotations of PHPCS findings (bin/checkstyle-annotations.php) and the failed-test summary of PHPUnit (bin/phpunit-summary.sh) on real reports
+	$(COMPOSE) run --build --rm php sh tests/bin/test-ci-annotations.sh
 
 zizmor: ## Audit .github/ (workflows, actions, dependabot.yml) with zizmor only (GITHUB_PUBLIC_TOKEN enables online audits; ZIZMOR_FORMAT=sarif ZIZMOR_OUT=file)
 	$(COMPOSE) --profile security run --rm -T $${GITHUB_PUBLIC_TOKEN:+-e GH_TOKEN=$$GITHUB_PUBLIC_TOKEN} zizmor --format $(ZIZMOR_FORMAT) .github/$(if $(ZIZMOR_OUT), > $(ZIZMOR_OUT))
@@ -495,9 +505,10 @@ docs-a11y: docs ## axe, third-party request and focus checks of the built site, 
 
 # lychee reads docker/docs/lychee.toml (exclusions, retries, accepted statuses). GITHUB_TOKEN is passed on only when set,
 # and never printed: without it github.com answers 429 after a few dozen links. readme.txt is not committed, so the
-# generated preview is checked.
-docs-links: docs readme ## Check the external links of the built site, README.md, the generated readme.txt and CONTRIBUTING.md with lychee (GITHUB_TOKEN avoids GitHub's rate limit)
-	$(COMPOSE) --profile docs run --rm -T lychee --config docker/docs/lychee.toml --no-progress build/docs README.md build/readme.txt CONTRIBUTING.md
+# generated preview is checked. LINKS_RETRY=1 (the scheduled run) tries links that answered 5xx once more, after
+# LINKS_RETRY_WAIT seconds (default 60): see bin/docs-links.sh.
+docs-links: docs readme ## Check the external links of the built site, README.md, the generated readme.txt and CONTRIBUTING.md with lychee (GITHUB_TOKEN avoids GitHub's rate limit; LINKS_RETRY=1 retries 5xx answers once)
+	@sh bin/docs-links.sh
 
 docs-deploy: ## Commit one version to the local gh-pages branch with mike, without pushing: make docs-deploy DOCS_VERSION=main [DOCS_ALIAS=latest] [DOCS_TITLE=...] [DOCS_DEFAULT=1]
 	@test -n "$(DOCS_VERSION)" || { echo 'Set DOCS_VERSION, e.g. make docs-deploy DOCS_VERSION=main' >&2; exit 1; }

@@ -1,0 +1,42 @@
+{
+  "total": 1,
+  "unique": 1,
+  "successful": 0,
+  "unknown": 0,
+  "unsupported": 0,
+  "timeouts": 0,
+  "redirects": 0,
+  "remaps": 0,
+  "excludes": 0,
+  "errors": 1,
+  "cached": 0,
+  "success_map": {},
+  "error_map": {
+    "docs/page.md": [
+      {
+        "url": "https://httpbin.org/status/404",
+        "status": {
+          "text": "Rejected status code: 404 Not Found",
+          "code": 404
+        },
+        "span": {
+          "line": 1,
+          "column": 1
+        },
+        "duration": {
+          "secs": 0,
+          "nanos": 357881783
+        }
+      }
+    ]
+  },
+  "timeout_map": {},
+  "suggestion_map": {},
+  "redirect_map": {},
+  "excluded_map": {},
+  "duration": {
+    "secs": 0,
+    "nanos": 358521665
+  },
+  "detailed_stats": false
+}

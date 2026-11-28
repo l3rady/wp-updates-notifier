@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="3.13.6">
+<file name="@ROOT@/includes/zz-temp-broken.php">
+ <error line="1" column="1" severity="error" message="Missing file doc comment" source="Squiz.Commenting.FileComment.Missing"/>
+ <error line="2" column="1" severity="error" message="Global variables defined by a theme/plugin should start with the theme/plugin prefix. Found: &quot;$x&quot;." source="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound"/>
+ <error line="2" column="3" severity="warning" message="Equals sign not aligned correctly; expected 1 space but found 0 spaces" source="Generic.Formatting.MultipleStatementAlignment.IncorrectWarning"/>
+ <error line="2" column="3" severity="error" message="Expected 1 space before &quot;=&quot;; 0 found" source="WordPress.WhiteSpace.OperatorSpacing.NoSpaceBefore"/>
+ <error line="2" column="3" severity="error" message="Expected 1 space after &quot;=&quot;; 0 found" source="WordPress.WhiteSpace.OperatorSpacing.NoSpaceAfter"/>
+ <error line="2" column="12" severity="warning" message="Processing form data without nonce verification." source="WordPress.Security.NonceVerification.Recommended"/>
+ <error line="2" column="12" severity="error" message="All output should be run through an escaping function (see the Security sections in the WordPress Developer Handbooks), found '$_GET[&quot;a&quot;]'." source="WordPress.Security.EscapeOutput.OutputNotEscaped"/>
+ <error line="2" column="12" severity="error" message="Detected usage of a possibly undefined superglobal array index: $_GET[&quot;a&quot;]. Check that the array index exists before using it." source="WordPress.Security.ValidatedSanitizedInput.InputNotValidated"/>
+ <error line="2" column="12" severity="error" message="$_GET[&quot;a&quot;] not unslashed before sanitization. Use wp_unslash() or similar" source="WordPress.Security.ValidatedSanitizedInput.MissingUnslash"/>
+ <error line="2" column="12" severity="error" message="Detected usage of a non-sanitized input variable: $_GET[&quot;a&quot;]" source="WordPress.Security.ValidatedSanitizedInput.InputNotSanitized"/>
+ <error line="2" column="18" severity="error" message="String &quot;a&quot; does not require double quotes; use single quotes instead" source="Squiz.Strings.DoubleQuoteUsage.NotRequired"/>
+ <error line="2" column="22" severity="error" message="Each PHP statement must be on a line by itself" source="Generic.Formatting.DisallowMultipleStatements.SameLine"/>
+ <error line="3" column="1" severity="error" message="Inline comments must end in full-stops, exclamation marks, or question marks" source="Squiz.Commenting.InlineComment.InvalidEndChar"/>
+</file>
+</checkstyle>
+

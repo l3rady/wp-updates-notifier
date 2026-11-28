@@ -35,7 +35,7 @@ CI also runs these, outside `make security`:
 - **Trivy** over the images (`make audit-images`): on `main` and weekly, report only.
 - **OpenSSF Scorecard** (`scorecard.yml`) on `main`.
 
-The workflow runs weekly too, because new advisories appear without a change here.
+The workflow runs weekly too, because new advisories appear without a change here. A failed weekly run opens an issue labelled `ci-failure` (the `security-report` job, the only one in the workflow with `issues: write`) and the next passing run closes it. See [Scheduled runs](testing.md#scheduled-runs).
 
 ## zizmor and online audits
 

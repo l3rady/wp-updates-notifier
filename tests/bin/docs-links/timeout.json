@@ -1,0 +1,42 @@
+{
+  "total": 1,
+  "unique": 1,
+  "successful": 0,
+  "unknown": 0,
+  "unsupported": 0,
+  "timeouts": 1,
+  "redirects": 0,
+  "remaps": 0,
+  "excludes": 0,
+  "errors": 0,
+  "cached": 0,
+  "success_map": {},
+  "error_map": {},
+  "timeout_map": {
+    "docs/page.md": [
+      {
+        "url": "https://httpbin.org/delay/5",
+        "status": {
+          "text": "Timeout",
+          "details": "Request timed out"
+        },
+        "span": {
+          "line": 1,
+          "column": 1
+        },
+        "duration": {
+          "secs": 1,
+          "nanos": 3055182
+        }
+      }
+    ]
+  },
+  "suggestion_map": {},
+  "redirect_map": {},
+  "excluded_map": {},
+  "duration": {
+    "secs": 1,
+    "nanos": 3759172
+  },
+  "detailed_stats": false
+}

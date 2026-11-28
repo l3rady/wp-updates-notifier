@@ -1,7 +1,8 @@
 #!/bin/sh
 # Tests the map of changed files to CI jobs (bin/ci-changes.sh) and that it agrees with the workflows, so the two
 # cannot drift apart. Only the gate jobs are required checks: a job left out of its gate's `needs` would never block a
-# merge. Run with `make test-ci-changes`; it needs only sh, awk, sed and grep.
+# merge. The report job of a workflow with a schedule (opens an issue when the gate failed) is the one exception: it
+# needs the gate, so it cannot be in it. Run with `make test-ci-changes`; it needs only sh, awk, sed and grep.
 set -eu
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -93,6 +94,7 @@ parse() {
 		injobs && /^[^ #]/ { injobs = 0 }
 		!injobs { next }
 		/^  [A-Za-z0-9_-]+:[ ]*$/ { job = $1; sub(/:$/, "", job); print "job", job; next }
+		job != "" && /^    if:/ { line = $0; sub(/^    if:[ ]*/, "", line); print "if", job, line }
 		job != "" && /^    needs:/ { line = $0; sub(/^    needs:[ ]*/, "", line); print "needs", job, line; next }
 		job != "" && /needs\.changes\.outputs\.jobs/ {
 			line = $0
@@ -111,11 +113,26 @@ for wf in $workflows; do
 	echo "$jobs" | grep -qx "$gate" || fail "$wf.yml has no $gate job"
 	echo "$jobs" | grep -qx changes || fail "$wf.yml has no changes job"
 
+	# A workflow with a schedule has a report job, which needs exactly the gate, is not in the gate's needs and runs
+	# on a schedule only. A workflow without one has no report job.
+	report="$wf-report"
+	if grep -q '^  schedule:' ".github/workflows/$wf.yml"; then
+		echo "$jobs" | grep -qx "$report" || fail "$wf.yml has a schedule but no $report job"
+		[ "$(sed -n "s/^needs $report //p" "$work/$wf.parsed")" = "[$gate]" ] || fail "$report must have exactly 'needs: [$gate]'"
+		sed -n "s/^if $report //p" "$work/$wf.parsed" | grep -qF "github.event_name == 'schedule'" || fail "$report must run on a schedule only: its if must contain github.event_name == 'schedule'"
+	else
+		! echo "$jobs" | grep -qx "$report" || fail "$wf.yml has no schedule, so it needs no $report job"
+	fi
+
 	# The gate needs every other job.
 	gate_needs="$(sed -n "s/^needs $gate \[\(.*\)\]$/\1/p" "$work/$wf.parsed" | tr -d ',')"
 	[ -n "$gate_needs" ] || fail "$gate needs must be a one-line flow list: needs: [changes, ...]"
 	for job in $jobs; do
 		[ "$job" != "$gate" ] || continue
+		if [ "$job" = "$report" ]; then
+			case " $gate_needs " in *" $job "*) fail "$gate needs $job, which needs $gate" ;; esac
+			continue
+		fi
 		case " $gate_needs " in *" $job "*) ;; *) fail "$job is missing from the needs of $gate in $wf.yml" ;; esac
 	done
 	for job in $gate_needs; do
@@ -125,7 +142,7 @@ for wf in $workflows; do
 
 	# A job that uses the map needs the changes job and asks for its own id; any other job is on the exempt list.
 	for job in $jobs; do
-		[ "$job" != "$gate" ] && [ "$job" != changes ] || continue
+		[ "$job" != "$gate" ] && [ "$job" != changes ] && [ "$job" != "$report" ] || continue
 		asked="$(sed -n "s/^mapped $job //p" "$work/$wf.parsed" | head -n 1)"
 		if [ -n "$asked" ]; then
 			[ "$asked" = "$job" ] || fail "$job in $wf.yml asks the map for '$asked'"

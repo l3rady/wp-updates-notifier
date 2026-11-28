@@ -1,0 +1,57 @@
+{
+  "total": 2,
+  "unique": 2,
+  "successful": 0,
+  "unknown": 0,
+  "unsupported": 0,
+  "timeouts": 0,
+  "redirects": 0,
+  "remaps": 0,
+  "excludes": 0,
+  "errors": 2,
+  "cached": 0,
+  "success_map": {},
+  "error_map": {
+    "docs/page.md": [
+      {
+        "url": "https://httpbin.org/status/503",
+        "status": {
+          "text": "Rejected status code: 503 Service Unavailable",
+          "code": 503
+        },
+        "span": {
+          "line": 1,
+          "column": 1
+        },
+        "duration": {
+          "secs": 0,
+          "nanos": 421838090
+        }
+      },
+      {
+        "url": "https://httpbin.org/status/502",
+        "status": {
+          "text": "Rejected status code: 502 Bad Gateway",
+          "code": 502
+        },
+        "span": {
+          "line": 1,
+          "column": 37
+        },
+        "duration": {
+          "secs": 0,
+          "nanos": 420274430
+        }
+      }
+    ]
+  },
+  "timeout_map": {},
+  "suggestion_map": {},
+  "redirect_map": {},
+  "excluded_map": {},
+  "duration": {
+    "secs": 0,
+    "nanos": 422543362
+  },
+  "detailed_stats": false
+}

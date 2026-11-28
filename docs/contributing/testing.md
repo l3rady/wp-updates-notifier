@@ -59,6 +59,8 @@ make test-wp WP_VERSION=6.7.9 PHP_VERSION=7.4
 
 **Covers.** Behaviour of the plugin inside a real WordPress: the update check, scheduling, settings and validation, channels and routing, the email channel, the settings screen markup, upgrades from older versions and uninstall. WordPress, its test library and a database come from the Docker setup. There is no real network (every HTTP request must be faked or the test fails) and no real mail.
 
+**In CI.** The `wordpress`, `wordpress-trunk` and `random-order` jobs of `ci.yml` keep PHPUnit's output in `build/phpunit.log`. When a run fails, `bin/phpunit-summary.sh` writes the failed tests (the `N) Class::test` entries and the first line of each message) to the job summary, so you find them without opening the log. `make test-ci-annotations` tests it on a log PHPUnit wrote.
+
 **Lives in.** `tests/wp/`, one `test-*.php` file per area, on `tests/wp/class-wpun-test-case.php`. Add a file there and it runs: they are found by name.
 
 **Run it.** `make test-wp` for a single site, `make test-wp-ms` for multisite. Three variables narrow the run:
@@ -163,8 +165,8 @@ Two checks guard the same boundary without WordPress. `make check-public-api` fa
 
 **Covers.** Mistakes found without running the code.
 
-- `make lint` runs PHP_CodeSniffer with the WordPress Coding Standards on the plugin, the example add-on and the field showcase. Warnings fail it too. `make fix` fixes what phpcbf can.
-- `make stan` runs PHPStan at level 8 with the WordPress stubs. `phpstan-baseline.neon` lists the findings that are accepted for now. It may only shrink: fix a new finding, or annotate it with a reason.
+- `make lint` runs PHP_CodeSniffer with the WordPress Coding Standards on the plugin, the example add-on and the field showcase. Warnings fail it too. `make fix` fixes what phpcbf can. When `GITHUB_ACTIONS` is set (CI), `bin/lint.sh` runs all three standards, also writes a Checkstyle report to `build/phpcs/`, and `bin/checkstyle-annotations.php` turns it into GitHub annotations (`::error` and `::warning`) on the changed lines, after the normal report. The local output does not change. `make test-ci-annotations` tests the converter, including that a message cannot inject another workflow command.
+- `make stan` runs PHPStan at level 8 with the WordPress stubs. `phpstan-baseline.neon` lists the findings that are accepted for now. It may only shrink: fix a new finding, or annotate it with a reason. In CI `make stan` passes `GITHUB_ACTIONS` on to PHPStan, whose table format then prints annotations as well.
 - `make rector` is a dry run that shows any PHP 7.4 syntax upgrade Rector would make. It changes nothing. It fails when the code is behind.
 - `make taint` (Psalm) and `make sast` (Semgrep) are on [Security checks](security-checks.md).
 
@@ -238,9 +240,15 @@ It runs the update check once from WP-CLI before the browser opens any page, and
 
 `make docs-a11y` builds this documentation site and checks every page in the dark and the light scheme: axe, no request to a third party, visible keyboard focus, and that every Mermaid diagram parses. A syntax error in a diagram fails it, because Mermaid would otherwise draw an error image and the page would still load. Specs are in `tests/e2e/docs/specs/`. `make docs-links` checks the links in the built site and in `README.md`, the generated `readme.txt` and `CONTRIBUTING.md` with lychee, including links to other sites. Internal links and anchors are already checked by the strict `make docs` build. See [Documentation site](documentation-site.md).
 
+A pull request or a push fails on any broken link, a `5xx` answer included. The weekly scheduled run sets `LINKS_RETRY=1`: a site that is briefly down is not a broken link, so when every failed link answered `5xx`, `bin/docs-links.sh` waits `LINKS_RETRY_WAIT` seconds (60 by default) and runs lychee again on just those links. Only a link that fails twice fails the run. Any other failure (a `404`, a timeout) fails at once. The first run writes a JSON report to `build/links/`, which `bin/docs-links.php` reads, and the log lists each failed link. `make test-docs-links` tests this with lychee's own reports and a stub for Docker.
+
 **Several worktrees, several runs.** Every browser suite runs as a compose project named with the checkout token (for example `wpun-e2e-12345678`; the token is the one in `WPUN_TOKEN`, 8 digits from the checkout's path, and a script run by hand computes it). Two worktrees can run the same suite at once without touching each other's site. In one checkout the suites share files, so `tests/lib/suite.sh` takes a lock in `build/locks/`: one run at a time of the suites that mount `tests/e2e` (`make a11y`, `e2e`, `e2e-ms`, `e2e-upgrade`, `screenshots`, `blueprint-smoke` and `docs-a11y`, which share its `node_modules`, and `make a11y` empties its `reports`), and one `make dast`. A second run fails at once, before it touches Docker, and the message names the run that holds the lock and its PID. A lock left by a killed run is taken over. With `E2E_KEEP=1` or `DAST_KEEP=1` the lock is released when the run ends, the site stays up, and the run prints the `docker compose down -v` command that removes it; the next run of that suite removes it too. `make test-browser-suite` tests the project name and the lock with a stub `docker`. The local sites of `make up` are the one thing worktrees still share: `make up`, `site-setup`, `wp`, `wp-ms`, `down` and `clean` refuse to run in a worktree unless `ALLOW_WORKTREE_SITE=1` is set (see [Local sites](local-sites.md)). `make test-git-mount` tests that guard.
 
 **CI.** The `a11y` and `e2e` jobs in `ci.yml` run `make a11y`, and `make e2e` with `make e2e-ms`. The `docs` and `links` jobs in `docs.yml` run the two documentation checks. The `links` job also runs every week, because links to other sites break without a change here.
+
+## Scheduled runs
+
+A scheduled run that fails tells nobody by itself, so `ci.yml`, `security.yml` and `docs.yml` each have a report job (`ci-report`, `security-report`, `docs-report`) that runs after the gate job, on `schedule` only. `bin/ci-failure-issue.sh` opens an issue labelled `ci-failure` when the gate failed, with the run link and the failed jobs, and comments on it at the next failure. When the gate passes it comments and closes the issue. There is one open issue for each workflow and schedule: `ci.yml` has two (the nightly trunk run and the weekly random-order run), and one passing never closes the other's. A cancelled or skipped run does nothing. These are the only jobs with `issues: write`. A schedule runs the workflow from the default branch, so a pull request, a push or a fork never opens an issue. `lint.yml` has no schedule, so it has no report job. `make test-ci-failure-issue` tests the script with a stub `gh`.
 
 ## Security tooling
 

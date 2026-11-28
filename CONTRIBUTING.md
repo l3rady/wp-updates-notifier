@@ -136,7 +136,11 @@ Only the gate jobs (`ci-gate`, `lint-gate`, `docs-gate`, `security-gate`) and
 passed or was skipped, so a skipped job never blocks a merge. A new job must be
 added to its workflow's gate `needs` and to the table in `bin/ci-changes.sh`
 (or, if it always runs or never runs on pull requests, to the exceptions in
-`tests/bin/test-ci-changes.sh`); that test fails until it is.
+`tests/bin/test-ci-changes.sh`); that test fails until it is. A workflow with a
+`schedule` (`ci.yml`, `security.yml`, `docs.yml`) also has a report job named
+`<workflow>-report` that needs its gate, is not in the gate's `needs`, and runs
+on `schedule` only. It opens an issue labelled `ci-failure` when the scheduled
+run fails and closes it when the run passes again. `lint.yml` has no schedule.
 
 ## Suppressions and baselines
 

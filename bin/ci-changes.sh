@@ -48,6 +48,21 @@ bin/ci-changes.sh         ALL
 tests/bin/test-ci-changes.sh ALL
 tests/bin/ci-changes/*    ALL
 
+# The scripts of the failure reports, rehearsed by their tests in the release-scripts job: the issue a failed
+# scheduled run opens, the retry of the link check, the annotations of PHPCS findings and the failed-test summary of
+# PHPUnit. The lint script and the annotations also run in the phpcs job; the link script in the links job.
+bin/ci-failure-issue.sh   release-scripts
+tests/bin/test-ci-failure-issue.sh release-scripts
+bin/docs-links.sh         release-scripts links
+bin/docs-links.php        release-scripts links
+tests/bin/test-docs-links.sh release-scripts
+tests/bin/docs-links/*    release-scripts
+bin/lint.sh               release-scripts phpcs
+bin/checkstyle-annotations.php release-scripts phpcs
+bin/phpunit-summary.sh    release-scripts wordpress
+tests/bin/test-ci-annotations.sh release-scripts
+tests/bin/ci-annotations/* release-scripts
+
 # The plugin's PHP: analysed, linted, tested, zipped and run in the browser. The hooks and translations checks (in
 # the phpcs job) read it too. wp-updates-notifier.php and uninstall.php are also what the release scripts rehearse on.
 wp-updates-notifier.php   phpstan rector smoke wordpress coverage dist dist-repro plugin-check a11y e2e phpcs quality sast taint release-scripts
